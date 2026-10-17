@@ -1,0 +1,85 @@
+/* Visualizador IPR: camadas em calha de categorias (fonte única, partilhada) */
+.ipr-cam{position:absolute;z-index:5;left:16px;top:72px;display:flex;align-items:flex-start;gap:8px;font-size:13px;color:#2f3424;pointer-events:none}
+.ipr-cam>*{pointer-events:auto}
+.ipr-rail{display:flex;flex-direction:column;max-height:var(--ipr-railh,none);background:rgba(255,255,255,.95);border-radius:6px;box-shadow:0 1px 5px rgba(30,35,22,.22);overflow:visible;padding:3px}
+.ipr-rb{position:relative;width:38px;height:38px;border:0;background:transparent;border-radius:5px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#3f4630;padding:0;margin:0}
+.ipr-rb svg{width:19px;height:19px;flex:none}
+.ipr-rb:hover,.ipr-rb:focus-visible{background:#efece0;outline:0}
+.ipr-rb[aria-expanded=true]{background:#3f4630;color:#fff}
+.ipr-rb+.ipr-rb{margin-top:2px}
+.ipr-sep{height:1px;background:#e3dec6;margin:3px 4px}
+.ipr-n{position:absolute;top:3px;right:3px;min-width:14px;height:14px;border-radius:7px;background:#bca714;color:#2f3424;font-size:9.5px;font-weight:700;line-height:14px;text-align:center;padding:0 3px;display:none}
+.ipr-n.on{display:block}
+.ipr-tip{position:absolute;left:calc(100% + 8px);top:50%;transform:translateY(-50%);background:rgba(47,52,36,.94);color:#fff;font-size:12px;white-space:nowrap;padding:5px 9px;border-radius:4px;opacity:0;pointer-events:none;transition:opacity .15s}
+@media (hover:hover){.ipr-rb:hover .ipr-tip{opacity:1}}
+.ipr-cam.aberto .ipr-tip{display:none}
+.ipr-fly{width:292px;max-height:var(--ipr-maxh,60vh);display:flex;flex-direction:column;background:rgba(255,253,246,.97);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border-radius:6px;box-shadow:0 4px 18px rgba(30,35,22,.28);overflow:hidden;transform-origin:left top;animation:iprAbre .16s ease-out}
+.ipr-fly[hidden]{display:none}
+@keyframes iprAbre{from{opacity:0;transform:translateX(-6px) scale(.98)}to{opacity:1;transform:none}}
+.ipr-fly-cab{display:flex;align-items:center;gap:8px;padding:11px 12px 8px 14px;border-bottom:1px solid #ebe6d2}
+.ipr-fly-cab strong{flex:1;font-size:14px;font-weight:600;color:#3f4630}
+.ipr-fx{border:0;background:none;font-size:20px;line-height:1;color:#7a7e68;cursor:pointer;padding:2px 6px;border-radius:4px}
+.ipr-fx:hover{background:#efece0}
+.ipr-busca{margin:8px 12px 2px;border:1px solid #d9d3bb;border-radius:5px;padding:7px 10px;font-size:13px;background:#fff;color:#2f3424;outline:0;min-width:0}
+.ipr-busca:focus{border-color:#5e6647}
+.ipr-lista{list-style:none;margin:0;padding:4px 0 6px;overflow:auto;flex:1;-webkit-overflow-scrolling:touch}
+.ipr-sub{padding:10px 14px 3px;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:#8a8d7a;font-weight:600}
+.ipr-it{padding:4px 12px 4px 14px}
+.ipr-it label{display:flex;align-items:center;gap:9px;cursor:pointer;line-height:1.3;min-height:30px}
+.ipr-it label span.ipr-nome{flex:1}
+.ipr-it small{display:block;color:#8a8d7a;font-size:11px}
+.ipr-cor{width:10px;height:10px;border-radius:3px;flex:none;box-shadow:inset 0 0 0 1px rgba(0,0,0,.15)}
+.ipr-sw{appearance:none;-webkit-appearance:none;flex:none;width:30px;height:17px;border-radius:9px;background:#d9d5c4;position:relative;cursor:pointer;transition:background .2s;margin:0}
+.ipr-sw:after{content:"";position:absolute;top:2px;left:2px;width:13px;height:13px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.25);transition:transform .2s}
+.ipr-sw:checked{background:#5e6647}
+.ipr-sw:checked:after{transform:translateX(13px)}
+.ipr-op{display:none;width:100%;margin:2px 0 4px;accent-color:#5e6647;height:14px}
+.ipr-it.on .ipr-op{display:block}
+.ipr-it.bl label{cursor:default;opacity:.78}
+.ipr-it.bl .ipr-sw{background:#ebe7d8}
+.ipr-it small.ipr-cad{color:#8a6d00}
+.ipr-it small.ipr-cad:before{content:"🔒 ";font-size:10px}
+.ipr-it small.ipr-est{color:#5e6647;font-style:italic}
+.ipr-leg{display:flex;flex-wrap:wrap;gap:2px 9px;margin:2px 0 3px 39px;font-size:11px;color:#6f725f}
+.ipr-leg i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:-1px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12)}
+.ipr-vazio{padding:16px 14px;color:#8a8d7a;font-size:12.5px}
+.ipr-rod{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 12px 10px 14px;border-top:1px solid #ebe6d2;font-size:12px;color:#7a7e68}
+.ipr-rod button{border:0;background:none;color:#5e6647;font-size:12px;cursor:pointer;padding:0;text-decoration:underline}
+@media (max-height:620px){.ipr-rail{overflow-y:auto;overflow-x:hidden;scrollbar-width:none}.ipr-rail::-webkit-scrollbar{display:none}.ipr-rb{flex:none}}
+@media (max-width:700px){
+ .ipr-cam{left:12px;top:64px}
+ .ipr-rb{width:40px;height:40px}
+ .ipr-fly{width:min(292px,calc(100vw - 80px))}
+}
+
+/* modo árvore (painel lateral, estilo Google Earth) */
+.ipr-arv{display:flex;flex-direction:column;min-height:0;height:100%;font-size:13px}
+.ipr-arv-cab{display:flex;gap:6px;padding:8px 10px;align-items:center}
+.ipr-arv-cab .ipr-busca{flex:1;margin:0;min-width:0}
+.ipr-arv-cab .ipr-off{flex:none;border:0;background:transparent;cursor:pointer;font-size:12px;padding:6px 4px}
+.ipr-arv-cab .ipr-off:disabled{opacity:.4;cursor:default}
+.ipr-arv-l{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:0 0 6px}
+.ipr-g{border-top:1px solid rgba(127,127,127,.15)}
+.ipr-gc{display:flex;align-items:center;padding-right:10px}
+.ipr-gt{flex:1;display:flex;align-items:center;gap:7px;min-width:0;border:0;background:transparent;color:inherit;font:inherit;font-weight:600;text-align:left;padding:8px 6px 8px 8px;cursor:pointer}
+.ipr-gt svg{width:16px;height:16px;flex:none;opacity:.8}
+.ipr-gn{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ipr-car{width:0;height:0;border-left:5px solid currentColor;border-top:4px solid transparent;border-bottom:4px solid transparent;transition:transform .12s;flex:none;opacity:.7}
+.ipr-g.ab .ipr-car{transform:rotate(90deg)}
+.ipr-gt .ipr-n{position:static;display:inline-block}
+.ipr-gsw{width:15px;height:15px;flex:none;margin:0;cursor:pointer}
+.ipr-arv .ipr-lista{list-style:none;margin:0;padding:0 0 6px 18px;max-height:none;overflow:visible}
+.ipr-arv .ipr-it label{display:flex;align-items:flex-start;gap:7px;padding:5px 10px 5px 6px;cursor:pointer}
+.ipr-arv .ipr-ck{width:15px;height:15px;margin:1px 0 0;flex:none;cursor:pointer}
+.ipr-arv .ipr-cor{position:static;width:10px;height:10px;border-radius:2px;flex:none;margin-top:3px}
+.ipr-arv .ipr-nome{flex:1;min-width:0}
+.ipr-arv .ipr-nome small{display:block;font-size:11px;opacity:.75}
+.ipr-arv .ipr-sub{list-style:none;font-size:10px;letter-spacing:.08em;text-transform:uppercase;opacity:.6;padding:6px 6px 2px}
+.ipr-arv .ipr-op{display:block;width:calc(100% - 40px);margin:0 0 4px 30px}
+.ipr-arv .ipr-leg{padding:0 10px 4px 30px}
+.ipr-arv .ipr-rod{padding:6px 10px;font-size:11px}
+.ipr-arv .ipr-vazio{padding:12px;opacity:.7}
+/* A minha Base Cartográfica: destacada no topo da árvore */
+.ipr-g[data-g="base"]{background:rgba(201,119,63,.10);border-top:2px solid #c9773f;border-bottom:1px solid rgba(201,119,63,.35)}
+.ipr-g[data-g="base"] .ipr-gn{font-weight:700;color:#a85a24}
+.ipr-g[data-g="base"] .ipr-sub{color:#a85a24}

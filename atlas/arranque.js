@@ -1,0 +1,1 @@
+!function(){var n=document.getElementById("ipe");function d(){window.IPREstudio.iniciar({raiz:n})}n&&(document.body.appendChild(n),"loading"===document.readyState?document.addEventListener("DOMContentLoaded",d):d())}();
