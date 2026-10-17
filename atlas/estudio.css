@@ -13,8 +13,8 @@ html.ipe-on,html.ipe-on body{overflow:hidden!important;height:100%}
 /* ── barra superior */
 .ipe-top{grid-column:1/-1;display:flex;align-items:center;gap:14px;padding:env(safe-area-inset-top) calc(12px + env(safe-area-inset-right)) 0 calc(12px + env(safe-area-inset-left));background:var(--p1);border-bottom:1px solid var(--ln);min-width:0;position:relative;z-index:8}
 .ipe-marca{display:flex;align-items:center;gap:10px;text-decoration:none!important;color:var(--tx)!important;flex:none}
-.ipe-marca img{width:26px;height:26px;border-radius:50%;background:var(--ar);padding:3px}
-.ipe-marca b{font:600 12px/1 var(--mono);letter-spacing:.14em}
+.ipe-marca img{width:34px;height:34px;object-fit:contain;flex:none}
+.ipe-marca b{font:600 13px/1 var(--mono);letter-spacing:.12em}
 .ipe-marca span{display:block;font-size:11px;color:var(--mu);letter-spacing:.02em;margin-top:2px}
 .ipe-vsep{width:1px;height:22px;background:var(--ln2);flex:none}
 .ipe-ctx{min-width:0;flex:0 1 auto;display:flex;flex-direction:column;line-height:1.2}
