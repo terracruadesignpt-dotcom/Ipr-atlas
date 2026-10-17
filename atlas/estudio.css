@@ -499,3 +499,31 @@ span.ipe-loc-pt{cursor:default}
 .ipc-cmp{display:inline-flex;gap:4px;align-items:center;font-size:11.5px;margin-left:6px;opacity:.8}
 .ipc-mk{width:16px;height:16px;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.35);cursor:pointer}.ipc-mk--pedido{border-radius:3px}.ipc-mk--oferta{border-radius:3px;transform:rotate(45deg)}
 .ipc-pop small{display:block;text-transform:uppercase;letter-spacing:.06em;font-size:10px;opacity:.7}.ipc-pop b{display:block;margin:2px 0 4px}.ipc-pop p{margin:0 0 6px;font-size:12.5px}.ipc-pop span{display:block;font-size:12px}
+
+/* Rosa dos ventos e escala gráfica sobre o mapa (17/10) */
+.ipe .maplibregl-ctrl-compass{display:none}
+.ipe-rosa{position:absolute;right:8px;top:112px;z-index:3;width:112px;height:auto;min-width:112px;padding:0;border:0;background:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px}
+.ipe-rosa svg{display:block;flex:none;width:96px!important;height:96px!important;max-width:none;filter:drop-shadow(0 2px 6px rgba(0,0,0,.35))}
+.ipe-rosa-r{transform-origin:50px 50px;transition:transform .12s linear}
+.ipe-rosa .o{fill:rgba(250,247,238,.88);stroke:#3f4630;stroke-width:1.2}
+.ipe-rosa .c{fill:none;stroke:#3f4630;stroke-width:.6}
+.ipe-rosa .c2{fill:none;stroke:#3f4630;stroke-width:.5;stroke-dasharray:1.5 1.5}
+.ipe-rosa .t line{stroke:#3f4630;stroke-width:.5}.ipe-rosa .t line.f{stroke-width:1.1}
+.ipe-rosa .na{fill:#b6432e}.ipe-rosa .nb{fill:#7c2a1c}
+.ipe-rosa .ma{fill:#3f4630}.ipe-rosa .mb{fill:#c9c3ad}
+.ipe-rosa .sa{fill:#75834a}.ipe-rosa .sb{fill:#e3dfcc}
+.ipe-rosa .cc{fill:#faf7ee;stroke:#3f4630;stroke-width:.8}
+.ipe-rosa .L{font:600 9px 'IBM Plex Mono',monospace;fill:#3f4630;text-anchor:middle}.ipe-rosa .L.N{fill:#b6432e;font-size:11px}
+.ipe-rosa-g{font:500 10px 'IBM Plex Mono',monospace;color:#3f4630;background:rgba(250,247,238,.88);border-radius:3px;padding:0 5px;white-space:nowrap;opacity:0;transition:opacity .2s}
+.ipe-rosa.rod .ipe-rosa-g{opacity:1}
+.ipe-rosa:hover svg{filter:drop-shadow(0 2px 8px rgba(0,0,0,.5))}
+.ipe-escg{position:absolute;left:12px;bottom:34px;z-index:3;background:rgba(250,247,238,.9);border:1px solid rgba(63,70,48,.35);border-radius:4px;padding:6px 18px 5px 10px;font:500 10.5px 'IBM Plex Mono',monospace;color:#2f2f2a;pointer-events:none;box-shadow:0 2px 8px rgba(0,0,0,.18)}
+.ipe-escg-b{display:flex;height:7px;border:1px solid #2f2f2a}
+.ipe-escg-b i{flex:2;background:#faf7ee}.ipe-escg-b i.h{flex:1}
+.ipe-escg-b i:nth-child(odd){background:#2f2f2a}
+.ipe-escg-l{position:relative;height:14px;margin-top:2px}
+.ipe-escg-l span{position:absolute;top:0;transform:translateX(-50%);white-space:nowrap}
+.ipe-escg-l span:first-child{transform:none}
+.ipe-escg-l span:last-child{transform:translateX(-30%)}
+.ipe-escg-r{margin-top:1px;color:#5b604b}.ipe-escg-r em{font-style:normal;opacity:.75}
+@media (max-width:700px){.ipe-rosa{transform:scale(.75);transform-origin:top right}.ipe-escg{bottom:30px;transform:scale(.9);transform-origin:bottom left}}
