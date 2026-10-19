@@ -8,6 +8,7 @@ div.iprv-mapa{position:absolute;inset:0}
 .iprv-pc h4:first-child{margin-top:0}
 .iprv-pc table{border-collapse:collapse;width:100%}
 .iprv-pc td{border-bottom:1px solid #eee9d8;padding:2px 4px;vertical-align:top;word-break:break-word}
-.iprv-pc td:first-child{color:#7a7e68;white-space:nowrap;width:1%}
+.iprv-pc td:first-child{color:#7a7e68;white-space:normal;width:38%;min-width:84px;overflow-wrap:anywhere;word-break:normal}
+.iprv-pc td+td{overflow-wrap:anywhere}
 .iprv-mu{color:#8a8d7a;font-size:12px}
 .iprv-cota{padding:2px 0 6px;font-size:13px}
