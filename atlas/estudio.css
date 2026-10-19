@@ -521,7 +521,7 @@ span.ipe-loc-pt{cursor:default}
 .ipe-rosa-g{font:500 10px 'IBM Plex Mono',monospace;color:#3f4630;background:rgba(250,247,238,.88);border-radius:3px;padding:0 5px;white-space:nowrap;opacity:0;transition:opacity .2s}
 .ipe-rosa.rod .ipe-rosa-g{opacity:1}
 .ipe-rosa:hover svg{filter:drop-shadow(0 2px 8px rgba(0,0,0,.5))}
-.ipe-escg{position:absolute;left:12px;bottom:34px;z-index:3;background:rgba(250,247,238,.9);border:1px solid rgba(63,70,48,.35);border-radius:4px;padding:6px 18px 5px 10px;font:500 10.5px 'IBM Plex Mono',monospace;color:#2f2f2a;pointer-events:none;box-shadow:0 2px 8px rgba(0,0,0,.18)}
+.ipe-escg{position:absolute;left:12px;bottom:64px;z-index:3;background:rgba(250,247,238,.9);border:1px solid rgba(63,70,48,.35);border-radius:4px;padding:6px 18px 5px 10px;font:500 10.5px 'IBM Plex Mono',monospace;color:#2f2f2a;pointer-events:none;box-shadow:0 2px 8px rgba(0,0,0,.18)}
 .ipe-escg-b{display:flex;height:7px;border:1px solid #2f2f2a}
 .ipe-escg-b i{flex:2;background:#faf7ee}.ipe-escg-b i.h{flex:1}
 .ipe-escg-b i:nth-child(odd){background:#2f2f2a}
@@ -530,7 +530,10 @@ span.ipe-loc-pt{cursor:default}
 .ipe-escg-l span:first-child{transform:none}
 .ipe-escg-l span:last-child{transform:translateX(-30%)}
 .ipe-escg-r{margin-top:1px;color:#5b604b}.ipe-escg-r em{font-style:normal;opacity:.75}
-@media (max-width:700px){.ipe-rosa{transform:scale(.75);transform-origin:top right}.ipe-escg{bottom:30px;transform:scale(.9);transform-origin:bottom left}}
+@media (max-width:700px){.ipe-rosa{transform:scale(.62);transform-origin:top right}.ipe-escg{bottom:58px;transform:scale(.85);transform-origin:bottom left}}
+/* 19/10: atribuição compacta e sem cruzar a escala */
+.ipe .maplibregl-ctrl-attrib.maplibregl-compact-show .maplibregl-ctrl-attrib-inner{display:block;max-width:min(62vw,460px);max-height:2.8em;overflow:hidden;font-size:10px;line-height:1.35}
+.ipe .maplibregl-ctrl-bottom-right{z-index:2}
 
 /* ── simplificação (18/10/2026): tema à vista, menu «Mais», camadas com rótulo, ferramentas avançadas recolhidas */
 .ipe-ib--txt{width:auto;padding:0 12px 0 9px;gap:7px;border-color:var(--ln2);color:var(--tx);font:500 13px 'Inter',system-ui,sans-serif}
