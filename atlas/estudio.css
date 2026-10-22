@@ -732,3 +732,10 @@ html body #tcdfmb.ipe-fm-c svg{width:28px!important;height:20px!important;margin
 .ipe-st .ipr-ed em:hover,.ipe-st .ipr-ed em:focus{color:var(--ac2);outline:0}
 .ipe-st input.ipr-in{font:12px var(--mono);color:var(--tx);background:var(--p3);border:1px solid var(--ac2);border-radius:3px;padding:2px 4px;height:20px;min-width:5ch;max-width:14ch}
 .ipe-st .ipr-rumo{color:var(--mu2);font:11px var(--mono)}
+/* 23/10: separadores do painel da direita numa só linha, compactos (reportes #15892 Miguel e #15893 Nuno) */
+#ipe .ipe-tabs{flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;scrollbar-width:none}
+#ipe .ipe-tabs::-webkit-scrollbar{display:none}
+#ipe .ipe-tab{flex:1 0 auto;padding:10px 9px 9px;font-size:10.5px;letter-spacing:.03em}
+/* 23/10: janela «Reportar» cabe no ecrã do iPad (100dvh) e mexe-se pelo título */
+html.ipe-on .tcdr2-p{max-height:calc(100dvh - 90px)!important;overscroll-behavior:contain}
+.tcdr2-p h3{cursor:move;touch-action:none}

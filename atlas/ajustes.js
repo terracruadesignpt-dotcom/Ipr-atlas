@@ -10,7 +10,9 @@
    10. Barra de estado editável (pedido do Nuno, 22/10, 23h52): clicar na escala, no zoom, na rotação, na inclinação ou na altitude
        do olho e escrever o valor (ex.: 25000 ou 1:25 000). A rotação mostra também o rumo (N, NE, SSO…). Nova casa «Incl.».
    11. «Reportar problema» da barra de estado escondido quando há Formiga (pedido do Nuno, 22/10, 23h53: evitar redundância;
-       a Formiga já reporta com imagem e áudio). O botão continua no código e volta se a Formiga não existir. */
+       a Formiga já reporta com imagem e áudio). O botão continua no código e volta se a Formiga não existir.
+   12. Roda do rato sobre a rosa dos ventos inclina a vista (3D).
+   13. Caderneta predial em PDF: lê o artigo e a freguesia e leva o mapa ao terreno. */
 (function () {
   "use strict";
   var SIGLA = "https://cdn.jsdelivr.net/gh/terracruadesignpt-dotcom/Ipr-atlas@3c382ba8826863c1dc0de2142ba8c2c5038e532b/atlas/marca/ipr-sigla.png";
@@ -98,25 +100,30 @@
     return true;
   }
 
-  // 6. Formiga arrastável
+  // 6. Janelas da Formiga e do «Reportar» arrastáveis pelo cabeçalho, em qualquer ecrã (rato, dedo ou caneta).
+  //    22/10, 00h30 (reporte #15893, iPad): a janela do reporte não abria toda e ficava presa; passa a caber no ecrã e a mexer.
   function formiga() {
     var p = document.getElementById("tcdfm"); if (!p || p.getAttribute("data-ipr")) return !!p;
     var h = p.querySelector("header"); if (!h) return false;
-    p.setAttribute("data-ipr", "1"); h.style.cursor = "move"; h.title = "Arraste para mudar a janela de sítio";
-    h.addEventListener("pointerdown", function (ev) {
-      if (!desk() || ev.target.closest("button")) return;
-      var r = p.getBoundingClientRect(), dx = ev.clientX - r.left, dy = ev.clientY - r.top;
-      ev.preventDefault(); h.setPointerCapture(ev.pointerId);
-      function mv(e) {
-        var x = Math.max(0, Math.min(window.innerWidth - r.width, e.clientX - dx)), y = Math.max(0, Math.min(window.innerHeight - 60, e.clientY - dy));
-        p.style.setProperty("left", x + "px", "important"); p.style.setProperty("top", y + "px", "important");
-        p.style.setProperty("bottom", "auto", "important"); p.style.setProperty("right", "auto", "important");
-      }
-      function up() { h.removeEventListener("pointermove", mv); h.removeEventListener("pointerup", up); }
-      h.addEventListener("pointermove", mv); h.addEventListener("pointerup", up);
-    });
+    p.setAttribute("data-ipr", "1"); h.style.cursor = "move"; h.style.touchAction = "none"; h.title = "Arraste para mudar a janela de sítio";
     return true;
   }
+  document.addEventListener("pointerdown", function (ev) {
+    var t = ev.target; if (!t.closest || t.closest("button,a,input,textarea,select")) return;
+    var h = t.closest("#tcdfm header, .tcdr2-p h3"); if (!h) return;
+    var p = h.closest("#tcdfm, .tcdr2-p"); if (!p) return;
+    var r = p.getBoundingClientRect(), dx = ev.clientX - r.left, dy = ev.clientY - r.top;
+    ev.preventDefault(); try { h.setPointerCapture(ev.pointerId); } catch (e) {}
+    function mv(e) {
+      var x = Math.max(0, Math.min(window.innerWidth - Math.min(r.width, window.innerWidth), e.clientX - dx)), y = Math.max(0, Math.min(window.innerHeight - 60, e.clientY - dy));
+      p.style.setProperty("left", x + "px", "important"); p.style.setProperty("top", y + "px", "important");
+      p.style.setProperty("bottom", "auto", "important"); p.style.setProperty("right", "auto", "important");
+      p.style.setProperty("width", r.width + "px", "important");
+      p.style.setProperty("max-height", "calc(100dvh - " + Math.round(y + 12) + "px)", "important");
+    }
+    function up() { h.removeEventListener("pointermove", mv); h.removeEventListener("pointerup", up); h.removeEventListener("pointercancel", up); }
+    h.addEventListener("pointermove", mv); h.addEventListener("pointerup", up); h.addEventListener("pointercancel", up);
+  }, true);
 
   // 7. «Os meus projectos» (reportes #15886 do Nuno e #15889 do Miguel): com sessão, a lista do entrada.js (cartão «Os meus
   //    terrenos») passa para dentro do grupo «Os meus projectos» da barra, que abre só quando a pessoa quer; junta os
@@ -203,7 +210,7 @@
     "ipe-z": { t: "Nível de aproximação do mapa: 0 é o mundo inteiro, 20 é o pormenor máximo. Clique para escrever um valor.", f: function (I, v) { I.jumpTo({ zoom: Math.max(0, Math.min(22, v)) }); } },
     "ipe-rot": { t: "Rotação do mapa em graus, de 0 a 360, contados a partir do norte no sentido dos ponteiros do relógio: é o rumo para onde aponta o topo do ecrã (0° norte, 90° este, 180° sul, 270° oeste). Clique para escrever; 0 volta ao norte.", f: function (I, v) { I.jumpTo({ bearing: ((v % 360) + 360) % 360 }); } },
     "ipr-incl": { t: "Inclinação da vista em graus: 0° é a vista de cima, até 85° é a vista rasante. Clique para escrever.", f: function (I, v) { I.jumpTo({ pitch: Math.max(0, Math.min(85, v)) }); } },
-    "ipe-olho": { t: "Altitude do ponto de vista (como num globo). Clique e escreva, em metros ou com km (ex.: 1500 ou 2 km).", f: function (I, v) { if (v < 20) return; var c = I.getCanvas(), h = (c && c.clientHeight) || 600, k = h / 2 / Math.tan(0.32175) * Math.cos(I.getPitch() * Math.PI / 180); I.jumpTo({ zoom: Math.log2(mpp(I) * k / v) }); } }
+    "ipe-olho": { t: "Altitude do ponto de vista (como num globo). Clique e escreva o valor: só o número usa a unidade que está à vista (com 3 km, escrever 2 vai para 2 km); também aceita 500 m ou 2 km.", f: function (I, v) { if (v < 20) return; var c = I.getCanvas(), h = (c && c.clientHeight) || 600, k = h / 2 / Math.tan(0.32175) * Math.cos(I.getPitch() * Math.PI / 180); I.jumpTo({ zoom: Math.log2(mpp(I) * k / v) }); } }
   };
   function editavel() {
     var st = document.querySelector("#ipe .ipe-st"), I = mapa(); if (!st || !I || st.getAttribute("data-ipr-ed")) return !!(st && st.getAttribute("data-ipr-ed"));
@@ -221,7 +228,7 @@
         var inp = document.createElement("input"); inp.className = "ipr-in"; inp.type = "text"; inp.inputMode = "decimal"; inp.value = (em.textContent || "").replace(/ /g, " ").replace(/°$/, ""); inp.setAttribute("aria-label", (s.querySelector("b") || {}).textContent || "");
         inp.style.width = Math.max(5, inp.value.length + 2) + "ch"; em.style.display = "none"; s.insertBefore(inp, em.nextSibling); inp.focus(); inp.select();
         var fim = false;
-        function fechar(aplicar) { if (fim) return; fim = true; if (aplicar) { var v = id === "ipe-esc" ? escala(inp.value) : num(inp.value); if (isFinite(v)) { try { I.stop(); c.f(I, v); } catch (e) {} } } inp.remove(); em.style.display = ""; }
+        function fechar(aplicar) { if (fim) return; fim = true; if (aplicar) { var v = id === "ipe-esc" ? escala(inp.value) : num(inp.value); if (id === "ipe-olho" && /^[\s\d.,]+$/.test(inp.value) && /km/.test(em.textContent || "")) v *= 1000; if (isFinite(v)) { try { I.stop(); c.f(I, v); } catch (e) {} } } inp.remove(); em.style.display = ""; }
         inp.addEventListener("keydown", function (e) { e.stopPropagation(); if (e.key === "Enter") { e.preventDefault(); fechar(true); } else if (e.key === "Escape") { fechar(false); } });
         inp.addEventListener("blur", function () { fechar(true); });
       }
@@ -240,10 +247,95 @@
     return !!fm;
   }
 
+  // 12. Rosa dos ventos: arrastar roda o mapa (já existia); a roda do rato por cima da rosa inclina a vista (3D).
+  //     Pedido do Nuno, 23/10, 00h31. Não mexe no arrastar nem no clique que repõe o norte.
+  function rosa() {
+    var z = document.querySelector("#ipe .ipe-rosa"), I = mapa(); if (!z || !I) return false; if (z.getAttribute("data-ipr")) return true;
+    z.setAttribute("data-ipr", "1");
+    z.title = "Arraste a rosa para rodar o mapa. Com o rato por cima, a roda inclina a vista em 3D. Clique para orientar a norte e tirar a inclinação.";
+    z.addEventListener("wheel", function (e) {
+      e.preventDefault(); e.stopPropagation();
+      var d = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY;
+      try { I.stop(); I.setPitch(Math.max(0, Math.min(85, I.getPitch() - d * 0.12))); } catch (x) {}
+    }, { passive: false, capture: true });
+    return true;
+  }
+
+  // 13. Caderneta predial em PDF (reporte #15895, Nuno): ao escolher o PDF no método «Artigo matricial ou caderneta», lê o texto
+  //     no próprio navegador (nada é enviado antes do pedido), preenche o artigo e a localidade e leva o mapa ao terreno:
+  //     pelo NIC, quando a caderneta o tem (cadastro predial), senão pela freguesia. O ficheiro continua a seguir com o pedido.
+  var PDFJS = "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/";
+  function pdfjs() {
+    if (window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
+    return new Promise(function (ok, ko) {
+      var sc = document.createElement("script"); sc.src = PDFJS + "pdf.min.js"; sc.crossOrigin = "anonymous";
+      sc.onload = function () {
+        var L = window.pdfjsLib; if (!L) return ko();
+        fetch(PDFJS + "pdf.worker.min.js").then(function (r) { return r.text(); }).then(function (t) {
+          L.GlobalWorkerOptions.workerSrc = URL.createObjectURL(new Blob([t], { type: "text/javascript" })); ok(L);
+        }).catch(function () { L.GlobalWorkerOptions.workerSrc = PDFJS + "pdf.worker.min.js"; ok(L); });
+      };
+      sc.onerror = ko; document.head.appendChild(sc);
+    });
+  }
+  function textoPdf(f) {
+    return pdfjs().then(function (L) { return f.arrayBuffer().then(function (b) { return L.getDocument({ data: b }).promise; }); }).then(function (doc) {
+      var n = Math.min(doc.numPages, 4), ps = [];
+      for (var i = 1; i <= n; i++) ps.push(doc.getPage(i).then(function (pg) { return pg.getTextContent(); }).then(function (c) { return c.items.map(function (it) { return it.str; }).join(" "); }));
+      return Promise.all(ps).then(function (a) { return a.join("\n"); });
+    });
+  }
+  function lerCaderneta(t) {
+    t = t.replace(/\s+/g, " ");
+    function g(re) { var m = re.exec(t); return m ? m[1].trim() : ""; }
+    var o = {
+      nic: g(/\b([A-Z]{3}\d{9})\b/),
+      artigo: g(/ARTIGO\s+MATRICIAL\s*(?:N\.?\s*º|Nº|N\.º|:)?\s*:?\s*(\d+)/i) || g(/\bARTIGO\s*:?\s*(\d+)/i),
+      seccao: g(/SEC[ÇC][ÃA]O\s*:?\s*([A-Z0-9]{1,4})\b/i),
+      freguesia: g(/FREGUESIA\s*:?\s*\d*\s*-?\s*([A-ZÀ-Ý][A-ZÀ-Ý0-9 .,'()\/-]+?)(?=\s+(?:ARTIGO|SEC[ÇC][ÃA]O|NOME|LOCALIZA|LUGAR|S[ÍI]TIO|TIPO|DESCRI|NIP|CONFRONTA|$))/i),
+      concelho: g(/CONCELHO\s*:?\s*\d*\s*-?\s*([A-ZÀ-Ý][A-ZÀ-Ý .'-]+?)(?=\s+FREGUESIA)/i),
+      sitio: g(/(?:NOME\s*\/\s*LOCALIZA[ÇC][ÃA]O(?:\s+(?:DO\s+)?PR[ÉE]DIO)?|LOCALIZA[ÇC][ÃA]O\s+DO\s+PR[ÉE]DIO|S[ÍI]TIO|LUGAR)\s*:?\s*([A-ZÀ-Ý0-9][^:]{2,60}?)(?=\s+(?:CONFRONTA|[ÁA]REA|TIPO|NIP|DESCRI|ARTIGO|MATRIZ|VALOR|ANO)|\s+[A-ZÀ-Ý]{4,}\s*:|$)/i)
+    };
+    function cap(x) { return x.toLowerCase().replace(/(^|[\s(\/-])([a-zà-ý])/g, function (m, a, b) { return a + b.toUpperCase(); }).replace(/\b(De|Da|Do|Das|Dos|E|A)\b/g, function (m) { return m.toLowerCase(); }); }
+    if (o.freguesia) o.freguesia = cap(o.freguesia.replace(/^UNI[ÃA]O DAS FREGUESIAS DE\s+/i, ""));
+    if (o.concelho) o.concelho = cap(o.concelho);
+    if (o.sitio) o.sitio = cap(o.sitio);
+    return o;
+  }
+  function aviso(inp, msg) {
+    var s = document.getElementById("ipr-cad-msg");
+    if (!s) { s = document.createElement("small"); s.id = "ipr-cad-msg"; s.className = "ipe-small"; s.setAttribute("aria-live", "polite"); inp.parentNode.insertBefore(s, inp.nextSibling); }
+    s.textContent = msg;
+  }
+  document.addEventListener("change", function (ev) {
+    var inp = ev.target; if (!inp || inp.id !== "ipe-cad" || !inp.files || !inp.files[0]) return;
+    var f = inp.files[0]; if (!/pdf$/i.test(f.type) && !/\.pdf$/i.test(f.name)) { aviso(inp, "Imagem recebida: segue com o pedido. Para localizar o terreno sozinho, use o PDF da caderneta."); return; }
+    aviso(inp, "A ler a caderneta…");
+    textoPdf(f).then(function (t) {
+      var o = lerCaderneta(t), art = document.getElementById("ipe-artigo"), loc = document.getElementById("ipe-local"), feito = [];
+      if (o.artigo && art && !art.value.trim()) { art.value = "artigo " + o.artigo + (o.seccao ? ", secção " + o.seccao : ""); feito.push("artigo " + o.artigo + (o.seccao ? " (secção " + o.seccao + ")" : "")); }
+      var lugar = [o.sitio, o.freguesia, o.concelho].filter(Boolean).join(", ");
+      if (lugar && loc && !loc.value.trim()) { loc.value = lugar; feito.push(lugar); }
+      [art, loc].forEach(function (e) { if (e) e.dispatchEvent(new Event("input", { bubbles: true })); });
+      var nic = document.getElementById("ipe-nic");
+      if (o.nic && nic) {
+        nic.value = o.nic; nic.dispatchEvent(new Event("input", { bubbles: true }));
+        nic.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+        aviso(inp, "Caderneta lida: " + (feito.join(" · ") || o.nic) + ". A procurar o prédio pelo NIC " + o.nic + " no cadastro.");
+      } else if (o.freguesia) {
+        var q = document.getElementById("ipe-q");
+        if (q) { q.value = o.freguesia + (o.concelho ? ", " + o.concelho : ""); q.dispatchEvent(new Event("input", { bubbles: true })); if (q.form) { try { q.form.requestSubmit(); } catch (e) {} } }
+        aviso(inp, "Caderneta lida: " + feito.join(" · ") + ". O mapa vai à freguesia; escolha a parcela no mapa (o pedido também segue só com a caderneta).");
+      } else {
+        aviso(inp, feito.length ? "Caderneta lida: " + feito.join(" · ") + "." : "Não consegui ler o artigo nesta caderneta (pode ser uma imagem digitalizada). Segue com o pedido e nós localizamos.");
+      }
+    }).catch(function () { aviso(inp, "Não consegui ler este PDF aqui. Segue com o pedido e nós localizamos o terreno."); });
+  }, true);
+
   var feito = {}, voltas = 0;
   function correr() {
     voltas++;
-    [["marca", marca], ["puxadores", puxadores], ["creditos", creditos], ["estado", estado], ["formiga", formiga], ["projectos", projectos], ["editavel", editavel], ["semBug", semBug]].forEach(function (f) { if (!feito[f[0]]) { try { feito[f[0]] = f[1](); } catch (e) {} } });
+    [["marca", marca], ["puxadores", puxadores], ["creditos", creditos], ["estado", estado], ["formiga", formiga], ["projectos", projectos], ["editavel", editavel], ["semBug", semBug], ["rosa", rosa]].forEach(function (f) { if (!feito[f[0]]) { try { feito[f[0]] = f[1](); } catch (e) {} } });
     try { nomes(); } catch (e) {}
     try { posicoes(); } catch (e) {}
     if (voltas < 60) setTimeout(correr, voltas < 10 ? 500 : 2000);
