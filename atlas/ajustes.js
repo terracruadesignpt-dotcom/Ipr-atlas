@@ -171,7 +171,7 @@
     var esq = document.getElementById("ipe-esq"), ipe = document.getElementById("ipe"); if (!ipe) return;
     var x = 14; if (desk() && esq && !ipe.classList.contains("sem-esq")) { var r = esq.getBoundingClientRect(); if (r.width > 40) x = Math.round(r.right) + 14; }
     document.documentElement.style.setProperty("--ipr-fm-left", x + "px");
-    var ck = document.getElementById("tcdck-l"); if (ck) { if (desk()) ck.style.setProperty("bottom", "36px", "important"); else ck.style.removeProperty("bottom"); }
+    var ck = document.getElementById("tcdck-l"); if (ck) { if (desk()) { ck.style.setProperty("bottom", "36px", "important"); ck.style.setProperty("left", x + "px", "important"); } else { ck.style.removeProperty("bottom"); ck.style.removeProperty("left"); } }
   }
   // 9. «Ver no mapa» nos projectos da IPR Cloud (e outras ligações /atlas/?v=lat,lng,zoom dentro do Atlas): voa até ao terreno
   //    sem recarregar a página. Antes, a página recarregava e a apresentação de abertura levava o mapa para outro sítio.
