@@ -739,27 +739,24 @@ html body #tcdfmb.ipe-fm-c svg{width:28px!important;height:20px!important;margin
 /* 23/10: janela «Reportar» cabe no ecrã do iPad (100dvh) e mexe-se pelo título */
 html.ipe-on .tcdr2-p{max-height:calc(100dvh - 90px)!important;overscroll-behavior:contain}
 .tcdr2-p h3{cursor:move;touch-action:none}
-/* 23/10: separadores da barra da esquerda (Camadas / Os meus projectos) */
-#ipe .ipr-esq-tabs{display:flex;flex:none;border-bottom:1px solid var(--ln);background:var(--p1);position:sticky;top:0;z-index:2}
-#ipe .ipr-esq-tabs button{flex:1 1 0;min-width:0;border:0;background:transparent;padding:10px 6px 9px;cursor:pointer;color:var(--mu);font:500 10.5px/1 var(--mono);letter-spacing:.04em;text-transform:uppercase;border-bottom:2px solid transparent;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#ipe .ipr-esq-tabs button:hover{color:var(--tx)}
-#ipe .ipr-esq-tabs button[aria-selected=true]{color:var(--tx);border-bottom-color:var(--ac)}
-#ipe .ipr-esq-tabs i{font-style:normal;color:var(--ac2);margin-left:3px}
-#ipe-esq.ipr-t-cam #ipc-loc{display:none!important}
-#ipe-esq.ipr-t-proj .ipr-arv>:not(#ipc-loc){display:none!important}
-#ipe-esq.ipr-t-proj .tme-todas,#ipe-esq.ipr-t-proj .ipe-sb--cam>.ipe-sbh{display:none!important}
-#ipe-esq.ipr-t-proj #ipc-loc>.ipr-gc{display:none}
-#ipe .ipr-esq-vazio{display:none;margin:12px 14px;font:13px/1.5 var(--sans,Inter,sans-serif);color:var(--mu)}
-#ipe .ipr-esq-vazio a{color:var(--ac2)}
-#ipe-esq.ipr-t-proj .ipr-esq-vazio{display:block}
 /* 23/10, 00h51: separadores à maneira das janelas do Windows (foto do Nuno): letra normal, separador activo ligado ao
    painel (mais claro, com rebordo em cima e dos lados), inactivos recuados; ao passar o rato, sombra leve e sublinhado. */
-#ipe .ipe-tabs,#ipe .ipr-esq-tabs{gap:2px;padding:6px 6px 0;background:var(--p2,var(--p1));border-bottom:1px solid var(--ln2,var(--ln));align-items:flex-end}
-#ipe .ipe-tab,#ipe .ipr-esq-tabs button{flex:0 1 auto;font:500 12.5px/1.2 Inter,system-ui,sans-serif;letter-spacing:0;text-transform:none;color:var(--mu);
+#ipe .ipe-tabs{gap:2px;padding:6px 6px 0;background:var(--p2,var(--p1));border-bottom:1px solid var(--ln2,var(--ln));align-items:flex-end}
+#ipe .ipe-tab{flex:0 1 auto;font:500 12.5px/1.2 Inter,system-ui,sans-serif;letter-spacing:0;text-transform:none;color:var(--mu);
   padding:7px 11px 6px;border:1px solid transparent;border-bottom:0;border-radius:4px 4px 0 0;background:transparent;margin-bottom:-1px;
   position:relative;transition:background .12s,color .12s,box-shadow .12s}
-#ipe .ipe-tab:hover,#ipe .ipr-esq-tabs button:hover{color:var(--tx);background:var(--p3);box-shadow:inset 0 -2px 0 var(--ac2)}
-#ipe .ipe-tab[aria-selected=true],#ipe .ipr-esq-tabs button[aria-selected=true]{color:var(--tx);background:var(--p1);border-color:var(--ln2,var(--ln));
+#ipe .ipe-tab:hover{color:var(--tx);background:var(--p3);box-shadow:inset 0 -2px 0 var(--ac2)}
+#ipe .ipe-tab[aria-selected=true]{color:var(--tx);background:var(--p1);border-color:var(--ln2,var(--ln));
   border-bottom:1px solid var(--p1);box-shadow:none;padding-top:8px;z-index:1}
-#ipe .ipe-tab[aria-selected=true]::before,#ipe .ipr-esq-tabs button[aria-selected=true]::before{content:"";position:absolute;left:-1px;right:-1px;top:-1px;height:2px;background:var(--ac);border-radius:4px 4px 0 0}
-#ipe .ipe-tab:focus-visible,#ipe .ipr-esq-tabs button:focus-visible{outline:2px solid var(--ac2);outline-offset:-2px}
+#ipe .ipe-tab[aria-selected=true]::before{content:"";position:absolute;left:-1px;right:-1px;top:-1px;height:2px;background:var(--ac);border-radius:4px 4px 0 0}
+#ipe .ipe-tab:focus-visible{outline:2px solid var(--ac2);outline-offset:-2px}
+/* 23/10, 00h55: separadores da direita curtos e apertados (Projectos, Processar, Comunidade, Cloud, Conta); mais espaço entre
+   a barra de cima e os painéis laterais. */
+#ipe .ipe-tabs{flex-wrap:nowrap;overflow-x:auto;padding:12px 8px 0;gap:1px}
+#ipe .ipe-tab{flex:0 0 auto;padding:6px 8px 5px;font-size:12px}
+#ipe .ipe-tab[aria-selected=true]{padding-top:7px}
+#ipe .ipe-tab i:empty{display:none}
+#ipe-esq{padding-top:10px}
+#ipe .ipr-loc-dir{margin:0 0 12px}
+#ipe .ipr-loc-dir>.ipr-gc{display:none}
+#ipe .tme-dir{margin:0 0 12px}
