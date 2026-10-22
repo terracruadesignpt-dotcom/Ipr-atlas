@@ -598,9 +598,9 @@ span.ipe-loc-pt{cursor:default}
 /* 1. As categorias de camadas (Fundo, Relevo, Água, Fogo, Solo…) ficavam com 6 px de altura: passam a ter a altura natural e o painel faz scroll */
 .ipe .ipr-arv>*{flex-shrink:0}
 .ipe .ipr-arv>.ipr-arv-l{flex:none;height:auto;max-height:none;overflow:visible}
-/* sem sessão iniciada, as categorias vêm antes do projecto de exemplo */
-body:not(.logged-in) .ipe .ipr-arv>.ipr-arv-cab{order:-2}
-body:not(.logged-in) .ipe .ipr-arv>.ipr-arv-l{order:-1}
+/* «Os meus projectos»: uma linha fechada no topo, abre com um toque; as categorias vêm logo a seguir */
+.ipe .ipr-g.ipc-loc.fechado>.ipr-gc{border-bottom:1px solid var(--ln)}
+#ipe .ipr-g.ipc-loc:not(.ab)>.ipe-sbc{display:none!important}
 /* 2. Rosa-dos-ventos: lado direito, 18 px por baixo dos controlos do mapa (o valor exacto vem do app.js em --rosa-top) */
 .ipe .ipe-rosa{top:var(--rosa-top,196px);bottom:auto;right:8px;transform-origin:top right}
 @media (max-width:900px){.ipe .ipe-rosa{top:var(--rosa-top,158px);bottom:auto}}
@@ -626,4 +626,38 @@ body:not(.logged-in) .ipe .ipr-arv>.ipr-arv-l{order:-1}
  .ipe .ipe-rosa{transform:scale(.55)}
  .ipe .ipe-escg{display:none}
  .ipe .maplibregl-ctrl-bottom-right{bottom:calc(118px + env(safe-area-inset-bottom));right:auto;left:8px}
+}
+
+/* 22/10/2026 (fim da tarde) · telemóvel e tablet estreito: uma só barra vertical à direita, fina e semi-transparente,
+   com zoom, localização, rosa-dos-ventos e as ferramentas de desenho (antes numa barra horizontal em baixo).
+   Com o telemóvel deitado (altura até 500 px) fica a barra horizontal de baixo. */
+.ipe{--rail:rgba(23,26,19,.58);--railb:rgba(255,255,255,.14);--railc:#efeadb}
+.ipe.claro{--rail:rgba(251,250,246,.7);--railb:rgba(63,70,48,.16);--railc:#3f4630}
+@media (max-width:900px) and (min-height:501px){
+ /* controlos do MapLibre: sem sombras nem margens, colados uns aos outros */
+ .ipe .maplibregl-ctrl-top-right{top:8px;right:8px}
+ .ipe .maplibregl-ctrl-top-right .maplibregl-ctrl{margin:0!important;float:none;width:40px;border-radius:0;box-shadow:none!important;background:var(--rail)!important;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);border:1px solid var(--railb);border-top:0}
+ .ipe .maplibregl-ctrl-top-right .maplibregl-ctrl:first-child{border-top:1px solid var(--railb);border-radius:10px 10px 0 0}
+ .ipe .maplibregl-ctrl-top-right .maplibregl-ctrl:empty,.ipe .maplibregl-ctrl-top-right .maplibregl-ctrl:not(:has(button)){display:none}
+ .ipe .maplibregl-ctrl-top-right .maplibregl-ctrl button{width:38px;height:34px;background-color:transparent!important;border:0!important}
+ .ipe .maplibregl-ctrl-top-right .maplibregl-ctrl button+button{border-top:1px solid var(--railb)!important}
+ /* rosa-dos-ventos dentro da barra */
+ .ipe .ipe-rosa{right:8px;width:40px;min-width:40px;height:44px;padding:3px 0;transform:none!important;background:var(--rail);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);border:1px solid var(--railb);border-top:0;box-sizing:border-box;justify-content:center}
+ .ipe .ipe-rosa svg{width:36px!important;height:36px!important;filter:none!important}
+ .ipe .ipe-rosa .ipe-rosa-g{display:none}
+ /* ferramentas por baixo da rosa, em coluna */
+ .ipe .ipe-tools{top:calc(var(--rosa-top,150px) + 44px);bottom:auto;left:auto;right:8px;width:40px;max-width:40px;flex-direction:column;align-items:center;justify-content:flex-start;gap:0;padding:2px 0 4px;border:1px solid var(--railb);border-top:0;border-radius:0 0 10px 10px;background:var(--rail);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);box-shadow:none;overflow-x:hidden;overflow-y:auto;max-height:calc(100% - var(--rosa-top,150px) - 44px - 120px - env(safe-area-inset-bottom));box-sizing:border-box;transform:none}
+ .ipe .ipe-tools .ipe-tg{flex-direction:column;align-items:center;gap:0;padding:0;margin:0;border:0}
+ .ipe .ipe-tools .ipe-tg+.ipe-tg{border-top:1px solid var(--railb);margin-top:2px;padding-top:2px}
+ .ipe .ipe-tools .ipe-tg--av{display:none}
+ .ipe .ipe-tools.av .ipe-tg--av{display:flex}
+ .ipe .ipe-tools .ipe-t{width:38px;height:34px;padding:0;color:var(--railc);background:transparent}
+ .ipe .ipe-tools .ipe-t[aria-pressed=true]{background:var(--acs)}
+ .ipe .ipe-tools .ipe-t span,.ipe .ipe-tools .ipe-tsep,.ipe .ipe-tools .ipe-vsep{display:none}
+ /* o que estava por cima da barra de baixo desce para junto do separador inferior */
+ .ipe .ipe-escg{bottom:calc(62px + env(safe-area-inset-bottom))}
+ .ipe .maplibregl-ctrl-bottom-right{bottom:calc(110px + env(safe-area-inset-bottom))}
+ #ipe .ipe-mapa:after{inset:8px 56px calc(60px + env(safe-area-inset-bottom)) 8px}
+ .ipe .ipe-hud,.ipe .ipe-pf{bottom:calc(110px + env(safe-area-inset-bottom))}
+ .ipe-mapa .iprv-aviso{bottom:calc(110px + env(safe-area-inset-bottom))}
 }
