@@ -586,3 +586,8 @@ span.ipe-loc-pt{cursor:default}
 .ipe-sb[data-sb="locais"]>.ipe-sbh em{margin-left:6px;font:500 11px var(--mono);color:var(--mu)}
 .ipr-g>.ipr-gc .ipr-gt{font-weight:600}
 .ipe-esq .ipe-busca kbd{display:none}
+
+/* 22/10/2026 · abertura do Atlas (primeira visita): botão Saltar */
+.ipe-ab-saltar{position:absolute;left:50%;bottom:calc(36px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:7;border:1px solid rgba(255,255,255,.55);background:rgba(18,20,16,.55);color:#fff;font:500 13px/1 Inter,system-ui,sans-serif;letter-spacing:.04em;padding:9px 18px;border-radius:20px;cursor:pointer;backdrop-filter:blur(4px)}
+.ipe-ab-saltar:hover{background:rgba(18,20,16,.75)}
+@media (max-width:900px){.ipe-ab-saltar{bottom:calc(150px + env(safe-area-inset-bottom))}}
