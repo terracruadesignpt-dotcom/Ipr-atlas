@@ -752,3 +752,14 @@ html.ipe-on .tcdr2-p{max-height:calc(100dvh - 90px)!important;overscroll-behavio
 #ipe .ipr-esq-vazio{display:none;margin:12px 14px;font:13px/1.5 var(--sans,Inter,sans-serif);color:var(--mu)}
 #ipe .ipr-esq-vazio a{color:var(--ac2)}
 #ipe-esq.ipr-t-proj .ipr-esq-vazio{display:block}
+/* 23/10, 00h51: separadores à maneira das janelas do Windows (foto do Nuno): letra normal, separador activo ligado ao
+   painel (mais claro, com rebordo em cima e dos lados), inactivos recuados; ao passar o rato, sombra leve e sublinhado. */
+#ipe .ipe-tabs,#ipe .ipr-esq-tabs{gap:2px;padding:6px 6px 0;background:var(--p2,var(--p1));border-bottom:1px solid var(--ln2,var(--ln));align-items:flex-end}
+#ipe .ipe-tab,#ipe .ipr-esq-tabs button{flex:0 1 auto;font:500 12.5px/1.2 Inter,system-ui,sans-serif;letter-spacing:0;text-transform:none;color:var(--mu);
+  padding:7px 11px 6px;border:1px solid transparent;border-bottom:0;border-radius:4px 4px 0 0;background:transparent;margin-bottom:-1px;
+  position:relative;transition:background .12s,color .12s,box-shadow .12s}
+#ipe .ipe-tab:hover,#ipe .ipr-esq-tabs button:hover{color:var(--tx);background:var(--p3);box-shadow:inset 0 -2px 0 var(--ac2)}
+#ipe .ipe-tab[aria-selected=true],#ipe .ipr-esq-tabs button[aria-selected=true]{color:var(--tx);background:var(--p1);border-color:var(--ln2,var(--ln));
+  border-bottom:1px solid var(--p1);box-shadow:none;padding-top:8px;z-index:1}
+#ipe .ipe-tab[aria-selected=true]::before,#ipe .ipr-esq-tabs button[aria-selected=true]::before{content:"";position:absolute;left:-1px;right:-1px;top:-1px;height:2px;background:var(--ac);border-radius:4px 4px 0 0}
+#ipe .ipe-tab:focus-visible,#ipe .ipr-esq-tabs button:focus-visible{outline:2px solid var(--ac2);outline-offset:-2px}
