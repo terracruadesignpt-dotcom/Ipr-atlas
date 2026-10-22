@@ -571,3 +571,18 @@ span.ipe-loc-pt{cursor:default}
 .ipe-sb--cam:not(.fechado) .ipe-sbc{flex:none;height:max(280px,calc(100vh - 130px));height:max(280px,calc(100dvh - 130px))}
 }
 @media (pointer:coarse) and (min-width:901px) and (max-width:1700px){.ipe{--wl:268px;--wr:330px}}
+
+/* 22/10/2026 · barra da esquerda arrumada: pesquisa e GPS sempre à vista, «Os meus locais» numa linha, depois as categorias */
+.ipe-sb[data-sb="busca"] .ipe-sbh,.ipe-sb--cam>.ipe-sbh{display:none}
+.ipe-sb[data-sb="busca"].fechado .ipe-sbc{display:block}
+.ipe-sb--cam.fechado{flex:1 1 auto}
+.ipe-sb--cam.fechado .ipe-sbc{display:flex}
+.ipe-sb[data-sb="busca"]{border-bottom:0}
+.ipe-esq .ipe-busca{display:flex;align-items:center;gap:6px}
+.ipe-esq .ipe-busca input{flex:1;min-width:0}
+.ipe-gpsq{flex:none;display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border:1px solid var(--ln2);border-radius:6px;background:var(--p2);color:var(--tx);cursor:pointer;padding:0}
+.ipe-gpsq:hover{background:var(--p3);color:var(--ac2)}
+.ipe-sb[data-sb="locais"]>.ipe-sbh{text-transform:none;letter-spacing:0;font:600 13px/1 Inter,system-ui,sans-serif;padding:9px 12px}
+.ipe-sb[data-sb="locais"]>.ipe-sbh em{margin-left:6px;font:500 11px var(--mono);color:var(--mu)}
+.ipr-g>.ipr-gc .ipr-gt{font-weight:600}
+.ipe-esq .ipe-busca kbd{display:none}
