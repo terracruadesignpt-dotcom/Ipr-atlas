@@ -558,3 +558,16 @@ span.ipe-loc-pt{cursor:default}
 .ipe-t--lbl svg{flex:none}
 @media (max-width:760px){.ipe-ib--txt span,.ipe-t--lbl span,.ipe-t--mais span{display:none}.ipe-ib--txt,.ipe-t--lbl{width:34px;padding:0}.ipe-t--mais{padding:0 8px}}
 .ipe-mais-m .ipe-ib--sh{border-color:transparent}
+
+/* 22/10/2026 · reportes da equipa (#15816, #15833, #15821, #15829) */
+.ipe-rosa{top:auto;bottom:48px;width:88px;min-width:88px}
+.ipe-rosa svg{width:76px!important;height:76px!important}
+@media (max-width:900px){.ipe-rosa{bottom:calc(148px + env(safe-area-inset-bottom))}}
+@media (max-width:700px){.ipe-rosa{transform:scale(.7);transform-origin:bottom right}}
+@media (max-height:760px){
+.ipe-esq{overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+.ipe-esq .ipe-sb{flex:none}
+.ipe-sb[data-sb="locais"] .ipe-sbc{max-height:28vh}
+.ipe-sb--cam:not(.fechado) .ipe-sbc{flex:none;height:max(280px,calc(100vh - 130px));height:max(280px,calc(100dvh - 130px))}
+}
+@media (pointer:coarse) and (min-width:901px) and (max-width:1700px){.ipe{--wl:268px;--wr:330px}}
