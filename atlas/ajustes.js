@@ -6,7 +6,11 @@
    4. Nome ao passar o rato em todos os botões da barra de ferramentas e dos controlos do mapa (em português).
    5. Barra de estado: um só sistema de coordenadas de cada vez (clique troca WGS84 / PT-TM06); «Z» passa a «Zoom» com explicação.
    6. Janela da Formiga arrastável pelo cabeçalho (computador).
-   7. Com sessão, «Os meus projectos» na barra da esquerda lista os terrenos e os projectos da IPR Cloud (ver abaixo). */
+   7. Com sessão, «Os meus projectos» na barra da esquerda lista os terrenos e os projectos da IPR Cloud (ver abaixo).
+   10. Barra de estado editável (pedido do Nuno, 22/10, 23h52): clicar na escala, no zoom, na rotação, na inclinação ou na altitude
+       do olho e escrever o valor (ex.: 25000 ou 1:25 000). A rotação mostra também o rumo (N, NE, SSO…). Nova casa «Incl.».
+   11. «Reportar problema» da barra de estado escondido quando há Formiga (pedido do Nuno, 22/10, 23h53: evitar redundância;
+       a Formiga já reporta com imagem e áudio). O botão continua no código e volta se a Formiga não existir. */
 (function () {
   "use strict";
   var SIGLA = "https://cdn.jsdelivr.net/gh/terracruadesignpt-dotcom/Ipr-atlas@3c382ba8826863c1dc0de2142ba8c2c5038e532b/atlas/marca/ipr-sigla.png";
@@ -188,10 +192,58 @@
     if (!desk()) { var f = document.querySelector("#ipe .ipe-dir-x, #ipe [data-fechar-dir]"); if (f) f.click(); }
   }, true);
 
+  // 10. Barra de estado editável
+  var RUMOS = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSO", "SO", "OSO", "O", "ONO", "NO", "NNO"];
+  function num(t) { t = String(t || "").trim().replace(/[\s ]/g, "").replace(",", "."); var k = /km$/i.test(t); t = t.replace(/[a-z°º]+$/i, ""); var v = parseFloat(t); if (!isFinite(v)) return NaN; return k ? v * 1000 : v; }
+  function escala(t) { t = String(t || "").replace(/[\s ]/g, ""); if (/:/.test(t) || (t.match(/\./g) || []).length > 1) t = t.replace(/^1[:.](?=\d)/, ""); t = t.replace(/\D/g, ""); return t ? +t : NaN; }
+  function rumo(b) { return RUMOS[Math.round(((b % 360) + 360) % 360 / 22.5) % 16]; }
+  function mpp(I) { return 156543.03392 * Math.cos(I.getCenter().lat * Math.PI / 180); }
+  var CAMPOS = {
+    "ipe-esc": { t: "Escala do ecrã. Clique e escreva a escala que quer (ex.: 25000 ou 1:25 000).", f: function (I, v) { if (v < 50) return; I.jumpTo({ zoom: Math.log2(mpp(I) * 96 / 0.0254 / v) }); } },
+    "ipe-z": { t: "Nível de aproximação do mapa: 0 é o mundo inteiro, 20 é o pormenor máximo. Clique para escrever um valor.", f: function (I, v) { I.jumpTo({ zoom: Math.max(0, Math.min(22, v)) }); } },
+    "ipe-rot": { t: "Rotação do mapa em graus, de 0 a 360, contados a partir do norte no sentido dos ponteiros do relógio: é o rumo para onde aponta o topo do ecrã (0° norte, 90° este, 180° sul, 270° oeste). Clique para escrever; 0 volta ao norte.", f: function (I, v) { I.jumpTo({ bearing: ((v % 360) + 360) % 360 }); } },
+    "ipr-incl": { t: "Inclinação da vista em graus: 0° é a vista de cima, até 85° é a vista rasante. Clique para escrever.", f: function (I, v) { I.jumpTo({ pitch: Math.max(0, Math.min(85, v)) }); } },
+    "ipe-olho": { t: "Altitude do ponto de vista (como num globo). Clique e escreva, em metros ou com km (ex.: 1500 ou 2 km).", f: function (I, v) { if (v < 20) return; var c = I.getCanvas(), h = (c && c.clientHeight) || 600, k = h / 2 / Math.tan(0.32175) * Math.cos(I.getPitch() * Math.PI / 180); I.jumpTo({ zoom: Math.log2(mpp(I) * k / v) }); } }
+  };
+  function editavel() {
+    var st = document.querySelector("#ipe .ipe-st"), I = mapa(); if (!st || !I || st.getAttribute("data-ipr-ed")) return !!(st && st.getAttribute("data-ipr-ed"));
+    var rot = document.getElementById("ipe-rot"); if (!rot) return false;
+    st.setAttribute("data-ipr-ed", "1");
+    var sp = document.createElement("span"); sp.innerHTML = "<b>Incl.</b><em id=\"ipr-incl\">0°</em>"; rot.parentNode.parentNode.insertBefore(sp, rot.parentNode.nextSibling);
+    var ru = document.createElement("small"); ru.className = "ipr-rumo"; rot.parentNode.appendChild(ru);
+    function act() { try { document.getElementById("ipr-incl").textContent = Math.round(I.getPitch()) + "°"; var b = I.getBearing(); ru.textContent = rumo(b); } catch (e) {} }
+    I.on("move", act); act();
+    Object.keys(CAMPOS).forEach(function (id) {
+      var em = document.getElementById(id); if (!em) return; var c = CAMPOS[id], s = em.parentNode;
+      s.classList.add("ipr-ed"); s.title = c.t; em.setAttribute("tabindex", "0"); em.setAttribute("role", "button");
+      function abrir() {
+        if (s.querySelector("input.ipr-in")) return;
+        var inp = document.createElement("input"); inp.className = "ipr-in"; inp.type = "text"; inp.inputMode = "decimal"; inp.value = (em.textContent || "").replace(/ /g, " ").replace(/°$/, ""); inp.setAttribute("aria-label", (s.querySelector("b") || {}).textContent || "");
+        inp.style.width = Math.max(5, inp.value.length + 2) + "ch"; em.style.display = "none"; s.insertBefore(inp, em.nextSibling); inp.focus(); inp.select();
+        var fim = false;
+        function fechar(aplicar) { if (fim) return; fim = true; if (aplicar) { var v = id === "ipe-esc" ? escala(inp.value) : num(inp.value); if (isFinite(v)) { try { I.stop(); c.f(I, v); } catch (e) {} } } inp.remove(); em.style.display = ""; }
+        inp.addEventListener("keydown", function (e) { e.stopPropagation(); if (e.key === "Enter") { e.preventDefault(); fechar(true); } else if (e.key === "Escape") { fechar(false); } });
+        inp.addEventListener("blur", function () { fechar(true); });
+      }
+      em.addEventListener("click", function (e) { e.stopPropagation(); abrir(); });
+      em.addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); abrir(); } });
+    });
+    return true;
+  }
+
+  // 11. Sem «Reportar problema» na barra quando há Formiga
+  function semBug() {
+    var b = document.getElementById("ipe-bug"); if (!b) return false;
+    var fm = document.getElementById("tcdfmb"), s = b.parentNode;
+    if (s) s.style.display = fm ? "none" : "";
+    var bt = document.querySelector("#ipe .ipe-beta"); if (bt && fm) bt.title = "Plataforma em versão beta: pode encontrar falhas; conte à Formiga (canto de baixo, à esquerda).";
+    return !!fm;
+  }
+
   var feito = {}, voltas = 0;
   function correr() {
     voltas++;
-    [["marca", marca], ["puxadores", puxadores], ["creditos", creditos], ["estado", estado], ["formiga", formiga], ["projectos", projectos]].forEach(function (f) { if (!feito[f[0]]) { try { feito[f[0]] = f[1](); } catch (e) {} } });
+    [["marca", marca], ["puxadores", puxadores], ["creditos", creditos], ["estado", estado], ["formiga", formiga], ["projectos", projectos], ["editavel", editavel], ["semBug", semBug]].forEach(function (f) { if (!feito[f[0]]) { try { feito[f[0]] = f[1](); } catch (e) {} } });
     try { nomes(); } catch (e) {}
     try { posicoes(); } catch (e) {}
     if (voltas < 60) setTimeout(correr, voltas < 10 ? 500 : 2000);

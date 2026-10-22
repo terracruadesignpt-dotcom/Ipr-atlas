@@ -727,3 +727,8 @@ html body #tcdfmb.ipe-fm-c svg{width:28px!important;height:20px!important;margin
 .ipe-marca.ipr-marca-txt{gap:0;padding-left:2px}.ipe-marca.ipr-marca-txt b{font:600 14px/1.1 'IBM Plex Mono',ui-monospace,monospace;letter-spacing:.14em}.ipe-marca.ipr-marca-txt span{font-size:11.5px;letter-spacing:.01em;margin-top:3px}
 @media (min-width:901px){.ipr-px::after{content:"";position:absolute;top:50%;left:50%;width:3px;height:40px;margin:-20px 0 0 -1.5px;border-radius:2px;background:var(--ln2);opacity:.9}html.ipe-on body #tcdfmb{left:var(--ipr-fm-left,14px)!important;right:auto!important}html.ipe-on #tcdck-l{bottom:36px!important}}
 @media (pointer:coarse) and (min-width:901px){.ipe:not(.sem-esq){--wl:var(--ipr-wl,250px)}.ipe:not(.sem-dir){--wr:var(--ipr-wr,280px)}.ipr-px{width:18px}.ipr-px-wl{left:calc(var(--wl) - 9px)}.ipr-px-wr{right:calc(var(--wr) - 9px)}.ipr-px::after{width:5px;height:56px;margin:-28px 0 0 -2.5px;background:var(--mu)}}
+/* 22/10, 23h52: barra de estado editável */
+.ipe-st .ipr-ed em{cursor:text;border-bottom:1px dotted var(--mu2)}
+.ipe-st .ipr-ed em:hover,.ipe-st .ipr-ed em:focus{color:var(--ac2);outline:0}
+.ipe-st input.ipr-in{font:12px var(--mono);color:var(--tx);background:var(--p3);border:1px solid var(--ac2);border-radius:3px;padding:2px 4px;height:20px;min-width:5ch;max-width:14ch}
+.ipe-st .ipr-rumo{color:var(--mu2);font:11px var(--mono)}
