@@ -171,6 +171,7 @@
     var esq = document.getElementById("ipe-esq"), ipe = document.getElementById("ipe"); if (!ipe) return;
     var x = 14; if (desk() && esq && !ipe.classList.contains("sem-esq")) { var r = esq.getBoundingClientRect(); if (r.width > 40) x = Math.round(r.right) + 14; }
     document.documentElement.style.setProperty("--ipr-fm-left", x + "px");
+    var ck = document.getElementById("tcdck-l"); if (ck) { if (desk()) ck.style.setProperty("bottom", "36px", "important"); else ck.style.removeProperty("bottom"); }
   }
   // 9. «Ver no mapa» nos projectos da IPR Cloud (e outras ligações /atlas/?v=lat,lng,zoom dentro do Atlas): voa até ao terreno
   //    sem recarregar a página. Antes, a página recarregava e a apresentação de abertura levava o mapa para outro sítio.
@@ -180,7 +181,10 @@
     var p = +m[1], q = +m[2], z = +m[3] || 15, lat = Math.abs(p) >= Math.abs(q) ? p : q, lng = lat === p ? q : p;
     if (!isFinite(lat) || !isFinite(lng) || Math.abs(lat) > 85) return;
     ev.preventDefault(); ev.stopPropagation();
-    try { I.stop(); I.flyTo({ center: [lng, lat], zoom: z, pitch: 0, bearing: 0, duration: 1200 }); } catch (e) { location.href = a.href; }
+    try {
+      I.stop(); I.flyTo({ center: [lng, lat], zoom: z, pitch: 0, bearing: 0, duration: 1200 });
+      setTimeout(function () { try { var c = I.getCenter(); if (Math.abs(c.lng - lng) > 0.01 || Math.abs(c.lat - lat) > 0.01) { I.stop(); I.jumpTo({ center: [lng, lat], zoom: z, pitch: 0, bearing: 0 }); } } catch (e) {} }, 1800);
+    } catch (e) { location.href = a.href; }
     if (!desk()) { var f = document.querySelector("#ipe .ipe-dir-x, #ipe [data-fechar-dir]"); if (f) f.click(); }
   }, true);
 
