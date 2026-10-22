@@ -20,3 +20,6 @@ window.addEventListener('resize',pedir);setInterval(tudo,2000);pedir()})();
 ;
 /* 22/10/2026 · atalho directo para «Comunidade › O meu perfil»: /atlas/#perfil (ou ?perfil=1) abre o separador e a vista do perfil */
 (function(){try{if(!/^#perfil$/.test(location.hash)&&!/[?&]perfil=1(&|$)/.test(location.search))return;var n=0,iv=setInterval(function(){var t=document.querySelector('#ipe .ipe-tab[data-tab="com"]');if(++n>120){clearInterval(iv);return}if(!t)return;if(t.getAttribute('aria-selected')!=='true'&&!t.classList.contains('on'))t.click();var b=document.querySelector('#ipe-com [data-com="perfil"]');if(b){if(b.getAttribute('aria-pressed')!=='true')b.click();clearInterval(iv)}else if(document.querySelector('#ipe-com [data-com="pessoas"]')&&n>40){clearInterval(iv)}},250)}catch(e){}})();
+;
+/* 22/10/2026 · no telemóvel a atribuição do mapa começa recolhida no botão «i» (toque para ver) */
+(function(){try{var n=0,iv=setInterval(function(){var a=document.querySelector('#ipe .maplibregl-ctrl-attrib');if(++n>80){clearInterval(iv);return}if(!a||!a.querySelector('.maplibregl-ctrl-attrib-button'))return;clearInterval(iv);if(innerWidth>900)return;setTimeout(function(){a.classList.add('maplibregl-compact');a.classList.remove('maplibregl-compact-show');a.removeAttribute('open')},1200)},500)}catch(e){}})();
