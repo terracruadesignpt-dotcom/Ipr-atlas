@@ -324,7 +324,15 @@
         aviso(inp, "Caderneta lida: " + (feito.join(" · ") || o.nic) + ". A procurar o prédio pelo NIC " + o.nic + " no cadastro.");
       } else if (o.freguesia) {
         var q = document.getElementById("ipe-q");
-        if (q) { q.value = o.freguesia + (o.concelho ? ", " + o.concelho : ""); q.dispatchEvent(new Event("input", { bubbles: true })); if (q.form) { try { q.form.requestSubmit(); } catch (e) {} } }
+        if (q && q.form) {
+          q.value = o.freguesia; try { q.form.requestSubmit(); } catch (e) {}
+          var n = 0, cc = (o.concelho || "").toLowerCase();
+          (function escolher() {
+            var bs = [].slice.call(document.querySelectorAll("#ipe-qres button[data-res]"));
+            if (!bs.length) { if (++n < 16) setTimeout(escolher, 400); return; }
+            var b = bs.filter(function (x) { return cc && (x.textContent || "").toLowerCase().indexOf(cc) >= 0; })[0] || bs[0]; b.click();
+          })();
+        }
         aviso(inp, "Caderneta lida: " + feito.join(" · ") + ". O mapa vai à freguesia; escolha a parcela no mapa (o pedido também segue só com a caderneta).");
       } else {
         aviso(inp, feito.length ? "Caderneta lida: " + feito.join(" · ") + "." : "Não consegui ler o artigo nesta caderneta (pode ser uma imagem digitalizada). Segue com o pedido e nós localizamos.");
