@@ -13,7 +13,8 @@
        a Formiga já reporta com imagem e áudio). O botão continua no código e volta se a Formiga não existir.
    12. Roda do rato sobre a rosa dos ventos inclina a vista (3D).
    13. Caderneta predial em PDF: lê o artigo e a freguesia e leva o mapa ao terreno.
-   14. Equipa: «Processar» sem formulário de cliente (dados da sessão, via m90297). */
+   14. Equipa: «Processar» sem formulário de cliente (dados da sessão, via m90297).
+   15. Barra da esquerda com separadores «Camadas» e «Os meus projectos». */
 (function () {
   "use strict";
   var SIGLA = "https://cdn.jsdelivr.net/gh/terracruadesignpt-dotcom/Ipr-atlas@3c382ba8826863c1dc0de2142ba8c2c5038e532b/atlas/marca/ipr-sigla.png";
@@ -370,10 +371,40 @@
     return true;
   }
 
+  // 15. Separadores na barra da esquerda: «Camadas» e «Os meus projectos» (Nuno, 23/10, 00h48; Miguel, reporte #15889:
+  //     «as camadas são mais importantes [...] faz disso um separador que abre só quando a pessoa quer»). Só esconde e mostra;
+  //     o grupo «Os meus projectos» continua o mesmo, com tudo o que já fazia.
+  function separadoresEsq() {
+    var esq = document.getElementById("ipe-esq"), loc = document.getElementById("ipc-loc"); if (!esq || !loc) return false;
+    if (esq.querySelector(".ipr-esq-tabs")) return true;
+    var bar = document.createElement("div"); bar.className = "ipr-esq-tabs"; bar.setAttribute("role", "tablist");
+    bar.innerHTML = '<button type="button" role="tab" data-t="cam">Camadas</button><button type="button" role="tab" data-t="proj">Os meus projectos <i></i></button>';
+    esq.insertBefore(bar, esq.firstChild);
+    if (!window.tcdNonce) {
+      var a = document.querySelector("#tme a.tme-b"), v = document.createElement("p"); v.className = "ipr-esq-vazio";
+      v.innerHTML = 'Os seus terrenos e projectos aparecem aqui depois de <a href="' + ((a && a.getAttribute("href")) || "/minha-conta/") + '">entrar na sua conta</a>.';
+      var cam = esq.querySelector(".ipe-sb--cam"); esq.insertBefore(v, cam || null);
+    }
+    function pôr(t) {
+      esq.classList.toggle("ipr-t-cam", t === "cam"); esq.classList.toggle("ipr-t-proj", t === "proj");
+      [].forEach.call(bar.children, function (b) { b.setAttribute("aria-selected", b.getAttribute("data-t") === t ? "true" : "false"); });
+      if (t === "proj") {
+        var sec = loc.closest(".ipe-sb"); if (sec && sec.classList.contains("fechado")) { var h = sec.querySelector(".ipe-sbh"); if (h) h.click(); }
+        if (loc.classList.contains("fechado")) { var g = loc.querySelector(".ipr-gt"); if (g) g.click(); }
+      }
+      gravar("tcd_atlas_esq_tab", t);
+    }
+    bar.addEventListener("click", function (e) { var b = e.target.closest("button[data-t]"); if (b) pôr(b.getAttribute("data-t")); });
+    function conta() { var n = (document.getElementById("ipc-loc-n") || {}).textContent || ""; bar.querySelector("i").textContent = n.trim(); }
+    try { new MutationObserver(conta).observe(document.getElementById("ipc-loc-n"), { childList: true, characterData: true, subtree: true }); } catch (e) {}
+    conta(); pôr(ler("tcd_atlas_esq_tab") === "proj" ? "proj" : "cam");
+    return true;
+  }
+
   var feito = {}, voltas = 0;
   function correr() {
     voltas++;
-    [["marca", marca], ["puxadores", puxadores], ["creditos", creditos], ["estado", estado], ["formiga", formiga], ["projectos", projectos], ["editavel", editavel], ["semBug", semBug], ["rosa", rosa]].forEach(function (f) { if (!feito[f[0]]) { try { feito[f[0]] = f[1](); } catch (e) {} } });
+    [["marca", marca], ["puxadores", puxadores], ["creditos", creditos], ["estado", estado], ["formiga", formiga], ["projectos", projectos], ["editavel", editavel], ["semBug", semBug], ["rosa", rosa], ["separadoresEsq", separadoresEsq]].forEach(function (f) { if (!feito[f[0]]) { try { feito[f[0]] = f[1](); } catch (e) {} } });
     try { nomes(); } catch (e) {}
     try { equipa(); } catch (e) {}
     try { posicoes(); } catch (e) {}

@@ -739,3 +739,16 @@ html body #tcdfmb.ipe-fm-c svg{width:28px!important;height:20px!important;margin
 /* 23/10: janela «Reportar» cabe no ecrã do iPad (100dvh) e mexe-se pelo título */
 html.ipe-on .tcdr2-p{max-height:calc(100dvh - 90px)!important;overscroll-behavior:contain}
 .tcdr2-p h3{cursor:move;touch-action:none}
+/* 23/10: separadores da barra da esquerda (Camadas / Os meus projectos) */
+#ipe .ipr-esq-tabs{display:flex;flex:none;border-bottom:1px solid var(--ln);background:var(--p1);position:sticky;top:0;z-index:2}
+#ipe .ipr-esq-tabs button{flex:1 1 0;min-width:0;border:0;background:transparent;padding:10px 6px 9px;cursor:pointer;color:var(--mu);font:500 10.5px/1 var(--mono);letter-spacing:.04em;text-transform:uppercase;border-bottom:2px solid transparent;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#ipe .ipr-esq-tabs button:hover{color:var(--tx)}
+#ipe .ipr-esq-tabs button[aria-selected=true]{color:var(--tx);border-bottom-color:var(--ac)}
+#ipe .ipr-esq-tabs i{font-style:normal;color:var(--ac2);margin-left:3px}
+#ipe-esq.ipr-t-cam #ipc-loc{display:none!important}
+#ipe-esq.ipr-t-proj .ipr-arv>:not(#ipc-loc){display:none!important}
+#ipe-esq.ipr-t-proj .tme-todas,#ipe-esq.ipr-t-proj .ipe-sb--cam>.ipe-sbh{display:none!important}
+#ipe-esq.ipr-t-proj #ipc-loc>.ipr-gc{display:none}
+#ipe .ipr-esq-vazio{display:none;margin:12px 14px;font:13px/1.5 var(--sans,Inter,sans-serif);color:var(--mu)}
+#ipe .ipr-esq-vazio a{color:var(--ac2)}
+#ipe-esq.ipr-t-proj .ipr-esq-vazio{display:block}
