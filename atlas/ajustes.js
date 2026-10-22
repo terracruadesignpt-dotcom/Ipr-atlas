@@ -20,13 +20,14 @@
     var a = document.querySelector(".ipe-marca"); if (!a || a.getAttribute("data-ipr")) return !!a;
     a.setAttribute("data-ipr", "1");
     a.title = "IPR Atlas · Instituto de Planeamento Regenerativo";
-    var im = a.querySelector("img"); if (im) { im.src = SIGLA; im.alt = "IPR"; im.className = "ipr-sigla"; }
+    var im = a.querySelector("img"); if (im) { im.style.display = "none"; im.alt = ""; } // 22/10, 23h47: sem imagem, só o nome (pedido do Nuno)
+    a.classList.add("ipr-marca-txt");
     var sp = a.querySelector("span"); if (sp) sp.textContent = "Instituto de Planeamento Regenerativo";
     return true;
   }
 
   // 2. Larguras ajustáveis
-  var LIM = { wl: [200, 520, 260], wr: [240, 560, 320] };
+  var LIM = { wl: [180, 560, 260], wr: [200, 600, 320] };
   function aplicarLarg(ipe) {
     ["wl", "wr"].forEach(function (k) { var v = +ler("tcd_atlas_" + k); if (v >= LIM[k][0] && v <= LIM[k][1]) ipe.style.setProperty("--ipr-" + k, v + "px"); });
   }
@@ -45,7 +46,7 @@
           ipe.style.setProperty("--ipr-" + k, v + "px"); gravar("tcd_atlas_" + k, v);
           var I = mapa(); if (I && I.resize) I.resize();
         }
-        function up() { h.removeEventListener("pointermove", mv); h.removeEventListener("pointerup", up); ipe.classList.remove("ipr-arrastar"); var I = mapa(); if (I && I.resize) I.resize(); }
+        function up() { h.removeEventListener("pointermove", mv); h.removeEventListener("pointerup", up); ipe.classList.remove("ipr-arrastar"); var I = mapa(); if (I && I.resize) I.resize(); posicoes(); }
         h.addEventListener("pointermove", mv); h.addEventListener("pointerup", up);
       });
       h.addEventListener("dblclick", function () { ipe.style.removeProperty("--ipr-" + k); gravar("tcd_atlas_" + k, ""); var I = mapa(); if (I && I.resize) setTimeout(function () { I.resize(); }, 50); });
@@ -165,12 +166,32 @@
     return true;
   }
 
+  // 8. Botão da Formiga no canto inferior esquerdo do mapa (não por cima da barra das camadas) e «Cookies» acima da barra de estado.
+  function posicoes() {
+    var esq = document.getElementById("ipe-esq"), ipe = document.getElementById("ipe"); if (!ipe) return;
+    var x = 14; if (desk() && esq && !ipe.classList.contains("sem-esq")) { var r = esq.getBoundingClientRect(); if (r.width > 40) x = Math.round(r.right) + 14; }
+    document.documentElement.style.setProperty("--ipr-fm-left", x + "px");
+  }
+  // 9. «Ver no mapa» nos projectos da IPR Cloud (e outras ligações /atlas/?v=lat,lng,zoom dentro do Atlas): voa até ao terreno
+  //    sem recarregar a página. Antes, a página recarregava e a apresentação de abertura levava o mapa para outro sítio.
+  document.addEventListener("click", function (ev) {
+    var a = ev.target.closest && ev.target.closest("#ipe a[href*='/atlas/?v=']"); if (!a) return;
+    var m = /[?&]v=([-0-9.]+),([-0-9.]+),([0-9.]+)/.exec(a.getAttribute("href") || ""), I = mapa(); if (!m || !I) return;
+    var p = +m[1], q = +m[2], z = +m[3] || 15, lat = Math.abs(p) >= Math.abs(q) ? p : q, lng = lat === p ? q : p;
+    if (!isFinite(lat) || !isFinite(lng) || Math.abs(lat) > 85) return;
+    ev.preventDefault(); ev.stopPropagation();
+    try { I.stop(); I.flyTo({ center: [lng, lat], zoom: z, pitch: 0, bearing: 0, duration: 1200 }); } catch (e) { location.href = a.href; }
+    if (!desk()) { var f = document.querySelector("#ipe .ipe-dir-x, #ipe [data-fechar-dir]"); if (f) f.click(); }
+  }, true);
+
   var feito = {}, voltas = 0;
   function correr() {
     voltas++;
     [["marca", marca], ["puxadores", puxadores], ["creditos", creditos], ["estado", estado], ["formiga", formiga], ["projectos", projectos]].forEach(function (f) { if (!feito[f[0]]) { try { feito[f[0]] = f[1](); } catch (e) {} } });
     try { nomes(); } catch (e) {}
+    try { posicoes(); } catch (e) {}
     if (voltas < 60) setTimeout(correr, voltas < 10 ? 500 : 2000);
   }
+  window.addEventListener("resize", function () { try { posicoes(); } catch (e) {} });
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", correr); else correr();
 })();
