@@ -722,3 +722,4 @@ html body #tcdfmb.ipe-fm-c svg{width:28px!important;height:20px!important;margin
 @media (max-width:900px){.ipr-px{display:none}}
 .ipe-marca img.ipr-sigla{width:auto;height:20px;background:#000;border-radius:5px;padding:5px 7px;box-sizing:content-box;object-fit:contain}
 .ipr-oculto{display:none!important}
+.tme-b{white-space:normal!important;text-align:center;line-height:1.25}.tme.tme-dentro{margin:0 0 8px;padding:0;border:0;background:none}.tme.tme-dentro h3{display:none}.tme-dentro .tme-t{padding:6px 8px}.tme-dentro .tme-b{min-height:26px;padding:0 10px;font-weight:500;font-size:12px;background:transparent!important;color:var(--ac)!important;border-color:var(--ln2)!important}.tme-dentro .tme-b:hover{border-color:var(--ac)!important;filter:none}
