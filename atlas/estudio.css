@@ -587,7 +587,9 @@ span.ipe-loc-pt{cursor:default}
 .ipr-g>.ipr-gc .ipr-gt{font-weight:600}
 .ipe-esq .ipe-busca kbd{display:none}
 
-/* 22/10/2026 · abertura do Atlas (primeira visita): botão Saltar */
-.ipe-ab-saltar{position:absolute;left:50%;bottom:calc(36px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:7;border:1px solid rgba(255,255,255,.55);background:rgba(18,20,16,.55);color:#fff;font:500 13px/1 Inter,system-ui,sans-serif;letter-spacing:.04em;padding:9px 18px;border-radius:20px;cursor:pointer;backdrop-filter:blur(4px)}
-.ipe-ab-saltar:hover{background:rgba(18,20,16,.75)}
-@media (max-width:900px){.ipe-ab-saltar{bottom:calc(150px + env(safe-area-inset-bottom))}}
+/* 22/10/2026 · abertura do Atlas (uma vez por sessão, no período experimental): «Saltar» e «Não mostrar mais» */
+.ipe-ab-saltar{position:absolute;left:50%;top:62px;bottom:auto;transform:translateX(-50%);z-index:7;display:flex;gap:8px}
+.ipe-ab-saltar button{border:1px solid rgba(255,255,255,.55);background:rgba(18,20,16,.55);color:#fff;font:500 13px/1 Inter,system-ui,sans-serif;letter-spacing:.03em;padding:9px 16px;border-radius:20px;cursor:pointer;backdrop-filter:blur(4px);white-space:nowrap}
+.ipe-ab-saltar button:hover{background:rgba(18,20,16,.78)}
+.ipe-ab-saltar button[data-ab="n"]{background:rgba(18,20,16,.35);border-color:rgba(255,255,255,.35);font-weight:400}
+@media (max-width:900px){.ipe-ab-saltar{top:14px}}
