@@ -593,3 +593,37 @@ span.ipe-loc-pt{cursor:default}
 .ipe-ab-saltar button:hover{background:rgba(18,20,16,.78)}
 .ipe-ab-saltar button[data-ab="n"]{background:rgba(18,20,16,.35);border-color:rgba(255,255,255,.35);font-weight:400}
 @media (max-width:900px){.ipe-ab-saltar{top:14px}}
+
+/* 22/10/2026 (tarde) · Atlas em todos os ecrãs: lista de camadas inteira, rosa por baixo dos controlos, sem sobreposições */
+/* 1. As categorias de camadas (Fundo, Relevo, Água, Fogo, Solo…) ficavam com 6 px de altura: passam a ter a altura natural e o painel faz scroll */
+.ipe .ipr-arv>*{flex-shrink:0}
+.ipe .ipr-arv>.ipr-arv-l{flex:none;height:auto;max-height:none;overflow:visible}
+/* sem sessão iniciada, as categorias vêm antes do projecto de exemplo */
+body:not(.logged-in) .ipe .ipr-arv>.ipr-arv-cab{order:-2}
+body:not(.logged-in) .ipe .ipr-arv>.ipr-arv-l{order:-1}
+/* 2. Rosa-dos-ventos: lado direito, 18 px por baixo dos controlos do mapa (o valor exacto vem do app.js em --rosa-top) */
+.ipe .ipe-rosa{top:var(--rosa-top,196px);bottom:auto;right:8px;transform-origin:top right}
+@media (max-width:900px){.ipe .ipe-rosa{top:var(--rosa-top,158px);bottom:auto}}
+@media (max-width:700px){.ipe .ipe-rosa{transform:scale(.7);transform-origin:top right}}
+/* 3. Telemóvel e tablet estreito */
+@media (max-width:900px){
+ /* camadas: botão com nome, painel até à barra de baixo, ferramentas escondidas enquanto o painel está aberto */
+ .ipe #ipe-camadas{width:auto;padding:0 10px 0 8px;gap:6px}
+ .ipe #ipe-camadas span{display:inline}
+ .ipe .ipe-esq{bottom:calc(52px + env(safe-area-inset-bottom))}
+ .ipe.esq-aberto .ipe-tools,.ipe.esq-aberto .ipe-escg{visibility:hidden}
+ /* escala e atribuição por cima da barra de ferramentas, nunca por baixo */
+ .ipe .ipe-escg{bottom:calc(122px + env(safe-area-inset-bottom));transform:scale(.85);transform-origin:bottom left}
+ .ipe .maplibregl-ctrl-bottom-right{bottom:calc(172px + env(safe-area-inset-bottom))}
+ .ipe .maplibregl-ctrl-attrib.maplibregl-compact-show .maplibregl-ctrl-attrib-inner{max-width:calc(100vw - 200px)}
+ #ipe .ipe-mapa:after{inset:8px 8px calc(118px + env(safe-area-inset-bottom)) 8px}
+ /* quando aparece o HUD ou o perfil, a escala sai do caminho */
+ .ipe-mapa.com-pf .ipe-escg{visibility:hidden}
+}
+@media (max-width:360px){.ipe .ipe-top{gap:4px}.ipe #ipe-entrar{padding:6px 4px}.ipe #ipe-camadas{padding:0 8px 0 6px}.ipe .ipe-t{width:34px;height:36px}}
+/* telemóvel deitado: barra e escala mais juntas */
+@media (max-width:900px) and (max-height:500px){
+ .ipe .ipe-rosa{transform:scale(.55)}
+ .ipe .ipe-escg{display:none}
+ .ipe .maplibregl-ctrl-bottom-right{bottom:calc(118px + env(safe-area-inset-bottom));right:auto;left:8px}
+}
