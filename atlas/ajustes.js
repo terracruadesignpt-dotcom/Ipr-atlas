@@ -12,7 +12,8 @@
    11. «Reportar problema» da barra de estado escondido quando há Formiga (pedido do Nuno, 22/10, 23h53: evitar redundância;
        a Formiga já reporta com imagem e áudio). O botão continua no código e volta se a Formiga não existir.
    12. Roda do rato sobre a rosa dos ventos inclina a vista (3D).
-   13. Caderneta predial em PDF: lê o artigo e a freguesia e leva o mapa ao terreno. */
+   13. Caderneta predial em PDF: lê o artigo e a freguesia e leva o mapa ao terreno.
+   14. Equipa: «Processar» sem formulário de cliente (dados da sessão, via m90297). */
 (function () {
   "use strict";
   var SIGLA = "https://cdn.jsdelivr.net/gh/terracruadesignpt-dotcom/Ipr-atlas@3c382ba8826863c1dc0de2142ba8c2c5038e532b/atlas/marca/ipr-sigla.png";
@@ -340,11 +341,41 @@
     }).catch(function () { aviso(inp, "Não consegui ler este PDF aqui. Segue com o pedido e nós localizamos o terreno."); });
   }, true);
 
+  // 14. Equipa: «Processar» em vez de «Encomendar», sem formulário de cliente (pedido do Nuno, 23/10, 00h43).
+  //     window.tcdEquipa vem do m90297 (só contas @terracruadesign.pt com sessão). O servidor já trata estes pedidos como
+  //     internos: sem custo, sem factura, directos para processamento. Os campos ficam no formulário, só escondidos e preenchidos.
+  function equipa() {
+    var E = window.tcdEquipa; if (!E || !E.email) return true;
+    var f = document.getElementById("ipe-form"); if (!f) return false;
+    var tab = document.querySelector('#ipe-tabs .ipe-tab[data-tab="enc"]');
+    if (tab && tab.firstChild && tab.firstChild.nodeType === 3 && tab.firstChild.nodeValue !== "Processar") { tab.firstChild.nodeValue = "Processar"; tab.title = "Processar a Base Cartográfica (equipa)"; }
+    var nome = document.getElementById("ipe-nome"), em = document.getElementById("ipe-email");
+    if (nome && !nome.value) nome.value = E.nome || E.email; if (em) em.value = E.email;
+    var ck = f.querySelector('input[name="consentimento"]'); if (ck) ck.checked = true;
+    var bt = document.getElementById("ipe-enviar"); if (bt && /Enviar pedido/.test(bt.textContent)) bt.textContent = "Processar";
+    if (f.getAttribute("data-ipr-eq")) return true;
+    f.setAttribute("data-ipr-eq", "1");
+    var esc = false;
+    [].forEach.call(f.children, function (e) {
+      if (e.tagName === "H3" && /03/.test(e.textContent)) { esc = true; }
+      if (e.id === "ipe-notas") { var l = e.previousElementSibling; if (l) { l.style.display = ""; l.textContent = "Notas para o processamento"; } e.style.display = ""; return; }
+      if (esc && (e.querySelector && e.querySelector('input[name="consentimento"]'))) { e.style.display = "none"; esc = false; return; }
+      if (esc && !(e.nextElementSibling && e.nextElementSibling.id === "ipe-notas")) e.style.display = "none";
+      if (e.classList && e.classList.contains("ipe-nota") && /paga|IVA/.test(e.textContent)) e.style.display = "none";
+    });
+    var g = document.getElementById("ipe-guia"); if (g) { [].forEach.call(g.querySelectorAll("*"), function (x) { if (x.children.length === 0 && /^Dados$/.test((x.textContent || "").trim())) { var li = x.closest("li,span,div"); if (li && li !== g) li.style.display = "none"; } }); }
+    var n = document.createElement("p"); n.className = "ipe-nota"; n.id = "ipr-eq-nota";
+    n.textContent = "Conta da equipa (" + E.email + "): sem formulário nem pagamento. Escolha o terreno, marque o que quer e carregue em Processar; segue directo para o processamento.";
+    if (bt) bt.parentNode.insertBefore(n, bt);
+    return true;
+  }
+
   var feito = {}, voltas = 0;
   function correr() {
     voltas++;
     [["marca", marca], ["puxadores", puxadores], ["creditos", creditos], ["estado", estado], ["formiga", formiga], ["projectos", projectos], ["editavel", editavel], ["semBug", semBug], ["rosa", rosa]].forEach(function (f) { if (!feito[f[0]]) { try { feito[f[0]] = f[1](); } catch (e) {} } });
     try { nomes(); } catch (e) {}
+    try { equipa(); } catch (e) {}
     try { posicoes(); } catch (e) {}
     if (voltas < 60) setTimeout(correr, voltas < 10 ? 500 : 2000);
   }
