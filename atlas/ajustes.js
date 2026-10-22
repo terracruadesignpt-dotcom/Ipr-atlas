@@ -383,6 +383,7 @@
       if (loc.classList.contains("fechado")) { var g = loc.querySelector(".ipr-gt"); if (g) g.click(); }
       return true;
     }
+    if (loc) loc.style.display = "none"; // sem sessão não há projectos: a esquerda fica só com Pesquisar e Camadas
     if (!tme || !pe) return false;
     if (tme.parentNode !== pe) { tme.classList.add("tme-dir"); pe.insertBefore(tme, pe.firstChild); }
     return true;
