@@ -577,6 +577,7 @@
     [["marca", marca], ["puxadores", puxadores], ["creditos", creditos], ["estado", estado], ["formiga", formiga], ["projectos", projectos], ["editavel", editavel], ["semBug", semBug], ["rosa", rosa], ["arrumar", arrumar], ["projDir", projDir], ["testarEsq", testarEsq], ["contaTopo", contaTopo], ["camadasTopo", camadasTopo]].forEach(function (f) { if (!feito[f[0]]) { try { feito[f[0]] = f[1](); } catch (e) {} } });
     try { nomes(); } catch (e) {}
     try { equipa(); } catch (e) {}
+    try { if (window.__iprTodas && !document.getElementById("ipr-todas")) todasBases(); } catch (e) {}
     try { posicoes(); } catch (e) {}
     if (voltas < 60) setTimeout(correr, voltas < 10 ? 500 : 2000);
   }
