@@ -805,15 +805,159 @@
     }
     return true;
   }
+  // 24. Formiga (compilação do Ecossistema IPR §26, 24/10/2026): nome só nas 3 primeiras visitas (contadas por dia, não por
+  // desenho da página), depois só o ícone com título; recolhida ao início; no Atlas fica por baixo dos botões do canto superior
+  // direito do mapa (zoom, localização), sem tapar nada; com o teclado do telemóvel aberto, a janela sobe acima do teclado.
+  var FM_VIS = (function () {
+    var hoje = new Date().toISOString().slice(0, 10), d = { n: 0, d: "" };
+    try { d = JSON.parse(localStorage.getItem("ipr_fm_visitas_v2") || "null") || d; } catch (e) {}
+    if (d.d !== hoje) { d.n = (d.n || 0) + 1; d.d = hoje; try { localStorage.setItem("ipr_fm_visitas_v2", JSON.stringify(d)); } catch (e) {} }
+    return d.n || 1;
+  })();
+  function formigaSitio() {
+    var b = document.getElementById("tcdfmb"); if (!b) return false;
+    if (FM_VIS > 3 && !b.classList.contains("tcd-fm-mini")) {
+      var nome = (b.textContent || "").trim() || "Formiga";
+      b.classList.add("tcd-fm-mini"); if (!b.title) b.title = nome; b.setAttribute("aria-label", b.title || nome);
+    }
+    var I = mapa(), ctr = document.querySelector("#ipe .maplibregl-ctrl-top-right"), cv = I && I.getContainer ? I.getContainer() : null;
+    if (ctr && cv) {
+      var rc = cv.getBoundingClientRect(), rt = ctr.getBoundingClientRect();
+      if (rc.width > 100 && rt.height > 0) {
+        var top = Math.round(rt.bottom + 10), dir = Math.max(8, Math.round(window.innerWidth - rc.right + 10));
+        if (top + 56 < rc.bottom) {
+          b.style.setProperty("position", "fixed", "important"); b.style.setProperty("top", top + "px", "important");
+          b.style.setProperty("right", dir + "px", "important"); b.style.setProperty("left", "auto", "important"); b.style.setProperty("bottom", "auto", "important");
+          b.classList.add("ipr-fm-dir");
+        }
+      }
+    }
+    return true;
+  }
+  (function () { // teclado virtual: a janela da Formiga fica acima dele
+    var vv = window.visualViewport; if (!vv) return;
+    function ajusta() {
+      var p = document.getElementById("tcdfm"); if (!p || p.offsetParent === null) return;
+      var tec = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+      if (tec > 80) { p.style.setProperty("bottom", (tec + 8) + "px", "important"); p.style.setProperty("top", "auto", "important"); p.style.setProperty("max-height", Math.round(vv.height - 16) + "px", "important"); p.setAttribute("data-ipr-tec", "1"); }
+      else if (p.getAttribute("data-ipr-tec")) { p.removeAttribute("data-ipr-tec"); p.style.removeProperty("bottom"); p.style.removeProperty("top"); p.style.removeProperty("max-height"); }
+    }
+    vv.addEventListener("resize", ajusta); vv.addEventListener("scroll", ajusta);
+  })();
+
+  // 25. Temas de camadas (compilação §34, 24/10/2026): botão «Temas» no cabeçalho da lista de camadas com seis temas IPR fixos
+  // e os temas da própria pessoa («Guardar como o meu tema», por agora no navegador). Só liga camadas que já existem no catálogo
+  // (viz.js) e respeita o Explorer: camadas de Condicionantes, Água, Solo e Fogo ficam de fora para quem não tem Intelligence.
+  var TEMA_GRUPO = { cond: ["crus","ren","ran","n2k","rnap","arv","la350","albzr","albuf","capt","eletr","viaria","ferro","marcos","aero","defesa"],
+    agua: ["hidro","hidro_g","rh","bacias","massas","inund","arpsi","aquif","hidrog","aquif_s","icnfpa","apasub","dgegn","ma_ecol","ma_quant","wei","wei_sub","capt_p","barragens","etar","nitratos","zprot","albpub","zadj","marcas","scs","cn","esc_med","precip","erosiv","hidrom","piezo","bac_troco","bal_i","bal_c"],
+    solo: ["sroa","contam","solos","carbono","aridez","desert","geo","cos_s2","cos23","cos25","cos18","cosc25","habitats","invasoras","copa18","swf21"],
+    fogo: ["perig_e","perig","perig_s","ard15","ard75","sgifr_a","sgifr_l","redeprim","zif"],
+    lidar: ["r_hipso","r_cdgt","r_cotas","r_somb","r_curvas"], prop: ["cad","bupi","ifap_p","ifap_o","distritos","concelhos","caop","r_projipr"],
+    ref: ["o_estradas","o_edif","o_agua","o_fronteiras","o_nomes","o_picos","o_caminhos","o_cobertura","o_usos","o_planos","o_protegidas","o_aguapts","o_energia","o_patrimonio","o_vedacoes"] };
+  var TEMA_CAT = {}; Object.keys(TEMA_GRUPO).forEach(function (g) { TEMA_GRUPO[g].forEach(function (id) { TEMA_CAT[id] = g; }); });
+  var TEMAS_IPR = [
+    { id: "terreno", nome: "Conhecer o terreno", fundo: "f_ortosat", c: ["r_somb","r_curvas","cad","hidro","o_caminhos","o_nomes"] },
+    { id: "agua", nome: "Água e bacias", fundo: "f_relevo", c: ["bacias","hidro","bac_troco","aquif","inund","precip","r_somb","o_nomes"] },
+    { id: "ecologia", nome: "Ecologia", fundo: "f_ortosat", c: ["habitats","n2k","rnap","cos23","copa18","swf21","invasoras","o_nomes"] },
+    { id: "cond", nome: "Condicionantes", fundo: "f_ortosat", c: ["crus","ren","ran","n2k","rnap","la350","cad"] },
+    { id: "campo", nome: "Campo", fundo: "f_ortosat", c: ["cad","r_curvas","o_caminhos","o_aguapts","icnfpa","o_vedacoes","o_nomes"] },
+    { id: "design", nome: "Design Terracrua Design", fundo: "f_ortosat", c: ["r_curvas","r_somb","hidro","bacias","solos","cad","o_nomes"] }
+  ];
+  function viz() { return window.__ipe && window.__ipe.viz; }
+  function trancada(id) { return window.IPR_NIVEL === "explorer" && /^(cond|agua|solo|fogo)$/.test(TEMA_CAT[id] || ""); }
+  function activasCat() { var R = viz(), a = []; try { a = R.activas(); } catch (e) {} return a.filter(function (id) { return TEMA_CAT[id]; }); }
+  function fundoActual() { var R = viz(), f = null; try { R.activas().forEach(function (id) { if (/^f_/.test(id)) f = id; }); } catch (e) {} return f; }
+  function aplicarConjunto(ids, fundo) {
+    var R = viz(); if (!R) return 0; var quer = {}, n = 0;
+    ids.forEach(function (id) { if (TEMA_CAT[id] && !trancada(id)) quer[id] = 1; });
+    activasCat().forEach(function (id) { if (!quer[id]) try { R.ligar(id, false); } catch (e) {} });
+    Object.keys(quer).forEach(function (id) { try { R.ligar(id, true); n++; } catch (e) {} });
+    if (fundo) try { R.fundo(fundo); } catch (e) {}
+    return n;
+  }
+  function temasMeus() { try { return JSON.parse(localStorage.getItem("ipr_temas_meus") || "[]") || []; } catch (e) { return []; } }
+  function temas() {
+    var cab = document.querySelector(".ipr-arv-cab"); if (!cab) return false; if (cab.querySelector(".ipr-temas-b")) return true;
+    if (!viz()) return false;
+    var b = document.createElement("button"); b.type = "button"; b.className = "ipr-temas-b"; b.textContent = "Temas"; b.title = "Conjuntos de camadas prontos a usar";
+    b.setAttribute("aria-haspopup", "true"); b.setAttribute("aria-expanded", "false");
+    var m = document.createElement("div"); m.className = "ipr-temas-m"; m.hidden = true; m.setAttribute("role", "menu");
+    function esc(t) { return String(t).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+    function pinta() {
+      var h = '<span class="ipr-temas-t">Temas IPR</span>';
+      TEMAS_IPR.forEach(function (t) { h += '<button type="button" role="menuitem" data-tema="ipr:' + t.id + '">' + esc(t.nome) + "</button>"; });
+      var meus = temasMeus();
+      if (meus.length) { h += '<span class="ipr-temas-t">Os meus temas</span>'; meus.forEach(function (t, i) { h += '<div class="ipr-temas-l"><button type="button" role="menuitem" data-tema="meu:' + i + '">' + esc(t.nome) + '</button><button type="button" class="ipr-temas-x" data-tirar="' + i + '" title="Retirar este tema" aria-label="Retirar ' + esc(t.nome) + '">×</button></div>'; }); }
+      h += '<button type="button" class="ipr-temas-g" data-guardar>Guardar como o meu tema</button>';
+      if (window.IPR_NIVEL === "explorer") h += '<p class="ipr-temas-n">Algumas camadas dos temas são do Intelligence e ficam desligadas.</p>';
+      m.innerHTML = h;
+    }
+    function fechar() { m.hidden = true; b.setAttribute("aria-expanded", "false"); }
+    b.addEventListener("click", function (e) { e.stopPropagation(); if (!m.hidden) { fechar(); return; } pinta(); m.hidden = false; b.setAttribute("aria-expanded", "true"); });
+    m.addEventListener("click", function (e) {
+      e.stopPropagation(); var t = e.target;
+      if (t.closest("[data-guardar]")) {
+        var nome = "", w = m.querySelector(".ipr-temas-in");
+        if (!w) { w = document.createElement("div"); w.className = "ipr-temas-in"; w.innerHTML = '<input type="text" maxlength="40" placeholder="Nome do tema" aria-label="Nome do tema"><button type="button" data-ok>Guardar</button>'; m.appendChild(w); w.querySelector("input").focus(); return; }
+        return;
+      }
+      if (t.closest("[data-ok]")) {
+        var inp = m.querySelector(".ipr-temas-in input"), nm = (inp && inp.value || "").trim().slice(0, 40); if (!nm) { inp && inp.focus(); return; }
+        var meus = temasMeus(); meus.push({ nome: nm, fundo: fundoActual(), c: activasCat() }); try { localStorage.setItem("ipr_temas_meus", JSON.stringify(meus.slice(-20))); } catch (x) {}
+        pinta(); return;
+      }
+      var x = t.closest("[data-tirar]"); if (x) { var l = temasMeus(); l.splice(+x.getAttribute("data-tirar"), 1); try { localStorage.setItem("ipr_temas_meus", JSON.stringify(l)); } catch (y) {} pinta(); return; }
+      var q = t.closest("[data-tema]"); if (!q) return;
+      var k = q.getAttribute("data-tema").split(":"), tema = k[0] === "ipr" ? TEMAS_IPR.filter(function (z) { return z.id === k[1]; })[0] : temasMeus()[+k[1]];
+      if (tema) { aplicarConjunto(tema.c || [], tema.fundo); fechar(); }
+    });
+    m.addEventListener("keydown", function (e) { e.stopPropagation(); if (e.key === "Enter" && e.target.matches(".ipr-temas-in input")) { var o = m.querySelector("[data-ok]"); o && o.click(); } if (e.key === "Escape") fechar(); });
+    document.addEventListener("click", function (e) { if (!m.hidden && !m.contains(e.target) && e.target !== b) fechar(); });
+    cab.insertBefore(b, cab.firstChild); cab.appendChild(m);
+    return true;
+  }
+
+  // 26. Geografia natural (compilação §30, 24/10/2026): botão próprio, ao lado do claro/escuro. Mantém o enquadramento, desliga
+  // limites administrativos e infra-estruturas e liga relevo, água, vegetação e habitats (o que o nível da conta permite).
+  // Carregar outra vez repõe as camadas que estavam ligadas antes.
+  var NAT_OFF = ["distritos","concelhos","caop","cad","bupi","ifap_p","ifap_o","r_projipr","crus","viaria","ferro","eletr","marcos","aero","defesa","o_estradas","o_edif","o_usos","o_energia","o_vedacoes","o_fronteiras","o_patrimonio"];
+  var NAT_ON = ["r_somb","hidro","o_agua","o_planos","bacias","habitats","copa18","swf21","o_cobertura","o_picos"];
+  var natAntes = null;
+  function natural() {
+    var tm = document.getElementById("ipe-tema"); if (!tm || !tm.parentNode) return false; if (document.getElementById("ipr-natural")) return true;
+    if (!viz()) return false;
+    var b = document.createElement("button"); b.type = "button"; b.id = "ipr-natural"; b.className = tm.className + " ipr-natural";
+    b.setAttribute("aria-pressed", "false"); b.title = "Geografia natural: realça os sistemas naturais e baixa os limites e as infra-estruturas";
+    b.setAttribute("aria-label", "Geografia natural");
+    b.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 19l6-9 4 5 3-4 5 8z"/><path d="M12 3c2 2.4 3.4 4.2 3.4 5.9a3.4 3.4 0 0 1-6.8 0C8.6 7.2 10 5.4 12 3z"/></svg>';
+    var nota = document.createElement("div"); nota.className = "ipr-natural-n"; nota.hidden = true;
+    nota.textContent = "Leitura actual dos sistemas naturais. Não reconstrói a paisagem pré-humana.";
+    b.addEventListener("click", function () {
+      var R = viz(); if (!R) return;
+      if (!natAntes) {
+        natAntes = { c: activasCat(), fundo: fundoActual() };
+        NAT_OFF.forEach(function (id) { try { R.ligar(id, false); } catch (e) {} });
+        NAT_ON.forEach(function (id) { if (TEMA_CAT[id] && !trancada(id)) try { R.ligar(id, true); } catch (e) {} });
+        b.setAttribute("aria-pressed", "true"); b.classList.add("on"); nota.hidden = false;
+        clearTimeout(b.__t); b.__t = setTimeout(function () { nota.hidden = true; }, 6000);
+      } else {
+        aplicarConjunto(natAntes.c, natAntes.fundo); natAntes = null;
+        b.setAttribute("aria-pressed", "false"); b.classList.remove("on"); nota.hidden = true;
+      }
+    });
+    tm.parentNode.insertBefore(b, tm.nextSibling); document.body.appendChild(nota);
+    return true;
+  }
   function correr() {
     voltas++;
-    [["marca", marca], ["puxadores", puxadores], ["creditos", creditos], ["estado", estado], ["formiga", formiga], ["projectos", projectos], ["editavel", editavel], ["semBug", semBug], ["rosa", rosa], ["arrumar", arrumar], ["projDir", projDir], ["testarEsq", testarEsq], ["contaTopo", contaTopo], ["camadasTopo", camadasTopo], ["sintetizar", sintetizar], ["opcoesCamadas", opcoesCamadas], ["projFechados", projFechados], ["todasMais", todasMais], ["painelTopo", painelTopo], ["qfieldQR", qfieldQR]].forEach(function (f) { if (!feito[f[0]]) { try { feito[f[0]] = f[1](); } catch (e) {} } });
+    [["marca", marca], ["puxadores", puxadores], ["creditos", creditos], ["estado", estado], ["formiga", formiga], ["projectos", projectos], ["editavel", editavel], ["semBug", semBug], ["rosa", rosa], ["arrumar", arrumar], ["projDir", projDir], ["testarEsq", testarEsq], ["contaTopo", contaTopo], ["camadasTopo", camadasTopo], ["sintetizar", sintetizar], ["opcoesCamadas", opcoesCamadas], ["projFechados", projFechados], ["todasMais", todasMais], ["painelTopo", painelTopo], ["qfieldQR", qfieldQR], ["temas", temas], ["natural", natural]].forEach(function (f) { if (!feito[f[0]]) { try { feito[f[0]] = f[1](); } catch (e) {} } });
     try { nomes(); } catch (e) {}
     try { equipa(); } catch (e) {}
     try { if (window.__iprTodas && !document.getElementById("ipr-todas")) todasBases(); } catch (e) {}
     try { posicoes(); } catch (e) {}
+    try { formigaSitio(); } catch (e) {}
     if (voltas < 60) setTimeout(correr, voltas < 10 ? 500 : 2000);
   }
-  window.addEventListener("resize", function () { try { posicoes(); } catch (e) {} });
+  window.addEventListener("resize", function () { try { posicoes(); } catch (e) {} try { formigaSitio(); } catch (e) {} });
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", correr); else correr();
 })();
