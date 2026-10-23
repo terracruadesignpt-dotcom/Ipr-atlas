@@ -709,10 +709,57 @@
     return true;
   }
 
+  // 21. «Todas as Bases» com «Ver todas» e o estado do worker (Nuno, 23/10, 10h20). Não mexe na secção do m90159: acrescenta
+  //     à caixa #ipr-todas, depois de ela ser desenhada, um resumo do worker (a correr, fila, erros, último contacto, ligação ao
+  //     painel) e o botão «Ver todas», que pede a lista completa (meus-mapas?todas=tudo, m90143) e a mostra na mesma caixa.
+  var wkInfo = null, todasTudo = false, todasPedido = false;
+  function todasMais() {
+    var box = document.getElementById("ipr-todas"); if (!box || !window.tcdNonce) return false;
+    function esc(t) { return String(t == null ? "" : t).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+    function desenhar() {
+      var c = box.querySelector(".ipr-todas-c"); if (!c) return;
+      var sm = box.querySelector(".ipr-todas-h small"); if (sm && todasTudo) sm.textContent = "todas";
+      if (wkInfo && !c.querySelector(".ipr-wk")) {
+        var w = document.createElement("div"); w.className = "ipr-wk";
+        var cor = wkInfo.erros ? "er" : (wkInfo.parado ? "av" : "ok");
+        w.innerHTML = '<span class="ipr-wk-p ' + cor + '"></span><b>Worker</b> ' + esc(wkInfo.texto || "") +
+          (wkInfo.a_correr && wkInfo.a_correr.length ? '<ul>' + wkInfo.a_correr.map(function (x) { return "<li>#" + esc(x.id) + " · " + esc(x.local || "") + " · " + esc(x.estado || "") + "</li>"; }).join("") + "</ul>" : "") +
+          (wkInfo.painel ? ' <a href="' + esc(wkInfo.painel) + '" target="_blank" rel="noopener">Painel do worker ↗</a>' : "");
+        c.insertBefore(w, c.firstChild);
+      }
+      if (!todasTudo && !c.querySelector(".ipr-todas-mais")) {
+        var b = document.createElement("button"); b.type = "button"; b.className = "ipr-todas-mais"; b.textContent = "Ver todas as Bases";
+        c.appendChild(b);
+      }
+    }
+    if (!box.getAttribute("data-ipr21")) {
+      box.setAttribute("data-ipr21", "1");
+      box.addEventListener("click", function (e) {
+        var b = e.target.closest && e.target.closest(".ipr-todas-mais"); if (!b || todasPedido) return;
+        todasPedido = true; b.textContent = "A carregar…";
+        fetch("/wp-json/tcd/v1/meus-mapas?todas=tudo", { credentials: "same-origin", headers: { "X-WP-Nonce": window.tcdNonce } })
+          .then(function (r) { return r.ok ? r.json() : null; })
+          .then(function (d) {
+            todasPedido = false;
+            if (d && d.todas && d.todas.length) { todasTudo = true; window.__iprTodas = d.todas; if (d.worker) wkInfo = d.worker; try { todasBases(); } catch (x) {} box.classList.add("aberto"); }
+            else { b.textContent = "Não foi possível carregar. Tentar outra vez"; }
+          })
+          .catch(function () { todasPedido = false; b.textContent = "Não foi possível carregar. Tentar outra vez"; });
+      });
+      try { new MutationObserver(function () { desenhar(); }).observe(box, { childList: true }); } catch (e) {}
+      fetch("/wp-json/tcd/v1/meus-mapas?todas=worker", { credentials: "same-origin", headers: { "X-WP-Nonce": window.tcdNonce } })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (d) { if (d && d.worker) { wkInfo = d.worker; var o = box.querySelector(".ipr-wk"); if (o) o.remove(); desenhar(); } })
+        .catch(function () {});
+    }
+    desenhar();
+    return false; // continua: a caixa é desenhada de novo a cada mudança de filtro
+  }
+
   var feito = {}, voltas = 0;
   function correr() {
     voltas++;
-    [["marca", marca], ["puxadores", puxadores], ["creditos", creditos], ["estado", estado], ["formiga", formiga], ["projectos", projectos], ["editavel", editavel], ["semBug", semBug], ["rosa", rosa], ["arrumar", arrumar], ["projDir", projDir], ["testarEsq", testarEsq], ["contaTopo", contaTopo], ["camadasTopo", camadasTopo], ["sintetizar", sintetizar], ["opcoesCamadas", opcoesCamadas], ["projFechados", projFechados]].forEach(function (f) { if (!feito[f[0]]) { try { feito[f[0]] = f[1](); } catch (e) {} } });
+    [["marca", marca], ["puxadores", puxadores], ["creditos", creditos], ["estado", estado], ["formiga", formiga], ["projectos", projectos], ["editavel", editavel], ["semBug", semBug], ["rosa", rosa], ["arrumar", arrumar], ["projDir", projDir], ["testarEsq", testarEsq], ["contaTopo", contaTopo], ["camadasTopo", camadasTopo], ["sintetizar", sintetizar], ["opcoesCamadas", opcoesCamadas], ["projFechados", projFechados], ["todasMais", todasMais]].forEach(function (f) { if (!feito[f[0]]) { try { feito[f[0]] = f[1](); } catch (e) {} } });
     try { nomes(); } catch (e) {}
     try { equipa(); } catch (e) {}
     try { if (window.__iprTodas && !document.getElementById("ipr-todas")) todasBases(); } catch (e) {}

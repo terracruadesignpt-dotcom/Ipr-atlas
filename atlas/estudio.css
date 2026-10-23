@@ -877,3 +877,12 @@ html.ipe-on .tcdr2-p{max-height:calc(100dvh - 90px)!important;overscroll-behavio
 /* 20. Projecto aberto no mapa, com o cartão fechado */
 #ipe-proj .ipe-card.ipr-actual{box-shadow:inset 3px 0 0 var(--ac,#e2924a)}
 #ipe-proj .ipe-card.ipr-actual .ipe-cc{cursor:pointer}
+/* 21. Todas as Bases: worker e «Ver todas» (23/10) */
+#ipe .ipr-wk{font:12px/1.45 Inter,system-ui,sans-serif;color:var(--tx);background:var(--p3);border-radius:5px;padding:6px 8px;margin:0 0 8px}
+#ipe .ipr-wk b{margin-right:4px}
+#ipe .ipr-wk ul{margin:4px 0 0;padding:0 0 0 16px;color:var(--mu)}
+#ipe .ipr-wk a{color:var(--ac2);white-space:nowrap}
+#ipe .ipr-wk-p{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:middle;background:#7a9a4a}
+#ipe .ipr-wk-p.av{background:#c9962b}
+#ipe .ipr-wk-p.er{background:#b4442f}
+#ipe .ipr-todas-mais{display:block;width:100%;margin:8px 0 0;border:1px solid var(--ln2);border-radius:5px;background:transparent;color:var(--ac2);font:600 12px Inter,system-ui,sans-serif;padding:6px;cursor:pointer}
