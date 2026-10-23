@@ -886,3 +886,9 @@ html.ipe-on .tcdr2-p{max-height:calc(100dvh - 90px)!important;overscroll-behavio
 #ipe .ipr-wk-p.av{background:#c9962b}
 #ipe .ipr-wk-p.er{background:#b4442f}
 #ipe .ipr-todas-mais{display:block;width:100%;margin:8px 0 0;border:1px solid var(--ln2);border-radius:5px;background:transparent;color:var(--ac2);font:600 12px Inter,system-ui,sans-serif;padding:6px;cursor:pointer}
+
+/* 22. Botão «Painel» ao lado da conta (23/10) */
+.ipr-painel{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 11px;margin-right:8px;border:1px solid #cfc9b4;border-radius:16px;background:#fff;color:#2f2f2a;font:600 12.5px/1 Inter,system-ui,sans-serif;text-decoration:none;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.08);flex:0 0 auto}
+.ipr-painel:hover,.ipr-painel:focus-visible{background:#f4f2ea;border-color:#75834a;color:#2f2f2a}
+.ipr-painel svg{flex:0 0 auto;color:#75834a}
+@media (max-width:700px){.ipr-painel{padding:0 9px;margin-right:6px}.ipr-painel span{display:none}}

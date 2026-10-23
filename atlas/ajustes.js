@@ -757,9 +757,22 @@
   }
 
   var feito = {}, voltas = 0;
+  // 22. Botão «Painel» no canto superior direito, ao lado da conta (pedido do Nuno, 23/10/2026, 17h23): equipa vai para
+  // /area-equipa/, as outras contas para /conta/. Só aparece com sessão iniciada.
+  function painelTopo() {
+    var u = document.getElementById("ipe-user"); if (!u || !u.parentNode) return !window.tcdNonce && document.readyState === "complete";
+    if (document.getElementById("ipr-painel")) return true;
+    if (!window.tcdNonce) return true;
+    var E = window.tcdEquipa, eq = !!(E && E.email);
+    var a = document.createElement("a"); a.id = "ipr-painel"; a.className = "ipr-painel"; a.href = eq ? "/area-equipa/" : "/conta/";
+    a.title = eq ? "Painel da equipa" : "O seu painel: encomendas, mapas, facturação"; a.setAttribute("aria-label", a.title);
+    a.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="4.5" rx="1.5"/><rect x="13.5" y="11" width="7" height="9.5" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/></svg><span>Painel</span>';
+    u.parentNode.insertBefore(a, u);
+    return true;
+  }
   function correr() {
     voltas++;
-    [["marca", marca], ["puxadores", puxadores], ["creditos", creditos], ["estado", estado], ["formiga", formiga], ["projectos", projectos], ["editavel", editavel], ["semBug", semBug], ["rosa", rosa], ["arrumar", arrumar], ["projDir", projDir], ["testarEsq", testarEsq], ["contaTopo", contaTopo], ["camadasTopo", camadasTopo], ["sintetizar", sintetizar], ["opcoesCamadas", opcoesCamadas], ["projFechados", projFechados], ["todasMais", todasMais]].forEach(function (f) { if (!feito[f[0]]) { try { feito[f[0]] = f[1](); } catch (e) {} } });
+    [["marca", marca], ["puxadores", puxadores], ["creditos", creditos], ["estado", estado], ["formiga", formiga], ["projectos", projectos], ["editavel", editavel], ["semBug", semBug], ["rosa", rosa], ["arrumar", arrumar], ["projDir", projDir], ["testarEsq", testarEsq], ["contaTopo", contaTopo], ["camadasTopo", camadasTopo], ["sintetizar", sintetizar], ["opcoesCamadas", opcoesCamadas], ["projFechados", projFechados], ["todasMais", todasMais], ["painelTopo", painelTopo]].forEach(function (f) { if (!feito[f[0]]) { try { feito[f[0]] = f[1](); } catch (e) {} } });
     try { nomes(); } catch (e) {}
     try { equipa(); } catch (e) {}
     try { if (window.__iprTodas && !document.getElementById("ipr-todas")) todasBases(); } catch (e) {}
