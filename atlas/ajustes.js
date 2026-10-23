@@ -366,9 +366,14 @@
       if (e.classList && e.classList.contains("ipe-nota") && /paga|IVA/.test(e.textContent)) e.style.display = "none";
     });
     var g = document.getElementById("ipe-guia"); if (g) { [].forEach.call(g.querySelectorAll("*"), function (x) { if (x.children.length === 0 && /^Dados$/.test((x.textContent || "").trim())) { var li = x.closest("li,span,div"); if (li && li !== g) li.style.display = "none"; } }); }
-    var n = document.createElement("p"); n.className = "ipe-nota"; n.id = "ipr-eq-nota";
-    n.textContent = "Conta da equipa (" + E.email + "): sem formulário nem pagamento. Escolha o terreno, marque o que quer e carregue em Processar; segue directo para o processamento.";
-    if (bt) bt.parentNode.insertBefore(n, bt);
+    // 23/10, 01h07 (Nuno): só os botões directos, sem tutorial, sem valores, Leitura sempre incluída, sem notas nem vale.
+    var gu = document.getElementById("ipe-guia"); if (gu) gu.style.display = "none";
+    [].forEach.call(f.querySelectorAll(".ipe-mp > p.ipe-p"), function (p) { p.style.display = "none"; });
+    var pr = document.getElementById("ipe-preco"); if (pr && pr.parentNode) pr.parentNode.style.display = "none";
+    var lt = f.querySelector('input[name="leitura"]'); if (lt) { lt.checked = true; lt.dispatchEvent(new Event("change", { bubbles: true })); var ll = lt.closest("label"); if (ll) ll.style.display = "none"; }
+    var nt = document.getElementById("ipe-notas"); if (nt) { nt.style.display = "none"; if (nt.previousElementSibling) nt.previousElementSibling.style.display = "none"; }
+    [].forEach.call(f.querySelectorAll(".ipe-nota"), function (x) { if (x.id !== "ipe-lidar") x.style.display = "none"; });
+    if (bt) { bt.addEventListener("click", function () { cascata(bt); }, true); }
     return true;
   }
 
@@ -414,10 +419,47 @@
     return true;
   }
 
+  // Cascata das camadas ao carregar em «Processar» (equipa). É só visual: o pedido segue como sempre para o worker.
+  var CAMADAS_BASE = ["MDT · hipsometria", "Sombreamento", "Curvas de nível 0,5 m", "Curvas de nível 1 m", "Curvas de nível 2 m", "Curvas de nível 5 m", "Declives · 7 classes", "Exposição solar", "Formas do relevo", "Exposição ao vento", "Linhas de água (Strahler)", "Festos e cumeadas", "Acumulação de fluxo", "Bacias hidrográficas", "Humidade topográfica (TWI)", "Erosão", "Leitura Territorial"];
+  function cascata(bt) {
+    var v = document.getElementById("ipr-casc"); if (v) v.remove();
+    v = document.createElement("div"); v.id = "ipr-casc"; v.className = "ipr-casc"; v.setAttribute("aria-live", "polite");
+    v.innerHTML = "<b>A preparar o processamento</b><ul>" + CAMADAS_BASE.map(function (n) { return "<li><i></i>" + n + "</li>"; }).join("") + '</ul><div class="fim">Go: enviado para o worker.</div>';
+    bt.parentNode.insertBefore(v, bt.nextSibling);
+    var li = v.querySelectorAll("li"), i = 0;
+    (function prox() { if (i < li.length) { li[i++].classList.add("on"); setTimeout(prox, 140); } else { v.querySelector(".fim").classList.add("on"); } })();
+  }
+
+  // «Testar camadas» passa da barra do mapa para a barra da esquerda, por cima das camadas (Nuno, 23/10, 01h08).
+  function testarEsq() {
+    var b = document.getElementById("tcd-testar-cam"), arv = document.querySelector("#ipe-cam .ipr-arv"); if (!b || !arv) return !window.tcdNonce;
+    var cab = arv.querySelector(".ipr-arv-cab");
+    if (b.parentNode !== arv) { b.classList.remove("ipe-t"); arv.insertBefore(b, cab ? cab.nextSibling : arv.firstChild); }
+    return true;
+  }
+
+  // Caixa de texto curta ao passar o rato nos ícones da barra do mapa e nos controlos.
+  (function dicas() {
+    if (!window.matchMedia || !window.matchMedia("(hover:hover)").matches) return;
+    var tip = null;
+    document.addEventListener("mouseover", function (e) {
+      var b = e.target.closest && e.target.closest("#ipe .ipe-tools button, #ipe .maplibregl-ctrl button, #ipe .ipe-rosa");
+      if (!b) return;
+      var t = b.getAttribute("data-ipr-tip") || b.getAttribute("title") || b.getAttribute("aria-label"); if (!t) return;
+      if (b.getAttribute("title")) { b.setAttribute("data-ipr-tip", t); b.removeAttribute("title"); }
+      if (!tip) { tip = document.createElement("div"); tip.className = "ipr-tip"; document.body.appendChild(tip); }
+      tip.textContent = t.split(". ")[0];
+      var r = b.getBoundingClientRect(); tip.style.left = "0px"; tip.style.top = "0px"; tip.classList.add("on");
+      var w = tip.offsetWidth, h = tip.offsetHeight, x = r.left - w - 8; if (x < 4) x = r.right + 8;
+      tip.style.left = x + "px"; tip.style.top = Math.max(4, r.top + r.height / 2 - h / 2) + "px";
+    });
+    document.addEventListener("mouseout", function (e) { if (tip && e.target.closest && e.target.closest("#ipe .ipe-tools button, #ipe .maplibregl-ctrl button, #ipe .ipe-rosa")) tip.classList.remove("on"); });
+  })();
+
   var feito = {}, voltas = 0;
   function correr() {
     voltas++;
-    [["marca", marca], ["puxadores", puxadores], ["creditos", creditos], ["estado", estado], ["formiga", formiga], ["projectos", projectos], ["editavel", editavel], ["semBug", semBug], ["rosa", rosa], ["arrumar", arrumar], ["projDir", projDir]].forEach(function (f) { if (!feito[f[0]]) { try { feito[f[0]] = f[1](); } catch (e) {} } });
+    [["marca", marca], ["puxadores", puxadores], ["creditos", creditos], ["estado", estado], ["formiga", formiga], ["projectos", projectos], ["editavel", editavel], ["semBug", semBug], ["rosa", rosa], ["arrumar", arrumar], ["projDir", projDir], ["testarEsq", testarEsq]].forEach(function (f) { if (!feito[f[0]]) { try { feito[f[0]] = f[1](); } catch (e) {} } });
     try { nomes(); } catch (e) {}
     try { equipa(); } catch (e) {}
     try { posicoes(); } catch (e) {}
