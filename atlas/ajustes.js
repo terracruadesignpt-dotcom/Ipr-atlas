@@ -571,10 +571,39 @@
   }
   function alerta(card, t) { var m = document.createElement("small"); m.className = "ipe-small mau"; m.textContent = t; var ct = card.querySelector(".ipe-ct"); if (ct) { ct.appendChild(m); setTimeout(function () { m.remove(); }, 5000); } }
 
+  // 18. «Sintetizar» (Nuno, 23/10, 01h44): cada projecto tem a caixa para o escolher; com dois ou três escolhidos aparece uma
+  //     barra no topo do separador Projectos com «Sintetizar», que abre a comparação que já existia (área, relevo, REN, RAN,
+  //     água, fogo). A caixa diz «escolher» e o botão do fundo passa a «Sintetizar os terrenos escolhidos».
+  function sintetizar() {
+    var box = document.getElementById("ipe-proj"); if (!box) return false;
+    function acertar() {
+      [].forEach.call(box.querySelectorAll(".ipc-cmp"), function (l) { var t = l.lastChild; if (t && t.nodeType === 3 && /comparar/.test(t.nodeValue)) t.nodeValue = " escolher"; l.title = "Escolher este terreno para sintetizar (extrair, analisar e comparar) com outros"; });
+      var bt = box.querySelector("[data-comparar]"); if (bt && /Comparar/.test(bt.textContent)) bt.textContent = "Sintetizar os terrenos escolhidos";
+      var n = box.querySelectorAll("[data-cmp-sel]:checked").length, bar = document.getElementById("ipr-sint");
+      if (!bar) {
+        bar = document.createElement("div"); bar.id = "ipr-sint"; bar.className = "ipr-sint"; bar.hidden = true;
+        bar.innerHTML = '<span><b>0</b> escolhidos</span><button type="button" class="ipe-b ipe-b--ac ipe-b--s">Sintetizar</button><button type="button" class="ipr-sint-x" title="Limpar a escolha">×</button>';
+        box.parentNode.insertBefore(bar, box);
+        bar.querySelector(".ipe-b").addEventListener("click", function () { var c = box.querySelector("[data-comparar]"); if (c) c.click(); });
+        bar.querySelector(".ipr-sint-x").addEventListener("click", function () { [].forEach.call(box.querySelectorAll("[data-cmp-sel]:checked"), function (x) { x.checked = false; }); acertar(); });
+      }
+      bar.querySelector("b").textContent = n; bar.hidden = n < 1;
+      var sb = bar.querySelector(".ipe-b"); sb.disabled = n < 2; sb.title = n < 2 ? "Escolha pelo menos dois terrenos (até três)" : "Sintetizar os " + n + " terrenos escolhidos";
+    }
+    if (!box.getAttribute("data-ipr-s")) {
+      box.setAttribute("data-ipr-s", "1");
+      box.addEventListener("change", function (e) { if (e.target.matches && e.target.matches("[data-cmp-sel]")) { if (box.querySelectorAll("[data-cmp-sel]:checked").length > 3) { e.target.checked = false; } acertar(); } });
+      box.addEventListener("click", function (e) { if (e.target.closest && e.target.closest(".ipc-cmp")) e.stopPropagation(); }, true);
+      try { new MutationObserver(acertar).observe(box, { childList: true }); } catch (e) {}
+    }
+    acertar();
+    return true;
+  }
+
   var feito = {}, voltas = 0;
   function correr() {
     voltas++;
-    [["marca", marca], ["puxadores", puxadores], ["creditos", creditos], ["estado", estado], ["formiga", formiga], ["projectos", projectos], ["editavel", editavel], ["semBug", semBug], ["rosa", rosa], ["arrumar", arrumar], ["projDir", projDir], ["testarEsq", testarEsq], ["contaTopo", contaTopo], ["camadasTopo", camadasTopo]].forEach(function (f) { if (!feito[f[0]]) { try { feito[f[0]] = f[1](); } catch (e) {} } });
+    [["marca", marca], ["puxadores", puxadores], ["creditos", creditos], ["estado", estado], ["formiga", formiga], ["projectos", projectos], ["editavel", editavel], ["semBug", semBug], ["rosa", rosa], ["arrumar", arrumar], ["projDir", projDir], ["testarEsq", testarEsq], ["contaTopo", contaTopo], ["camadasTopo", camadasTopo], ["sintetizar", sintetizar]].forEach(function (f) { if (!feito[f[0]]) { try { feito[f[0]] = f[1](); } catch (e) {} } });
     try { nomes(); } catch (e) {}
     try { equipa(); } catch (e) {}
     try { if (window.__iprTodas && !document.getElementById("ipr-todas")) todasBases(); } catch (e) {}

@@ -775,7 +775,6 @@ html.ipe-on .tcdr2-p{max-height:calc(100dvh - 90px)!important;overscroll-behavio
 #ipe-proj .ipe-ct strong{font-size:13px}
 #ipe-proj .ipe-ct .mono{font-size:11px;margin-top:1px}
 #ipe-proj .ipe-card:not(.on) .ipe-ct .mono+.mono{display:none}
-#ipe-proj .ipe-card:not(.on) .ipc-cmp{display:none}
 #ipe-proj .ipe-ct .ipe-est,#ipe-proj .ipe-ct [class*=estado]{transform:scale(.85);transform-origin:left center;margin-top:2px}
 #ipe-proj .ipe-card.on .ipe-cc{grid-template-columns:56px 1fr}
 #ipe-proj .ipe-card.on .ipe-thumb{width:56px;height:56px}
@@ -860,3 +859,10 @@ html.ipe-on .tcdr2-p{max-height:calc(100dvh - 90px)!important;overscroll-behavio
 #ipe .ipr-todas li.k-revisao b::before{content:"● ";color:#d9822b}
 #ipe .ipr-todas li.k-entregue b::before{content:"● ";color:var(--ac)}
 #ipe .ipr-todas-adm{color:var(--mu);text-decoration:none;padding:0 4px}
+/* 23/10, 01h44: «Sintetizar»: caixa de selecção sempre à vista em cada projecto e barra quando há escolhidos */
+#ipe-proj .ipc-cmp{display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--mu);margin-top:2px}
+#ipe .ipr-sint{position:sticky;top:0;z-index:3;display:flex;align-items:center;gap:8px;margin:0 0 8px;padding:7px 10px;border:1px solid var(--ac);border-radius:6px;background:var(--p1);font:12.5px Inter,system-ui,sans-serif;color:var(--tx);box-shadow:0 2px 8px rgba(0,0,0,.12)}
+#ipe .ipr-sint[hidden]{display:none}
+#ipe .ipr-sint b{font-weight:600}
+#ipe .ipr-sint button{margin-left:auto}
+#ipe .ipr-sint .ipr-sint-x{margin-left:0;border:0;background:none;color:var(--mu);cursor:pointer;font-size:15px}
