@@ -770,9 +770,44 @@
     u.parentNode.insertBefore(a, u);
     return true;
   }
+  // 23. «Abrir no QField» com QR e nota sobre o que funciona sem rede (compilação do Ecossistema IPR, §15; Nuno, 23/10/2026).
+  // Acrescenta ao separador Cloud (cloud.js, sem o alterar), em cada terreno: um QR para abrir o terreno no telemóvel ou
+  // no tablet (o Atlas, com sessão, mostra lá os mesmos passos) e o QR do endereço do servidor, para não ter de o escrever.
+  var QRLIB = "https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js";
+  function qrSvg(txt) {
+    try { var q = window.qrcode(0, "M"); q.addData(txt); q.make(); return q.createSvgTag({ cellSize: 3, margin: 2, scalable: true }); } catch (e) { return ""; }
+  }
+  function qfieldQR() {
+    if (!window.tcdNonce) return true;
+    var srvs = document.querySelectorAll(".ipc-srv:not([data-ipr-qr])"); if (!srvs.length) return false;
+    function aplicar() {
+      document.querySelectorAll(".ipc-srv:not([data-ipr-qr])").forEach(function (srv) {
+        srv.setAttribute("data-ipr-qr", "1");
+        var corpo = srv.closest(".ipc-corpo") || srv.parentNode, cod = srv.querySelector("code"), servidor = cod ? cod.textContent.trim() : "";
+        var a = corpo.querySelector(".ipc-acc a[href]"), mapa = a ? new URL(a.getAttribute("href"), location.origin).href : location.origin + "/atlas/";
+        var box = document.createElement("div"); box.className = "ipr-qf";
+        box.innerHTML = '<div class="ipr-qf-qr"><figure>' + qrSvg(mapa) + '<figcaption>Abrir este terreno no telemóvel</figcaption></figure>' +
+          (servidor ? '<figure>' + qrSvg(servidor) + '<figcaption>Endereço do servidor</figcaption></figure>' : "") + '</div>' +
+          '<p class="ipr-qf-nota"><b>Sem rede no terreno:</b> o QField guarda o projecto no aparelho. Funcionam sem rede as camadas da Base, os seus desenhos, pontos, fotografias e notas; ' +
+          'sincronize quando voltar a ter rede. As camadas vindas de serviços externos (cadastro, ortofotos, condicionantes por WMS) precisam de rede. ' +
+          'Importar o pacote .zip é uma cópia, não sincroniza; para trabalhar em equipa, entre pela IPR Cloud.</p>';
+        srv.parentNode.insertBefore(box, srv.nextSibling);
+      });
+    }
+    if (window.qrcode) { aplicar(); }
+    else if (!window.__iprQrLib) {
+      window.__iprQrLib = 1; var s = document.createElement("script"); s.src = QRLIB; s.crossOrigin = "anonymous";
+      s.onload = aplicar; document.head.appendChild(s);
+    }
+    if (!window.__iprQrObs) { // o cloud.js redesenha a lista: voltar a aplicar
+      window.__iprQrObs = 1;
+      new MutationObserver(function () { if (window.qrcode && document.querySelector(".ipc-srv:not([data-ipr-qr])")) aplicar(); }).observe(document.body, { childList: true, subtree: true });
+    }
+    return true;
+  }
   function correr() {
     voltas++;
-    [["marca", marca], ["puxadores", puxadores], ["creditos", creditos], ["estado", estado], ["formiga", formiga], ["projectos", projectos], ["editavel", editavel], ["semBug", semBug], ["rosa", rosa], ["arrumar", arrumar], ["projDir", projDir], ["testarEsq", testarEsq], ["contaTopo", contaTopo], ["camadasTopo", camadasTopo], ["sintetizar", sintetizar], ["opcoesCamadas", opcoesCamadas], ["projFechados", projFechados], ["todasMais", todasMais], ["painelTopo", painelTopo]].forEach(function (f) { if (!feito[f[0]]) { try { feito[f[0]] = f[1](); } catch (e) {} } });
+    [["marca", marca], ["puxadores", puxadores], ["creditos", creditos], ["estado", estado], ["formiga", formiga], ["projectos", projectos], ["editavel", editavel], ["semBug", semBug], ["rosa", rosa], ["arrumar", arrumar], ["projDir", projDir], ["testarEsq", testarEsq], ["contaTopo", contaTopo], ["camadasTopo", camadasTopo], ["sintetizar", sintetizar], ["opcoesCamadas", opcoesCamadas], ["projFechados", projFechados], ["todasMais", todasMais], ["painelTopo", painelTopo], ["qfieldQR", qfieldQR]].forEach(function (f) { if (!feito[f[0]]) { try { feito[f[0]] = f[1](); } catch (e) {} } });
     try { nomes(); } catch (e) {}
     try { equipa(); } catch (e) {}
     try { if (window.__iprTodas && !document.getElementById("ipr-todas")) todasBases(); } catch (e) {}
