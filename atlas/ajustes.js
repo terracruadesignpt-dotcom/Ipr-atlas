@@ -456,10 +456,38 @@
     document.addEventListener("mouseout", function (e) { if (tip && e.target.closest && e.target.closest("#ipe .ipe-tools button, #ipe .maplibregl-ctrl button, #ipe .ipe-rosa")) tip.classList.remove("on"); });
   })();
 
+  // 17. Canto superior direito = conta e ecrã (Nuno, 23/10, 01h17): o separador «Conta» sai do painel da direita e abre-se no
+  //     nome da pessoa, lá em cima; o botão «Camadas» do topo desaparece no computador (as camadas já estão sempre na barra da
+  //     esquerda). No telemóvel e no iPad ao alto o botão fica, porque é ele que abre as camadas.
+  function contaTopo() {
+    var u = document.getElementById("ipe-user"), tab = document.querySelector('#ipe-tabs .ipe-tab[data-tab="conta"]'), corpo = document.getElementById("ipe-conta");
+    if (!u || !tab || !corpo) return !window.tcdNonce;
+    if (u.getAttribute("data-ipr")) return true;
+    u.setAttribute("data-ipr", "1"); tab.style.display = "none"; u.title = "A sua conta: dados, facturação e guardados";
+    var pop = document.createElement("div"); pop.className = "ipr-userpop"; pop.hidden = true; pop.appendChild(corpo); document.body.appendChild(pop);
+    function fechar() { pop.hidden = true; }
+    u.addEventListener("click", function (e) {
+      if (e.ctrlKey || e.metaKey || e.shiftKey) return; e.preventDefault(); e.stopPropagation();
+      if (!pop.hidden) { fechar(); return; }
+      if (!corpo.getAttribute("data-ipr-c")) { // o app.js só preenche a conta quando se abre o separador: abre-o e volta ao que estava
+        corpo.setAttribute("data-ipr-c", "1"); var act = document.querySelector('#ipe-tabs .ipe-tab[aria-selected="true"]'); tab.click(); if (act && act !== tab) setTimeout(function () { act.click(); }, 30);
+      }
+      var r = u.getBoundingClientRect(); pop.style.top = Math.round(r.bottom + 8) + "px"; pop.style.right = Math.max(8, Math.round(window.innerWidth - r.right - 40)) + "px"; pop.hidden = false;
+    });
+    document.addEventListener("click", function (e) { if (!pop.hidden && !pop.contains(e.target) && e.target !== u) fechar(); });
+    document.addEventListener("keydown", function (e) { if (e.key === "Escape") fechar(); });
+    return true;
+  }
+  function camadasTopo() {
+    var b = document.getElementById("ipe-camadas"), ipe = document.getElementById("ipe"); if (!b || !ipe) return false;
+    if (desk()) { if (ipe.classList.contains("sem-esq")) b.click(); b.classList.add("ipr-so-movel"); }
+    return true;
+  }
+
   var feito = {}, voltas = 0;
   function correr() {
     voltas++;
-    [["marca", marca], ["puxadores", puxadores], ["creditos", creditos], ["estado", estado], ["formiga", formiga], ["projectos", projectos], ["editavel", editavel], ["semBug", semBug], ["rosa", rosa], ["arrumar", arrumar], ["projDir", projDir], ["testarEsq", testarEsq]].forEach(function (f) { if (!feito[f[0]]) { try { feito[f[0]] = f[1](); } catch (e) {} } });
+    [["marca", marca], ["puxadores", puxadores], ["creditos", creditos], ["estado", estado], ["formiga", formiga], ["projectos", projectos], ["editavel", editavel], ["semBug", semBug], ["rosa", rosa], ["arrumar", arrumar], ["projDir", projDir], ["testarEsq", testarEsq], ["contaTopo", contaTopo], ["camadasTopo", camadasTopo]].forEach(function (f) { if (!feito[f[0]]) { try { feito[f[0]] = f[1](); } catch (e) {} } });
     try { nomes(); } catch (e) {}
     try { equipa(); } catch (e) {}
     try { posicoes(); } catch (e) {}
