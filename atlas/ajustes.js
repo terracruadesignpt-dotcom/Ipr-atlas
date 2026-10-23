@@ -1113,9 +1113,197 @@
     window.__iprFichas = 1;
     return true;
   }
+  // 27. Parcelas candidatas a partir de um ponto (compilação do Ecossistema IPR, §13; Nuno, 24/10/2026).
+  // Depois de «A minha localização» (GeolocateControl do m90287), de um toque longo no mapa ou do botão «Parcelas aqui», liga
+  // a ferramenta «Escolher parcelas» do próprio Atlas, espera pelas parcelas do cadastro (fonte ipe-cadv) e destaca como
+  // candidatas: a parcela que contém o ponto (forte), o primeiro anel de contíguas (médio) e o segundo anel (discreto).
+  // Não selecciona nada sozinho: tocar numa candidata usa a ferramenta do Atlas (O.on("click", He) no app.js), por isso
+  // juntar e tirar funciona como sempre. «Juntar a do ponto» dispara esse mesmo clique no interior da parcela.
+  // Aviso fixo: «São candidatas, não identificam a propriedade; confirme os limites.» Não edita o app.js.
+  function parcelasPonto() {
+    var M = window.__ipe && window.__ipe.mapa; if (!M || !M.getStyle) return false;
+    if (window.__iprPP) return true; window.__iprPP = 1;
+    var TOL = 6e-6, AVISO = "São candidatas, não identificam a propriedade; confirme os limites.", alvo = null, caixa = null;
+
+    function feats() {
+      var s = M.getSource("ipe-cadv"); if (!s) return [];
+      try { var d = s.serialize && s.serialize().data; if (d && d.features) return d.features; } catch (e) {}
+      try { return M.querySourceFeatures("ipe-cadv"); } catch (e) { return []; }
+    }
+    function aneis(g) { return !g ? [] : g.type === "Polygon" ? [g.coordinates] : g.type === "MultiPolygon" ? g.coordinates : []; }
+    function dentro(p, g) {
+      return aneis(g).some(function (poly) {
+        var r = poly[0], c = false;
+        for (var i = 0, j = r.length - 1; i < r.length; j = i++) {
+          if (((r[i][1] > p[1]) !== (r[j][1] > p[1])) && (p[0] < (r[j][0] - r[i][0]) * (p[1] - r[i][1]) / (r[j][1] - r[i][1]) + r[i][0])) c = !c;
+        }
+        return c;
+      });
+    }
+    function caixaDe(g) { var b = [1e9, 1e9, -1e9, -1e9]; aneis(g).forEach(function (p) { p[0].forEach(function (v) { b[0] = Math.min(b[0], v[0]); b[1] = Math.min(b[1], v[1]); b[2] = Math.max(b[2], v[0]); b[3] = Math.max(b[3], v[1]); }); }); return b; }
+    function dSeg(p, a, b) {
+      var dx = b[0] - a[0], dy = b[1] - a[1], l = dx * dx + dy * dy, t = l ? ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / l : 0;
+      t = Math.max(0, Math.min(1, t)); var x = a[0] + t * dx - p[0], y = a[1] + t * dy - p[1]; return Math.sqrt(x * x + y * y);
+    }
+    function tocam(f1, f2) { // vizinhas: algum vértice de uma a menos de TOL de um lado da outra
+      var b1 = f1.__b || (f1.__b = caixaDe(f1.geometry)), b2 = f2.__b || (f2.__b = caixaDe(f2.geometry));
+      if (b1[0] > b2[2] + TOL || b2[0] > b1[2] + TOL || b1[1] > b2[3] + TOL || b2[1] > b1[3] + TOL) return false;
+      function teste(a, b) {
+        var vs = []; aneis(a.geometry).forEach(function (p) { vs = vs.concat(p[0]); });
+        var rb = aneis(b.geometry);
+        for (var i = 0; i < vs.length; i += 1) for (var k = 0; k < rb.length; k++) { var r = rb[k][0]; for (var j = 0; j < r.length - 1; j++) if (dSeg(vs[i], r[j], r[j + 1]) < TOL) return true; }
+        return false;
+      }
+      return teste(f1, f2) || teste(f2, f1);
+    }
+    function interior(g) {
+      var b = caixaDe(g), c = [(b[0] + b[2]) / 2, (b[1] + b[3]) / 2]; if (dentro(c, g)) return c;
+      for (var i = 1; i < 8; i++) for (var j = 1; j < 8; j++) { var q = [b[0] + (b[2] - b[0]) * i / 8, b[1] + (b[3] - b[1]) * j / 8]; if (dentro(q, g)) return q; }
+      return c;
+    }
+    function ref(f) { return (f.properties && f.properties.ref) || f.id; }
+
+    function desenhar(ponto) {
+      var fs = feats(); if (!fs.length) return false;
+      var base = null; fs.some(function (f) { if (dentro(ponto, f.geometry)) { base = f; return true; } return false; });
+      if (!base) return false;
+      var a1 = fs.filter(function (f) { return ref(f) !== ref(base) && tocam(base, f); });
+      var vistos = {}; vistos[ref(base)] = 1; a1.forEach(function (f) { vistos[ref(f)] = 1; });
+      var a2 = []; a1.forEach(function (n) { fs.forEach(function (f) { if (!vistos[ref(f)] && tocam(n, f)) { vistos[ref(f)] = 1; a2.push(f); } }); });
+      var out = [{ type: "Feature", properties: { anel: 0, ref: ref(base) }, geometry: base.geometry }]
+        .concat(a1.map(function (f) { return { type: "Feature", properties: { anel: 1, ref: ref(f) }, geometry: f.geometry }; }))
+        .concat(a2.map(function (f) { return { type: "Feature", properties: { anel: 2, ref: ref(f) }, geometry: f.geometry }; }));
+      var d = { type: "FeatureCollection", features: out };
+      if (M.getSource("ipr-cand")) M.getSource("ipr-cand").setData(d);
+      else {
+        M.addSource("ipr-cand", { type: "geojson", data: d });
+        M.addLayer({ id: "ipr-cand-f", type: "fill", source: "ipr-cand", paint: { "fill-color": "#f0c24b", "fill-opacity": ["match", ["get", "anel"], 0, 0.35, 1, 0.18, 0.06] } });
+        M.addLayer({ id: "ipr-cand-l", type: "line", source: "ipr-cand", paint: { "line-color": "#f0c24b", "line-width": ["match", ["get", "anel"], 0, 3, 1, 1.8, 0.8], "line-dasharray": [2, 1.5], "line-opacity": ["match", ["get", "anel"], 2, 0.5, 1] } });
+      }
+      alvo = { ponto: ponto, base: base };
+      mostrarCaixa(1 + a1.length + a2.length);
+      return true;
+    }
+    function limpar() {
+      try { if (M.getLayer("ipr-cand-l")) M.removeLayer("ipr-cand-l"); if (M.getLayer("ipr-cand-f")) M.removeLayer("ipr-cand-f"); if (M.getSource("ipr-cand")) M.removeSource("ipr-cand"); } catch (e) {}
+      if (caixa) caixa.hidden = true; alvo = null;
+    }
+    function mostrarCaixa(n) {
+      if (!caixa) {
+        caixa = document.createElement("div"); caixa.className = "ipr-pp";
+        caixa.innerHTML = '<p class="ipr-pp-av"></p><p class="ipr-pp-n"></p><div class="ipr-pp-b"><button type="button" class="ipe-b ipe-b--s ipe-b--ac" data-pp="juntar">Juntar a do ponto</button><button type="button" class="ipe-b ipe-b--s" data-pp="fechar">Fechar</button></div>';
+        caixa.querySelector(".ipr-pp-av").textContent = AVISO;
+        caixa.addEventListener("click", function (e) {
+          var b = e.target.closest("[data-pp]"); if (!b) return;
+          if (b.dataset.pp === "fechar") { limpar(); return; }
+          if (b.dataset.pp === "juntar" && alvo) clicar(interior(alvo.base.geometry));
+        });
+        (M.getContainer() || document.body).appendChild(caixa);
+      }
+      caixa.querySelector(".ipr-pp-n").textContent = n + (n === 1 ? " parcela candidata" : " parcelas candidatas") + ". Toque numa parcela para a juntar ou tirar.";
+      caixa.hidden = false;
+    }
+    function clicar(ll) { // o mesmo clique que a ferramenta «Escolher parcelas» trata (He)
+      try { var p = M.project(ll); M.fire("click", { lngLat: new maplibregl.LngLat(ll[0], ll[1]), point: p, originalEvent: { type: "click" } }); } catch (e) {}
+    }
+    function ferramenta() {
+      var b = document.querySelector('#ipe [data-tool="parcelas"]') || document.querySelector('[data-guia="parcelas"]');
+      if (b && b.getAttribute("aria-pressed") !== "true") b.click();
+      return !!b;
+    }
+    function partir(ll) {
+      if (!ll) return; var ponto = [ll.lng, ll.lat];
+      if (M.getZoom() < 16) M.flyTo({ center: ll, zoom: 16.5, duration: 900 });
+      ferramenta();
+      var t = 0; (function espera() {
+        if (desenhar(ponto)) return;
+        if (++t < 24) setTimeout(espera, 500); // até 12 s pelas parcelas do cadastro
+      })();
+    }
+
+    // Origem 1: «A minha localização» (controlo do MapLibre que o m90287 junta ao mapa).
+    function ligarGeo() {
+      var cs = (M._controls || []).filter(function (c) { return window.maplibregl && c instanceof maplibregl.GeolocateControl; });
+      cs.forEach(function (c) { if (c.__iprPP) return; c.__iprPP = 1; c.on("geolocate", function (e) { if (e && e.coords) partir({ lng: e.coords.longitude, lat: e.coords.latitude }); }); });
+      return cs.length > 0;
+    }
+    if (!ligarGeo()) { var n = 0; (function de() { if (!ligarGeo() && ++n < 30) setTimeout(de, 1000); })(); }
+    // Origem 2: toque longo (650 ms sem mexer) ou clique longo com o rato.
+    var lp = null, lpFeito = 0;
+    function inicio(e) { if (e.originalEvent && e.originalEvent.touches && e.originalEvent.touches.length > 1) return; var ll = e.lngLat, pt = e.point; lp = { pt: pt, t: setTimeout(function () { lp = null; lpFeito = Date.now(); partir(ll); }, 650) }; }
+    // O clique que o rato larga no fim do toque longo não deve juntar a parcela à selecção: pára-o antes de chegar ao mapa.
+    M.getContainer().addEventListener("click", function (e) { if (lpFeito && Date.now() - lpFeito < 2000 && !e.target.closest(".ipr-pp")) { e.stopPropagation(); } lpFeito = 0; }, true);
+    function mexe(e) { if (lp && (Math.abs(e.point.x - lp.pt.x) > 8 || Math.abs(e.point.y - lp.pt.y) > 8)) { clearTimeout(lp.t); lp = null; } }
+    function fim() { if (lp) { clearTimeout(lp.t); lp = null; } }
+    M.on("touchstart", inicio); M.on("touchmove", mexe); M.on("touchend", fim); M.on("touchcancel", fim);
+    M.on("mousedown", inicio); M.on("mousemove", mexe); M.on("mouseup", fim); M.on("dragstart", fim);
+    // Origem 3: botão «Parcelas aqui» (centro do mapa, por exemplo depois de uma pesquisa de lugar).
+    var tr = document.querySelector("#ipe .maplibregl-ctrl-top-right");
+    if (tr && !document.getElementById("ipr-pp-aqui")) {
+      var g = document.createElement("div"); g.className = "maplibregl-ctrl maplibregl-ctrl-group";
+      g.innerHTML = '<button type="button" id="ipr-pp-aqui" title="Parcelas aqui: candidatas no centro do mapa" aria-label="Parcelas aqui"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z"/><circle cx="12" cy="12" r="2" fill="currentColor"/></svg></button>';
+      g.querySelector("button").addEventListener("click", function () { partir(M.getCenter()); });
+      tr.appendChild(g);
+    }
+    // Ao sair da ferramenta «Escolher parcelas», as candidatas desaparecem.
+    document.addEventListener("click", function (e) {
+      var b = e.target.closest && e.target.closest('[data-tool]'); if (!b || !alvo) return;
+      setTimeout(function () { var p = document.querySelector('#ipe [data-tool="parcelas"]'); if (p && p.getAttribute("aria-pressed") !== "true") limpar(); }, 50);
+    }, true);
+    return true;
+  }
+  // 28. «Partilhar esta vista» com QR e, para o Intelligence e as organizações, «Incorporar no meu site» (compilação do
+  // Ecossistema IPR, §35; Nuno, 24/10/2026). Não altera o app.js: quando a janela de partilha abre (campo #ipe-sh-u),
+  // acrescenta por baixo o QR da mesma ligação (qrcode-generator, como no §23) e, só quando window.IPR_NIVEL é
+  // «intelligence» ou window.IPR_ORG é verdadeiro (m90336), o código de um iframe para /atlas/?incorporar=1. A versão
+  // incorporada corre sempre como visitante (m90336): só camadas do Explorer, sem o terreno do cliente (mapa= sai).
+  function partilhaQR() {
+    function embedUrl(u) {
+      // Sem URLSearchParams: mantém as vírgulas de v= e c= tal como o Atlas as escreve e lê.
+      var p = String(u).split("#")[0].split("?"), q = (p[1] || "").split("&").filter(function (k) { return k && !/^(mapa|tour|embed|incorporar)=/.test(k); });
+      q.push("incorporar=1"); return p[0] + "?" + q.join("&");
+    }
+    function esc(t) { return String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
+    function aplicar() {
+      var inp = document.getElementById("ipe-sh-u"); if (!inp || inp.getAttribute("data-ipr-qr") === inp.value) return;
+      inp.setAttribute("data-ipr-qr", inp.value);
+      var caixa = inp.parentNode, velho = caixa.querySelector(".ipr-shq"); if (velho) velho.remove();
+      var pode = window.IPR_NIVEL === "intelligence" || window.IPR_ORG === true;
+      var el = document.createElement("div"); el.className = "ipr-shq";
+      var h = '<figure class="ipr-shq-qr">' + (window.qrcode ? qrSvg(inp.value) : "") + '<figcaption>Apontar a câmara do telemóvel para abrir esta vista</figcaption></figure>';
+      if (pode) {
+        var cod = '<iframe src="' + esc(embedUrl(inp.value)) + '" width="100%" height="480" style="border:0" loading="lazy" allow="fullscreen" title="IPR Atlas"></iframe>';
+        h += '<div class="ipr-shq-emb"><b>Incorporar no meu site</b><p>Cole este código na sua página. Mostra só as camadas públicas (Explorer), nunca o limite do terreno nem dados dos projectos.</p>' +
+          '<textarea class="ipe-in mono" id="ipr-shq-cod" readonly rows="3">' + esc(cod) + '</textarea>' +
+          '<button type="button" class="ipe-b ipe-b--s" data-ipr-emb="copiar">Copiar código</button> <small class="ipe-small bom" id="ipr-shq-m"></small></div>';
+      }
+      el.innerHTML = h;
+      var acc = caixa.querySelector(".ipe-acc"); caixa.insertBefore(el, acc ? acc.nextSibling : null);
+      var b = el.querySelector('[data-ipr-emb="copiar"]');
+      if (b) b.addEventListener("click", function (e) {
+        e.stopPropagation(); var t = document.getElementById("ipr-shq-cod"), m = document.getElementById("ipr-shq-m");
+        function ok() { if (m) m.textContent = "Código copiado."; }
+        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t.value).then(ok, function () { t.select(); try { document.execCommand("copy"); ok(); } catch (x) {} });
+        else { t.select(); try { document.execCommand("copy"); ok(); } catch (x) {} }
+      });
+    }
+    function carregar(f) {
+      if (window.qrcode) return f();
+      if (!window.__iprQrLib) { window.__iprQrLib = 1; var s = document.createElement("script"); s.src = QRLIB; s.crossOrigin = "anonymous"; s.onload = function () { window.__iprQrOk = 1; f(); }; document.head.appendChild(s); }
+      else { var n = 0; (function e() { if (window.qrcode) f(); else if (++n < 40) setTimeout(e, 250); })(); }
+    }
+    if (window.IPR_EMBED) return true;
+    if (!window.__iprShqObs) {
+      window.__iprShqObs = 1;
+      new MutationObserver(function () {
+        var i = document.getElementById("ipe-sh-u"); if (i && i.getAttribute("data-ipr-qr") !== i.value) carregar(aplicar);
+      }).observe(document.body, { childList: true, subtree: true });
+    }
+    return true;
+  }
   function correr() {
     voltas++;
-    [["marca", marca], ["puxadores", puxadores], ["creditos", creditos], ["estado", estado], ["formiga", formiga], ["projectos", projectos], ["editavel", editavel], ["semBug", semBug], ["rosa", rosa], ["arrumar", arrumar], ["projDir", projDir], ["testarEsq", testarEsq], ["contaTopo", contaTopo], ["camadasTopo", camadasTopo], ["sintetizar", sintetizar], ["opcoesCamadas", opcoesCamadas], ["projFechados", projFechados], ["todasMais", todasMais], ["painelTopo", painelTopo], ["qfieldQR", qfieldQR], ["temas", temas], ["natural", natural], ["aprenderDesenho", aprenderDesenho], ["fichas", fichasCamada]].forEach(function (f) { if (!feito[f[0]]) { try { feito[f[0]] = f[1](); } catch (e) {} } });
+    [["marca", marca], ["puxadores", puxadores], ["creditos", creditos], ["estado", estado], ["formiga", formiga], ["projectos", projectos], ["editavel", editavel], ["semBug", semBug], ["rosa", rosa], ["arrumar", arrumar], ["projDir", projDir], ["testarEsq", testarEsq], ["contaTopo", contaTopo], ["camadasTopo", camadasTopo], ["sintetizar", sintetizar], ["opcoesCamadas", opcoesCamadas], ["projFechados", projFechados], ["todasMais", todasMais], ["painelTopo", painelTopo], ["qfieldQR", qfieldQR], ["temas", temas], ["natural", natural], ["aprenderDesenho", aprenderDesenho], ["fichas", fichasCamada], ["parcelas", parcelasPonto], ["partilhaQR", partilhaQR]].forEach(function (f) { if (!feito[f[0]]) { try { feito[f[0]] = f[1](); } catch (e) {} } });
     try { nomes(); } catch (e) {}
     try { equipa(); } catch (e) {}
     try { if (window.__iprTodas && !document.getElementById("ipr-todas")) todasBases(); } catch (e) {}

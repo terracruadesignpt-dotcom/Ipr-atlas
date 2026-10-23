@@ -942,3 +942,18 @@ html.ipe-on body #tcdfmb.ipr-fm-dir{z-index:20!important}
 .ipr-ficha-est--d{color:#2f6b3a}.ipr-ficha-est--x{color:#9a6200}.ipr-ficha-est--p{color:var(--mu,#6b6a66)}
 .ipr-ficha-p{margin:10px 0 0;padding-top:8px;border-top:1px solid var(--ln,#e3e0d8);color:var(--mu,#6b6a66);font-size:11px}
 @media (max-width:600px){.ipr-ficha{left:8px;right:8px;bottom:8px;width:auto;max-height:60vh}}
+
+/* 27. Parcelas candidatas (s13-parcelas.js) e 28. QR e incorporação na partilha (s35-partilha.js), 24/10/2026. */
+.ipr-pp{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);z-index:5;max-width:min(420px,calc(100% - 32px));background:var(--ipe-bg,#fff);color:var(--ipe-tx,#1d1d1b);border:1px solid rgba(0,0,0,.12);border-radius:8px;box-shadow:0 4px 18px rgba(0,0,0,.18);padding:10px 12px;font-size:13px;line-height:1.4}
+.ipr-pp[hidden]{display:none}
+.ipr-pp p{margin:0 0 6px}
+.ipr-pp-av{font-weight:600;color:#8a5a00}
+.ipr-pp-b{display:flex;gap:8px;flex-wrap:wrap}
+.ipr-shq{display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap;margin-top:10px;padding-top:10px;border-top:1px solid rgba(127,127,127,.25)}
+.ipr-shq-qr{margin:0;width:132px;text-align:center}
+.ipr-shq-qr svg{width:132px;height:132px;background:#fff;border-radius:4px}
+.ipr-shq-qr figcaption{font-size:11px;opacity:.75;margin-top:4px}
+.ipr-shq-emb{flex:1 1 220px;min-width:0}
+.ipr-shq-emb p{margin:4px 0 6px;font-size:12px;opacity:.8}
+.ipr-shq-emb textarea{width:100%;box-sizing:border-box;font-size:11px;resize:vertical}
+@media (prefers-color-scheme:dark){.ipr-pp{background:var(--ipe-bg,#1e1e1b);color:var(--ipe-tx,#ecebe6);border-color:rgba(255,255,255,.14)}.ipr-pp-av{color:#e2b26b}}
