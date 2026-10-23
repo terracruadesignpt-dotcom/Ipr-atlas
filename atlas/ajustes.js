@@ -678,10 +678,41 @@
     return false; // continua a correr: a árvore pode ser criada de novo (outro modo, outra Base)
   }
 
+  // 20. Projectos fechados à partida, como as categorias de camadas à esquerda (Nuno, 23/10, 03h06): o projecto aberto no
+  //     mapa deixava o cartão estendido e era preciso descer duas vezes para ver os outros. Agora todos começam fechados; o
+  //     que está no mapa fica marcado (ipr-actual). Clicar no cartão do projecto aberto estende-o ou fecha-o; clicar noutro
+  //     abre-o no mapa, como antes, e esse fica estendido.
+  var projAbrir = null;
+  function projFechados() {
+    var box = document.getElementById("ipe-proj"); if (!box) return false;
+    function acertar() {
+      [].forEach.call(box.querySelectorAll(".ipe-card[data-i]"), function (c) {
+        if (c.getAttribute("data-ipr-f")) return;
+        c.setAttribute("data-ipr-f", "1");
+        var actual = c.classList.contains("on");
+        c.classList.toggle("ipr-actual", actual);
+        if (actual && projAbrir !== c.dataset.i) c.classList.remove("on");
+      });
+      projAbrir = null;
+    }
+    if (!box.getAttribute("data-ipr-pf")) {
+      box.setAttribute("data-ipr-pf", "1");
+      box.addEventListener("click", function (e) {
+        if (!e.target.closest || e.target.closest(".ipe-cx") || e.target.closest(".ipc-cmp") || e.target.closest("button,a,input,label")) return;
+        var c = e.target.closest(".ipe-card[data-i]"); if (!c) return;
+        if (c.classList.contains("ipr-actual")) { e.stopPropagation(); c.classList.toggle("on"); return; }
+        projAbrir = c.dataset.i;
+      }, true);
+      try { new MutationObserver(acertar).observe(box, { childList: true, subtree: true }); } catch (e) {}
+    }
+    acertar();
+    return true;
+  }
+
   var feito = {}, voltas = 0;
   function correr() {
     voltas++;
-    [["marca", marca], ["puxadores", puxadores], ["creditos", creditos], ["estado", estado], ["formiga", formiga], ["projectos", projectos], ["editavel", editavel], ["semBug", semBug], ["rosa", rosa], ["arrumar", arrumar], ["projDir", projDir], ["testarEsq", testarEsq], ["contaTopo", contaTopo], ["camadasTopo", camadasTopo], ["sintetizar", sintetizar], ["opcoesCamadas", opcoesCamadas]].forEach(function (f) { if (!feito[f[0]]) { try { feito[f[0]] = f[1](); } catch (e) {} } });
+    [["marca", marca], ["puxadores", puxadores], ["creditos", creditos], ["estado", estado], ["formiga", formiga], ["projectos", projectos], ["editavel", editavel], ["semBug", semBug], ["rosa", rosa], ["arrumar", arrumar], ["projDir", projDir], ["testarEsq", testarEsq], ["contaTopo", contaTopo], ["camadasTopo", camadasTopo], ["sintetizar", sintetizar], ["opcoesCamadas", opcoesCamadas], ["projFechados", projFechados]].forEach(function (f) { if (!feito[f[0]]) { try { feito[f[0]] = f[1](); } catch (e) {} } });
     try { nomes(); } catch (e) {}
     try { equipa(); } catch (e) {}
     try { if (window.__iprTodas && !document.getElementById("ipr-todas")) todasBases(); } catch (e) {}
