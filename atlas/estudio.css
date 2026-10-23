@@ -760,3 +760,31 @@ html.ipe-on .tcdr2-p{max-height:calc(100dvh - 90px)!important;overscroll-behavio
 #ipe .ipr-loc-dir{margin:0 0 12px}
 #ipe .ipr-loc-dir>.ipr-gc{display:none}
 #ipe .tme-dir{margin:0 0 12px}
+/* 23/10, 01h03: separadores como pastas de dossiê. O separador activo continua o painel (mesma cor, sem linha por baixo);
+   os outros ficam atrás, sobre a faixa mais escura, separados do painel pela linha. */
+#ipe .ipe-tabs{background:var(--p3);border-bottom:0;box-shadow:inset 0 -1px 0 var(--ln2)}
+#ipe .ipe-tab{margin-bottom:0}
+#ipe .ipe-tab[aria-selected=true]{background:var(--p1);border-color:var(--ln2);border-bottom:0;box-shadow:none}
+#ipe .ipe-tab[aria-selected=true]::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;background:var(--p1)}
+#ipe .ipe-tab:not([aria-selected=true]):hover{background:color-mix(in srgb,var(--p1) 55%,var(--p3))}
+/* Projectos em linhas curtas (como as camadas da esquerda); abre-se um para ver tudo. */
+#ipe-proj .ipr-oculto-h{display:none}
+#ipe-proj .ipe-cards{gap:4px}
+#ipe-proj .ipe-cc{grid-template-columns:38px 1fr;gap:9px;padding:6px 8px;align-items:center}
+#ipe-proj .ipe-thumb{width:38px;height:38px;border-radius:3px}
+#ipe-proj .ipe-ct strong{font-size:13px}
+#ipe-proj .ipe-ct .mono{font-size:11px;margin-top:1px}
+#ipe-proj .ipe-card:not(.on) .ipe-ct .mono+.mono{display:none}
+#ipe-proj .ipe-card:not(.on) .ipc-cmp{display:none}
+#ipe-proj .ipe-ct .ipe-est,#ipe-proj .ipe-ct [class*=estado]{transform:scale(.85);transform-origin:left center;margin-top:2px}
+#ipe-proj .ipe-card.on .ipe-cc{grid-template-columns:56px 1fr}
+#ipe-proj .ipe-card.on .ipe-thumb{width:56px;height:56px}
+/* Camadas da Base: botões pequenos e juntos */
+#ipe-proj .ipe-basecam{padding:8px 10px;margin:4px 0 8px}
+#ipe-proj .ipe-basecam .ipe-h{font-size:12.5px;margin:0 0 6px}
+#ipe-proj .ipe-chips{display:flex;flex-wrap:wrap;gap:4px}
+#ipe-proj .ipe-chips>*{font-size:11.5px!important;padding:3px 8px!important;line-height:1.3!important;min-height:0!important;border-radius:11px!important}
+/* Ficha do terreno na lista de ficheiros (equipa) */
+#ipe-proj .ipr-ficha-eq{display:none}
+#ipe-proj .ipr-ficha-eq [data-res-out]{display:block}
+#ipe-proj .ipr-ficha-out{margin:6px 0 4px}

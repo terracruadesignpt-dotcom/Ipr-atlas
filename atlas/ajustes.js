@@ -14,7 +14,8 @@
    12. Roda do rato sobre a rosa dos ventos inclina a vista (3D).
    13. Caderneta predial em PDF: lê o artigo e a freguesia e leva o mapa ao terreno.
    14. Equipa: «Processar» sem formulário de cliente (dados da sessão, via m90297).
-   15. Barra da esquerda só com Pesquisar e Camadas; projectos e «Comece aqui» no painel da direita. */
+   15. Barra da esquerda só com Pesquisar e Camadas; projectos e «Comece aqui» no painel da direita.
+   16. Separador Projectos: sem título repetido, projectos em linhas curtas, ficha do terreno na lista de ficheiros (equipa). */
 (function () {
   "use strict";
   var SIGLA = "https://cdn.jsdelivr.net/gh/terracruadesignpt-dotcom/Ipr-atlas@3c382ba8826863c1dc0de2142ba8c2c5038e532b/atlas/marca/ipr-sigla.png";
@@ -389,10 +390,34 @@
     return true;
   }
 
+  // 16. Separador Projectos (Nuno, 23/10, 01h03): sem o título «Os seus projectos» (redundante com o separador); projectos em
+  //     linhas curtas que se abrem; para a equipa, a ficha do terreno passa para a lista de ficheiros, com «Abrir».
+  //     O app.js redesenha a lista; um observador volta a aplicar. A ficha continua a ser a mesma (mesmo botão, escondido).
+  function projDir() {
+    var box = document.getElementById("ipe-proj"); if (!box) return false;
+    function aplicar() {
+      [].forEach.call(box.querySelectorAll("h3.ipe-h"), function (h) { if (/^Os seus projectos/.test((h.textContent || "").trim())) h.classList.add("ipr-oculto-h"); });
+      if (!window.tcdEquipa) return;
+      [].forEach.call(box.querySelectorAll(".ipe-card .ipe-res--proj:not(.ipr-ficha-eq)"), function (r) {
+        r.classList.add("ipr-ficha-eq");
+        var card = r.closest(".ipe-card"), bt = r.querySelector("[data-res-proj]"), out = r.querySelector("[data-res-out]");
+        var fl = card && card.querySelector(".ipe-cx > ul.ipe-fl:not([data-sh-lista])");
+        var li = document.createElement("li"); li.innerHTML = '<span>Ficha do terreno (indicativa)</span><a href="#" data-ipr-ficha>Abrir</a>';
+        if (!fl) { var h4 = [].filter.call(card.querySelectorAll(".ipe-cx > h4.ipe-h"), function (x) { return /^Ficheiros/.test(x.textContent); })[0]; fl = document.createElement("ul"); fl.className = "ipe-fl"; if (h4) { var nx = h4.nextElementSibling; if (nx && nx.tagName === "P") nx.remove(); h4.parentNode.insertBefore(fl, h4.nextSibling); } else { r.parentNode.insertBefore(fl, r); } }
+        fl.appendChild(li);
+        if (out) { out.classList.add("ipr-ficha-out"); fl.parentNode.insertBefore(out, fl.nextSibling); }
+        li.querySelector("a").addEventListener("click", function (e) { e.preventDefault(); e.stopPropagation(); if (bt) bt.click(); });
+      });
+    }
+    if (!box.getAttribute("data-ipr")) { box.setAttribute("data-ipr", "1"); try { new MutationObserver(function () { aplicar(); }).observe(box, { childList: true }); } catch (e) {} }
+    aplicar();
+    return true;
+  }
+
   var feito = {}, voltas = 0;
   function correr() {
     voltas++;
-    [["marca", marca], ["puxadores", puxadores], ["creditos", creditos], ["estado", estado], ["formiga", formiga], ["projectos", projectos], ["editavel", editavel], ["semBug", semBug], ["rosa", rosa], ["arrumar", arrumar]].forEach(function (f) { if (!feito[f[0]]) { try { feito[f[0]] = f[1](); } catch (e) {} } });
+    [["marca", marca], ["puxadores", puxadores], ["creditos", creditos], ["estado", estado], ["formiga", formiga], ["projectos", projectos], ["editavel", editavel], ["semBug", semBug], ["rosa", rosa], ["arrumar", arrumar], ["projDir", projDir]].forEach(function (f) { if (!feito[f[0]]) { try { feito[f[0]] = f[1](); } catch (e) {} } });
     try { nomes(); } catch (e) {}
     try { equipa(); } catch (e) {}
     try { posicoes(); } catch (e) {}
