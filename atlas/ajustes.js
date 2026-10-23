@@ -600,10 +600,88 @@
     return true;
   }
 
+  // 19. Opções de cada camada, à maneira do QField (Nuno, 23/10, 02h23): nas camadas ligadas aparece um botão «⋯» que abre
+  //     uma caixa por baixo com «Aproximar» (enquadra o mapa na extensão da camada), «Desligar» e a fonte. Não mexe no que já
+  //     existia: a caixa de ligar, a legenda e a barra de opacidade ficam onde estavam.
+  function limitesCamada(id) {
+    var m = window.__ipe && window.__ipe.mapa; if (!m || !m.getStyle) return null;
+    var b = null, pre = "iprv-" + id;
+    function junta(w, s, e, n) { if (![w, s, e, n].every(isFinite)) return; if (!b) b = [w, s, e, n]; else { b[0] = Math.min(b[0], w); b[1] = Math.min(b[1], s); b[2] = Math.max(b[2], e); b[3] = Math.max(b[3], n); } }
+    function coords(c) { if (typeof c[0] === "number") junta(c[0], c[1], c[0], c[1]); else c.forEach(coords); }
+    function geo(g) { if (!g) return; if (g.type === "FeatureCollection") g.features.forEach(function (f) { geo(f.geometry); }); else if (g.type === "Feature") geo(g.geometry); else if (g.type === "GeometryCollection") g.geometries.forEach(geo); else if (g.coordinates) coords(g.coordinates); }
+    Object.keys(m.getStyle().sources || {}).forEach(function (k) {
+      if (k !== pre && k.indexOf(pre + "-") !== 0) return;
+      var s = m.getSource(k); if (!s) return;
+      try {
+        if (s.type === "geojson" && s._data && typeof s._data === "object") { geo(s._data); return; }
+        var tb = s.tileBounds && s.tileBounds.bounds;
+        if (tb) { junta(tb.getWest ? tb.getWest() : tb._sw.lng, tb.getSouth ? tb.getSouth() : tb._sw.lat, tb.getEast ? tb.getEast() : tb._ne.lng, tb.getNorth ? tb.getNorth() : tb._ne.lat); return; }
+        if (s.bounds && s.bounds.length === 4) { junta(s.bounds[0], s.bounds[1], s.bounds[2], s.bounds[3]); return; }
+        if (m.querySourceFeatures) m.querySourceFeatures(k).forEach(function (f) { geo(f.geometry); });
+      } catch (e) {}
+    });
+    // Camadas do mundo inteiro (fundos, serviços nacionais sem extensão) não têm onde aproximar.
+    if (b && (b[2] - b[0] > 60 || b[3] - b[1] > 40)) return null;
+    return b;
+  }
+  function aproximar(id, li) {
+    var m = window.__ipe && window.__ipe.mapa, b = limitesCamada(id);
+    // Camadas da Base sem extensão própria: o terreno do projecto.
+    if (!b && li && li.closest('.ipr-g[data-g="base"]')) b = limitesCamada("limite") || limitesCamada("aoi");
+    if (!m || !b) return false;
+    if (b[2] - b[0] < 1e-6 && b[3] - b[1] < 1e-6) m.flyTo({ center: [b[0], b[1]], zoom: Math.max(m.getZoom(), 16) });
+    else m.fitBounds([[b[0], b[1]], [b[2], b[3]]], { padding: 60, maxZoom: 18, duration: 900 });
+    return true;
+  }
+  var opcAberta = null;
+  function opcoesCamadas() {
+    var arv = document.querySelectorAll(".ipr-arv-l"); if (!arv.length) return false;
+    [].forEach.call(arv, function (l) {
+      if (l.getAttribute("data-ipr-opc")) return;
+      l.setAttribute("data-ipr-opc", "1");
+      function por() {
+        [].forEach.call(l.querySelectorAll(".ipr-it.on:not(.bl)"), function (li) {
+          var lab = li.querySelector("label"); if (!lab || li.querySelector(".ipr-opc-b")) return;
+          var bt = document.createElement("button"); bt.type = "button"; bt.className = "ipr-opc-b"; bt.textContent = "⋯";
+          bt.title = "Opções da camada"; bt.setAttribute("aria-label", "Opções da camada"); bt.setAttribute("aria-expanded", "false");
+          lab.appendChild(bt);
+          if (opcAberta === li.dataset.id) caixa(li, bt);
+        });
+      }
+      function caixa(li, bt) {
+        var x = li.querySelector(".ipr-opc"); if (x) { x.remove(); bt.setAttribute("aria-expanded", "false"); opcAberta = null; return; }
+        [].forEach.call(l.querySelectorAll(".ipr-opc"), function (o) { o.remove(); });
+        opcAberta = li.dataset.id;
+        var c = document.createElement("div"); c.className = "ipr-opc";
+        var nota = li.querySelector(".ipr-nome small:not(.ipr-est)");
+        c.innerHTML = '<div class="ipr-opc-bts"><button type="button" class="ipe-b ipe-b--s" data-opc="zoom">Aproximar</button>' +
+          '<button type="button" class="ipe-b ipe-b--s" data-opc="off">Desligar</button></div>' +
+          (nota && nota.textContent ? '<p class="ipr-opc-n">' + nota.textContent.replace(/[<&]/g, "") + "</p>" : "") +
+          '<p class="ipr-opc-m" hidden></p>';
+        var op = li.querySelector(".ipr-op");
+        li.insertBefore(c, op ? op.nextSibling : null);
+        bt.setAttribute("aria-expanded", "true");
+      }
+      l.addEventListener("click", function (e) {
+        var b = e.target.closest && e.target.closest(".ipr-opc-b");
+        if (b) { e.preventDefault(); e.stopPropagation(); caixa(b.closest(".ipr-it"), b); return; }
+        var a = e.target.closest && e.target.closest("[data-opc]"); if (!a) return;
+        e.preventDefault(); e.stopPropagation();
+        var li = a.closest(".ipr-it");
+        if (a.getAttribute("data-opc") === "zoom") {
+          if (!aproximar(li.dataset.id, li)) { var m = li.querySelector(".ipr-opc-m"); m.textContent = "Esta camada cobre todo o país (ou ainda está a carregar): não há uma extensão para aproximar."; m.hidden = false; }
+        } else { opcAberta = null; var ck = li.querySelector(".ipr-ck"); if (ck) ck.click(); }
+      }, true);
+      try { new MutationObserver(por).observe(l, { childList: true }); } catch (e) {}
+      por();
+    });
+    return false; // continua a correr: a árvore pode ser criada de novo (outro modo, outra Base)
+  }
+
   var feito = {}, voltas = 0;
   function correr() {
     voltas++;
-    [["marca", marca], ["puxadores", puxadores], ["creditos", creditos], ["estado", estado], ["formiga", formiga], ["projectos", projectos], ["editavel", editavel], ["semBug", semBug], ["rosa", rosa], ["arrumar", arrumar], ["projDir", projDir], ["testarEsq", testarEsq], ["contaTopo", contaTopo], ["camadasTopo", camadasTopo], ["sintetizar", sintetizar]].forEach(function (f) { if (!feito[f[0]]) { try { feito[f[0]] = f[1](); } catch (e) {} } });
+    [["marca", marca], ["puxadores", puxadores], ["creditos", creditos], ["estado", estado], ["formiga", formiga], ["projectos", projectos], ["editavel", editavel], ["semBug", semBug], ["rosa", rosa], ["arrumar", arrumar], ["projDir", projDir], ["testarEsq", testarEsq], ["contaTopo", contaTopo], ["camadasTopo", camadasTopo], ["sintetizar", sintetizar], ["opcoesCamadas", opcoesCamadas]].forEach(function (f) { if (!feito[f[0]]) { try { feito[f[0]] = f[1](); } catch (e) {} } });
     try { nomes(); } catch (e) {}
     try { equipa(); } catch (e) {}
     try { if (window.__iprTodas && !document.getElementById("ipr-todas")) todasBases(); } catch (e) {}

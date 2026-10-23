@@ -866,3 +866,10 @@ html.ipe-on .tcdr2-p{max-height:calc(100dvh - 90px)!important;overscroll-behavio
 #ipe .ipr-sint b{font-weight:600}
 #ipe .ipr-sint button{margin-left:auto}
 #ipe .ipr-sint .ipr-sint-x{margin-left:0;border:0;background:none;color:var(--mu);cursor:pointer;font-size:15px}
+
+/* 19. Opções da camada (⋯) */
+.ipr-opc-b{margin-left:auto;flex:0 0 auto;border:0;background:transparent;color:inherit;opacity:.55;font-size:15px;line-height:1;padding:2px 6px;border-radius:4px;cursor:pointer}
+.ipr-opc-b:hover,.ipr-opc-b[aria-expanded="true"]{opacity:1;background:rgba(127,127,127,.18)}
+.ipr-opc{margin:2px 10px 6px 30px;padding:7px 8px;border-radius:6px;background:rgba(127,127,127,.10);font-size:12px}
+.ipr-opc-bts{display:flex;gap:6px;flex-wrap:wrap}
+.ipr-opc-n,.ipr-opc-m{margin:6px 0 0;opacity:.8;line-height:1.35}
