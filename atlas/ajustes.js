@@ -374,6 +374,13 @@
     var nt = document.getElementById("ipe-notas"); if (nt) { nt.style.display = "none"; if (nt.previousElementSibling) nt.previousElementSibling.style.display = "none"; }
     [].forEach.call(f.querySelectorAll(".ipe-nota"), function (x) { if (x.id !== "ipe-lidar") x.style.display = "none"; });
     if (bt) { bt.addEventListener("click", function () { cascata(bt); }, true); }
+    // Nome do projecto (Nuno, 23/10, 01h27): vai como nome da encomenda; o local tirado do mapa segue nas notas.
+    if (!document.getElementById("ipr-pnome")) {
+      var w = document.createElement("div"); w.className = "ipr-pnome-w";
+      w.innerHTML = '<label class="ipe-lbl" for="ipr-pnome">Nome do projecto</label><input class="ipe-in" id="ipr-pnome" maxlength="120" placeholder="Ex.: Herdade do Vale (o nome do pedido ou do cliente)">';
+      var h1 = [].filter.call(f.querySelectorAll("h3.ipe-h"), function (h) { return /01/.test(h.textContent); })[0];
+      f.insertBefore(w, h1 || f.firstChild);
+    }
     return true;
   }
 
@@ -402,6 +409,7 @@
     var box = document.getElementById("ipe-proj"); if (!box) return false;
     function aplicar() {
       [].forEach.call(box.querySelectorAll("h3.ipe-h"), function (h) { if (/^Os seus projectos/.test((h.textContent || "").trim())) h.classList.add("ipr-oculto-h"); });
+      if (window.tcdNonce) [].forEach.call(box.querySelectorAll(".ipe-card"), function (c) { if (c.querySelector(".ipc-cmp") || /#\d+/.test(c.textContent)) renomear(c); });
       if (!window.tcdEquipa) return;
       [].forEach.call(box.querySelectorAll(".ipe-card .ipe-res--proj:not(.ipr-ficha-eq)"), function (r) {
         r.classList.add("ipr-ficha-eq");
@@ -483,6 +491,52 @@
     if (desk()) { if (ipe.classList.contains("sem-esq")) b.click(); b.classList.add("ipr-so-movel"); }
     return true;
   }
+
+  // Envio do «Processar» com o nome do projecto (só equipa). Não muda o pedido de mais nenhuma forma.
+  (function () {
+    if (!window.fetch || window.__iprFetchNome) return; window.__iprFetchNome = 1;
+    var of = window.fetch;
+    window.fetch = function (url, op) {
+      try {
+        var nm = document.getElementById("ipr-pnome");
+        if (window.tcdEquipa && nm && nm.value.trim() && op && op.method === "POST" && /pedido-base/.test(String(url)) && op.body && op.body.set) {
+          var orig = op.body.get("local") || "", nt = op.body.get("notas") || "";
+          op.body.set("local", nm.value.trim());
+          if (orig) op.body.set("notas", (nt ? nt + "\n" : "") + "Local: " + orig);
+        }
+      } catch (e) {}
+      return of.apply(this, arguments);
+    };
+  })();
+
+  // Mudar o nome de um projecto (dono ou equipa), no separador Projectos. Usa a acção tcd_pnome (m90158).
+  function renomear(card) {
+    var st = card.querySelector(".ipe-ct strong"), num = ((card.querySelector(".ipe-ct .mono") || {}).textContent || "").match(/#(\d+)/);
+    if (!st || !num || card.querySelector(".ipr-ren")) return;
+    var b = document.createElement("button"); b.type = "button"; b.className = "ipr-ren"; b.title = "Mudar o nome do projecto"; b.textContent = "✎";
+    st.parentNode.insertBefore(b, st.nextSibling);
+    b.addEventListener("click", function (e) {
+      e.stopPropagation(); e.preventDefault();
+      if (card.querySelector(".ipr-ren-in")) return;
+      var i = document.createElement("input"); i.className = "ipe-in ipr-ren-in"; i.value = st.textContent; i.maxLength = 120;
+      st.style.display = "none"; b.style.display = "none"; st.parentNode.insertBefore(i, st); i.focus(); i.select();
+      i.addEventListener("click", function (ev) { ev.stopPropagation(); });
+      var fim = false;
+      function acabar(gravar) {
+        if (fim) return; fim = true; var v = i.value.trim();
+        if (gravar && v && v !== st.textContent) {
+          var fd = new FormData(); fd.append("action", "tcd_pnome"); fd.append("_n", window.tcdNonce || ""); fd.append("id", num[1]); fd.append("nome", v);
+          fetch("/wp-admin/admin-ajax.php", { method: "POST", credentials: "same-origin", body: fd }).then(function (r) { return r.json(); }).then(function (d) {
+            if (d && d.success) { st.textContent = d.data.nome; st.title = d.data.nome; } else { alerta(card, (d && d.data) || "Não foi possível mudar o nome."); }
+          }).catch(function () { alerta(card, "Não foi possível mudar o nome."); });
+        }
+        i.remove(); st.style.display = ""; b.style.display = "";
+      }
+      i.addEventListener("keydown", function (ev) { ev.stopPropagation(); if (ev.key === "Enter") acabar(true); else if (ev.key === "Escape") acabar(false); });
+      i.addEventListener("blur", function () { acabar(true); });
+    });
+  }
+  function alerta(card, t) { var m = document.createElement("small"); m.className = "ipe-small mau"; m.textContent = t; var ct = card.querySelector(".ipe-ct"); if (ct) { ct.appendChild(m); setTimeout(function () { m.remove(); }, 5000); } }
 
   var feito = {}, voltas = 0;
   function correr() {

@@ -833,3 +833,9 @@ html.ipe-on .tcdr2-p{max-height:calc(100dvh - 90px)!important;overscroll-behavio
 .ipr-userpop .ipe-b:hover{background:#ebe7d9}
 .ipr-userpop a{color:#5f6b3a}
 #ipe-user{cursor:pointer}
+/* 23/10, 01h27: nome do projecto */
+#ipe .ipr-pnome-w{margin:0 0 12px}
+#ipe .ipr-ren{border:0;background:none;color:var(--mu);cursor:pointer;font-size:12px;padding:0 4px;margin-left:2px;vertical-align:middle}
+#ipe .ipr-ren:hover{color:var(--ac2)}
+#ipe .ipe-ct strong{display:inline-block;max-width:calc(100% - 22px);vertical-align:middle}
+#ipe .ipr-ren-in{font-size:13px;padding:3px 6px;margin:0 0 2px;width:100%}
