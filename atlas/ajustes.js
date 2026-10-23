@@ -505,9 +505,42 @@
           if (orig) op.body.set("notas", (nt ? nt + "\n" : "") + "Local: " + orig);
         }
       } catch (e) {}
-      return of.apply(this, arguments);
+      var pr = of.apply(this, arguments);
+      try {
+        if (/meus-mapas/.test(String(url)) && (!op || !op.method || op.method === "GET")) {
+          pr.then(function (r) { if (r && r.ok) r.clone().json().then(function (d) { if (d && d.todas) { window.__iprTodas = d.todas; try { todasBases(); } catch (e) {} } }).catch(function () {}); });
+        }
+      } catch (e) {}
+      return pr;
     };
   })();
+
+  // «Todas as Bases» (Nuno, Miguel e Susana; m90159): caixa no separador Projectos com as últimas 50, por estado.
+  var TODAS_K = [["pedido", "Pedidos"], ["processar", "A processar"], ["revisao", "Em revisão"], ["entregue", "Entregues"]];
+  function todasBases() {
+    var L = window.__iprTodas, pp = document.querySelector('#ipe .ipe-pane[data-pane="proj"]'); if (!L || !pp) return;
+    var box = document.getElementById("ipr-todas");
+    if (!box) { box = document.createElement("section"); box.id = "ipr-todas"; box.className = "ipr-todas"; pp.insertBefore(box, pp.firstChild); }
+    var sel = box.getAttribute("data-k") || "todas";
+    function esc(t) { return String(t == null ? "" : t).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+    var cont = {}; L.forEach(function (x) { cont[x.k] = (cont[x.k] || 0) + 1; });
+    var h = '<button type="button" class="ipr-todas-h" aria-expanded="' + (box.classList.contains("aberto") ? "true" : "false") + '">Todas as Bases <b>' + L.length + '</b><small>últimas 50</small></button><div class="ipr-todas-c"><div class="ipr-todas-f">';
+    h += '<button type="button" data-k="todas"' + (sel === "todas" ? ' aria-pressed="true"' : "") + '>Todas</button>';
+    TODAS_K.forEach(function (k) { h += '<button type="button" data-k="' + k[0] + '"' + (sel === k[0] ? ' aria-pressed="true"' : "") + ">" + k[1] + " <i>" + (cont[k[0]] || 0) + "</i></button>"; });
+    h += "</div><ul>";
+    L.filter(function (x) { return sel === "todas" || x.k === sel; }).forEach(function (x) {
+      h += '<li class="k-' + x.k + '"><a href="' + esc(x.url) + '" title="Abrir no Atlas"><b>' + esc(x.local || "Terreno sem nome") + "</b><span>#" + x.id + " · " + esc(x.cliente) + (x.equipa ? " (equipa)" : "") + " · " + (x.ha ? String(Math.round(x.ha * 100) / 100).replace(".", ",") + " ha" : "") + "</span><span>" + esc(x.data) + " · " + (TODAS_K.filter(function (k) { return k[0] === x.k; })[0] || ["", x.k])[1] + (x.cloud ? " · Cloud" : "") + (x.total > 0 && x.k === "pedido" ? " · " + String(x.total.toFixed(2)).replace(".", ",") + " €" : "") + "</span></a>" + (x.admin ? '<a class="ipr-todas-adm" href="' + esc(x.admin) + '" target="_blank" rel="noopener" title="Abrir a encomenda">↗</a>' : "") + "</li>";
+    });
+    h += "</ul></div>";
+    box.innerHTML = h;
+    if (!box.getAttribute("data-ipr")) {
+      box.setAttribute("data-ipr", "1");
+      box.addEventListener("click", function (e) {
+        var t = e.target.closest(".ipr-todas-h"); if (t) { box.classList.toggle("aberto"); t.setAttribute("aria-expanded", box.classList.contains("aberto") ? "true" : "false"); return; }
+        var k = e.target.closest(".ipr-todas-f button"); if (k) { box.setAttribute("data-k", k.getAttribute("data-k")); todasBases(); }
+      });
+    }
+  }
 
   // Mudar o nome de um projecto (dono ou equipa), no separador Projectos. Usa a acção tcd_pnome (m90158).
   function renomear(card) {

@@ -839,3 +839,24 @@ html.ipe-on .tcdr2-p{max-height:calc(100dvh - 90px)!important;overscroll-behavio
 #ipe .ipr-ren:hover{color:var(--ac2)}
 #ipe .ipe-ct strong{display:inline-block;max-width:calc(100% - 22px);vertical-align:middle}
 #ipe .ipr-ren-in{font-size:13px;padding:3px 6px;margin:0 0 2px;width:100%}
+/* 23/10, 01h32: Todas as Bases (Nuno, Miguel, Susana) */
+#ipe .ipr-todas{margin:0 0 12px;border:1px solid var(--ln2);border-radius:6px;background:var(--p2);overflow:hidden}
+#ipe .ipr-todas-h{display:flex;align-items:baseline;gap:8px;width:100%;border:0;background:var(--p3);color:var(--tx);font:600 13px Inter,system-ui,sans-serif;padding:8px 10px;cursor:pointer;text-align:left}
+#ipe .ipr-todas-h b{color:var(--ac2)}
+#ipe .ipr-todas-h small{margin-left:auto;font-weight:400;color:var(--mu);font-size:11px}
+#ipe .ipr-todas-c{display:none;padding:6px 8px 8px}
+#ipe .ipr-todas.aberto .ipr-todas-c{display:block}
+#ipe .ipr-todas-f{display:flex;flex-wrap:wrap;gap:4px;margin:0 0 6px}
+#ipe .ipr-todas-f button{border:1px solid var(--ln2);background:var(--p1);color:var(--tx);border-radius:11px;padding:2px 8px;font:500 11.5px Inter,system-ui,sans-serif;cursor:pointer}
+#ipe .ipr-todas-f button[aria-pressed=true]{background:var(--ac);border-color:var(--ac);color:#fff}
+#ipe .ipr-todas-f i{font-style:normal;opacity:.75}
+#ipe .ipr-todas ul{list-style:none;margin:0;padding:0;max-height:320px;overflow:auto}
+#ipe .ipr-todas li{display:flex;align-items:flex-start;gap:4px;border-top:1px solid var(--ln);padding:4px 2px}
+#ipe .ipr-todas li>a:first-child{flex:1;min-width:0;text-decoration:none;color:var(--tx);display:flex;flex-direction:column;font-size:12px;line-height:1.35}
+#ipe .ipr-todas li b{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#ipe .ipr-todas li span{color:var(--mu);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#ipe .ipr-todas li.k-pedido b::before{content:"● ";color:#c9a227}
+#ipe .ipr-todas li.k-processar b::before{content:"● ";color:#4a90c2}
+#ipe .ipr-todas li.k-revisao b::before{content:"● ";color:#d9822b}
+#ipe .ipr-todas li.k-entregue b::before{content:"● ";color:var(--ac)}
+#ipe .ipr-todas-adm{color:var(--mu);text-decoration:none;padding:0 4px}
