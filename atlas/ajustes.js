@@ -1767,15 +1767,16 @@
   window.addEventListener("appinstalled", function () { var b = document.getElementById("ipr-app-b"); if (b) b.remove(); });
   function naApp() { return (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) || window.navigator.standalone === true; }
   function instalarApp() {
-    if (naApp()) { document.documentElement.classList.add("ipr-na-app"); return true; }
+    if (naApp()) { document.documentElement.classList.add("ipr-na-app"); }
     var tm = document.getElementById("ipe-tema"); if (!tm || !tm.parentNode) return false;
     if (document.getElementById("ipr-app-b")) return true;
+    // dentro da app o botão fica escondido (só serve o menu «Partilhar a app»)
     var st = document.createElement("style");
     st.textContent = "#ipr-app-b{display:inline-flex;align-items:center;gap:5px}#ipr-app-b span{font:600 12px Inter,sans-serif;letter-spacing:.02em}" +
       "#ipr-app-p{position:fixed;z-index:2147483000;top:calc(54px + env(safe-area-inset-top,0px));right:max(12px,env(safe-area-inset-right,0px));width:min(320px,calc(100vw - 24px));background:var(--p2,#1d1d1b);color:var(--tx,#eee);border:1px solid var(--ln,#444);border-radius:12px;padding:14px 16px;box-shadow:0 10px 30px rgba(0,0,0,.35);font:14px/1.45 Inter,system-ui,sans-serif}" +
       "#ipr-app-p b{display:block;font-size:15px;margin-bottom:6px}#ipr-app-p ol{margin:6px 0 10px;padding-left:20px}#ipr-app-p li{margin:3px 0}#ipr-app-p small{color:var(--mu,#aaa);display:block}" +
       "#ipr-app-p .x{position:absolute;top:6px;right:8px;border:0;background:none;color:inherit;font-size:20px;cursor:pointer;line-height:1}" +
-      "@media (max-width:600px){#ipr-app-b span{display:none}}";
+      "@media (max-width:600px){#ipr-app-b span{display:none}}.ipr-na-app #ipr-app-b{display:none!important}";
     document.head.appendChild(st);
     var b = document.createElement("button"); b.type = "button"; b.id = "ipr-app-b"; b.className = tm.className;
     b.title = "Instalar o IPR Atlas como app"; b.setAttribute("aria-label", "Instalar a app IPR Atlas");
@@ -1790,6 +1791,26 @@
       if (android) return '<ol><li>Toque no menu ⋮ do Chrome.</li><li>Escolha «Instalar aplicação» ou «Adicionar ao ecrã principal».</li></ol>';
       return '<ol><li>Na barra de endereço do Chrome ou do Edge, clique no ícone de instalar (um ecrã com uma seta).</li><li>Ou no menu ⋮ › «Transmitir, guardar e partilhar» › «Instalar página como app».</li></ol>';
     }
+    window.__iprAppAbrir = function () { b.click(); };
+    // Menu «Mais» (Nuno 24/10, 18h08): «Instalar a app» e «Partilhar a app» (partilha do sistema; sem ela, copia a ligação)
+    (function menuApp() {
+      var m = document.querySelector("#ipe-mais .ipe-mais-m"), sh = document.getElementById("ipe-share");
+      if (!m) { setTimeout(menuApp, 1500); return; } if (document.getElementById("ipr-app-inst")) return;
+      var ICO = '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M12 7v7M9 11.5l3 3 3-3"/></svg>';
+      var ICO2 = '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M9.5 12.5l5-3M9.5 12.5l5 3"/><circle cx="9.5" cy="12.5" r="1.3"/><circle cx="14.5" cy="9.5" r="1.3"/><circle cx="14.5" cy="15.5" r="1.3"/></svg>';
+      function item(id, ico, txt, fn) { var x = document.createElement("button"); x.type = "button"; x.id = id; x.className = "ipe-ib ipe-ib--sh"; x.setAttribute("role", "menuitem"); x.title = txt; x.setAttribute("aria-label", txt); x.innerHTML = ico + "<span>" + txt + "</span>"; x.addEventListener("click", function (e) { e.stopPropagation(); fn(x); }); return x; }
+      var inst = item("ipr-app-inst", ICO, "Instalar a app", function () { try { document.getElementById("ipe-mais-b").click(); } catch (x) {} setTimeout(function () { b.click(); }, 60); });
+      var part = item("ipr-app-part", ICO2, "Partilhar a app", function (x) {
+        var url = location.origin + "/atlas/", txt = "IPR Atlas: o terreno, os projectos e a Base Cartográfica no telemóvel. Abra a ligação e instale a app.";
+        if (navigator.share) { navigator.share({ title: "IPR Atlas", text: txt, url: url }).catch(function () {}); return; }
+        var ok = function () { var sp = x.querySelector("span"); sp.textContent = "Ligação copiada"; setTimeout(function () { sp.textContent = "Partilhar a app"; }, 2200); };
+        try { navigator.clipboard.writeText(url).then(ok, function () { prompt("Copie a ligação:", url); }); } catch (e) { prompt("Copie a ligação:", url); }
+      });
+      var ref = sh ? sh.nextSibling : m.firstChild;
+      if (!naApp()) m.insertBefore(inst, ref);
+      m.insertBefore(part, sh ? sh.nextSibling : m.firstChild);
+      if (!naApp()) m.insertBefore(inst, part);
+    })();
     b.addEventListener("click", function (e) {
       e.stopPropagation();
       var p = document.getElementById("ipr-app-p"); if (p) { p.remove(); return; }
@@ -2073,9 +2094,33 @@
     });
     return true;
   }
+  // §43 Reabrir o painel da esquerda (Nuno 24/10, 18h09: «na app, depois de desseleccionar, já não dá para reactivar»).
+  // Quando o painel das camadas está fechado e não há outro botão à vista para o abrir, aparece uma lingueta «Camadas»
+  // encostada à esquerda do mapa. Usa o mesmo botão do Atlas (#ipe-camadas), por isso abre e fecha como sempre.
+  function linguetaEsq() {
+    var ipe = document.getElementById("ipe"), cam = document.getElementById("ipe-camadas"), mapaEl = document.getElementById("ipe-mapa");
+    if (!ipe || !cam || !mapaEl) return false; if (document.getElementById("ipr-lingueta")) return true;
+    var st = document.createElement("style");
+    st.textContent = "#ipr-lingueta{position:absolute;left:0;top:50%;transform:translateY(-50%);z-index:4;display:flex;align-items:center;gap:6px;padding:12px 8px 12px 6px;border:1px solid var(--ln);border-left:0;border-radius:0 10px 10px 0;background:var(--p1);color:var(--tx);font:600 12px Inter,sans-serif;writing-mode:vertical-rl;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.2)}#ipr-lingueta svg{transform:rotate(90deg)}";
+    document.head.appendChild(st);
+    var l = document.createElement("button"); l.type = "button"; l.id = "ipr-lingueta"; l.hidden = true; l.setAttribute("aria-label", "Abrir o painel das camadas");
+    l.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4 3 9l9 5 9-5-9-5Z"/><path d="m3 14 9 5 9-5"/></svg>Camadas';
+    mapaEl.appendChild(l);
+    l.addEventListener("click", function (e) { e.stopPropagation(); cam.click(); setTimeout(ver, 50); });
+    function visivel(el) { if (!el) return false; var r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0 && getComputedStyle(el).visibility !== "hidden"; }
+    function ver() {
+      var largo = window.innerWidth > 900, fechado = largo ? ipe.classList.contains("sem-esq") : !ipe.classList.contains("esq-aberto");
+      var barra = [].slice.call(document.querySelectorAll("#ipe .ipe-tools button")).filter(function (x) { return /Barra lateral/.test(x.title || x.getAttribute("aria-label") || x.getAttribute("data-ipr-tip") || ""); })[0];
+      var outro = visivel(cam) || visivel(barra);
+      l.hidden = !(fechado && !outro);
+    }
+    new MutationObserver(ver).observe(ipe, { attributes: true, attributeFilter: ["class"] });
+    window.addEventListener("resize", ver); ver(); setTimeout(ver, 1500);
+    return true;
+  }
   function correr() {
     voltas++;
-    [["marca", marca], ["puxadores", puxadores], ["creditos", creditos], ["estado", estado], ["formiga", formiga], ["projectos", projectos], ["editavel", editavel], ["semBug", semBug], ["rosa", rosa], ["arrumar", arrumar], ["projDir", projDir], ["testarEsq", testarEsq], ["contaTopo", contaTopo], ["camadasTopo", camadasTopo], ["sintetizar", sintetizar], ["opcoesCamadas", opcoesCamadas], ["projFechados", projFechados], ["todasMais", todasMais], ["painelTopo", painelTopo], ["qfieldQR", qfieldQR], ["temas", temas], ["natural", natural], ["aprenderDesenho", aprenderDesenho], ["fichas", fichasCamada], ["natureza", fichasNatureza], ["parcelas", parcelasPonto], ["partilhaQR", partilhaQR], ["teclado", tecladoVirtual], ["prefs", prefsConta], ["cronologia", cronologia], ["alcanena", pilotoAlcanena], ["estilosOrg", estilosOrg], ["fimDoVoo", fimDoVoo], ["orgNomes", orgNomes], ["projRecolhidos", projRecolhidos], ["instalarApp", instalarApp], ["temaEscuro", temaEscuro], ["orgPastas", orgPastas], ["discricao", discricao], ["estradas", estradas], ["cloudLimpo", cloudLimpo], ["navEsquerda", navEsquerda], ["encomendaCompacta", encomendaCompacta], ["testarLigacao", testarLigacao]].forEach(function (f) { if (!feito[f[0]]) { try { feito[f[0]] = f[1](); } catch (e) {} } });
+    [["marca", marca], ["puxadores", puxadores], ["creditos", creditos], ["estado", estado], ["formiga", formiga], ["projectos", projectos], ["editavel", editavel], ["semBug", semBug], ["rosa", rosa], ["arrumar", arrumar], ["projDir", projDir], ["testarEsq", testarEsq], ["contaTopo", contaTopo], ["camadasTopo", camadasTopo], ["sintetizar", sintetizar], ["opcoesCamadas", opcoesCamadas], ["projFechados", projFechados], ["todasMais", todasMais], ["painelTopo", painelTopo], ["qfieldQR", qfieldQR], ["temas", temas], ["natural", natural], ["aprenderDesenho", aprenderDesenho], ["fichas", fichasCamada], ["natureza", fichasNatureza], ["parcelas", parcelasPonto], ["partilhaQR", partilhaQR], ["teclado", tecladoVirtual], ["prefs", prefsConta], ["cronologia", cronologia], ["alcanena", pilotoAlcanena], ["estilosOrg", estilosOrg], ["fimDoVoo", fimDoVoo], ["orgNomes", orgNomes], ["projRecolhidos", projRecolhidos], ["instalarApp", instalarApp], ["temaEscuro", temaEscuro], ["orgPastas", orgPastas], ["discricao", discricao], ["estradas", estradas], ["cloudLimpo", cloudLimpo], ["navEsquerda", navEsquerda], ["encomendaCompacta", encomendaCompacta], ["testarLigacao", testarLigacao], ["linguetaEsq", linguetaEsq]].forEach(function (f) { if (!feito[f[0]]) { try { feito[f[0]] = f[1](); } catch (e) {} } });
     try { nomes(); } catch (e) {}
     try { equipa(); } catch (e) {}
     try { if (window.__iprTodas && !document.getElementById("ipr-todas")) todasBases(); } catch (e) {}
