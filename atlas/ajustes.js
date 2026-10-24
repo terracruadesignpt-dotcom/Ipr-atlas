@@ -1751,9 +1751,37 @@
     aplicar(); botoes();
     return true;
   }
+  // §34 App instalável (PWA, m90348 no site). No telemóvel, fora da app, depois do voo de entrada:
+  // Android/Chrome: botão «Instalar» que abre o pedido do próprio sistema; iPhone/iPad: instruções do Safari.
+  // «Agora não» esconde por 30 dias (localStorage, protegido). Nunca aparece dentro da app nem no computador.
+  var pedidoInstalar = null;
+  window.addEventListener("beforeinstallprompt", function (e) { e.preventDefault(); pedidoInstalar = e; });
+  window.addEventListener("appinstalled", function () { var t = document.getElementById("ipr-app-aviso"); if (t) t.remove(); try { localStorage.setItem("ipr_app_aviso", String(Date.now() + 3650 * 864e5)); } catch (x) {} });
+  function instalarApp() {
+    var dentro = (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) || window.navigator.standalone === true;
+    if (dentro) { document.documentElement.classList.add("ipr-na-app"); return true; }
+    if (window.innerWidth > 900 || !("serviceWorker" in navigator)) return true;
+    try { if (+localStorage.getItem("ipr_app_aviso") > Date.now()) return true; } catch (x) {}
+    var ua = navigator.userAgent || "", ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+    setTimeout(function mostrar() {
+      if (window.__ipeAb) { setTimeout(mostrar, 3000); return; }
+      if (!ios && !pedidoInstalar) return;
+      if (document.getElementById("ipr-app-aviso")) return;
+      var st = document.createElement("style");
+      st.textContent = "#ipr-app-aviso{position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:2147483000;background:#1d1d1b;color:#f2f2ee;border-radius:14px;padding:12px 14px;display:flex;gap:12px;align-items:center;box-shadow:0 8px 30px rgba(0,0,0,.35);font:14px/1.4 system-ui,sans-serif}#ipr-app-aviso img{width:40px;height:40px;border-radius:9px;flex:none}#ipr-app-aviso .t{flex:1;min-width:0}#ipr-app-aviso b{display:block;font-size:15px}#ipr-app-aviso small{color:#bdbdb4}#ipr-app-aviso button{border:0;border-radius:9px;padding:8px 12px;font:600 14px system-ui,sans-serif;cursor:pointer}#ipr-app-aviso .s{background:#94be39;color:#111}#ipr-app-aviso .n{background:transparent;color:#bdbdb4;padding:8px 4px}";
+      document.head.appendChild(st);
+      var d = document.createElement("div"); d.id = "ipr-app-aviso"; d.setAttribute("role", "dialog"); d.setAttribute("aria-label", "Instalar a app IPR Atlas");
+      var ico = "https://cdn.jsdelivr.net/gh/terracruadesignpt-dotcom/Ipr-atlas@ff31470a317d28e02c55e703208ddee31e2fcb91/atlas/marca/ipr-app-192.png";
+      d.innerHTML = '<img alt="" src="' + ico + '"><div class="t"><b>IPR Atlas no seu telemóvel</b>' + (ios ? '<small>Toque em Partilhar (o quadrado com a seta) e depois em «Adicionar ao ecrã principal».</small>' : '<small>Abre directamente no mapa, em ecrã inteiro.</small>') + '</div>' + (ios ? '' : '<button class="s" type="button">Instalar</button>') + '<button class="n" type="button">Agora não</button>';
+      document.body.appendChild(d);
+      d.querySelector(".n").onclick = function () { d.remove(); try { localStorage.setItem("ipr_app_aviso", String(Date.now() + 30 * 864e5)); } catch (x) {} };
+      var s = d.querySelector(".s"); if (s) s.onclick = function () { var p = pedidoInstalar; pedidoInstalar = null; d.remove(); if (p) { p.prompt(); try { p.userChoice.then(function (r) { if (r && r.outcome !== "accepted") { try { localStorage.setItem("ipr_app_aviso", String(Date.now() + 30 * 864e5)); } catch (x) {} } }); } catch (x) {} } };
+    }, 12000);
+    return true;
+  }
   function correr() {
     voltas++;
-    [["marca", marca], ["puxadores", puxadores], ["creditos", creditos], ["estado", estado], ["formiga", formiga], ["projectos", projectos], ["editavel", editavel], ["semBug", semBug], ["rosa", rosa], ["arrumar", arrumar], ["projDir", projDir], ["testarEsq", testarEsq], ["contaTopo", contaTopo], ["camadasTopo", camadasTopo], ["sintetizar", sintetizar], ["opcoesCamadas", opcoesCamadas], ["projFechados", projFechados], ["todasMais", todasMais], ["painelTopo", painelTopo], ["qfieldQR", qfieldQR], ["temas", temas], ["natural", natural], ["aprenderDesenho", aprenderDesenho], ["fichas", fichasCamada], ["natureza", fichasNatureza], ["parcelas", parcelasPonto], ["partilhaQR", partilhaQR], ["teclado", tecladoVirtual], ["prefs", prefsConta], ["cronologia", cronologia], ["alcanena", pilotoAlcanena], ["estilosOrg", estilosOrg], ["fimDoVoo", fimDoVoo], ["orgNomes", orgNomes], ["projRecolhidos", projRecolhidos]].forEach(function (f) { if (!feito[f[0]]) { try { feito[f[0]] = f[1](); } catch (e) {} } });
+    [["marca", marca], ["puxadores", puxadores], ["creditos", creditos], ["estado", estado], ["formiga", formiga], ["projectos", projectos], ["editavel", editavel], ["semBug", semBug], ["rosa", rosa], ["arrumar", arrumar], ["projDir", projDir], ["testarEsq", testarEsq], ["contaTopo", contaTopo], ["camadasTopo", camadasTopo], ["sintetizar", sintetizar], ["opcoesCamadas", opcoesCamadas], ["projFechados", projFechados], ["todasMais", todasMais], ["painelTopo", painelTopo], ["qfieldQR", qfieldQR], ["temas", temas], ["natural", natural], ["aprenderDesenho", aprenderDesenho], ["fichas", fichasCamada], ["natureza", fichasNatureza], ["parcelas", parcelasPonto], ["partilhaQR", partilhaQR], ["teclado", tecladoVirtual], ["prefs", prefsConta], ["cronologia", cronologia], ["alcanena", pilotoAlcanena], ["estilosOrg", estilosOrg], ["fimDoVoo", fimDoVoo], ["orgNomes", orgNomes], ["projRecolhidos", projRecolhidos], ["instalarApp", instalarApp]].forEach(function (f) { if (!feito[f[0]]) { try { feito[f[0]] = f[1](); } catch (e) {} } });
     try { nomes(); } catch (e) {}
     try { equipa(); } catch (e) {}
     try { if (window.__iprTodas && !document.getElementById("ipr-todas")) todasBases(); } catch (e) {}
