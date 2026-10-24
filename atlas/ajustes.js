@@ -2018,16 +2018,21 @@
     var arv = document.querySelector("#ipe-cam .ipr-arv") || document.querySelector(".ipr-arv"); if (!arv) return false;
     if (document.getElementById("ipr-lig-b")) return true;
     var st = document.createElement("style");
-    st.textContent = "#ipr-lig-b{display:flex;align-items:center;gap:6px;width:100%;margin:6px 0 2px;padding:7px 10px;border:1px solid var(--ln);border-radius:8px;background:var(--p2,transparent);color:var(--tx);font:500 12.5px Inter,sans-serif;cursor:pointer}" +
+    st.textContent = ".ipr-testes{display:flex;gap:6px;margin:6px 0 2px}.ipr-testes>*{flex:1 1 0;min-width:0;margin:0!important;width:auto!important;justify-content:center;white-space:nowrap}" +
+      "#ipr-lig-b{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;margin:6px 0 2px;padding:7px 10px;border:1px solid var(--ln);border-radius:8px;background:var(--p2,transparent);color:var(--tx);font:500 12.5px Inter,sans-serif;cursor:pointer}" +
       "#ipr-lig-r{margin:4px 0 8px;padding:9px 11px;border:1px solid var(--ln);border-radius:8px;font:12.5px/1.45 Inter,sans-serif;color:var(--tx)}#ipr-lig-r b{display:block;font-size:13.5px;margin-bottom:3px}" +
       "#ipr-lig-r ul{margin:6px 0 0;padding-left:18px;color:var(--mu)}#ipr-lig-r .ok{color:#7fae4a}#ipr-lig-r .med{color:#d9a43a}#ipr-lig-r .mau{color:#d9534f}";
     document.head.appendChild(st);
     var b = document.createElement("button"); b.type = "button"; b.id = "ipr-lig-b";
-    b.innerHTML = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M2 9a15 15 0 0 1 20 0M5.5 12.5a10 10 0 0 1 13 0M9 16a5 5 0 0 1 6 0"/><circle cx="12" cy="19.5" r="1.2" fill="currentColor"/></svg><span>Testar a ligação à internet</span>';
+    b.innerHTML = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M2 9a15 15 0 0 1 20 0M5.5 12.5a10 10 0 0 1 13 0M9 16a5 5 0 0 1 6 0"/><circle cx="12" cy="19.5" r="1.2" fill="currentColor"/></svg><span>Testar internet</span>';
     b.title = "Verifica se a sua internet chega para carregar as camadas";
-    var t = document.getElementById("tcd-testar-cam"), cab = arv.querySelector(".ipr-arv-cab");
-    if (t && t.parentNode) t.parentNode.insertBefore(b, t.nextSibling); else arv.insertBefore(b, cab ? cab.nextSibling : arv.firstChild);
-    var r = document.createElement("div"); r.id = "ipr-lig-r"; r.hidden = true; b.parentNode.insertBefore(r, b.nextSibling);
+    // 24/10 18h05: «Testar camadas» e «Testar internet» partilham a mesma linha, metade cada um
+    var linha = document.createElement("div"); linha.className = "ipr-testes";
+    var cab = arv.querySelector(".ipr-arv-cab"); arv.insertBefore(linha, cab ? cab.nextSibling : arv.firstChild);
+    linha.appendChild(b);
+    function juntar() { var t = document.getElementById("tcd-testar-cam"); if (t && t.parentNode !== linha) linha.insertBefore(t, b); }
+    juntar(); new MutationObserver(juntar).observe(arv, { childList: true });
+    var r = document.createElement("div"); r.id = "ipr-lig-r"; r.hidden = true; linha.parentNode.insertBefore(r, linha.nextSibling);
     function tempo(u, ms) {
       var c = new AbortController(), t0 = performance.now(), to = setTimeout(function () { c.abort(); }, ms || 8000);
       return fetch(u, { cache: "no-store", mode: "cors", signal: c.signal }).then(function (x) { return x.arrayBuffer().then(function (a) { clearTimeout(to); return { ok: x.ok, ms: performance.now() - t0, kb: a.byteLength / 1024 }; }); })
