@@ -1550,8 +1550,8 @@
     function legenda(id, png, nome) {
       var c = document.getElementById("ipr-leg-org");
       if (!png) { if (c && c.dataset.id === String(id)) c.remove(); return; }
-      if (!c) { c = document.createElement("div"); c.id = "ipr-leg-org"; c.style.cssText = "position:absolute;left:10px;bottom:38px;z-index:5;max-height:55vh;overflow:auto;background:rgba(255,255,255,.94);border:1px solid rgba(0,0,0,.15);border-radius:8px;padding:6px 8px;box-shadow:0 2px 10px rgba(0,0,0,.15);font:12px Inter,sans-serif;color:#222;max-width:260px"; (m.getContainer() || document.body).appendChild(c); }
-      c.dataset.id = id; c.innerHTML = '<div style="display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:4px"><b style="font-weight:600">' + String(nome || "Legenda").replace(/[<>&]/g, "") + '</b><button type="button" aria-label="Fechar legenda" style="border:0;background:none;cursor:pointer;font-size:15px;line-height:1">×</button></div><img alt="Legenda do tema" style="display:block;max-width:240px;height:auto">';
+      if (!c) { c = document.createElement("div"); c.id = "ipr-leg-org"; c.style.cssText = "position:absolute;left:10px;bottom:38px;z-index:5;max-height:" + (window.innerWidth <= 700 ? "38vh" : "55vh") + ";overflow:auto;background:rgba(255,255,255,.94);border:1px solid rgba(0,0,0,.15);border-radius:8px;padding:6px 8px;box-shadow:0 2px 10px rgba(0,0,0,.15);font:12px Inter,sans-serif;color:#222;max-width:260px"; (m.getContainer() || document.body).appendChild(c); }
+      c.dataset.id = id; c.innerHTML = '<div style="display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:4px"><b style="font-weight:600">' + String(nome || "Legenda").replace(/[<>&]/g, "") + '</b><button type="button" aria-label="Fechar legenda" style="border:0;background:none;cursor:pointer;font-size:15px;line-height:1">×</button></div><img alt="Legenda do tema" style="display:block;max-width:' + (window.innerWidth <= 700 ? 170 : 240) + 'px;height:auto">';
       c.querySelector("img").src = png; c.querySelector("button").onclick = function () { c.remove(); };
     }
     function estilizar(id) {
@@ -1663,9 +1663,33 @@
     })();
     return true;
   }
+  // 32. Nomes das camadas da organização legíveis (24/10/2026, pedido do Nuno no telemóvel): o org.js repete em cada linha o
+  //     prefixo do projecto («268 Quinta Linda · …») que já está no título do grupo, e corta o resto com reticências. Aqui
+  //     tira-se esse prefixo repetido (o nome completo fica no title) e os nomes passam a partir em duas linhas.
+  function orgNomes() {
+    if (window.__iprOrgNomes) return true;
+    window.__iprOrgNomes = 1;
+    var st = document.createElement("style");
+    st.textContent = ".ipo-c label b{white-space:normal!important;overflow:visible!important;text-overflow:clip!important;line-height:1.25}.ipo-c{align-items:flex-start}.ipo-c small{padding-top:2px}";
+    document.head.appendChild(st);
+    function limpar() {
+      document.querySelectorAll('.ipe-pane[data-pane="org"] .ipo-c label b').forEach(function (b) {
+        if (b.dataset.ipoN) return;
+        var t = b.textContent, m = /^(\d+\s[^·]{2,60}?)\s·\s(.+)$/.exec(t);
+        b.dataset.ipoN = "1";
+        if (!m) return;
+        var g = b.closest(".ipo-c"), h = g && g.previousElementSibling;
+        while (h && !h.classList.contains("ipo-g")) h = h.previousElementSibling;
+        if (h && (h.textContent.indexOf(m[1]) >= 0 || /Temas do projecto/.test(h.textContent))) { b.title = t; b.textContent = m[2]; }
+      });
+    }
+    new MutationObserver(limpar).observe(document.body, { childList: true, subtree: true });
+    limpar();
+    return true;
+  }
   function correr() {
     voltas++;
-    [["marca", marca], ["puxadores", puxadores], ["creditos", creditos], ["estado", estado], ["formiga", formiga], ["projectos", projectos], ["editavel", editavel], ["semBug", semBug], ["rosa", rosa], ["arrumar", arrumar], ["projDir", projDir], ["testarEsq", testarEsq], ["contaTopo", contaTopo], ["camadasTopo", camadasTopo], ["sintetizar", sintetizar], ["opcoesCamadas", opcoesCamadas], ["projFechados", projFechados], ["todasMais", todasMais], ["painelTopo", painelTopo], ["qfieldQR", qfieldQR], ["temas", temas], ["natural", natural], ["aprenderDesenho", aprenderDesenho], ["fichas", fichasCamada], ["natureza", fichasNatureza], ["parcelas", parcelasPonto], ["partilhaQR", partilhaQR], ["teclado", tecladoVirtual], ["prefs", prefsConta], ["cronologia", cronologia], ["alcanena", pilotoAlcanena], ["estilosOrg", estilosOrg], ["fimDoVoo", fimDoVoo]].forEach(function (f) { if (!feito[f[0]]) { try { feito[f[0]] = f[1](); } catch (e) {} } });
+    [["marca", marca], ["puxadores", puxadores], ["creditos", creditos], ["estado", estado], ["formiga", formiga], ["projectos", projectos], ["editavel", editavel], ["semBug", semBug], ["rosa", rosa], ["arrumar", arrumar], ["projDir", projDir], ["testarEsq", testarEsq], ["contaTopo", contaTopo], ["camadasTopo", camadasTopo], ["sintetizar", sintetizar], ["opcoesCamadas", opcoesCamadas], ["projFechados", projFechados], ["todasMais", todasMais], ["painelTopo", painelTopo], ["qfieldQR", qfieldQR], ["temas", temas], ["natural", natural], ["aprenderDesenho", aprenderDesenho], ["fichas", fichasCamada], ["natureza", fichasNatureza], ["parcelas", parcelasPonto], ["partilhaQR", partilhaQR], ["teclado", tecladoVirtual], ["prefs", prefsConta], ["cronologia", cronologia], ["alcanena", pilotoAlcanena], ["estilosOrg", estilosOrg], ["fimDoVoo", fimDoVoo], ["orgNomes", orgNomes]].forEach(function (f) { if (!feito[f[0]]) { try { feito[f[0]] = f[1](); } catch (e) {} } });
     try { nomes(); } catch (e) {}
     try { equipa(); } catch (e) {}
     try { if (window.__iprTodas && !document.getElementById("ipr-todas")) todasBases(); } catch (e) {}
