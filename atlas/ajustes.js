@@ -18,6 +18,24 @@
    16. Separador Projectos: sem título repetido, projectos em linhas curtas, ficha do terreno na lista de ficheiros (equipa). */
 (function () {
   "use strict";
+  // §44 No máximo 3 pedidos ao site ao mesmo tempo (24/10, 22h04: «Error establishing a database connection» durante um
+  // minuto, quando o Atlas pediu de uma vez muitas camadas da organização, notas, locais e diário; o alojamento tem um
+  // limite de ligações à base de dados). Só os pedidos a /wp-json/ deste site esperam na fila; tudo o resto segue igual.
+  (function filaPedidos() {
+    if (!window.fetch || window.__iprFila) return; window.__iprFila = 1;
+    // mosaicos pelo proxy do site (viz/px, wms) têm fila própria de 4, para o mapa não ficar à espera das outras leituras
+    var orig = window.fetch.bind(window), F = { api: { max: 3, n: 0, q: [] }, mos: { max: 4, n: 0, q: [] } };
+    function tipo(u) { try { var x = new URL(typeof u === "string" ? u : (u && u.url) || "", location.href); if (x.origin !== location.origin || x.pathname.indexOf("/wp-json/") !== 0) return null; return /\/tcd\/v1\/(viz\/px|wms\/)/.test(x.pathname) ? "mos" : "api"; } catch (e) { return null; } }
+    function proximo(f) { while (f.n < f.max && f.q.length) { var t = f.q.shift(); f.n++; t(); } }
+    window.fetch = function (u, o) {
+      var k = tipo(u); if (!k) return orig(u, o);
+      var f = F[k];
+      return new Promise(function (res, rej) {
+        f.q.push(function () { orig(u, o).then(res, rej).finally(function () { f.n--; proximo(f); }); });
+        proximo(f);
+      });
+    };
+  })();
   var SIGLA = "https://cdn.jsdelivr.net/gh/terracruadesignpt-dotcom/Ipr-atlas@3c382ba8826863c1dc0de2142ba8c2c5038e532b/atlas/marca/ipr-sigla.png";
   function ler(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
   function gravar(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
