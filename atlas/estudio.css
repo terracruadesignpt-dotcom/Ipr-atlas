@@ -958,3 +958,18 @@ html.ipe-on body #tcdfmb.ipr-fm-dir{z-index:20!important}
 .ipr-shq-emb p{margin:4px 0 6px;font-size:12px;opacity:.8}
 .ipr-shq-emb textarea{width:100%;box-sizing:border-box;font-size:11px;resize:vertical}
 @media (prefers-color-scheme:dark){.ipr-pp{background:var(--ipe-bg,#1e1e1b);color:var(--ipe-tx,#ecebe6);border-color:rgba(255,255,255,.14)}.ipr-pp-av{color:#e2b26b}}
+
+/* 29. Teclado virtual (s22-teclado.js), 31. Cronologia (s33-cronologia.js), 24/10/2026. */
+body.ipr-kb #ipe .maplibregl-ctrl-bottom-left,body.ipr-kb #ipe .maplibregl-ctrl-bottom-right{visibility:hidden}
+body.ipr-kb .ipr-pp{bottom:calc(var(--ipr-kb,0px) + 8px)}
+.ipr-crono-b.on{border-color:var(--ac);color:var(--ac)}
+.ipr-crono{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:29;padding:8px 10px 10px;background:var(--p1);border:1px solid var(--ln2);border-radius:8px;box-shadow:0 10px 28px rgba(0,0,0,.28);font:12px/1.4 Inter,system-ui,sans-serif;color:var(--tx)}
+.ipr-crono[hidden]{display:none}
+.ipr-crono-c{display:flex;align-items:center;justify-content:space-between}
+.ipr-crono-a{font:600 20px/1.1 var(--mono,"IBM Plex Mono",monospace)}
+.ipr-crono-x{border:0;background:none;color:var(--mu);font-size:18px;line-height:1;padding:2px 6px;cursor:pointer}
+.ipr-crono input[type=range]{width:100%;margin:6px 0 0;accent-color:var(--ac)}
+.ipr-crono-r{display:flex;justify-content:space-between;font:10.5px var(--mono,"IBM Plex Mono",monospace);color:var(--mu);padding:0 2px}
+.ipr-crono-t{margin:6px 0 4px;color:var(--mu)}
+.ipr-crono-f{display:flex;gap:6px;align-items:center;cursor:pointer}
+.ipr-crono-n{margin:4px 0 0;font-size:11px;color:var(--mu)}

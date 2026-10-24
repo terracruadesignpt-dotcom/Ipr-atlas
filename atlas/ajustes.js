@@ -1302,9 +1302,201 @@
     }
     return true;
   }
+  // 29. Teclado virtual e rotação (compilação do Ecossistema IPR, §22; Nuno, 24/10/2026). Com o teclado do telemóvel ou do iPad
+  //     aberto (window.visualViewport), põe a altura dele na variável CSS --ipr-kb e a classe ipr-kb no body, e traz o campo
+  //     em foco (pesquisa, Formiga, formulários dos painéis) para dentro da parte visível. A janela da Formiga já é tratada no §24.
+  //     Ao rodar o aparelho, guarda o centro, o zoom, a rotação e a inclinação, chama map.resize() e repõe a vista.
+  //     As margens das áreas de segurança (entalhe, barra inferior) ficam em --ipr-sa-t/-b/-l/-r para o CSS.
+  function tecladoVirtual() {
+    if (window.__iprKb) return true; window.__iprKb = 1;
+    var raiz = document.documentElement, vv = window.visualViewport;
+    // Áreas de segurança: env() só funciona em CSS, por isso copia-se para variáveis legíveis por todos.
+    if (!document.getElementById("ipr-sa")) {
+      var st = document.createElement("style"); st.id = "ipr-sa";
+      st.textContent = ":root{--ipr-sa-t:env(safe-area-inset-top,0px);--ipr-sa-b:env(safe-area-inset-bottom,0px);--ipr-sa-l:env(safe-area-inset-left,0px);--ipr-sa-r:env(safe-area-inset-right,0px)}";
+      document.head.appendChild(st);
+    }
+    function editavel(el) {
+      if (!el || el === document.body) return false;
+      if (el.isContentEditable) return true;
+      var t = (el.tagName || "").toLowerCase(), tp = (el.type || "").toLowerCase();
+      return t === "textarea" || t === "select" || (t === "input" && !/^(button|submit|checkbox|radio|range|file|color|reset|image|hidden)$/.test(tp));
+    }
+    var aberto = false, tAjuste = 0;
+    function mostrar(el) {
+      if (!vv || !editavel(el)) return;
+      var r = el.getBoundingClientRect(), topo = vv.offsetTop + 8, fundo = vv.offsetTop + vv.height - 12;
+      if (r.bottom > fundo || r.top < topo) {
+        try { el.scrollIntoView({ block: "center", inline: "nearest", behavior: "smooth" }); } catch (e) { try { el.scrollIntoView(false); } catch (x) {} }
+      }
+    }
+    function ajusta() {
+      if (!vv) return;
+      var kb = Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop));
+      var abre = kb > 80 && editavel(document.activeElement);
+      raiz.style.setProperty("--ipr-kb", (abre ? kb : 0) + "px");
+      raiz.style.setProperty("--ipr-vvh", Math.round(vv.height) + "px");
+      if (abre !== aberto) { aberto = abre; document.body.classList.toggle("ipr-kb", abre); }
+      if (abre) { clearTimeout(tAjuste); tAjuste = setTimeout(function () { mostrar(document.activeElement); }, 120); }
+    }
+    if (vv) { vv.addEventListener("resize", ajusta); vv.addEventListener("scroll", ajusta); }
+    document.addEventListener("focusin", function (e) { if (editavel(e.target)) setTimeout(function () { ajusta(); mostrar(e.target); }, 350); });
+    document.addEventListener("focusout", function () { setTimeout(ajusta, 200); });
+    // Rotação: a vista fica onde estava.
+    var antes = null;
+    function guardar() { var I = mapa(); if (!I || !I.getCenter) return; try { antes = { c: I.getCenter(), z: I.getZoom(), b: I.getBearing(), p: I.getPitch() }; } catch (e) { antes = null; } }
+    function repor() {
+      var I = mapa(); if (!I) return;
+      setTimeout(function () {
+        try { I.resize(); } catch (e) {}
+        if (antes) { try { I.jumpTo({ center: antes.c, zoom: antes.z, bearing: antes.b, pitch: antes.p }); } catch (e) {} }
+        try { if (typeof posicoes === "function") posicoes(); } catch (e) {}
+        try { if (typeof formigaSitio === "function") formigaSitio(); } catch (e) {}
+        ajusta();
+      }, 250);
+    }
+    var mq = window.matchMedia ? window.matchMedia("(orientation: portrait)") : null;
+    if (mq) { var mudou = function () { repor(); }; if (mq.addEventListener) mq.addEventListener("change", mudou); else if (mq.addListener) mq.addListener(mudou); }
+    window.addEventListener("orientationchange", repor);
+    // Guarda a vista antes da rotação: em cada movimento do mapa (barato: só lê quatro números).
+    (function liga() { var I = mapa(); if (I && I.on) { I.on("moveend", guardar); guardar(); } else setTimeout(liga, 1000); })();
+    ajusta();
+    return true;
+  }
+  // 30. Preferências do Atlas na conta (compilação do Ecossistema IPR, §25; Nuno, 24/10/2026). Servidor no m90340.
+  //     Só com sessão iniciada (window.TCD_PREFS, impresso pelo m90340). Guarda na conta uma lista fechada de chaves de
+  //     interface: tema claro/escuro e modo leve (ipe_cfg_v1), voo de abertura (ipe_abertura_off), secções da barra
+  //     (ipe_sb_v1), guias vistos (ipe_tour_*), larguras dos painéis e sistema de coordenadas (tcd_atlas_*), árvore de
+  //     camadas recolhida (ipr_arv_v2), visitas da Formiga (ipr_fm_visitas_v2) e os temas da pessoa (ipr_temas_meus).
+  //     Nunca guarda locais, desenhos, rascunhos, a vista do mapa nem as camadas ligadas. A reposição noutro aparelho é feita
+  //     antes do Atlas arrancar, pelo próprio m90340 (só as chaves que faltam no navegador). Aqui só se envia o que mudou:
+  //     verifica de 10 em 10 s, envia no máximo de 30 em 30 s e ao sair da página (sendBeacon). Até 20 KB.
+  var PREF_CHAVES = /^(ipe_cfg_v1|ipe_abertura_off|ipe_sb_v1|ipe_tour_v1|ipe_tour_enc1|ipe_tour_cli1|tcd_atlas_[a-z0-9_-]{1,30}|ipr_arv_v2|ipr_fm_visitas_v2|ipr_temas_meus)$/;
+  function prefsLer() {
+    var o = {}, n = 0;
+    try {
+      for (var i = 0; i < localStorage.length; i++) {
+        var k = localStorage.key(i); if (!k || !PREF_CHAVES.test(k)) continue;
+        var v = localStorage.getItem(k); if (v == null || v.length > 8000) continue;
+        o[k] = v; n += k.length + v.length;
+      }
+    } catch (e) { return null; }
+    return n > 20000 ? null : o;
+  }
+  function prefsConta() {
+    var P = window.TCD_PREFS; if (!P || !P.aj || !P.n) return true; // sem sessão: nada a fazer
+    if (window.__iprPrefs) return true; window.__iprPrefs = 1;
+    var ultimo = JSON.stringify(P.v || {}), enviadoEm = 0, pendente = false;
+    function corpo(v) { var f = new FormData(); f.append("action", "tcd_m340"); f.append("n", P.n); f.append("v", v); return f; }
+    function enviar(forcar) {
+      var o = prefsLer(); if (!o) return; var s = JSON.stringify(o);
+      if (s === ultimo) { pendente = false; return; }
+      if (!forcar && Date.now() - enviadoEm < 30000) { pendente = true; return; }
+      ultimo = s; enviadoEm = Date.now(); pendente = false;
+      try {
+        if (forcar && navigator.sendBeacon) { navigator.sendBeacon(P.aj, corpo(s)); return; }
+        fetch(P.aj, { method: "POST", body: corpo(s), credentials: "same-origin", keepalive: true }).catch(function () { ultimo = ""; });
+      } catch (e) {}
+    }
+    setInterval(function () { enviar(false); }, 10000);
+    window.addEventListener("pagehide", function () { enviar(true); });
+    document.addEventListener("visibilitychange", function () { if (document.visibilityState === "hidden") enviar(true); });
+    return true;
+  }
+  // 31. Cronologia (compilação do Ecossistema IPR, §33; Nuno, 24/10/2026): botão «Cronologia» no cabeçalho da lista de camadas,
+  //     ao lado de «Temas». Abre uma régua que troca o fundo pelas ortofotos que já existem no catálogo (viz.js): 1995, 2007,
+  //     2012, 2015, 2018 e 2023, com o ano e a fonte. Opcionalmente liga as áreas ardidas do período (ICNF: 1975 a 2014 ou 2015
+  //     a 2025; são acumuladas do período, não de um só ano). Usa só R.fundo() e R.ligar() do próprio Atlas. Ao fechar, repõe o
+  //     fundo e as áreas ardidas como estavam antes de abrir. As áreas ardidas são do Intelligence: no Explorer a caixa fica
+  //     desactivada.
+  var CRONO = [
+    { a: 1995, id: "f_o95", t: "Ortofotos 1995 (infravermelho, cores virtuais)", f: "DGT" },
+    { a: 2007, id: "f_o07", t: "Ortofotos 2007", f: "DGT" },
+    { a: 2012, id: "f_o12", t: "Ortofotos 2012", f: "DGT" },
+    { a: 2015, id: "f_o15", t: "Ortofotos 2015", f: "DGT" },
+    { a: 2018, id: "f_orto18", t: "Ortofotos 2018 · 25 cm", f: "DGT" },
+    { a: 2023, id: "f_ortosat", t: "OrtoSat 2023 · 30 cm", f: "DGT" }
+  ];
+  function cronologia() {
+    var cab = document.querySelector(".ipr-arv-cab"); if (!cab) return false; if (cab.querySelector(".ipr-crono-b")) return true;
+    var R = viz(); if (!R || typeof R.fundo !== "function") return false;
+    var b = document.createElement("button"); b.type = "button"; b.className = "ipr-temas-b ipr-crono-b"; b.textContent = "Cronologia";
+    b.title = "Comparar o terreno em anos diferentes"; b.setAttribute("aria-expanded", "false");
+    var p = document.createElement("div"); p.className = "ipr-crono"; p.hidden = true; p.setAttribute("role", "group"); p.setAttribute("aria-label", "Cronologia");
+    var ardTranc = trancada("ard15");
+    p.innerHTML = '<div class="ipr-crono-c"><strong class="ipr-crono-a">2023</strong><button type="button" class="ipr-crono-x" aria-label="Fechar a cronologia">×</button></div>'
+      + '<input type="range" min="0" max="' + (CRONO.length - 1) + '" step="1" value="' + (CRONO.length - 1) + '" aria-label="Ano da imagem">'
+      + '<div class="ipr-crono-r">' + CRONO.map(function (c) { return "<span>" + String(c.a).slice(2) + "</span>"; }).join("") + "</div>"
+      + '<p class="ipr-crono-t"></p>'
+      + '<label class="ipr-crono-f"><input type="checkbox"' + (ardTranc ? " disabled" : "") + '> Áreas ardidas do período (ICNF)</label>'
+      + (ardTranc ? '<p class="ipr-crono-n">As áreas ardidas são do IPR Atlas Intelligence.</p>' : "");
+    var antes = null, rg = p.querySelector("input[type=range]"), cb = p.querySelector("input[type=checkbox]");
+    function ardAct() { var a = []; try { a = R.activas(); } catch (e) {} return { a15: a.indexOf("ard15") > -1, a75: a.indexOf("ard75") > -1 }; }
+    function aplicar() {
+      var c = CRONO[+rg.value] || CRONO[CRONO.length - 1];
+      try { R.fundo(c.id); } catch (e) {}
+      p.querySelector(".ipr-crono-a").textContent = c.a; p.querySelector(".ipr-crono-t").textContent = c.t + " · " + c.f;
+      if (cb.checked && !ardTranc) {
+        var novo = c.a >= 2015;
+        try { R.ligar("ard15", novo); R.ligar("ard75", !novo); } catch (e) {}
+      }
+    }
+    function abrir() {
+      if (!p.hidden) return;
+      antes = { fundo: fundoActual(), ard: ardAct() };
+      var i = CRONO.map(function (c) { return c.id; }).indexOf(antes.fundo); rg.value = i > -1 ? i : CRONO.length - 1;
+      p.hidden = false; b.setAttribute("aria-expanded", "true"); b.classList.add("on"); aplicar();
+    }
+    function fechar() {
+      if (p.hidden) return; p.hidden = true; b.setAttribute("aria-expanded", "false"); b.classList.remove("on");
+      if (antes) {
+        try { if (antes.fundo) R.fundo(antes.fundo); } catch (e) {}
+        if (!ardTranc) { try { R.ligar("ard15", antes.ard.a15); R.ligar("ard75", antes.ard.a75); } catch (e) {} }
+      }
+      antes = null; cb.checked = false;
+    }
+    b.addEventListener("click", function (e) { e.stopPropagation(); if (p.hidden) abrir(); else fechar(); });
+    rg.addEventListener("input", aplicar);
+    cb.addEventListener("change", function () {
+      if (ardTranc) return;
+      if (cb.checked) aplicar(); else { try { R.ligar("ard15", antes ? antes.ard.a15 : false); R.ligar("ard75", antes ? antes.ard.a75 : false); } catch (e) {} }
+    });
+    p.querySelector(".ipr-crono-x").addEventListener("click", function (e) { e.stopPropagation(); fechar(); });
+    p.addEventListener("click", function (e) { e.stopPropagation(); });
+    p.addEventListener("keydown", function (e) { e.stopPropagation(); if (e.key === "Escape") fechar(); });
+    var tb = cab.querySelector(".ipr-temas-b");
+    if (tb && tb.nextSibling) cab.insertBefore(b, tb.nextSibling); else cab.insertBefore(b, cab.firstChild);
+    cab.appendChild(p);
+    return true;
+  }
+  // 32. Piloto de Alcanena (compilação do Ecossistema IPR, §32; Nuno, 24/10/2026): tema «Piloto de Alcanena» no menu «Temas»
+  //     (§25). Liga as camadas do catálogo que servem a leitura do sistema cársico: rede hidrográfica, bacias, bacias por troço,
+  //     massas e unidades hidrogeológicas, nascentes monitorizadas, geologia, áreas protegidas e Rede Natura (Parque Natural das
+  //     Serras de Aire e Candeeiros), habitats, sombreado e nomes; e voa até ao Maciço Calcário Estremenho, com a nascente dos
+  //     Olhos de Água do Alviela e Alcanena no enquadramento. As camadas do Intelligence ficam de fora para o Explorer (§25).
+  //     Não há camada própria de carso no catálogo: a leitura faz-se pela geologia e pela hidrogeologia.
+  var ALCANENA = { id: "alcanena", nome: "Piloto de Alcanena", fundo: "f_ortosat",
+    c: ["hidro", "bacias", "bac_troco", "aquif", "hidrog", "apasub", "geo", "rnap", "n2k", "habitats", "r_somb", "o_agua", "o_nomes"],
+    voo: { center: [-8.735, 39.485], zoom: 11.3, pitch: 50, bearing: 20 } };
+  function pilotoAlcanena() {
+    if (window.__iprAlc) return true;
+    if (typeof TEMAS_IPR === "undefined" || !viz()) return false;
+    window.__iprAlc = 1;
+    if (!TEMAS_IPR.some(function (t) { return t.id === ALCANENA.id; })) TEMAS_IPR.push(ALCANENA);
+    // O menu do §25 só liga as camadas; o voo acrescenta-se aqui, depois do clique dele.
+    document.addEventListener("click", function (e) {
+      var q = e.target && e.target.closest && e.target.closest('[data-tema="ipr:' + ALCANENA.id + '"]'); if (!q) return;
+      setTimeout(function () {
+        var I = mapa(); if (!I || !I.flyTo) return;
+        var reduz = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        try { if (reduz) I.jumpTo(ALCANENA.voo); else I.flyTo(Object.assign({ duration: 3500, essential: true }, ALCANENA.voo)); } catch (x) {}
+      }, 60);
+    }, true);
+    return true;
+  }
   function correr() {
     voltas++;
-    [["marca", marca], ["puxadores", puxadores], ["creditos", creditos], ["estado", estado], ["formiga", formiga], ["projectos", projectos], ["editavel", editavel], ["semBug", semBug], ["rosa", rosa], ["arrumar", arrumar], ["projDir", projDir], ["testarEsq", testarEsq], ["contaTopo", contaTopo], ["camadasTopo", camadasTopo], ["sintetizar", sintetizar], ["opcoesCamadas", opcoesCamadas], ["projFechados", projFechados], ["todasMais", todasMais], ["painelTopo", painelTopo], ["qfieldQR", qfieldQR], ["temas", temas], ["natural", natural], ["aprenderDesenho", aprenderDesenho], ["fichas", fichasCamada], ["parcelas", parcelasPonto], ["partilhaQR", partilhaQR]].forEach(function (f) { if (!feito[f[0]]) { try { feito[f[0]] = f[1](); } catch (e) {} } });
+    [["marca", marca], ["puxadores", puxadores], ["creditos", creditos], ["estado", estado], ["formiga", formiga], ["projectos", projectos], ["editavel", editavel], ["semBug", semBug], ["rosa", rosa], ["arrumar", arrumar], ["projDir", projDir], ["testarEsq", testarEsq], ["contaTopo", contaTopo], ["camadasTopo", camadasTopo], ["sintetizar", sintetizar], ["opcoesCamadas", opcoesCamadas], ["projFechados", projFechados], ["todasMais", todasMais], ["painelTopo", painelTopo], ["qfieldQR", qfieldQR], ["temas", temas], ["natural", natural], ["aprenderDesenho", aprenderDesenho], ["fichas", fichasCamada], ["parcelas", parcelasPonto], ["partilhaQR", partilhaQR], ["teclado", tecladoVirtual], ["prefs", prefsConta], ["cronologia", cronologia], ["alcanena", pilotoAlcanena]].forEach(function (f) { if (!feito[f[0]]) { try { feito[f[0]] = f[1](); } catch (e) {} } });
     try { nomes(); } catch (e) {}
     try { equipa(); } catch (e) {}
     try { if (window.__iprTodas && !document.getElementById("ipr-todas")) todasBases(); } catch (e) {}
