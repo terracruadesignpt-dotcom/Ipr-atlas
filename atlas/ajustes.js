@@ -1687,9 +1687,31 @@
     limpar();
     return true;
   }
+  // 33. «Os meus projectos» em barras recolhidas (24/10/2026, pedido do Nuno): ao entrar sem ?mapa= nenhum projecto
+  //     aparece aberto (o app.js abria o primeiro); tocar numa barra abre-a e fecha a anterior; tocar outra vez fecha-a.
+  function projRecolhidos() {
+    if (window.__iprProjRec) return true;
+    var raiz = document.getElementById("ipe-proj"); if (!raiz) return false;
+    window.__iprProjRec = 1;
+    var aberto = new URLSearchParams(location.search).get("mapa") ? null : "-";
+    function aplicar() {
+      if (aberto === null) return;
+      raiz.querySelectorAll(".ipe-card[data-i]").forEach(function (c) { var q = c.dataset.i === aberto; if (c.classList.contains("on") !== q) c.classList.toggle("on", q); });
+    }
+    raiz.addEventListener("click", function (e) {
+      var cc = e.target.closest && e.target.closest(".ipe-card[data-i] > .ipe-cc"); if (!cc || e.target.closest(".ipc-cmp")) return;
+      var k = cc.parentNode.dataset.i;
+      var era = aberto === null ? (cc.parentNode.classList.contains("on") ? k : "-") : aberto;
+      aberto = era === k ? "-" : k;
+      setTimeout(aplicar, 0); setTimeout(aplicar, 150);
+    }, true);
+    new MutationObserver(function () { aplicar(); }).observe(raiz, { childList: true, subtree: true });
+    aplicar();
+    return true;
+  }
   function correr() {
     voltas++;
-    [["marca", marca], ["puxadores", puxadores], ["creditos", creditos], ["estado", estado], ["formiga", formiga], ["projectos", projectos], ["editavel", editavel], ["semBug", semBug], ["rosa", rosa], ["arrumar", arrumar], ["projDir", projDir], ["testarEsq", testarEsq], ["contaTopo", contaTopo], ["camadasTopo", camadasTopo], ["sintetizar", sintetizar], ["opcoesCamadas", opcoesCamadas], ["projFechados", projFechados], ["todasMais", todasMais], ["painelTopo", painelTopo], ["qfieldQR", qfieldQR], ["temas", temas], ["natural", natural], ["aprenderDesenho", aprenderDesenho], ["fichas", fichasCamada], ["natureza", fichasNatureza], ["parcelas", parcelasPonto], ["partilhaQR", partilhaQR], ["teclado", tecladoVirtual], ["prefs", prefsConta], ["cronologia", cronologia], ["alcanena", pilotoAlcanena], ["estilosOrg", estilosOrg], ["fimDoVoo", fimDoVoo], ["orgNomes", orgNomes]].forEach(function (f) { if (!feito[f[0]]) { try { feito[f[0]] = f[1](); } catch (e) {} } });
+    [["marca", marca], ["puxadores", puxadores], ["creditos", creditos], ["estado", estado], ["formiga", formiga], ["projectos", projectos], ["editavel", editavel], ["semBug", semBug], ["rosa", rosa], ["arrumar", arrumar], ["projDir", projDir], ["testarEsq", testarEsq], ["contaTopo", contaTopo], ["camadasTopo", camadasTopo], ["sintetizar", sintetizar], ["opcoesCamadas", opcoesCamadas], ["projFechados", projFechados], ["todasMais", todasMais], ["painelTopo", painelTopo], ["qfieldQR", qfieldQR], ["temas", temas], ["natural", natural], ["aprenderDesenho", aprenderDesenho], ["fichas", fichasCamada], ["natureza", fichasNatureza], ["parcelas", parcelasPonto], ["partilhaQR", partilhaQR], ["teclado", tecladoVirtual], ["prefs", prefsConta], ["cronologia", cronologia], ["alcanena", pilotoAlcanena], ["estilosOrg", estilosOrg], ["fimDoVoo", fimDoVoo], ["orgNomes", orgNomes], ["projRecolhidos", projRecolhidos]].forEach(function (f) { if (!feito[f[0]]) { try { feito[f[0]] = f[1](); } catch (e) {} } });
     try { nomes(); } catch (e) {}
     try { equipa(); } catch (e) {}
     try { if (window.__iprTodas && !document.getElementById("ipr-todas")) todasBases(); } catch (e) {}
