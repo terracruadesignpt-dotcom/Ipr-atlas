@@ -1494,9 +1494,46 @@
     }, true);
     return true;
   }
+  // 29. Fichas das camadas de «Natureza e clima» (compilação do Ecossistema IPR, §38 e §31; 24/10/2026). As camadas entram
+  //     no catálogo do viz.js (s38-viz-aplicar.py); aqui só se juntam as fichas a window.IPR_FICHAS (§28), para o botão
+  //     «Ficha da camada» e para a Formiga. Corre depois do §28; sem IPR_FICHAS espera pela volta seguinte.
+  function fichasNatureza() {
+    var F = window.IPR_FICHAS; if (!F) return false;
+    if (F.n_gbif_todas) return true;
+    var gbif = {
+      g: "Natureza e clima · Biodiversidade (GBIF)",
+      s: "Saber que grupos de seres vivos já foram registados perto do terreno e onde vale a pena procurar ou pedir levantamentos.",
+      l: "Hexágonos coloridos pelo número de registos: cores mais quentes, mais registos. Zonas vazias querem dizer sem registos, não sem espécies.",
+      f: "GBIF.org (Global Biodiversity Information Facility), API de mapas v2; dados de muitas instituições, cada conjunto com a sua licença (CC0, CC BY 4.0 ou CC BY-NC 4.0).",
+      d: "Actualizado pelo GBIF todos os dias a partir dos conjuntos publicados; os registos vão de colecções antigas a observações recentes.",
+      c: "Mundial; mostrado aqui para Portugal, Açores, Madeira e a Península.",
+      e: "Hexágonos de tamanho fixo no ecrã (40 por mosaico): ao aproximar ficam mais finos; precisão de cada registo variável.",
+      lim: "Mostra o esforço de observação tanto como a biodiversidade. Espécies sensíveis podem vir generalizadas ou ocultas na origem. Para citar, usar o DOI do descarregamento no GBIF.org.",
+      ex: "Num vale com muitos registos de aves junto a uma ribeira, a galeria ripícola merece protecção e um percurso de observação.",
+      est: "experimental"
+    };
+    var gibs = {
+      g: "Natureza e clima · Água e clima (NASA GIBS)",
+      s: "Leitura regional do ciclo da água: onde há neve, quanta água o solo guarda e quanto se perde por evaporação.",
+      l: "Cores conforme a legenda da NASA para cada produto; não permite consultar valores aqui.",
+      f: "NASA EOSDIS GIBS (Global Imagery Browse Services); dados NASA sem restrições de uso, com indicação da fonte.",
+      c: "Mundial; mostrado aqui para Portugal, Açores, Madeira e a Península.",
+      lim: "Resolução grosseira para um terreno: serve para comparar regiões e estações, não para dimensionar obras.",
+      ex: "Comparar a humidade do solo de Outubro entre o Barlavento e a Beira Interior antes de escolher espécies.",
+      est: "experimental"
+    };
+    function junta(id, base, extra) { var f = { id: id }; for (var k in base) f[k] = base[k]; for (var k2 in extra) f[k2] = extra[k2]; f.porConfirmar = []; F[id] = f; }
+    junta("n_gbif_todas", gbif, { n: "Ocorrências de espécies (todas)", o: "Número de registos de ocorrência de qualquer ser vivo reunidos pelo GBIF, agregados em hexágonos." });
+    junta("n_gbif_aves", gbif, { n: "Ocorrências de aves", o: "Número de registos de aves (classe Aves) reunidos pelo GBIF, agregados em hexágonos." });
+    junta("n_gbif_plantas", gbif, { n: "Ocorrências de plantas", o: "Número de registos de plantas (reino Plantae) reunidos pelo GBIF, agregados em hexágonos." });
+    junta("n_gibs_neve", gibs, { n: "Neve · cobertura média em Janeiro de 2026 (MODIS)", o: "Percentagem média de dias com neve no mês, vista pelo satélite Terra (MODIS).", d: "Janeiro de 2026 (fixo; mudar a data no catálogo para outro mês).", e: "Cerca de 5 km por píxel." });
+    junta("n_gibs_humsolo", gibs, { n: "Humidade do solo na zona das raízes · dia mais recente (SMAP)", o: "Água no primeiro metro de solo, estimada pelo modelo SMAP L4 com dados de satélite.", d: "Diário, com alguns dias de atraso; mostra sempre o dia mais recente disponível.", e: "Cerca de 9 km por píxel." });
+    junta("n_gibs_evap", gibs, { n: "Evaporação sobre terra · Julho de 2026 (MERRA-2)", o: "Água devolvida à atmosfera a partir do solo e da vegetação, em média mensal (reanálise MERRA-2).", d: "Julho de 2026 (fixo).", e: "Cerca de 50 km por píxel." });
+    return true;
+  }
   function correr() {
     voltas++;
-    [["marca", marca], ["puxadores", puxadores], ["creditos", creditos], ["estado", estado], ["formiga", formiga], ["projectos", projectos], ["editavel", editavel], ["semBug", semBug], ["rosa", rosa], ["arrumar", arrumar], ["projDir", projDir], ["testarEsq", testarEsq], ["contaTopo", contaTopo], ["camadasTopo", camadasTopo], ["sintetizar", sintetizar], ["opcoesCamadas", opcoesCamadas], ["projFechados", projFechados], ["todasMais", todasMais], ["painelTopo", painelTopo], ["qfieldQR", qfieldQR], ["temas", temas], ["natural", natural], ["aprenderDesenho", aprenderDesenho], ["fichas", fichasCamada], ["parcelas", parcelasPonto], ["partilhaQR", partilhaQR], ["teclado", tecladoVirtual], ["prefs", prefsConta], ["cronologia", cronologia], ["alcanena", pilotoAlcanena]].forEach(function (f) { if (!feito[f[0]]) { try { feito[f[0]] = f[1](); } catch (e) {} } });
+    [["marca", marca], ["puxadores", puxadores], ["creditos", creditos], ["estado", estado], ["formiga", formiga], ["projectos", projectos], ["editavel", editavel], ["semBug", semBug], ["rosa", rosa], ["arrumar", arrumar], ["projDir", projDir], ["testarEsq", testarEsq], ["contaTopo", contaTopo], ["camadasTopo", camadasTopo], ["sintetizar", sintetizar], ["opcoesCamadas", opcoesCamadas], ["projFechados", projFechados], ["todasMais", todasMais], ["painelTopo", painelTopo], ["qfieldQR", qfieldQR], ["temas", temas], ["natural", natural], ["aprenderDesenho", aprenderDesenho], ["fichas", fichasCamada], ["natureza", fichasNatureza], ["parcelas", parcelasPonto], ["partilhaQR", partilhaQR], ["teclado", tecladoVirtual], ["prefs", prefsConta], ["cronologia", cronologia], ["alcanena", pilotoAlcanena]].forEach(function (f) { if (!feito[f[0]]) { try { feito[f[0]] = f[1](); } catch (e) {} } });
     try { nomes(); } catch (e) {}
     try { equipa(); } catch (e) {}
     try { if (window.__iprTodas && !document.getElementById("ipr-todas")) todasBases(); } catch (e) {}
