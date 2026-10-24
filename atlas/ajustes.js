@@ -1785,7 +1785,10 @@
     function passos() {
       var ua = navigator.userAgent || "", ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
       var safariMac = !ios && /Safari\//.test(ua) && !/Chrome|Chromium|Edg\//.test(ua), firefox = /Firefox\//.test(ua), android = /Android/.test(ua);
-      if (ios) return '<ol><li>Toque em <b style="display:inline">Partilhar</b> (o quadrado com a seta para cima), na barra do Safari.</li><li>Escolha «Adicionar ao ecrã principal».</li><li>Confirme com «Adicionar».</li></ol><small>No iPhone e no iPad tem de ser no Safari.</small>';
+      var outroIOS = ios && (!!navigator.brave || /CriOS|FxiOS|EdgiOS|OPiOS|GSA\//.test(ua));
+      if (ios) return (outroIOS ? '<p style="margin:0 0 6px"><b style="display:inline">Este navegador não instala apps.</b> Abra o IPR Atlas no Safari:</p><p style="margin:0 0 8px"><button type="button" class="ipe-b ipe-b--s" data-ipr-copiar-app>Copiar a ligação</button> e cole-a no Safari.</p>' : "") +
+        '<ol><li>No Safari, toque em <b style="display:inline">Partilhar</b> (o quadrado com a seta para cima).</li><li>Deslize a lista para baixo e escolha «Adicionar ao ecrã principal».</li><li>Confirme com «Adicionar».</li></ol>' +
+        (outroIOS ? "" : '<small>Se não vir «Adicionar ao ecrã principal», está noutro navegador (Brave, Chrome…): abra a ligação no Safari.</small>');
       if (safariMac) return '<ol><li>No menu Ficheiro do Safari, escolha «Adicionar à Dock».</li></ol>';
       if (firefox) return '<p style="margin:0 0 8px">O Firefox não instala apps de sites. Abra o IPR Atlas no Chrome, no Edge ou no Safari.</p>';
       if (android) return '<ol><li>Toque no menu ⋮ do Chrome.</li><li>Escolha «Instalar aplicação» ou «Adicionar ao ecrã principal».</li></ol>';
@@ -1819,6 +1822,7 @@
       p.innerHTML = '<button type="button" class="x" aria-label="Fechar">×</button><b>IPR Atlas como app</b><p style="margin:0 0 6px">Fica um ícone no ecrã principal e o Atlas abre directamente no mapa, em ecrã inteiro.</p>' + passos();
       document.body.appendChild(p);
       p.querySelector(".x").onclick = function () { p.remove(); };
+      var cp = p.querySelector("[data-ipr-copiar-app]"); if (cp) cp.onclick = function (ev) { ev.stopPropagation(); var u = location.origin + "/atlas/"; try { navigator.clipboard.writeText(u).then(function () { cp.textContent = "Ligação copiada"; }, function () { prompt("Copie a ligação:", u); }); } catch (x) { prompt("Copie a ligação:", u); } };
       setTimeout(function () { document.addEventListener("click", function fora(ev) { if (!p.contains(ev.target)) { p.remove(); document.removeEventListener("click", fora); } }); }, 0);
     });
     return true;
