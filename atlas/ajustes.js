@@ -1531,9 +1531,119 @@
     junta("n_gibs_evap", gibs, { n: "Evaporação sobre terra · Julho de 2026 (MERRA-2)", o: "Água devolvida à atmosfera a partir do solo e da vegetação, em média mensal (reanálise MERRA-2).", d: "Julho de 2026 (fixo).", e: "Cerca de 50 km por píxel." });
     return true;
   }
+  // 30. Estilos e temas dos projectos QGIS nas camadas da organização (24/10/2026, Quinta Linda). O org.js (outra sessão)
+  //     pinta cada camada com a cor do grupo; quando o GeoJSON traz a simbologia convertida do QGIS (propriedades _f, _s,
+  //     _sw, _dk, _m, _i, _lb…, gravadas pelo importador do Núcleo), aqui troca-se a pintura por expressões por elemento,
+  //     juntam-se traços, marcadores ao longo das linhas, ícones e rótulos, e ordena-se como no projecto (_z).
+  //     Elementos com _img são temas inteiros renderizados pelo QGIS: entram como imagem georreferenciada, com a legenda
+  //     do tema num cartão, e só um tema fica ligado de cada vez. Não altera o org.js: embrulha addLayer/setLayoutProperty.
+  function estilosOrg() {
+    var m = mapa(); if (!m || !m.addLayer || !window.tcdOrg) return false;
+    if (m.__iprEstOrg) return true; m.__iprEstOrg = 1;
+    var extra = {}, temas = {}, cor0 = {};
+    var addL = m.addLayer.bind(m), setLP = m.setLayoutProperty.bind(m);
+    function dados(src) { try { var s = m.getSource(src); var d = s && s.serialize && s.serialize().data; return d && d.features ? d : null; } catch (e) { return null; } }
+    function px(k, d) { return ["coalesce", ["to-number", ["get", k]], d]; }
+    function larg(k, d) { return ["interpolate", ["exponential", 2], ["zoom"], 13, ["*", px(k, d), 0.35], 17, px(k, d), 20, ["*", px(k, d), 3]]; }
+    function vis(id) { try { return m.getLayoutProperty(id, "visibility") !== "none"; } catch (e) { return false; } }
+    function juntar(id, base, def) { try { if (!m.getLayer(def.id)) addL(def); } catch (e) { return; } (extra[id] = extra[id] || []).push(def.id); }
+    function legenda(id, png, nome) {
+      var c = document.getElementById("ipr-leg-org");
+      if (!png) { if (c && c.dataset.id === String(id)) c.remove(); return; }
+      if (!c) { c = document.createElement("div"); c.id = "ipr-leg-org"; c.style.cssText = "position:absolute;left:10px;bottom:38px;z-index:5;max-height:55vh;overflow:auto;background:rgba(255,255,255,.94);border:1px solid rgba(0,0,0,.15);border-radius:8px;padding:6px 8px;box-shadow:0 2px 10px rgba(0,0,0,.15);font:12px Inter,sans-serif;color:#222;max-width:260px"; (m.getContainer() || document.body).appendChild(c); }
+      c.dataset.id = id; c.innerHTML = '<div style="display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:4px"><b style="font-weight:600">' + String(nome || "Legenda").replace(/[<>&]/g, "") + '</b><button type="button" aria-label="Fechar legenda" style="border:0;background:none;cursor:pointer;font-size:15px;line-height:1">×</button></div><img alt="Legenda do tema" style="display:block;max-width:240px;height:auto">';
+      c.querySelector("img").src = png; c.querySelector("button").onclick = function () { c.remove(); };
+    }
+    function estilizar(id) {
+      var src = "org-" + id, d = dados(src); if (!d || !d.features.length) return;
+      var p0 = d.features[0].properties || {};
+      if (p0._img) { // tema renderizado pelo QGIS
+        temas[id] = { nome: p0._tema || "", leg: p0._leg || "" };
+        ["f", "l", "p"].forEach(function (s) { try { m.setFilter(src + "-" + s, ["!", ["has", "_img"]]); } catch (e) {} });
+        try { if (!m.getSource(src + "-img")) m.addSource(src + "-img", { type: "image", url: p0._img, coordinates: p0._cantos }); } catch (e) { return; }
+        juntar(id, src, { id: src + "-img", type: "raster", source: src + "-img", paint: { "raster-opacity": Number(p0._ro || 1), "raster-fade-duration": 0 } });
+        try { m.moveLayer(src + "-img", src + "-f"); } catch (e) {}
+        // só um tema de cada vez
+        Object.keys(temas).forEach(function (o) { if (+o !== +id && vis("org-" + o + "-f")) { window.tcdOrg.desligar(+o); var cb = document.querySelector('[data-ipo-c="' + o + '"]'); if (cb) cb.checked = false; } });
+        legenda(id, temas[id].leg, temas[id].nome);
+        return;
+      }
+      if (p0._z === undefined) return; // camada sem simbologia: fica como o org.js a desenhou
+      cor0[id] = 1;
+      var tem = function (k) { return d.features.some(function (f) { return f.properties && f.properties[k] !== undefined && f.properties[k] !== null && f.properties[k] !== ""; }); };
+      try {
+        m.setPaintProperty(src + "-f", "fill-color", ["coalesce", ["get", "_f"], "rgba(0,0,0,0)"]);
+        m.setPaintProperty(src + "-f", "fill-opacity", ["case", ["has", "_f"], px("_fo", 1), 0]);
+        m.setPaintProperty(src + "-l", "line-color", ["coalesce", ["get", "_s"], "rgba(0,0,0,0)"]);
+        m.setPaintProperty(src + "-l", "line-opacity", ["case", ["any", ["!", ["has", "_s"]], ["has", "_dk"]], 0, px("_so", 1)]);
+        m.setPaintProperty(src + "-l", "line-width", larg("_sw", 1));
+        m.setPaintProperty(src + "-p", "circle-color", ["coalesce", ["get", "_f"], "#777"]);
+        m.setPaintProperty(src + "-p", "circle-opacity", ["case", ["has", "_i"], 0, px("_fo", 1)]);
+        m.setPaintProperty(src + "-p", "circle-radius", ["interpolate", ["linear"], ["zoom"], 13, 2, 17, ["max", ["*", px("_r", 4), 0.55], 3], 20, ["max", ["*", px("_r", 4), 1.4], 5]]);
+        m.setPaintProperty(src + "-p", "circle-stroke-color", ["coalesce", ["get", "_s"], "#fff"]);
+        m.setPaintProperty(src + "-p", "circle-stroke-width", ["case", ["has", "_i"], 0, ["has", "_s"], px("_sw", 0.6), 0]);
+      } catch (e) {}
+      var linhas = ["any", ["==", ["geometry-type"], "LineString"], ["==", ["geometry-type"], "Polygon"]];
+      // traços: um estrato por padrão (line-dasharray constante)
+      var dk = {}; d.features.forEach(function (f) { var k = f.properties && f.properties._dk; if (k) dk[k] = 1; });
+      Object.keys(dk).forEach(function (k, i) {
+        var arr = k.split(",").map(Number).filter(function (x) { return x > 0; }); if (arr.length < 2) arr = [2, 2];
+        juntar(id, src, { id: src + "-x-d" + i, type: "line", source: src, filter: ["all", linhas, ["==", ["get", "_dk"], k]], layout: { "line-cap": "butt" }, paint: { "line-color": ["coalesce", ["get", "_s"], "#333"], "line-opacity": px("_so", 1), "line-width": larg("_sw", 1), "line-dasharray": arr } });
+      });
+      if (tem("_s2")) juntar(id, src, { id: src + "-x-s2", type: "line", source: src, filter: ["all", linhas, ["has", "_s2"]], paint: { "line-color": ["get", "_s2"], "line-width": larg("_sw2", 0.5) } });
+      // marcadores ao longo das linhas (árvores das keylines, drenos): pontos redondos espaçados
+      if (tem("_m")) {
+        var md = {}; d.features.forEach(function (f) { var v = f.properties && f.properties._md; if (v) md[v] = 1; });
+        Object.keys(md).forEach(function (v, i) {
+          juntar(id, src, { id: src + "-x-m" + i, type: "line", source: src, filter: ["all", linhas, ["has", "_m"], ["==", ["to-string", ["get", "_md"]], v]], layout: { "line-cap": "round", "line-join": "round" }, paint: { "line-color": ["get", "_m"], "line-opacity": px("_mo", 1), "line-width": larg("_mw", 3), "line-dasharray": [0.01, Math.max(+v, 1.2)] } });
+        });
+      }
+      // ícones SVG convertidos (ex.: colmeias)
+      if (tem("_i") && window.IPR_ORG_ICONES) {
+        Object.keys(window.IPR_ORG_ICONES).forEach(function (k) {
+          if (m.hasImage("org-i-" + k)) return; var im = new Image(); im.onload = function () { try { if (!m.hasImage("org-i-" + k)) m.addImage("org-i-" + k, im, { pixelRatio: 2 }); } catch (e) {} }; im.src = "data:image/png;base64," + window.IPR_ORG_ICONES[k];
+        });
+        juntar(id, src, { id: src + "-x-i", type: "symbol", source: src, filter: ["has", "_i"], layout: { "icon-image": ["concat", "org-i-", ["get", "_i"]], "icon-size": ["interpolate", ["linear"], ["zoom"], 14, 0.35, 18, 0.8], "icon-allow-overlap": true } });
+      }
+      // rótulos
+      if (tem("_lb")) {
+        var emLinha = d.features.some(function (f) { return f.geometry && /LineString/.test(f.geometry.type) && f.properties && f.properties._lb; });
+        juntar(id, src, { id: src + "-x-t", type: "symbol", source: src, filter: ["has", "_lb"], minzoom: 15,
+          layout: { "text-field": ["get", "_lb"], "text-font": ["Noto Sans Regular"], "text-size": ["interpolate", ["linear"], ["zoom"], 15, ["*", px("_lz", 11), 0.75], 18, ["*", px("_lz", 11), 1.1]], "symbol-placement": emLinha ? "line" : "point", "text-max-angle": 40, "text-padding": 2 },
+          paint: { "text-color": ["coalesce", ["get", "_lc"], "#222"], "text-halo-color": ["case", ["==", ["coalesce", ["get", "_lh"], ""], ""], "rgba(255,255,255,.75)", ["get", "_lh"]], "text-halo-width": 1.4 } });
+      }
+      ordenar();
+    }
+    function zDe(id) { var d = dados("org-" + id); return d && d.features[0] && d.features[0].properties && +d.features[0].properties._z || 0; }
+    function ordenar() {
+      var ids = Object.keys(cor0).sort(function (a, b) { return zDe(a) - zDe(b); });
+      ids.forEach(function (id) { ["f", "l"].concat((extra[id] || []).filter(function (x) { return !/-(t|i)$/.test(x) && !/-img$/.test(x); }).map(function (x) { return x.replace("org-" + id + "-", ""); })).concat(["p"]).forEach(function (s) { var L = "org-" + id + "-" + s; try { if (m.getLayer(L)) m.moveLayer(L); } catch (e) {} }); });
+      ids.forEach(function (id) { (extra[id] || []).filter(function (x) { return /-(t|i)$/.test(x); }).forEach(function (L) { try { m.moveLayer(L); } catch (e) {} }); });
+    }
+    m.addLayer = function (def, antes) {
+      var r = addL(def, antes), g = def && def.id && /^org-(\d+)-p$/.exec(def.id);
+      if (g) { var id = +g[1]; setTimeout(function () { estilizar(id); }, 0); }
+      return r;
+    };
+    m.setLayoutProperty = function (L, k, v, o) {
+      var r = setLP(L, k, v, o), g = /^org-(\d+)-f$/.exec(L);
+      if (g && k === "visibility") {
+        var id = +g[1]; (extra[id] || []).forEach(function (x) { try { setLP(x, "visibility", v); } catch (e) {} });
+        if (temas[id]) {
+          if (v === "none") legenda(id, ""); else { legenda(id, temas[id].leg, temas[id].nome); Object.keys(temas).forEach(function (o) { if (+o !== id && vis("org-" + o + "-f")) { window.tcdOrg.desligar(+o); var cb = document.querySelector('[data-ipo-c="' + o + '"]'); if (cb) cb.checked = false; } }); }
+        }
+      }
+      return r;
+    };
+    // a janela de atributos do org.js mostra as propriedades todas: tirar as de estilo (começam por «_»)
+    try { new MutationObserver(function () { document.querySelectorAll(".ipo-pop tr").forEach(function (tr) { var k = tr.firstChild && tr.firstChild.textContent || ""; if (k.charAt(0) === "_") tr.remove(); }); }).observe(m.getContainer(), { childList: true, subtree: true }); } catch (e) {}
+    // camadas já desenhadas antes deste ajuste
+    Object.keys((m.getStyle() || {}).sources || {}).forEach(function (s) { var g = /^org-(\d+)$/.exec(s); if (g && m.getLayer(s + "-p")) estilizar(+g[1]); });
+    return true;
+  }
   function correr() {
     voltas++;
-    [["marca", marca], ["puxadores", puxadores], ["creditos", creditos], ["estado", estado], ["formiga", formiga], ["projectos", projectos], ["editavel", editavel], ["semBug", semBug], ["rosa", rosa], ["arrumar", arrumar], ["projDir", projDir], ["testarEsq", testarEsq], ["contaTopo", contaTopo], ["camadasTopo", camadasTopo], ["sintetizar", sintetizar], ["opcoesCamadas", opcoesCamadas], ["projFechados", projFechados], ["todasMais", todasMais], ["painelTopo", painelTopo], ["qfieldQR", qfieldQR], ["temas", temas], ["natural", natural], ["aprenderDesenho", aprenderDesenho], ["fichas", fichasCamada], ["natureza", fichasNatureza], ["parcelas", parcelasPonto], ["partilhaQR", partilhaQR], ["teclado", tecladoVirtual], ["prefs", prefsConta], ["cronologia", cronologia], ["alcanena", pilotoAlcanena]].forEach(function (f) { if (!feito[f[0]]) { try { feito[f[0]] = f[1](); } catch (e) {} } });
+    [["marca", marca], ["puxadores", puxadores], ["creditos", creditos], ["estado", estado], ["formiga", formiga], ["projectos", projectos], ["editavel", editavel], ["semBug", semBug], ["rosa", rosa], ["arrumar", arrumar], ["projDir", projDir], ["testarEsq", testarEsq], ["contaTopo", contaTopo], ["camadasTopo", camadasTopo], ["sintetizar", sintetizar], ["opcoesCamadas", opcoesCamadas], ["projFechados", projFechados], ["todasMais", todasMais], ["painelTopo", painelTopo], ["qfieldQR", qfieldQR], ["temas", temas], ["natural", natural], ["aprenderDesenho", aprenderDesenho], ["fichas", fichasCamada], ["natureza", fichasNatureza], ["parcelas", parcelasPonto], ["partilhaQR", partilhaQR], ["teclado", tecladoVirtual], ["prefs", prefsConta], ["cronologia", cronologia], ["alcanena", pilotoAlcanena], ["estilosOrg", estilosOrg]].forEach(function (f) { if (!feito[f[0]]) { try { feito[f[0]] = f[1](); } catch (e) {} } });
     try { nomes(); } catch (e) {}
     try { equipa(); } catch (e) {}
     try { if (window.__iprTodas && !document.getElementById("ipr-todas")) todasBases(); } catch (e) {}
