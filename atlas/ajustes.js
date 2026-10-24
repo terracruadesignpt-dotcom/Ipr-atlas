@@ -1641,9 +1641,31 @@
     Object.keys((m.getStyle() || {}).sources || {}).forEach(function (s) { var g = /^org-(\d+)$/.exec(s); if (g && m.getLayer(s + "-p")) estilizar(+g[1]); });
     return true;
   }
+  // 31. Fim do voo de entrada (24/10/2026, pedido do Nuno): o voo da abertura acaba na Melriça em 3D; quando termina (ou se
+  //     salta), o mapa volta a 2D, com o norte para cima, a mostrar Portugal continental. Segue a marca window.__ipeAb do
+  //     app.js (1 durante o voo, 0 cerca de 1,8 s depois de chegar). Não mexe no voo em si.
+  function fimDoVoo() {
+    if (window.__iprFimVoo) return true;
+    if (!mapa()) return false;
+    window.__iprFimVoo = 1;
+    var visto = 0, n = 0;
+    (function vigiar() {
+      if (window.__ipeAb === 1) visto = 1;
+      if (visto && window.__ipeAb === 0) {
+        var m = mapa(); if (!m) return;
+        try { var b3 = document.querySelector('[data-tool="3d"][aria-pressed="true"]'); if (b3) b3.click(); } catch (e) {}
+        try { if (m.getTerrain && m.getTerrain()) m.setTerrain(null); } catch (e) {}
+        var reduz = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        try { m.fitBounds([[-9.55, 36.95], [-6.18, 42.16]], { padding: 40, pitch: 0, bearing: 0, duration: reduz ? 0 : 2500, essential: true }); } catch (e) {}
+        return;
+      }
+      if (++n < 240) setTimeout(vigiar, 250); // até 60 s depois de o mapa existir
+    })();
+    return true;
+  }
   function correr() {
     voltas++;
-    [["marca", marca], ["puxadores", puxadores], ["creditos", creditos], ["estado", estado], ["formiga", formiga], ["projectos", projectos], ["editavel", editavel], ["semBug", semBug], ["rosa", rosa], ["arrumar", arrumar], ["projDir", projDir], ["testarEsq", testarEsq], ["contaTopo", contaTopo], ["camadasTopo", camadasTopo], ["sintetizar", sintetizar], ["opcoesCamadas", opcoesCamadas], ["projFechados", projFechados], ["todasMais", todasMais], ["painelTopo", painelTopo], ["qfieldQR", qfieldQR], ["temas", temas], ["natural", natural], ["aprenderDesenho", aprenderDesenho], ["fichas", fichasCamada], ["natureza", fichasNatureza], ["parcelas", parcelasPonto], ["partilhaQR", partilhaQR], ["teclado", tecladoVirtual], ["prefs", prefsConta], ["cronologia", cronologia], ["alcanena", pilotoAlcanena], ["estilosOrg", estilosOrg]].forEach(function (f) { if (!feito[f[0]]) { try { feito[f[0]] = f[1](); } catch (e) {} } });
+    [["marca", marca], ["puxadores", puxadores], ["creditos", creditos], ["estado", estado], ["formiga", formiga], ["projectos", projectos], ["editavel", editavel], ["semBug", semBug], ["rosa", rosa], ["arrumar", arrumar], ["projDir", projDir], ["testarEsq", testarEsq], ["contaTopo", contaTopo], ["camadasTopo", camadasTopo], ["sintetizar", sintetizar], ["opcoesCamadas", opcoesCamadas], ["projFechados", projFechados], ["todasMais", todasMais], ["painelTopo", painelTopo], ["qfieldQR", qfieldQR], ["temas", temas], ["natural", natural], ["aprenderDesenho", aprenderDesenho], ["fichas", fichasCamada], ["natureza", fichasNatureza], ["parcelas", parcelasPonto], ["partilhaQR", partilhaQR], ["teclado", tecladoVirtual], ["prefs", prefsConta], ["cronologia", cronologia], ["alcanena", pilotoAlcanena], ["estilosOrg", estilosOrg], ["fimDoVoo", fimDoVoo]].forEach(function (f) { if (!feito[f[0]]) { try { feito[f[0]] = f[1](); } catch (e) {} } });
     try { nomes(); } catch (e) {}
     try { equipa(); } catch (e) {}
     try { if (window.__iprTodas && !document.getElementById("ipr-todas")) todasBases(); } catch (e) {}
