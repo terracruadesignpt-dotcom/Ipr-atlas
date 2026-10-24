@@ -1813,6 +1813,11 @@
       if (!naApp()) m.insertBefore(inst, ref);
       m.insertBefore(part, sh ? sh.nextSibling : m.firstChild);
       if (!naApp()) m.insertBefore(inst, part);
+      // 24/10 20h53: o «Cookies» flutuante tapava os separadores no telemóvel; no Atlas passa para este menu
+      var ICO3 = '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 12.5A8.5 8.5 0 1 1 11.5 3.5a3 3 0 0 0 4 3.5 3 3 0 0 0 5 5.5z"/><circle cx="9" cy="10" r="1"/><circle cx="14" cy="15" r="1"/><circle cx="9" cy="15.5" r="1"/></svg>';
+      var ck = item("ipr-cookies-m", ICO3, "Preferências de cookies", function () { try { document.getElementById("ipe-mais-b").click(); } catch (x) {} var l = document.getElementById("tcdck-l"); if (l) l.click(); });
+      var hr = m.querySelector("hr"); m.insertBefore(ck, hr || null);
+      var stc = document.createElement("style"); stc.textContent = "#tcdck-l{display:none!important}"; document.head.appendChild(stc);
     })();
     b.addEventListener("click", function (e) {
       e.stopPropagation();
