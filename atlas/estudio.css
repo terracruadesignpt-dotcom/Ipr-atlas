@@ -990,3 +990,8 @@ body.ipr-kb .ipr-pp{bottom:calc(var(--ipr-kb,0px) + 8px)}
 #ipe-proj .ipe-card:not(.on) .ipe-cc{display:block;padding-top:8px;padding-bottom:8px}
 #ipe-proj .ipe-card:not(.on) .ipc-cmp{display:none}
 #ipe-proj .ipr-ver-mapa{align-self:flex-start;margin-top:4px;font-size:12px;padding:3px 10px}
+/* Separadores em pasta de dossiê também no tema escuro, sem cortar os nomes (24/10/2026, foto do Nuno no iPad). */
+#ipe .ipe-tabs{overflow-x:auto;overflow-y:hidden;scrollbar-width:none;gap:3px;padding:10px 8px 0;background:var(--p2,var(--p1));box-shadow:inset 0 -1px 0 var(--ln,rgba(127,127,127,.35))}
+#ipe .ipe-tab{position:relative;flex:1 0 auto;min-width:max-content;text-overflow:clip;overflow:visible;border:1px solid var(--ln,rgba(127,127,127,.35));border-bottom:0;border-radius:8px 8px 0 0;background:color-mix(in srgb,var(--p3,#2a2a28) 75%,var(--p2,#1d1d1b));color:var(--mu);padding:7px 10px 6px;font-size:12px}
+#ipe .ipe-tab[aria-selected=true]{background:var(--p1);color:var(--tx);z-index:1;padding-top:8px}
+#ipe .ipe-tab[aria-selected=true]::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;background:var(--p1)}

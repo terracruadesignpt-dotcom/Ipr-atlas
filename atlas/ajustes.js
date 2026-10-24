@@ -820,12 +820,18 @@
       var nome = (b.textContent || "").trim() || "Formiga";
       b.classList.add("tcd-fm-mini"); if (!b.title) b.title = nome; b.setAttribute("aria-label", b.title || nome);
     }
-    var I = mapa(), ctr = document.querySelector("#ipe .maplibregl-ctrl-top-right"), cv = I && I.getContainer ? I.getContainer() : null;
+    var I = mapa(), ctr = document.querySelector("#ipe .ipe-tools") || document.querySelector("#ipe .maplibregl-ctrl-top-right"), cv = I && I.getContainer ? I.getContainer() : null;
     if (ctr && cv) {
       var rc = cv.getBoundingClientRect(), rt = ctr.getBoundingClientRect();
       if (rc.width > 100 && rt.height > 0) {
         var top = Math.round(rt.bottom + 10), dir = Math.max(8, Math.round(window.innerWidth - rc.right + 10));
-        if (top + 56 < rc.bottom) {
+        if (rt.height > rc.height * 0.45) {
+          // barra de ferramentas vertical (alta): a Formiga fica em baixo, encostada à barra, alinhada com o fundo do mapa
+          var dirB = Math.max(8, Math.round(window.innerWidth - rt.left + 10)), baixo = Math.max(12, Math.round(window.innerHeight - rc.bottom + 12));
+          b.style.setProperty("position", "fixed", "important"); b.style.setProperty("bottom", baixo + "px", "important");
+          b.style.setProperty("right", dirB + "px", "important"); b.style.setProperty("left", "auto", "important"); b.style.setProperty("top", "auto", "important");
+          b.classList.add("ipr-fm-dir");
+        } else if (top + 56 < rc.bottom) {
           b.style.setProperty("position", "fixed", "important"); b.style.setProperty("top", top + "px", "important");
           b.style.setProperty("right", dir + "px", "important"); b.style.setProperty("left", "auto", "important"); b.style.setProperty("bottom", "auto", "important");
           b.classList.add("ipr-fm-dir");
@@ -920,8 +926,8 @@
   // 26. Geografia natural (compilação §30, 24/10/2026): botão próprio, ao lado do claro/escuro. Mantém o enquadramento, desliga
   // limites administrativos e infra-estruturas e liga relevo, água, vegetação e habitats (o que o nível da conta permite).
   // Carregar outra vez repõe as camadas que estavam ligadas antes.
-  var NAT_OFF = ["distritos","concelhos","caop","cad","bupi","ifap_p","ifap_o","r_projipr","crus","viaria","ferro","eletr","marcos","aero","defesa","o_estradas","o_edif","o_usos","o_energia","o_vedacoes","o_fronteiras","o_patrimonio"];
-  var NAT_ON = ["r_somb","hidro","o_agua","o_planos","bacias","habitats","copa18","swf21","o_cobertura","o_picos"];
+  var NAT_OFF = ["distritos","concelhos","caop","cad","bupi","ifap_p","ifap_o","r_projipr","crus","viaria","ferro","eletr","marcos","aero","defesa","o_estradas","o_edif","o_usos","o_energia","o_vedacoes","o_fronteiras","o_patrimonio","o_nomes","o_picos","o_caminhos"]; // 24/10 17h34: sem toponímia, estradas nem caminhos
+  var NAT_ON = ["r_somb","hidro","o_agua","o_planos","bacias","habitats","copa18","swf21","o_cobertura"]; // água, floresta, estrutura natural, bacias
   var natAntes = null;
   function natural() {
     var tm = document.getElementById("ipe-tema"); if (!tm || !tm.parentNode) return false; if (document.getElementById("ipr-natural")) return true;
@@ -1440,6 +1446,8 @@
     function aplicar() {
       var c = CRONO[+rg.value] || CRONO[CRONO.length - 1];
       try { R.fundo(c.id); } catch (e) {}
+      // 24/10 17h47: as ortofotos só aparecem a 1:50 000 ou maior; se o mapa estiver afastado, aproxima-o no mesmo sítio
+      try { var M0 = mapa(); if (M0 && /^f_o/.test(c.id) && M0.getZoom() < 12.6) M0.easeTo({ zoom: 13.2, duration: 900 }); } catch (e) {}
       p.querySelector(".ipr-crono-a").textContent = c.a; p.querySelector(".ipr-crono-t").textContent = c.t + " · " + c.f;
       if (cb.checked && !ardTranc) {
         var novo = c.a >= 2015;
@@ -1751,37 +1759,318 @@
     aplicar(); botoes();
     return true;
   }
-  // §34 App instalável (PWA, m90348 no site). No telemóvel, fora da app, depois do voo de entrada:
-  // Android/Chrome: botão «Instalar» que abre o pedido do próprio sistema; iPhone/iPad: instruções do Safari.
-  // «Agora não» esconde por 30 dias (localStorage, protegido). Nunca aparece dentro da app nem no computador.
+  // §34 Botão «App» no topo (PWA, m90348 no site; Nuno 24/10, 17h29: «quero o botão da app lá no topo»). Fica ao lado do
+  // claro/escuro e da geografia natural. Android e Chrome/Edge no computador: abre o pedido de instalação do sistema.
+  // iPhone, iPad e Safari: mostra os passos (Partilhar › Adicionar ao ecrã principal). Dentro da app instalada não aparece.
   var pedidoInstalar = null;
   window.addEventListener("beforeinstallprompt", function (e) { e.preventDefault(); pedidoInstalar = e; });
-  window.addEventListener("appinstalled", function () { var t = document.getElementById("ipr-app-aviso"); if (t) t.remove(); try { localStorage.setItem("ipr_app_aviso", String(Date.now() + 3650 * 864e5)); } catch (x) {} });
+  window.addEventListener("appinstalled", function () { var b = document.getElementById("ipr-app-b"); if (b) b.remove(); });
+  function naApp() { return (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) || window.navigator.standalone === true; }
   function instalarApp() {
-    var dentro = (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) || window.navigator.standalone === true;
-    if (dentro) { document.documentElement.classList.add("ipr-na-app"); return true; }
-    if (window.innerWidth > 900 || !("serviceWorker" in navigator)) return true;
-    try { if (+localStorage.getItem("ipr_app_aviso") > Date.now()) return true; } catch (x) {}
-    var ua = navigator.userAgent || "", ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
-    setTimeout(function mostrar() {
-      if (window.__ipeAb) { setTimeout(mostrar, 3000); return; }
-      if (!ios && !pedidoInstalar) return;
-      if (document.getElementById("ipr-app-aviso")) return;
-      var st = document.createElement("style");
-      st.textContent = "#ipr-app-aviso{position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:2147483000;background:#1d1d1b;color:#f2f2ee;border-radius:14px;padding:12px 14px;display:flex;gap:12px;align-items:center;box-shadow:0 8px 30px rgba(0,0,0,.35);font:14px/1.4 system-ui,sans-serif}#ipr-app-aviso img{width:40px;height:40px;border-radius:9px;flex:none}#ipr-app-aviso .t{flex:1;min-width:0}#ipr-app-aviso b{display:block;font-size:15px}#ipr-app-aviso small{color:#bdbdb4}#ipr-app-aviso button{border:0;border-radius:9px;padding:8px 12px;font:600 14px system-ui,sans-serif;cursor:pointer}#ipr-app-aviso .s{background:#94be39;color:#111}#ipr-app-aviso .n{background:transparent;color:#bdbdb4;padding:8px 4px}";
-      document.head.appendChild(st);
-      var d = document.createElement("div"); d.id = "ipr-app-aviso"; d.setAttribute("role", "dialog"); d.setAttribute("aria-label", "Instalar a app IPR Atlas");
-      var ico = "https://cdn.jsdelivr.net/gh/terracruadesignpt-dotcom/Ipr-atlas@ff31470a317d28e02c55e703208ddee31e2fcb91/atlas/marca/ipr-app-192.png";
-      d.innerHTML = '<img alt="" src="' + ico + '"><div class="t"><b>IPR Atlas no seu telemóvel</b>' + (ios ? '<small>Toque em Partilhar (o quadrado com a seta) e depois em «Adicionar ao ecrã principal».</small>' : '<small>Abre directamente no mapa, em ecrã inteiro.</small>') + '</div>' + (ios ? '' : '<button class="s" type="button">Instalar</button>') + '<button class="n" type="button">Agora não</button>';
-      document.body.appendChild(d);
-      d.querySelector(".n").onclick = function () { d.remove(); try { localStorage.setItem("ipr_app_aviso", String(Date.now() + 30 * 864e5)); } catch (x) {} };
-      var s = d.querySelector(".s"); if (s) s.onclick = function () { var p = pedidoInstalar; pedidoInstalar = null; d.remove(); if (p) { p.prompt(); try { p.userChoice.then(function (r) { if (r && r.outcome !== "accepted") { try { localStorage.setItem("ipr_app_aviso", String(Date.now() + 30 * 864e5)); } catch (x) {} } }); } catch (x) {} } };
-    }, 12000);
+    if (naApp()) { document.documentElement.classList.add("ipr-na-app"); return true; }
+    var tm = document.getElementById("ipe-tema"); if (!tm || !tm.parentNode) return false;
+    if (document.getElementById("ipr-app-b")) return true;
+    var st = document.createElement("style");
+    st.textContent = "#ipr-app-b{display:inline-flex;align-items:center;gap:5px}#ipr-app-b span{font:600 12px Inter,sans-serif;letter-spacing:.02em}" +
+      "#ipr-app-p{position:fixed;z-index:2147483000;top:calc(54px + env(safe-area-inset-top,0px));right:max(12px,env(safe-area-inset-right,0px));width:min(320px,calc(100vw - 24px));background:var(--p2,#1d1d1b);color:var(--tx,#eee);border:1px solid var(--ln,#444);border-radius:12px;padding:14px 16px;box-shadow:0 10px 30px rgba(0,0,0,.35);font:14px/1.45 Inter,system-ui,sans-serif}" +
+      "#ipr-app-p b{display:block;font-size:15px;margin-bottom:6px}#ipr-app-p ol{margin:6px 0 10px;padding-left:20px}#ipr-app-p li{margin:3px 0}#ipr-app-p small{color:var(--mu,#aaa);display:block}" +
+      "#ipr-app-p .x{position:absolute;top:6px;right:8px;border:0;background:none;color:inherit;font-size:20px;cursor:pointer;line-height:1}" +
+      "@media (max-width:600px){#ipr-app-b span{display:none}}";
+    document.head.appendChild(st);
+    var b = document.createElement("button"); b.type = "button"; b.id = "ipr-app-b"; b.className = tm.className;
+    b.title = "Instalar o IPR Atlas como app"; b.setAttribute("aria-label", "Instalar a app IPR Atlas");
+    b.innerHTML = '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M12 7v7M9 11.5l3 3 3-3M10.5 18.5h3"/></svg><span>App</span>';
+    var nat = document.getElementById("ipr-natural"); tm.parentNode.insertBefore(b, (nat || tm).nextSibling);
+    function passos() {
+      var ua = navigator.userAgent || "", ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+      var safariMac = !ios && /Safari\//.test(ua) && !/Chrome|Chromium|Edg\//.test(ua), firefox = /Firefox\//.test(ua), android = /Android/.test(ua);
+      if (ios) return '<ol><li>Toque em <b style="display:inline">Partilhar</b> (o quadrado com a seta para cima), na barra do Safari.</li><li>Escolha «Adicionar ao ecrã principal».</li><li>Confirme com «Adicionar».</li></ol><small>No iPhone e no iPad tem de ser no Safari.</small>';
+      if (safariMac) return '<ol><li>No menu Ficheiro do Safari, escolha «Adicionar à Dock».</li></ol>';
+      if (firefox) return '<p style="margin:0 0 8px">O Firefox não instala apps de sites. Abra o IPR Atlas no Chrome, no Edge ou no Safari.</p>';
+      if (android) return '<ol><li>Toque no menu ⋮ do Chrome.</li><li>Escolha «Instalar aplicação» ou «Adicionar ao ecrã principal».</li></ol>';
+      return '<ol><li>Na barra de endereço do Chrome ou do Edge, clique no ícone de instalar (um ecrã com uma seta).</li><li>Ou no menu ⋮ › «Transmitir, guardar e partilhar» › «Instalar página como app».</li></ol>';
+    }
+    b.addEventListener("click", function (e) {
+      e.stopPropagation();
+      var p = document.getElementById("ipr-app-p"); if (p) { p.remove(); return; }
+      if (pedidoInstalar) { var q = pedidoInstalar; pedidoInstalar = null; q.prompt(); return; }
+      p = document.createElement("div"); p.id = "ipr-app-p"; p.setAttribute("role", "dialog"); p.setAttribute("aria-label", "Instalar a app");
+      p.innerHTML = '<button type="button" class="x" aria-label="Fechar">×</button><b>IPR Atlas como app</b><p style="margin:0 0 6px">Fica um ícone no ecrã principal e o Atlas abre directamente no mapa, em ecrã inteiro.</p>' + passos();
+      document.body.appendChild(p);
+      p.querySelector(".x").onclick = function () { p.remove(); };
+      setTimeout(function () { document.addEventListener("click", function fora(ev) { if (!p.contains(ev.target)) { p.remove(); document.removeEventListener("click", fora); } }); }, 0);
+    });
+    return true;
+  }
+
+  // §35 Tema escuro por omissão (Nuno 24/10, 17h29) e botão claro/escuro legível: lua quando está claro, sol quando está
+  // escuro, e o título diz para onde muda. Quem já escolheu claro, escuro ou automático nas definições fica como escolheu.
+  function temaEscuro() {
+    var tm = document.getElementById("ipe-tema"), raiz = document.getElementById("ipe"); if (!tm || !raiz) return false;
+    var cfg = {}; try { cfg = JSON.parse(localStorage.getItem("ipe_cfg_v1") || "{}") || {}; } catch (e) {}
+    if (!cfg.tema && raiz.classList.contains("claro")) { try { tm.click(); } catch (e) {} }
+    var SOL = '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M5.6 18.4 7 17M17 7l1.4-1.4"/></svg>';
+    var LUA = '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>';
+    function marcar() {
+      var claro = raiz.classList.contains("claro");
+      var t = claro ? "Tema claro. Mudar para escuro" : "Tema escuro. Mudar para claro";
+      if (tm.title !== t) { tm.title = t; tm.setAttribute("aria-label", t); tm.innerHTML = claro ? LUA : SOL; }
+    }
+    new MutationObserver(marcar).observe(raiz, { attributes: true, attributeFilter: ["class"] });
+    marcar();
+    return true;
+  }
+
+  // §36 Organizações (Nuno 24/10, 17h32): quem pertence a várias escolhe a activa (lista do m90350, window.IPR_ORGS);
+  // as camadas ficam em pastas por projecto («268 Quinta Linda») com subpastas («terreno e zonas», «água», «temas»),
+  // todas recolhíveis; o estado fica guardado neste aparelho. Os nós do org.js só mudam de sítio: os interruptores mantêm-se.
+  function orgPastas() {
+    var P = document.querySelector('.ipe-pane[data-pane="org"]'); if (!P) return false;
+    if (window.__iprOrgP) return true; window.__iprOrgP = 1;
+    var st = document.createElement("style");
+    st.textContent = ".ipr-of{margin:10px 0 2px;border:1px solid var(--ln2,rgba(127,127,127,.25));border-radius:10px;overflow:hidden}" +
+      ".ipr-of>button,.ipr-sf>button{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:8px;width:100%;cursor:pointer;padding:9px 10px;font:600 13px Inter,sans-serif;color:var(--tx)}" +
+      ".ipr-of>button{background:var(--p3,rgba(127,127,127,.08))}.ipr-of>button i,.ipr-sf>button i{width:10px;height:10px;border-radius:50%;flex:none}" +
+      ".ipr-of>button em,.ipr-sf>button em{font-style:normal;flex:1;min-width:0}.ipr-of small,.ipr-sf small{font:500 11px Inter,sans-serif;color:var(--mu)}" +
+      ".ipr-of>button:after,.ipr-sf>button:after{content:'';width:7px;height:7px;border-right:1.6px solid currentColor;border-bottom:1.6px solid currentColor;transform:rotate(45deg);margin:0 4px 3px 2px;transition:transform .15s;opacity:.7}" +
+      ".ipr-of.rec>button:after,.ipr-sf.rec>button:after{transform:rotate(-45deg);margin-bottom:0}" +
+      ".ipr-of.rec>.ipr-of-b,.ipr-sf.rec>.ipr-sf-b{display:none}.ipr-of-b{padding:0 6px 6px}.ipr-sf>button{padding:8px 6px;font-weight:500;border-top:1px solid var(--ln2,rgba(127,127,127,.2))}" +
+      ".ipr-sf-b{padding-left:14px}.ipe-pane[data-pane=org] .ipo-g{display:none}" +
+      ".ipr-orgsel{font:600 13px Inter,sans-serif;background:var(--p3,transparent);color:var(--tx);border:1px solid var(--ln);border-radius:8px;padding:5px 8px;max-width:100%}";
+    document.head.appendChild(st);
+    var EST = {}; try { EST = JSON.parse(localStorage.getItem("ipr_org_pastas") || "{}") || {}; } catch (e) {}
+    function guardar() { try { localStorage.setItem("ipr_org_pastas", JSON.stringify(EST)); } catch (e) {} }
+    function chave(s) { return String(s).toLowerCase().replace(/\s+/g, " ").trim(); }
+    function pasta(cls, k, titulo, cor, porOmissao) {
+      var d = document.createElement("div"); d.className = cls; d.dataset.k = k;
+      var rec = k in EST ? EST[k] : porOmissao; if (rec) d.classList.add("rec");
+      var bt = document.createElement("button"); bt.type = "button"; bt.setAttribute("aria-expanded", String(!rec));
+      bt.innerHTML = (cor ? '<i style="background:' + cor + '"></i>' : "") + "<em></em><small></small>"; bt.querySelector("em").textContent = titulo;
+      bt.addEventListener("click", function () { var r = d.classList.toggle("rec"); EST[k] = r; guardar(); bt.setAttribute("aria-expanded", String(!r)); });
+      var b = document.createElement("div"); b.className = cls + "-b"; d.appendChild(bt); d.appendChild(b); return d;
+    }
+    function contar(d) {
+      var t = d.querySelectorAll(".ipo-c").length, l = d.querySelectorAll(".ipo-c input:checked").length;
+      var s = d.querySelector(":scope>button small"); if (s) s.textContent = t + (l ? " · " + l + " ligada" + (l > 1 ? "s" : "") : "");
+    }
+    function seletor() {
+      var O = window.IPR_ORGS; if (!O || !O.lista || O.lista.length < 2) return;
+      var top = P.querySelector(".ipo-top"); if (!top || top.querySelector(".ipr-orgsel")) return;
+      var s = document.createElement("select"); s.className = "ipr-orgsel"; s.setAttribute("aria-label", "Organização activa");
+      O.lista.forEach(function (o) { var op = document.createElement("option"); op.value = o.id; op.textContent = o.nome + (o.papel ? " · " + o.papel : ""); if (+o.id === +O.activa) op.selected = true; s.appendChild(op); });
+      s.addEventListener("change", function () { location.href = "/atlas/?ipr_org=" + encodeURIComponent(s.value) + "&_ipr_org=" + encodeURIComponent(O.nonce) + "&separador=org"; });
+      var nome = top.querySelector(".ipe-lbl"); if (nome) nome.replaceWith(s); else top.insertBefore(s, top.firstChild);
+    }
+    function organizar() {
+      seletor();
+      var gs = [].slice.call(P.querySelectorAll(":scope .ipo-g")).filter(function (g) { return !g.closest(".ipr-of"); });
+      if (!gs.length) { P.querySelectorAll(".ipr-of,.ipr-sf").forEach(contar); return; }
+      var projs = {}, ordem = [];
+      gs.forEach(function (g) {
+        var nome = g.textContent.trim(), cor = (g.querySelector("i") || {}).style ? g.querySelector("i").style.background : "";
+        var m = /^(\d+\s[^·]{2,60}?)\s·\s(.+)$/.exec(nome), proj, sub;
+        if (m) { proj = m[1]; sub = m[2].charAt(0).toUpperCase() + m[2].slice(1); }
+        else if (/Temas do projecto/i.test(nome)) { proj = ordem.length === 1 ? ordem[0] : "Temas"; sub = "Temas do projecto (QGIS)"; }
+        else { proj = nome; sub = ""; }
+        var linhas = []; var n = g.nextElementSibling; while (n && n.classList.contains("ipo-c")) { linhas.push(n); n = n.nextElementSibling; }
+        linhas.forEach(function (c) { var b = c.querySelector("label b"); if (b && !b.dataset.ipoN) { b.dataset.ipoN = "1"; var mm = /^(\d+\s[^·]{2,60}?)\s·\s(.+)$/.exec(b.textContent); if (mm && (mm[1] === proj || !m)) { b.title = b.textContent; b.textContent = mm[2]; } } });
+        if (!projs[proj]) { projs[proj] = { cor: cor, subs: [] }; ordem.push(proj); }
+        projs[proj].subs.push({ nome: sub, cor: cor, g: g, linhas: linhas });
+      });
+      var ancora = gs[0];
+      ordem.forEach(function (proj) {
+        var p = projs[proj], F = pasta("ipr-of", "p:" + chave(proj), proj, p.cor, false), FB = F.querySelector(".ipr-of-b");
+        ancora.parentNode.insertBefore(F, ancora);
+        p.subs.forEach(function (s) {
+          FB.appendChild(s.g);
+          if (!s.nome || p.subs.length === 1) { s.linhas.forEach(function (c) { FB.appendChild(c); }); return; }
+          var S = pasta("ipr-sf", "s:" + chave(proj + "|" + s.nome), s.nome, s.cor, true), SB = S.querySelector(".ipr-sf-b");
+          s.linhas.forEach(function (c) { SB.appendChild(c); }); FB.appendChild(S); contar(S);
+        });
+        contar(F);
+      });
+    }
+    P.addEventListener("change", function () { setTimeout(function () { P.querySelectorAll(".ipr-of,.ipr-sf").forEach(contar); }, 0); });
+    new MutationObserver(function () { clearTimeout(organizar.t); organizar.t = setTimeout(organizar, 30); }).observe(P, { childList: true, subtree: true });
+    organizar();
+    return true;
+  }
+
+  // §37 Discrição (Nuno 24/10, 17h35): à primeira vista os nomes das camadas e dos grupos não mostram a proveniência
+  // (siglas de fontes entre parênteses); a fonte continua na ficha da camada e na atribuição do mapa, como as licenças
+  // exigem. No Explorer, as camadas trancadas mostram só o nome e «Intelligence», sem ficha.
+  var SIGLAS = /\s*\((?:GBIF|NASA GIBS|NASA|MODIS|SMAP|MERRA-2|DGT|ICNF|APA|SNIAmb|OpenStreetMap|OSM|IGN|CNIG|EEA|Copernicus|CLMS|LNEG|DGADR|DGEG|INE|IFAP|ESA|EOX|Esri|Mapterhorn|PNOA)(?:[^)]*)\)/g;
+  function discricao() {
+    if (window.__iprDisc) return true; if (!document.body) return false; window.__iprDisc = 1;
+    var explorer = window.IPR_NIVEL === "explorer";
+    function limpar(raiz) {
+      (raiz || document).querySelectorAll(".ipr-nome, .ipr-sub, .ipr-gh, .ipr-grupo, .ipr-sg, [class*='ipr-cat'] > span, .ipr-it small").forEach(function (el) {
+        [].forEach.call(el.childNodes, function (n) { if (n.nodeType === 3 && SIGLAS.test(n.nodeValue)) { SIGLAS.lastIndex = 0; n.nodeValue = n.nodeValue.replace(SIGLAS, ""); } SIGLAS.lastIndex = 0; });
+      });
+      if (explorer) (raiz || document).querySelectorAll("li.ipr-it.bl small.ipr-cad").forEach(function (s) { if (s.textContent !== "Intelligence") s.textContent = "Intelligence"; });
+    }
+    var t = 0; new MutationObserver(function () { clearTimeout(t); t = setTimeout(function () { limpar(); }, 40); }).observe(document.body, { childList: true, subtree: true, characterData: true });
+    if (explorer) document.addEventListener("click", function (e) { var b = e.target.closest && e.target.closest("[data-ipr-ficha]"); if (b && b.closest("li.ipr-it.bl")) { e.stopImmediatePropagation(); e.preventDefault(); } }, true);
+    limpar();
+    return true;
+  }
+
+  // §38 Estradas no mapa normal (Nuno 24/10, 17h34): ao chegar ao Atlas liga as estradas do OpenStreetMap, que vão
+  // aparecendo com a aproximação (principais primeiro, depois as locais). Não liga em modo geografia natural.
+  function estradas() {
+    var R = viz(); if (!R || window.__ipeAb) return false;
+    var nat = document.getElementById("ipr-natural"); if (nat && nat.getAttribute("aria-pressed") === "true") return true;
+    try { R.ligar("o_estradas", true); } catch (e) {}
+    return true;
+  }
+  // §39 IPR Cloud sem repetições (Nuno 24/10, 17h37): o nome do terreno não se repete na linha de baixo; quando todos os
+  // terrenos têm o mesmo papel (por exemplo «Administrador»), o papel aparece uma vez no topo e não em cada cartão;
+  // cartões iguais (mesmo código) só aparecem uma vez.
+  function cloudLimpo() {
+    var P = document.querySelector('.ipe-pane[data-pane="cloud"]') || document.getElementById("ipe-cloud"); if (!P) return false;
+    if (window.__iprCloudL) return true; window.__iprCloudL = 1;
+    function limpar() {
+      var cs = [].slice.call(P.querySelectorAll(".ipc-ter")); if (!cs.length) return;
+      var vistos = {}, papeis = {};
+      cs.forEach(function (c) {
+        var cod = (c.querySelector(".ipc-cod") || {}).textContent || "";
+        if (cod && vistos[cod]) { c.hidden = true; return; } vistos[cod] = 1;
+        var n = c.querySelector(".ipc-nome"), m = c.querySelector(".ipc-meta");
+        if (n && m && !m.dataset.l) {
+          m.dataset.l = "1";
+          var nome = n.textContent.trim().replace(/\s*\(pelo mapa\)\s*$/, ""), partes = m.textContent.split(" · ");
+          partes = partes.filter(function (x) { var y = x.trim().replace(/\s*\(pelo mapa\)\s*$/, ""); return y && y !== nome && nome.indexOf(y) !== 0; });
+          m.textContent = partes.join(" · ");
+        }
+        var p = c.querySelector(".ipc-papel"); if (p) papeis[p.textContent.trim()] = 1;
+      });
+      var ks = Object.keys(papeis), so = ks.length === 1;
+      P.classList.toggle("ipr-papel-unico", so);
+      var top = P.querySelector(".ipc-top"); if (top) { var e = top.querySelector(".ipr-papel-t"); if (so) { if (!e) { e = document.createElement("small"); e.className = "ipr-papel-t"; top.appendChild(e); } e.textContent = ks[0]; } else if (e) e.remove(); }
+    }
+    var st = document.createElement("style");
+    st.textContent = ".ipr-papel-unico .ipc-ter .ipc-papel{display:none}.ipr-papel-t{font:600 10.5px Inter,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--ac2);margin-left:auto}";
+    document.head.appendChild(st);
+    var t = 0; new MutationObserver(function () { clearTimeout(t); t = setTimeout(limpar, 30); }).observe(P, { childList: true, subtree: true });
+    limpar();
+    return true;
+  }
+  // §40 Barra do mapa mais limpa (Nuno 24/10, 17h44, foto do iPad): aproximar/afastar, a rosa dos ventos, «Parcelas aqui» e
+  // a localização passam para o canto superior esquerdo do mapa; à direita fica só a barra das ferramentas, que sobe para o
+  // topo e ganha espaço entre os grupos (seleccionar e medir, desenhar, painéis e ficheiros, tempo e vista).
+  function navEsquerda() {
+    var ctr = document.querySelector("#ipe .maplibregl-ctrl-top-right"), tl = document.querySelector("#ipe .maplibregl-ctrl-top-left");
+    if (!ctr || !tl || !document.querySelector("#ipe .ipe-tools")) return false;
+    if (window.__iprNavE) return true;
+    var gs = [].slice.call(ctr.children).filter(function (g) { return g.classList.contains("maplibregl-ctrl-group"); });
+    if (!gs.length) return false;
+    window.__iprNavE = 1;
+    var st = document.createElement("style");
+    st.textContent = "#ipe .maplibregl-ctrl-top-left.ipr-nav{display:flex;flex-direction:column;gap:6px;top:8px;left:8px}" +
+      "#ipe .maplibregl-ctrl-top-left.ipr-nav .maplibregl-ctrl-group{margin:0;background:var(--p1);border:1px solid var(--ln);border-radius:10px;box-shadow:0 2px 10px rgba(0,0,0,.18);overflow:hidden}" +
+      "#ipe .ipr-nav .maplibregl-ctrl-group:empty,#ipe .ipr-nav .maplibregl-ctrl-group:not(:has(button)){display:none}" +
+      "#ipe .maplibregl-ctrl-top-left.ipr-nav .maplibregl-ctrl-group button{width:36px;height:36px;color:var(--tx)}" +
+      "#ipe .ipr-nav .ipe-rosa{position:static!important;width:40px!important;min-width:0!important;margin:2px 0}#ipe .ipr-nav .ipe-rosa svg{width:40px!important;height:40px!important}#ipe .ipr-nav .ipe-rosa>:not(svg){display:none}" +
+      "#ipe .ipe-tools{top:8px!important}#ipe .ipe-tools .ipe-tg+.ipe-tg{margin-top:6px}";
+    document.head.appendChild(st);
+    tl.classList.add("ipr-nav");
+    function mover() {
+      [].slice.call(ctr.children).forEach(function (g) { if (g.classList.contains("maplibregl-ctrl-group")) tl.appendChild(g); });
+      var rz = document.querySelector("#ipe .ipe-rosa"); if (rz && rz.parentNode !== tl) tl.insertBefore(rz, tl.children[1] || null);
+    }
+    mover();
+    new MutationObserver(mover).observe(document.getElementById("ipe") || document.body, { childList: true, subtree: true });
+    return true;
+  }
+  // §41 Encomenda mais compacta e Cronologia no Intelligence (Nuno 24/10, 17h47): as quatro formas de indicar o terreno
+  // ficam em botões pequenos de uma linha, sempre à vista; o vale de oferta fica com uma frase curta. No Explorer, o botão
+  // Cronologia explica que é do IPR Atlas Intelligence em vez de abrir.
+  function encomendaCompacta() {
+    if (window.__iprEncC) return true; if (!document.querySelector(".ipe-met")) return false; window.__iprEncC = 1;
+    var st = document.createElement("style");
+    st.textContent = "#ipe .ipe-met{display:grid!important;grid-template-columns:1fr 1fr;gap:6px!important}" +
+      "#ipe .ipe-met .ipe-mb{display:flex!important;flex-direction:row!important;align-items:center;gap:7px;min-height:0!important;padding:7px 9px!important;font-size:12.5px!important;line-height:1.2!important;text-align:left}" +
+      "#ipe .ipe-met .ipe-mb svg{width:15px;height:15px;flex:none}" +
+      ".ipr-crono-int{font:12.5px/1.4 Inter,sans-serif;color:var(--mu);margin:6px 0 0;padding:8px 10px;border:1px solid var(--ln);border-radius:8px}";
+    document.head.appendChild(st);
+    function vale() {
+      var l = document.querySelector('label[for="ipe-vale"]'); if (l && l.textContent !== "Vale de oferta (opcional)") l.textContent = "Vale de oferta (opcional)";
+      var n = document.getElementById("ipe-vale-nota"); if (n && !n.dataset.c) { n.dataset.c = "1"; n.textContent = "O código OFERTA-… que recebeu. Sem o código, reconhecemos o vale pelo seu nome."; }
+    }
+    vale(); new MutationObserver(vale).observe(document.getElementById("ipe") || document.body, { childList: true, subtree: true });
+    if (window.IPR_NIVEL === "explorer") {
+      document.addEventListener("click", function (e) {
+        var b = e.target.closest && e.target.closest(".ipr-crono-b"); if (!b) return;
+        e.stopImmediatePropagation(); e.preventDefault();
+        var cab = b.closest(".ipr-arv-cab") || b.parentNode, n = cab.parentNode.querySelector(".ipr-crono-int");
+        if (n) { n.remove(); return; }
+        n = document.createElement("p"); n.className = "ipr-crono-int";
+        n.textContent = "A Cronologia compara o terreno em ortofotos de 1995 a 2025 e as áreas ardidas de cada período. Faz parte do IPR Atlas Intelligence.";
+        cab.parentNode.insertBefore(n, cab.nextSibling);
+      }, true);
+    }
+    return true;
+  }
+  // §42 Testar a ligação (Nuno 24/10, 17h50): com internet fraca as camadas demoram ou falham e parece que o Atlas não
+  // funciona. O botão mede o tempo de resposta e a velocidade de descarga, experimenta os servidores dos fundos (DGT,
+  // Sentinel-2, relevo) e diz em linguagem simples o que esperar e o que fazer. Não envia nada para fora: só descarrega.
+  function testarLigacao() {
+    var arv = document.querySelector("#ipe-cam .ipr-arv") || document.querySelector(".ipr-arv"); if (!arv) return false;
+    if (document.getElementById("ipr-lig-b")) return true;
+    var st = document.createElement("style");
+    st.textContent = "#ipr-lig-b{display:flex;align-items:center;gap:6px;width:100%;margin:6px 0 2px;padding:7px 10px;border:1px solid var(--ln);border-radius:8px;background:var(--p2,transparent);color:var(--tx);font:500 12.5px Inter,sans-serif;cursor:pointer}" +
+      "#ipr-lig-r{margin:4px 0 8px;padding:9px 11px;border:1px solid var(--ln);border-radius:8px;font:12.5px/1.45 Inter,sans-serif;color:var(--tx)}#ipr-lig-r b{display:block;font-size:13.5px;margin-bottom:3px}" +
+      "#ipr-lig-r ul{margin:6px 0 0;padding-left:18px;color:var(--mu)}#ipr-lig-r .ok{color:#7fae4a}#ipr-lig-r .med{color:#d9a43a}#ipr-lig-r .mau{color:#d9534f}";
+    document.head.appendChild(st);
+    var b = document.createElement("button"); b.type = "button"; b.id = "ipr-lig-b";
+    b.innerHTML = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M2 9a15 15 0 0 1 20 0M5.5 12.5a10 10 0 0 1 13 0M9 16a5 5 0 0 1 6 0"/><circle cx="12" cy="19.5" r="1.2" fill="currentColor"/></svg><span>Testar a ligação à internet</span>';
+    b.title = "Verifica se a sua internet chega para carregar as camadas";
+    var t = document.getElementById("tcd-testar-cam"), cab = arv.querySelector(".ipr-arv-cab");
+    if (t && t.parentNode) t.parentNode.insertBefore(b, t.nextSibling); else arv.insertBefore(b, cab ? cab.nextSibling : arv.firstChild);
+    var r = document.createElement("div"); r.id = "ipr-lig-r"; r.hidden = true; b.parentNode.insertBefore(r, b.nextSibling);
+    function tempo(u, ms) {
+      var c = new AbortController(), t0 = performance.now(), to = setTimeout(function () { c.abort(); }, ms || 8000);
+      return fetch(u, { cache: "no-store", mode: "cors", signal: c.signal }).then(function (x) { return x.arrayBuffer().then(function (a) { clearTimeout(to); return { ok: x.ok, ms: performance.now() - t0, kb: a.byteLength / 1024 }; }); })
+        .catch(function () { clearTimeout(to); return { ok: false, ms: performance.now() - t0, kb: 0 }; });
+    }
+    b.addEventListener("click", function () {
+      if (b.disabled) return;
+      b.disabled = true; r.hidden = false; r.innerHTML = "<b>A testar…</b>Demora uns segundos.";
+      if (!navigator.onLine) { r.innerHTML = '<b class="mau">Sem ligação à internet</b>O aparelho está desligado da rede. As camadas voltam quando houver internet.'; b.disabled = false; return; }
+      var n = Date.now(), pings = [];
+      (function ping(i) {
+        if (i >= 3) return medir();
+        tempo("/ipr-app.webmanifest?l=" + n + i, 6000).then(function (x) { if (x.ok) pings.push(x.ms); ping(i + 1); });
+      })(0);
+      function medir() {
+        Promise.all([
+          tempo("https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.js?l=" + n, 20000),
+          tempo("https://ortos.dgterritorio.gov.pt/wms/ortosat2023?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&LAYERS=ortoSat2023-CorVerdadeira&STYLES=&CRS=EPSG:3857&WIDTH=256&HEIGHT=256&FORMAT=image/jpeg&BBOX=-939258,4696291,-861016,4774562&l=" + n, 12000),
+          tempo("https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless_3857/default/g/8/97/121.jpg?l=" + n, 12000),
+          tempo("https://tiles.mapterhorn.com/8/121/97.webp?l=" + n, 12000)
+        ]).then(function (v) {
+          var lat = pings.length ? Math.round(pings.sort(function (a, b) { return a - b; })[Math.floor(pings.length / 2)]) : null;
+          var mbps = v[0].ok && v[0].ms > 0 ? (v[0].kb * 8 / 1024) / (v[0].ms / 1000) : 0;
+          var nota = lat === null ? "mau" : (mbps >= 8 && lat < 250 ? "ok" : (mbps >= 2 && lat < 700 ? "med" : "mau"));
+          var tit = { ok: "Ligação boa", med: "Ligação razoável", mau: "Ligação fraca" }[nota];
+          var txt = { ok: "As camadas devem carregar normalmente.", med: "As camadas carregam, mas mais devagar. Ligue poucas de cada vez.", mau: "Com esta ligação as camadas podem demorar muito ou não aparecer. Não é avaria do Atlas." }[nota];
+          var srv = [["Ortofotos e serviços da DGT", v[1]], ["Imagem de satélite (Sentinel-2)", v[2]], ["Relevo", v[3]]].map(function (s) {
+            return "<li>" + s[0] + ": " + (s[1].ok ? (s[1].ms < 1500 ? "responde bem" : "responde devagar") : "não respondeu") + "</li>";
+          }).join("");
+          var dicas = nota === "ok" ? "" : "<li>Ligue só as camadas de que precisa e desligue as outras.</li><li>Use o mapa mais afastado até as imagens aparecerem.</li><li>No terreno sem rede, use o QField com o projecto descarregado.</li>";
+          var ct = navigator.connection && navigator.connection.effectiveType ? " · rede " + navigator.connection.effectiveType.toUpperCase() : "";
+          r.innerHTML = '<b class="' + nota + '">' + tit + "</b>" + txt +
+            '<div style="margin-top:4px;color:var(--mu)">Resposta ' + (lat === null ? "sem resposta" : lat + " ms") + " · descarga " + (mbps ? (mbps >= 10 ? Math.round(mbps) : mbps.toFixed(1)) + " Mbit/s" : "falhou") + ct + "</div>" +
+            "<ul>" + srv + dicas + "</ul>";
+          b.disabled = false;
+        });
+      }
+    });
     return true;
   }
   function correr() {
     voltas++;
-    [["marca", marca], ["puxadores", puxadores], ["creditos", creditos], ["estado", estado], ["formiga", formiga], ["projectos", projectos], ["editavel", editavel], ["semBug", semBug], ["rosa", rosa], ["arrumar", arrumar], ["projDir", projDir], ["testarEsq", testarEsq], ["contaTopo", contaTopo], ["camadasTopo", camadasTopo], ["sintetizar", sintetizar], ["opcoesCamadas", opcoesCamadas], ["projFechados", projFechados], ["todasMais", todasMais], ["painelTopo", painelTopo], ["qfieldQR", qfieldQR], ["temas", temas], ["natural", natural], ["aprenderDesenho", aprenderDesenho], ["fichas", fichasCamada], ["natureza", fichasNatureza], ["parcelas", parcelasPonto], ["partilhaQR", partilhaQR], ["teclado", tecladoVirtual], ["prefs", prefsConta], ["cronologia", cronologia], ["alcanena", pilotoAlcanena], ["estilosOrg", estilosOrg], ["fimDoVoo", fimDoVoo], ["orgNomes", orgNomes], ["projRecolhidos", projRecolhidos], ["instalarApp", instalarApp]].forEach(function (f) { if (!feito[f[0]]) { try { feito[f[0]] = f[1](); } catch (e) {} } });
+    [["marca", marca], ["puxadores", puxadores], ["creditos", creditos], ["estado", estado], ["formiga", formiga], ["projectos", projectos], ["editavel", editavel], ["semBug", semBug], ["rosa", rosa], ["arrumar", arrumar], ["projDir", projDir], ["testarEsq", testarEsq], ["contaTopo", contaTopo], ["camadasTopo", camadasTopo], ["sintetizar", sintetizar], ["opcoesCamadas", opcoesCamadas], ["projFechados", projFechados], ["todasMais", todasMais], ["painelTopo", painelTopo], ["qfieldQR", qfieldQR], ["temas", temas], ["natural", natural], ["aprenderDesenho", aprenderDesenho], ["fichas", fichasCamada], ["natureza", fichasNatureza], ["parcelas", parcelasPonto], ["partilhaQR", partilhaQR], ["teclado", tecladoVirtual], ["prefs", prefsConta], ["cronologia", cronologia], ["alcanena", pilotoAlcanena], ["estilosOrg", estilosOrg], ["fimDoVoo", fimDoVoo], ["orgNomes", orgNomes], ["projRecolhidos", projRecolhidos], ["instalarApp", instalarApp], ["temaEscuro", temaEscuro], ["orgPastas", orgPastas], ["discricao", discricao], ["estradas", estradas], ["cloudLimpo", cloudLimpo], ["navEsquerda", navEsquerda], ["encomendaCompacta", encomendaCompacta], ["testarLigacao", testarLigacao]].forEach(function (f) { if (!feito[f[0]]) { try { feito[f[0]] = f[1](); } catch (e) {} } });
     try { nomes(); } catch (e) {}
     try { equipa(); } catch (e) {}
     try { if (window.__iprTodas && !document.getElementById("ipr-todas")) todasBases(); } catch (e) {}
