@@ -1177,15 +1177,16 @@
       if (M.getSource("ipr-cand")) M.getSource("ipr-cand").setData(d);
       else {
         M.addSource("ipr-cand", { type: "geojson", data: d });
-        M.addLayer({ id: "ipr-cand-f", type: "fill", source: "ipr-cand", paint: { "fill-color": "#f0c24b", "fill-opacity": ["match", ["get", "anel"], 0, 0.35, 1, 0.18, 0.06] } });
-        M.addLayer({ id: "ipr-cand-l", type: "line", source: "ipr-cand", paint: { "line-color": "#f0c24b", "line-width": ["match", ["get", "anel"], 0, 3, 1, 1.8, 0.8], "line-dasharray": [2, 1.5], "line-opacity": ["match", ["get", "anel"], 2, 0.5, 1] } });
+        M.addLayer({ id: "ipr-cand-f", type: "fill", source: "ipr-cand", paint: { "fill-color": "#ffd400", "fill-opacity": ["match", ["get", "anel"], 0, 0.45, 1, 0.25, 0.1] } });
+        M.addLayer({ id: "ipr-cand-c", type: "line", source: "ipr-cand", paint: { "line-color": "#1d1d1b", "line-width": ["match", ["get", "anel"], 0, 6, 1, 4, 2], "line-opacity": 0.55 } });
+        M.addLayer({ id: "ipr-cand-l", type: "line", source: "ipr-cand", paint: { "line-color": "#ffd400", "line-width": ["match", ["get", "anel"], 0, 3.5, 1, 2.2, 1], "line-dasharray": [2, 1.5], "line-opacity": ["match", ["get", "anel"], 2, 0.5, 1] } });
       }
       alvo = { ponto: ponto, base: base };
       mostrarCaixa(1 + a1.length + a2.length);
       return true;
     }
     function limpar() {
-      try { if (M.getLayer("ipr-cand-l")) M.removeLayer("ipr-cand-l"); if (M.getLayer("ipr-cand-f")) M.removeLayer("ipr-cand-f"); if (M.getSource("ipr-cand")) M.removeSource("ipr-cand"); } catch (e) {}
+      try { if (M.getLayer("ipr-cand-l")) M.removeLayer("ipr-cand-l"); if (M.getLayer("ipr-cand-c")) M.removeLayer("ipr-cand-c"); if (M.getLayer("ipr-cand-f")) M.removeLayer("ipr-cand-f"); if (M.getSource("ipr-cand")) M.removeSource("ipr-cand"); } catch (e) {}
       if (caixa) caixa.hidden = true; alvo = null;
     }
     function mostrarCaixa(n) {
@@ -1213,7 +1214,7 @@
     }
     function partir(ll) {
       if (!ll) return; var ponto = [ll.lng, ll.lat];
-      if (M.getZoom() < 16) M.flyTo({ center: ll, zoom: 16.5, duration: 900 });
+      M.flyTo({ center: ll, zoom: Math.max(M.getZoom(), 16.5), pitch: 0, duration: 900 }); // vista de cima: as candidatas lêem-se melhor
       ferramenta();
       var t = 0; (function espera() {
         if (desenhar(ponto)) return;
