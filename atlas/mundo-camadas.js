@@ -29,6 +29,40 @@
       R("mu-luzes", "Luzes nocturnas", GIBS + "VIIRS_Black_Marble/default/2016-01-01/GoogleMapsCompatible_Level8/{z}/{y}/{x}.png", 0, 8, 0.9,
         "Black Marble 2016: NASA Earth Observatory", "Povoamento e infra-estruturas vistos de noite.")
     ]],
+    ["Relevo", [
+      R("mu-aster", "Relevo a cores (altitude e sombra)", GIBS + "ASTER_GDEM_Color_Shaded_Relief/default/GoogleMapsCompatible_Level12/{z}/{y}/{x}.jpeg", 0, 12, 0.75,
+        "ASTER GDEM: NASA e METI", "Altitude em cores, com sombra, a 30 m. Para ler serras, vales e planaltos de qualquer país.")
+    ]],
+    ["Clima e tempo", [
+      R("mu-chuva", "Chuva · último dia", GIBS + "IMERG_Precipitation_Rate/default/default/GoogleMapsCompatible_Level6/{z}/{y}/{x}.png", 0, 6, 0.7,
+        "IMERG: NASA GPM, via GIBS", "Intensidade média da chuva no último dia disponível (satélites GPM, cerca de 10 km)."),
+      R("mu-temp", "Temperatura do ar · último mês", GIBS + "MERRA2_2m_Air_Temperature_Monthly/default/default/GoogleMapsCompatible_Level6/{z}/{y}/{x}.png", 0, 6, 0.6,
+        "MERRA-2: NASA GMAO, via GIBS", "Média mensal a 2 m do solo, cerca de 50 km: dá o clima da região, não o do terreno."),
+      R("mu-cheia", "Cheias · últimos 3 dias", GIBS + "MODIS_Combined_Flood_3-Day/default/default/GoogleMapsCompatible_Level9/{z}/{y}/{x}.png", 0, 9, 0.85,
+        "Cheias: NASA LANCE MODIS, via GIBS", "Água fora do sítio habitual detectada por satélite (cerca de 250 m).")
+    ]],
+    ["Vegetação e floresta", [
+      R("mu-evi", "Vigor da vegetação · últimos 8 dias", GIBS + "MODIS_Terra_EVI_8Day/default/default/GoogleMapsCompatible_Level9/{z}/{y}/{x}.png", 0, 9, 0.7,
+        "EVI: NASA MODIS, via GIBS", "Índice de vegetação (EVI) a 250 m: verde mais escuro é vegetação mais activa."),
+      R("mu-perda", "Perda de floresta 2001 a 2024", "https://tiles.globalforestwatch.org/umd_tree_cover_loss/latest/dynamic/{z}/{x}/{y}.png?start_year=2001&end_year=2024&tree_cover_density_threshold=30", 3, 12, 0.9,
+        "Hansen/UMD/Google/USGS/NASA, via Global Forest Watch, CC BY 4.0", "Áreas onde o coberto arbóreo desapareceu, por ano (Landsat, 30 m).", 1),
+      R("mu-altura", "Altura do coberto vegetal", GIBS + "GEDI_ISS_L3_Canopy_Height_Mean_RH100_201904-202108/default/default/GoogleMapsCompatible_Level7/{z}/{y}/{x}.png", 0, 7, 0.75,
+        "GEDI: NASA e Universidade de Maryland, via GIBS", "Altura média das árvores medida por laser a partir da estação espacial (1 km; entre 52°N e 52°S).", 1),
+      R("mu-biomassa", "Biomassa aérea", GIBS + "GEDI_ISS_L4B_Aboveground_Biomass_Density_Mean_201904-202303/default/default/GoogleMapsCompatible_Level7/{z}/{y}/{x}.png", 0, 7, 0.75,
+        "GEDI L4B: NASA, via GIBS", "Toneladas de biomassa por hectare (1 km; entre 52°N e 52°S).", 1)
+    ]],
+    ["População", [
+      R("mu-pop", "Densidade de população 2020", GIBS + "GPW_Population_Density_2020/default/GoogleMapsCompatible_Level7/{z}/{y}/{x}.png", 0, 7, 0.7,
+        "GPWv4: NASA SEDAC / CIESIN, CC BY 4.0", "Pessoas por km², a cerca de 1 km.")
+    ]],
+    ["Riscos naturais", [
+      R("mu-rcheia", "Frequência de cheias", GIBS + "NDH_Flood_Hazard_Frequency_Distribution_1985-2003/default/GoogleMapsCompatible_Level7/{z}/{y}/{x}.png", 0, 7, 0.7,
+        "Natural Disaster Hotspots: NASA SEDAC / CIESIN, Banco Mundial", "Cheias registadas de 1985 a 2003, em classes.", 1),
+      R("mu-rseca", "Frequência de secas", GIBS + "NDH_Drought_Hazard_Frequency_Distribution_1980-2000/default/GoogleMapsCompatible_Level7/{z}/{y}/{x}.png", 0, 7, 0.7,
+        "Natural Disaster Hotspots: NASA SEDAC / CIESIN, Banco Mundial", "Secas de 1980 a 2000, em classes.", 1),
+      R("mu-rdesl", "Perigo de deslizamentos", GIBS + "NDH_Landslide_Hazard_Distribution_2000/default/GoogleMapsCompatible_Level7/{z}/{y}/{x}.png", 0, 7, 0.7,
+        "Natural Disaster Hotspots: NASA SEDAC / NGI, Banco Mundial", "Perigo de deslizamento de terras, em classes.", 1)
+    ]],
     ["Ocupação do solo", [
       R("ao-lulc", "Ocupação do solo 10 m (Sentinel-2, 2024)", LULC, 4, 22, 0.65,
         "Ocupação do solo: Impact Observatory, Microsoft e Esri (Sentinel-2 10 m), CC BY 4.0",
@@ -88,7 +122,7 @@
   function preencher(d) {
     var h = "<h4>Mundo · fontes globais</h4>";
     CAT.forEach(function (g) { h += "<h5>" + g[0] + "</h5>"; g[1].forEach(function (it) { h += caixa(it); }); });
-    h += "<small>Fontes abertas de cobertura mundial, para qualquer país. Os fundos de satélite, o relevo, o OpenStreetMap, a biodiversidade (GBIF) e a água e clima (NASA) do Atlas também cobrem o mundo. Informação indicativa: a referência vinculativa é a dos organismos de cada país.</small>";
+    h += "<small>Fontes abertas de cobertura mundial, para qualquer país. As de clima, cheias e vegetação actualizam-se sozinhas com a última data publicada. Os fundos de satélite, o relevo, o OpenStreetMap, a biodiversidade (GBIF) e a água e clima (NASA) do Atlas também cobrem o mundo. Informação indicativa: a referência vinculativa é a dos organismos de cada país.</small>";
     d.innerHTML = h;
   }
   function montar() {
