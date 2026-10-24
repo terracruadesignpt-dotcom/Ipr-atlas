@@ -989,3 +989,4 @@ body.ipr-kb .ipr-pp{bottom:calc(var(--ipr-kb,0px) + 8px)}
 #ipe-proj .ipe-card:not(.on) .ipe-thumb{display:none}
 #ipe-proj .ipe-card:not(.on) .ipe-cc{display:block;padding-top:8px;padding-bottom:8px}
 #ipe-proj .ipe-card:not(.on) .ipc-cmp{display:none}
+#ipe-proj .ipr-ver-mapa{align-self:flex-start;margin-top:4px;font-size:12px;padding:3px 10px}

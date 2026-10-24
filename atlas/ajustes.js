@@ -1703,6 +1703,43 @@
       if (aberto === null) return;
       raiz.querySelectorAll(".ipe-card[data-i]").forEach(function (c) { var q = c.dataset.i === aberto; if (c.classList.contains("on") !== q) c.classList.toggle("on", q); });
     }
+    // Botão «Ver no mapa» em todas as barras (24/10/2026, 15h56): leva o mapa ao limite do terreno, aberto ou recolhido.
+    var geos = null;
+    function geometrias() {
+      if (geos) return geos;
+      geos = fetch("/wp-json/tcd/v1/meus-mapas", { credentials: "same-origin", headers: { "X-WP-Nonce": window.tcdNonce || "" } })
+        .then(function (r) { return r.json(); }).then(function (d) {
+          var m = {}; ["mapas", "partilhados", "rever"].forEach(function (k) { (d[k] || []).forEach(function (x) { if (x && x.geojson) m[String(x.encomenda || x.id)] = x.geojson; }); });
+          return m;
+        }).catch(function () { geos = null; return {}; });
+      return geos;
+    }
+    function caixa(gj) {
+      var b = [180, 90, -180, -90];
+      (function andar(c) { if (typeof c[0] === "number") { b[0] = Math.min(b[0], c[0]); b[1] = Math.min(b[1], c[1]); b[2] = Math.max(b[2], c[0]); b[3] = Math.max(b[3], c[1]); } else c.forEach(andar); })((gj.features || [gj]).map(function (f) { return (f.geometry || f).coordinates; }));
+      return b[0] <= b[2] ? b : null;
+    }
+    function botoes() {
+      raiz.querySelectorAll(".ipe-card[data-i] .ipe-ct").forEach(function (ct) {
+        if (ct.querySelector(".ipr-ver-mapa")) return;
+        var m = /#\s*([0-9A-Za-z-]+)/.exec(ct.textContent || ""); if (!m) return;
+        var bt = document.createElement("button"); bt.type = "button"; bt.className = "ipe-b ipe-b--s ipr-ver-mapa"; bt.textContent = "Ver no mapa"; bt.dataset.enc = m[1];
+        ct.appendChild(bt);
+      });
+    }
+    raiz.addEventListener("click", function (e) {
+      var bt = e.target.closest && e.target.closest(".ipr-ver-mapa"); if (!bt) return;
+      e.preventDefault(); e.stopImmediatePropagation();
+      bt.disabled = true;
+      geometrias().then(function (m) {
+        bt.disabled = false;
+        var gj = m[bt.dataset.enc], b = gj && caixa(gj), M = mapa();
+        if (!b || !M) { bt.textContent = "Sem limite"; return; }
+        try { M.fitBounds([[b[0], b[1]], [b[2], b[3]]], { padding: 60, maxZoom: 17, duration: 1200 }); } catch (x) {}
+        // no telemóvel, baixa o painel para se ver o mapa
+        if (window.innerWidth <= 900) { try { var d = document.getElementById("ipe-dir"); if (d) d.classList.remove("aberto"); } catch (x) {} }
+      });
+    }, true);
     raiz.addEventListener("click", function (e) {
       var cc = e.target.closest && e.target.closest(".ipe-card[data-i] > .ipe-cc"); if (!cc || e.target.closest(".ipc-cmp")) return;
       var k = cc.parentNode.dataset.i;
@@ -1710,8 +1747,8 @@
       aberto = era === k ? "-" : k;
       setTimeout(aplicar, 0); setTimeout(aplicar, 150);
     }, true);
-    new MutationObserver(function () { aplicar(); }).observe(raiz, { childList: true, subtree: true });
-    aplicar();
+    new MutationObserver(function () { aplicar(); botoes(); }).observe(raiz, { childList: true, subtree: true });
+    aplicar(); botoes();
     return true;
   }
   function correr() {
