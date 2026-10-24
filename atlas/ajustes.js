@@ -1411,11 +1411,15 @@
   //     desactivada.
   var CRONO = [
     { a: 1995, id: "f_o95", t: "Ortofotos 1995 (infravermelho, cores virtuais)", f: "DGT" },
+    { a: 2005, id: "f_o04", t: "Ortofotos 2004 a 2006 (voos de três anos)", f: "DGT" },
     { a: 2007, id: "f_o07", t: "Ortofotos 2007", f: "DGT" },
+    { a: 2010, id: "f_o10", t: "Ortofotos 2010", f: "DGT" },
     { a: 2012, id: "f_o12", t: "Ortofotos 2012", f: "DGT" },
     { a: 2015, id: "f_o15", t: "Ortofotos 2015", f: "DGT" },
     { a: 2018, id: "f_orto18", t: "Ortofotos 2018 · 25 cm", f: "DGT" },
-    { a: 2023, id: "f_ortosat", t: "OrtoSat 2023 · 30 cm", f: "DGT" }
+    { a: 2021, id: "f_o21", t: "Ortofotos 2021 · só a metade norte do país", f: "DGT" },
+    { a: 2023, id: "f_ortosat", t: "OrtoSat 2023 · 30 cm", f: "DGT" },
+    { a: 2025, id: "f_o25", t: "Ortofotos 2025 · 25 cm", f: "DGT" }
   ];
   function cronologia() {
     var cab = document.querySelector(".ipr-arv-cab"); if (!cab) return false; if (cab.querySelector(".ipr-crono-b")) return true;
@@ -1429,7 +1433,8 @@
       + '<div class="ipr-crono-r">' + CRONO.map(function (c) { return "<span>" + String(c.a).slice(2) + "</span>"; }).join("") + "</div>"
       + '<p class="ipr-crono-t"></p>'
       + '<label class="ipr-crono-f"><input type="checkbox"' + (ardTranc ? " disabled" : "") + '> Áreas ardidas do período (ICNF)</label>'
-      + (ardTranc ? '<p class="ipr-crono-n">As áreas ardidas são do IPR Atlas Intelligence.</p>' : "");
+      + (ardTranc ? '<p class="ipr-crono-n">As áreas ardidas são do IPR Atlas Intelligence.</p>' : "")
+      + '<p class="ipr-crono-n">As ortofotos só aparecem com o mapa aproximado (escala 1:50 000 ou maior). <b>Antes de 1995</b> há fotografias aéreas de arquivo, que não são ortofotos: a <a href="https://www.dgterritorio.gov.pt/node/1435" target="_blank" rel="noopener">fototeca da DGT</a> (desde 1944) e o CIGeoE (voos de 1937 a 1960, pedidos por coordenadas). Servem para documentar a antiguidade de uma construção, mas não substituem a apreciação da câmara.</p>';
     var antes = null, rg = p.querySelector("input[type=range]"), cb = p.querySelector("input[type=checkbox]");
     function ardAct() { var a = []; try { a = R.activas(); } catch (e) {} return { a15: a.indexOf("ard15") > -1, a75: a.indexOf("ard75") > -1 }; }
     function aplicar() {
