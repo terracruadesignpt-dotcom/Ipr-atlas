@@ -2160,25 +2160,44 @@
   // a escalas pequenas e, em JPEG, voltam como um rectângulo cinzento por cima do país. Abaixo do zoom 9,5 os fundos da DGT
   // escondem-se e fica o satélite sem nuvens (Sentinel-2, EOX, já usado por baixo) com o relevo sombreado do Mapterhorn por cima,
   // a esbater-se até ao zoom 11. A partir daí entra a ortofoto de 30 cm como antes. Não mexe nos outros fundos nem nas camadas.
+  // 25/10, 19h13 (Nuno: «não te pedi uma camada branca à volta de Portugal [...] ortofoto com o mais detalhe possível,
+  // ensombreamento meio 3D e toponímia»). A mancha branca era a cópia em PNG que o viz.js junta aos fundos da DGT para os
+  // níveis de zoom pequenos (camadas «-lzr»): a DGT devolve-a quase branca. Agora, abaixo do zoom 9,5, nenhum fundo da DGT
+  // (ortos, OrtoSat e mosaicos Sentinel de Portugal, com ou sem «-lzr») aparece; fica o satélite sem nuvens. O relevo
+  // sombreado passa a ficar por cima de qualquer fundo de imagem a todas as escalas (forte de longe, suave sobre a ortofoto)
+  // e só se esconde com os mapas desenhados (OpenStreetMap, OpenTopoMap, Relevo sombreado). A toponímia fica ligada.
   function longe() {
     var m = window.__ipe && window.__ipe.mapa; if (!m || !m.getStyle || !m.getStyle()) return false;
-    var DGT = /^iprv-f_(ortosat|orto18|o\d\d|o04)$/, ZMIN = 9.5;
+    var DGT = /^iprv-f_(ortosat|orto18|o\d\d|o04|s2jul|s2jan|s2out)(-lzr)?$/, DESENHO = /^iprv-f_(mapa|otm|relevo)(-|$)/, ZMIN = 9.5;
     function aplicar() {
-      var st = m.getStyle(); if (!st || !st.layers) return;
-      st.layers.forEach(function (l) { if (DGT.test(l.id) && (l.minzoom || 0) < ZMIN) { try { m.setLayerZoomRange(l.id, ZMIN, l.maxzoom || 24); } catch (e) {} } });
-      var sub = m.getLayer("iprv-f_sub");
+      var st = m.getStyle(); if (!st || !st.layers) return; var ls = st.layers;
+      ls.forEach(function (l) { if (DGT.test(l.id) && (l.minzoom || 0) < ZMIN) { try { m.setLayerZoomRange(l.id, ZMIN, l.maxzoom || 24); } catch (e) {} } });
       if (!m.getSource("ipr-longe-dem")) { try { m.addSource("ipr-longe-dem", { type: "raster-dem", tiles: ["https://tiles.mapterhorn.com/{z}/{x}/{y}.webp"], encoding: "terrarium", tileSize: 512, maxzoom: 12, attribution: "Relevo: Mapterhorn (Copernicus GLO-30, LiDAR DGT; CC BY 4.0) · Satélite: Sentinel-2 cloudless 2016, EOX (CC BY 4.0)" }); } catch (e) {} }
-      if (sub && !m.getLayer("ipr-longe-relevo")) {
-        var ls = st.layers, i = ls.findIndex(function (l) { return l.id === "iprv-f_sub"; }), antes = i >= 0 && ls[i + 1] ? ls[i + 1].id : undefined;
+      // Fica logo acima do último fundo (iprv-f_*), por baixo das camadas temáticas e da toponímia.
+      var ult = -1; ls.forEach(function (l, k) { if (l.id.indexOf("iprv-f_") === 0) ult = k; });
+      var antes; for (var k = ult + 1; k < ls.length; k++) { if (ls[k].id !== "ipr-longe-relevo") { antes = ls[k].id; break; } }
+      if (!m.getLayer("ipr-longe-relevo")) {
         try {
-          m.addLayer({ id: "ipr-longe-relevo", type: "hillshade", source: "ipr-longe-dem", maxzoom: 12, paint: {
-            "hillshade-exaggeration": ["interpolate", ["linear"], ["zoom"], 5, 0.55, 9, 0.45, 11, 0.2, 12, 0],
+          m.addLayer({ id: "ipr-longe-relevo", type: "hillshade", source: "ipr-longe-dem", paint: {
+            "hillshade-exaggeration": ["interpolate", ["linear"], ["zoom"], 5, 0.6, 9, 0.5, 12, 0.38, 16, 0.3],
             "hillshade-illumination-direction": 315,
-            "hillshade-shadow-color": "rgba(18,22,14,0.62)", "hillshade-highlight-color": "rgba(255,248,228,0.28)", "hillshade-accent-color": "rgba(10,12,8,0.25)" } }, antes);
+            "hillshade-shadow-color": "rgba(18,22,14,0.6)", "hillshade-highlight-color": "rgba(255,248,228,0.25)", "hillshade-accent-color": "rgba(10,12,8,0.22)" } }, antes);
         } catch (e) {}
+      } else if (ult >= 0) {
+        var pos = ls.findIndex(function (l) { return l.id === "ipr-longe-relevo"; });
+        if (pos >= 0 && pos < ult) { try { m.moveLayer("ipr-longe-relevo", antes); } catch (e) {} }
       }
-      // O relevo só acompanha o satélite: se o fundo escolhido não for o satélite por baixo, esconde-se.
-      if (m.getLayer("ipr-longe-relevo")) { try { var v = sub && m.getLayoutProperty("iprv-f_sub", "visibility") !== "none" ? "visible" : "none"; if ((m.getLayoutProperty("ipr-longe-relevo", "visibility") || "visible") !== v) m.setLayoutProperty("ipr-longe-relevo", "visibility", v); } catch (e) {} }
+      if (m.getLayer("ipr-longe-relevo")) {
+        var desenho = ls.some(function (l) { return DESENHO.test(l.id) && m.getLayoutProperty(l.id, "visibility") !== "none"; });
+        var v = desenho ? "none" : "visible";
+        try { if ((m.getLayoutProperty("ipr-longe-relevo", "visibility") || "visible") !== v) m.setLayoutProperty("ipr-longe-relevo", "visibility", v); } catch (e) {}
+      }
+      // Toponímia sempre presente (localidades, aldeias, rios e serras), ligada pelo catálogo como se carregasse na caixa.
+      if (!longe.nomes && window.IPRViz && !ls.some(function (l) { return l.id.indexOf("iprv-o_nomes-") === 0; })) {
+        var cx = document.querySelector('.ipr-it[data-id="o_nomes"] input');
+        if (cx) { longe.nomes = 1; if (!cx.checked) cx.click(); }
+        else if (window.__ipe && window.__ipe.viz && typeof window.__ipe.viz.ligar === "function") { longe.nomes = 1; try { window.__ipe.viz.ligar("o_nomes", true); } catch (e) {} }
+      }
     }
     var t = 0; m.on("styledata", function () { clearTimeout(t); t = setTimeout(aplicar, 60); });
     aplicar();
