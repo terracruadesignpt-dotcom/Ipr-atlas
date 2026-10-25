@@ -421,7 +421,7 @@
       if (loc.parentNode !== arv || arv.firstElementChild !== loc) arv.insertBefore(loc, arv.firstChild);
       var gn = loc.querySelector(".ipr-gn"); if (gn && gn.textContent !== "Os meus locais") gn.textContent = "Os meus locais";
     }
-    if (!document.getElementById("ipr-loc-css")) { var cs = document.createElement("style"); cs.id = "ipr-loc-css"; cs.textContent = "#ipe #ipc-loc.ipr-g:not(.ipr-fechou)>.ipe-sbc{display:block!important}#ipe #ipc-loc.ipr-g:not(.ipr-fechou) .ipr-car{transform:rotate(90deg)}#ipe #ipc-loc.ipr-g.ipr-fechou>.ipe-sbc{display:none!important}"; document.head.appendChild(cs); }
+    if (!document.getElementById("ipr-loc-css")) { var cs = document.createElement("style"); cs.id = "ipr-loc-css"; cs.textContent = "#ipe #ipc-loc.ipr-g:not(.ipr-fechou)>.ipe-sbc{display:block!important}#ipe #ipc-loc.ipr-g:not(.ipr-fechou) .ipr-car{transform:rotate(90deg)}#ipe #ipc-loc.ipr-g.ipr-fechou>.ipe-sbc{display:none!important}#ipe #ipc-loc .ipe-loc-s,#ipe #ipc-loc .ipe-loc-p:has([data-am]){display:none!important}#ipe #ipc-loc>.ipe-sbc{max-height:30vh;overflow:auto}"; document.head.appendChild(cs); }
     var gtb = loc.querySelector(".ipr-gt"); if (gtb && !gtb.__iprM) { gtb.__iprM = 1; gtb.addEventListener("click", function () { loc.classList.toggle("ipr-fechou"); }, true); }
     pôr();
     if (!arrumar.obs) { arrumar.obs = 1; new MutationObserver(function () { clearTimeout(arrumar.t); arrumar.t = setTimeout(pôr, 60); }).observe(cam, { childList: true, subtree: true }); }
@@ -2514,6 +2514,45 @@
     return true;
   }
 
+  // §51 Subpastas nas categorias de camadas (Nuno 25/10, 19h32: «as camadas à esquerda mais subdivididas [...] a água dá para
+  // ter várias subcategorias, nas condicionantes também [...] isso devia ser tudo subcategorias»). Os subtítulos que o
+  // camadas.js já desenha (Superficial, Subterrânea, Pontos de água, Propriedade, Limites administrativos…) passam a pastas
+  // que se abrem e fecham, com o número de camadas e de ligadas. Abrem-se sozinhas quando têm camadas ligadas; o estado
+  // fica guardado neste aparelho. Não muda as camadas nem os interruptores.
+  function subPastas() {
+    var cam = document.getElementById("ipe-cam"); if (!cam) return false;
+    if (cam.__ipr51) return true; cam.__ipr51 = 1;
+    var st = document.createElement("style");
+    st.textContent = "#ipe-cam li.ipr-sub.ipr-sp{cursor:pointer;display:flex;align-items:center;gap:7px;padding:7px 8px 6px 4px;margin-top:2px;border-top:1px solid var(--ln2,rgba(127,127,127,.18));font:600 11.5px Inter,system-ui,sans-serif;letter-spacing:.04em;user-select:none;color:var(--tx,#ddd)}" +
+      "#ipe-cam li.ipr-sub.ipr-sp:before{content:'';width:6px;height:6px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(-45deg);transition:transform .15s;flex:none;margin-left:2px}" +
+      "#ipe-cam li.ipr-sub.ipr-sp.ab:before{transform:rotate(45deg)}#ipe-cam li.ipr-sub.ipr-sp small{margin-left:auto;font:500 10.5px var(--mono,monospace);letter-spacing:0;color:var(--mu)}#ipe-cam li.ipr-sub.ipr-sp small b{color:var(--ac,#9cbf4f)}" +
+      "#ipe-cam li.ipr-sp-esc{display:none!important}";
+    document.head.appendChild(st);
+    var EST = {}; try { EST = JSON.parse(localStorage.getItem("ipr_subpastas") || "{}") || {}; } catch (e) {}
+    function guardar() { try { localStorage.setItem("ipr_subpastas", JSON.stringify(EST)); } catch (e) {} }
+    function itens(li) { var r = [], n = li.nextElementSibling; while (n && !n.classList.contains("ipr-sub")) { r.push(n); n = n.nextElementSibling; } return r; }
+    function chave(li) { var g = li.closest(".ipr-g"), gn = g ? ((g.querySelector(".ipr-gn") || {}).textContent || "") : ""; return gn + "|" + li.textContent.replace(/\s*\d+(\s*·\s*\d+)?\s*$/, "").trim(); }
+    function aplicar() {
+      if (cam.querySelector(".ipr-busca input") && cam.querySelector(".ipr-busca input").value) { cam.querySelectorAll("li.ipr-sp-esc").forEach(function (x) { x.classList.remove("ipr-sp-esc"); }); return; }
+      cam.querySelectorAll("ul.ipr-lista > li.ipr-sub").forEach(function (li) {
+        var its = itens(li), lig = its.filter(function (x) { return x.classList.contains("on") || !!x.querySelector("input:checked"); }).length;
+        if (!li.classList.contains("ipr-sp")) { li.classList.add("ipr-sp"); li.dataset.k = chave(li); li.appendChild(document.createElement("small")); }
+        var k = li.dataset.k, ab = k in EST ? !!EST[k] : lig > 0;
+        li.classList.toggle("ab", ab);
+        var sm = li.querySelector("small"), h = its.length + (lig ? " · <b>" + lig + "</b>" : ""); if (sm.innerHTML !== h) sm.innerHTML = h;
+        its.forEach(function (x) { x.classList.toggle("ipr-sp-esc", !ab); });
+      });
+    }
+    cam.addEventListener("click", function (e) {
+      var li = e.target.closest && e.target.closest("li.ipr-sub.ipr-sp"); if (!li) return;
+      EST[li.dataset.k] = !li.classList.contains("ab"); guardar(); aplicar();
+    });
+    cam.addEventListener("change", function () { setTimeout(aplicar, 0); });
+    new MutationObserver(function () { clearTimeout(subPastas.t); subPastas.t = setTimeout(aplicar, 40); }).observe(cam, { childList: true, subtree: true });
+    aplicar();
+    return true;
+  }
+
   function cartoes() {
     if (!document.getElementById("ipr-jorg-css")) { var cs = document.createElement("style"); cs.id = "ipr-jorg-css"; cs.textContent = ".ipr-jorg-esc{display:inline-flex;gap:4px;margin-left:6px;align-items:center}.ipr-jorg-esc select{font:12px Inter,sans-serif;max-width:160px;background:var(--p3,transparent);color:var(--tx);border:1px solid var(--ln);border-radius:6px;padding:2px 4px}.ipr-jorg-esc button{font:600 12px Inter,sans-serif;border:1px solid var(--ln);border-radius:6px;padding:2px 8px;background:var(--ac,#75834a);color:#fff;cursor:pointer}"; document.head.appendChild(cs); }
     var P = document.getElementById("ipe-proj"); if (!P || !window.tcdNonce) return false;
@@ -2573,7 +2612,7 @@
   }
   function correr() {
     voltas++;
-    [["marca", marca], ["puxadores", puxadores], ["creditos", creditos], ["estado", estado], ["formiga", formiga], ["projectos", projectos], ["editavel", editavel], ["semBug", semBug], ["rosa", rosa], ["arrumar", arrumar], ["projDir", projDir], ["testarEsq", testarEsq], ["contaTopo", contaTopo], ["camadasTopo", camadasTopo], ["sintetizar", sintetizar], ["opcoesCamadas", opcoesCamadas], ["projFechados", projFechados], ["todasMais", todasMais], ["painelTopo", painelTopo], ["qfieldQR", qfieldQR], ["temas", temas], ["natural", natural], ["aprenderDesenho", aprenderDesenho], ["fichas", fichasCamada], ["natureza", fichasNatureza], ["parcelas", parcelasPonto], ["partilhaQR", partilhaQR], ["teclado", tecladoVirtual], ["prefs", prefsConta], ["cronologia", cronologia], ["alcanena", pilotoAlcanena], ["estilosOrg", estilosOrg], ["fimDoVoo", fimDoVoo], ["orgNomes", orgNomes], ["projRecolhidos", projRecolhidos], ["instalarApp", instalarApp], ["temaEscuro", temaEscuro], ["orgPastas", orgPastas], ["discricao", discricao], ["estradas", estradas], ["cloudLimpo", cloudLimpo], ["navEsquerda", navEsquerda], ["encomendaCompacta", encomendaCompacta], ["testarLigacao", testarLigacao], ["linguetaEsq", linguetaEsq], ["longe", longe], ["arrumarCamadas", arrumarCamadas], ["separadores", separadores], ["processar", processar], ["cartoes", cartoes], ["diagMundo", diagMundo], ["foraDoPais", foraDoPais]].forEach(function (f) { if (!feito[f[0]]) { try { feito[f[0]] = f[1](); } catch (e) {} } });
+    [["marca", marca], ["puxadores", puxadores], ["creditos", creditos], ["estado", estado], ["formiga", formiga], ["projectos", projectos], ["editavel", editavel], ["semBug", semBug], ["rosa", rosa], ["arrumar", arrumar], ["projDir", projDir], ["testarEsq", testarEsq], ["contaTopo", contaTopo], ["camadasTopo", camadasTopo], ["sintetizar", sintetizar], ["opcoesCamadas", opcoesCamadas], ["projFechados", projFechados], ["todasMais", todasMais], ["painelTopo", painelTopo], ["qfieldQR", qfieldQR], ["temas", temas], ["natural", natural], ["aprenderDesenho", aprenderDesenho], ["fichas", fichasCamada], ["natureza", fichasNatureza], ["parcelas", parcelasPonto], ["partilhaQR", partilhaQR], ["teclado", tecladoVirtual], ["prefs", prefsConta], ["cronologia", cronologia], ["alcanena", pilotoAlcanena], ["estilosOrg", estilosOrg], ["fimDoVoo", fimDoVoo], ["orgNomes", orgNomes], ["projRecolhidos", projRecolhidos], ["instalarApp", instalarApp], ["temaEscuro", temaEscuro], ["orgPastas", orgPastas], ["discricao", discricao], ["estradas", estradas], ["cloudLimpo", cloudLimpo], ["navEsquerda", navEsquerda], ["encomendaCompacta", encomendaCompacta], ["testarLigacao", testarLigacao], ["linguetaEsq", linguetaEsq], ["longe", longe], ["arrumarCamadas", arrumarCamadas], ["separadores", separadores], ["processar", processar], ["cartoes", cartoes], ["diagMundo", diagMundo], ["foraDoPais", foraDoPais], ["subPastas", subPastas]].forEach(function (f) { if (!feito[f[0]]) { try { feito[f[0]] = f[1](); } catch (e) {} } });
     try { nomes(); } catch (e) {}
     try { equipa(); } catch (e) {}
     try { if (window.__iprTodas && !document.getElementById("ipr-todas")) todasBases(); } catch (e) {}
