@@ -2356,6 +2356,48 @@
   }
 
   // Cartões dos projectos: «Arquivar» (esconde da lista, não apaga nada) e «Juntar à organização» (limite do terreno).
+  // §49 Teste das camadas também com as camadas mundiais e europeias (Nuno 25/10, 18h20: «quando estou no mundo [...] o teste
+  // das camadas vai incluir as globais»). Antes de o app.js montar o diagnóstico, junta ao catálogo, só durante esse instante,
+  // as camadas do grupo Mundo (mundo-camadas.js) e as europeias do país do centro do mapa (eu-camadas.js; com o mapa muito
+  // afastado, as de todos os países). Cada uma é pedida numa tesela no centro do mapa, ao nível de zoom em que existe.
+  function diagMundo() {
+    if (window.__iprDiagMundo) return true; window.__iprDiagMundo = 1;
+    var W = 20037508.342789244;
+    function tesela(url, z, lng, lat) {
+      var n = Math.pow(2, z), x = Math.floor((lng + 180) / 360 * n), r = lat * Math.PI / 180;
+      var y = Math.floor((1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2 * n); x = Math.max(0, Math.min(n - 1, x)); y = Math.max(0, Math.min(n - 1, y));
+      var t = 2 * W / n, bb = [-W + x * t, W - (y + 1) * t, -W + (x + 1) * t, W - y * t].map(function (v) { return v.toFixed(2); }).join(",");
+      return url.replace("{bbox-epsg-3857}", bb).replace("{z}", z).replace("{x}", x).replace("{y}", y).replace("{-y}", n - 1 - y);
+    }
+    function extra() {
+      var I = window.__ipe && window.__ipe.mapa, c = I ? I.getCenter() : { lng: -8, lat: 39.5 }, zm = I ? I.getZoom() : 6, out = [], vistos = {};
+      function junta(it, grupo) {
+        if (!it || !it.id || vistos[it.id]) return; vistos[it.id] = 1;
+        if (it.vec || it.tipo === "vector") { out.push({ id: "dgx-" + it.id, n: it.nome, g: grupo, fonte: it.attr || "", t: "omtbase" }); return; }
+        if (!it.url || typeof it.url !== "string") return;
+        var z = Math.max(it.min || 0, Math.min(it.max == null ? 10 : it.max, Math.max(4, Math.min(12, Math.round(zm)))));
+        out.push({ id: "dgx-" + it.id, n: it.nome, g: grupo, fonte: (it.attr || "").replace(/<[^>]+>/g, ""), t: "xyz", url: tesela(it.url, z, c.lng, c.lat) });
+      }
+      var M = window.__tcdMundoCamadas; if (M && M.CAT) M.CAT.forEach(function (g) { (g[1] || []).forEach(function (it) { junta(it, "Mundo · " + g[0]); }); });
+      var E = window.__tcdEuCamadas;
+      if (E && E.itens) {
+        var cc = E.pais ? E.pais(c.lng, c.lat) : "", lista = cc ? [cc] : (zm < 5 && E.CAT ? Object.keys(E.CAT) : []);
+        lista.forEach(function (k) { E.itens(k).forEach(function (it) { junta(it, "Europa · " + k); }); });
+        if (!lista.length && E.COMUM) E.COMUM.forEach(function (it) { junta(it, "Europa"); });
+      }
+      return out;
+    }
+    document.addEventListener("click", function (e) {
+      var b = e.target.closest && e.target.closest('[data-cfga="diag"]'); if (!b || !window.IPRViz || !Array.isArray(IPRViz.catalogo)) return;
+      var cat = IPRViz.catalogo, n = cat.length, x = [];
+      try { x = extra(); } catch (er) { x = []; }
+      if (!x.length) return;
+      Array.prototype.push.apply(cat, x);
+      setTimeout(function () { if (cat.length >= n + x.length) cat.splice(n, x.length); }, 0);
+    }, true);
+    return true;
+  }
+
   function cartoes() {
     var P = document.getElementById("ipe-proj"); if (!P || !window.tcdNonce) return false;
     if (P.__ipr48) return true; P.__ipr48 = 1;
@@ -2396,7 +2438,7 @@
   }
   function correr() {
     voltas++;
-    [["marca", marca], ["puxadores", puxadores], ["creditos", creditos], ["estado", estado], ["formiga", formiga], ["projectos", projectos], ["editavel", editavel], ["semBug", semBug], ["rosa", rosa], ["arrumar", arrumar], ["projDir", projDir], ["testarEsq", testarEsq], ["contaTopo", contaTopo], ["camadasTopo", camadasTopo], ["sintetizar", sintetizar], ["opcoesCamadas", opcoesCamadas], ["projFechados", projFechados], ["todasMais", todasMais], ["painelTopo", painelTopo], ["qfieldQR", qfieldQR], ["temas", temas], ["natural", natural], ["aprenderDesenho", aprenderDesenho], ["fichas", fichasCamada], ["natureza", fichasNatureza], ["parcelas", parcelasPonto], ["partilhaQR", partilhaQR], ["teclado", tecladoVirtual], ["prefs", prefsConta], ["cronologia", cronologia], ["alcanena", pilotoAlcanena], ["estilosOrg", estilosOrg], ["fimDoVoo", fimDoVoo], ["orgNomes", orgNomes], ["projRecolhidos", projRecolhidos], ["instalarApp", instalarApp], ["temaEscuro", temaEscuro], ["orgPastas", orgPastas], ["discricao", discricao], ["estradas", estradas], ["cloudLimpo", cloudLimpo], ["navEsquerda", navEsquerda], ["encomendaCompacta", encomendaCompacta], ["testarLigacao", testarLigacao], ["linguetaEsq", linguetaEsq], ["longe", longe], ["arrumarCamadas", arrumarCamadas], ["separadores", separadores], ["processar", processar], ["cartoes", cartoes]].forEach(function (f) { if (!feito[f[0]]) { try { feito[f[0]] = f[1](); } catch (e) {} } });
+    [["marca", marca], ["puxadores", puxadores], ["creditos", creditos], ["estado", estado], ["formiga", formiga], ["projectos", projectos], ["editavel", editavel], ["semBug", semBug], ["rosa", rosa], ["arrumar", arrumar], ["projDir", projDir], ["testarEsq", testarEsq], ["contaTopo", contaTopo], ["camadasTopo", camadasTopo], ["sintetizar", sintetizar], ["opcoesCamadas", opcoesCamadas], ["projFechados", projFechados], ["todasMais", todasMais], ["painelTopo", painelTopo], ["qfieldQR", qfieldQR], ["temas", temas], ["natural", natural], ["aprenderDesenho", aprenderDesenho], ["fichas", fichasCamada], ["natureza", fichasNatureza], ["parcelas", parcelasPonto], ["partilhaQR", partilhaQR], ["teclado", tecladoVirtual], ["prefs", prefsConta], ["cronologia", cronologia], ["alcanena", pilotoAlcanena], ["estilosOrg", estilosOrg], ["fimDoVoo", fimDoVoo], ["orgNomes", orgNomes], ["projRecolhidos", projRecolhidos], ["instalarApp", instalarApp], ["temaEscuro", temaEscuro], ["orgPastas", orgPastas], ["discricao", discricao], ["estradas", estradas], ["cloudLimpo", cloudLimpo], ["navEsquerda", navEsquerda], ["encomendaCompacta", encomendaCompacta], ["testarLigacao", testarLigacao], ["linguetaEsq", linguetaEsq], ["longe", longe], ["arrumarCamadas", arrumarCamadas], ["separadores", separadores], ["processar", processar], ["cartoes", cartoes], ["diagMundo", diagMundo]].forEach(function (f) { if (!feito[f[0]]) { try { feito[f[0]] = f[1](); } catch (e) {} } });
     try { nomes(); } catch (e) {}
     try { equipa(); } catch (e) {}
     try { if (window.__iprTodas && !document.getElementById("ipr-todas")) todasBases(); } catch (e) {}
