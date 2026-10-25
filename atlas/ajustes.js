@@ -2725,8 +2725,13 @@
       var b = e.target.closest && e.target.closest("#ipr-projorg button"); if (!b) return; e.stopPropagation();
       if (b.dataset.po && window.__iprOrgBase) window.__iprOrgBase(+b.dataset.po); else if (window.__iprOrgAbrir) window.__iprOrgAbrir(b.dataset.pok);
     });
-    new MutationObserver(function () { if (desenhando) return; clearTimeout(desenhar.t); desenhar.t = setTimeout(desenhar, 80); }).observe(P, { childList: true });
-    desenhar();
+    // Travão: no máximo 6 redesenhos por 10 s, para nunca entrar em ciclo com o próprio Atlas.
+    var vezes = [];
+    new MutationObserver(function () {
+      if (desenhando) return; var t = Date.now(); vezes = vezes.filter(function (x) { return t - x < 10000; }); if (vezes.length >= 6) return;
+      clearTimeout(desenhar.t); desenhar.t = setTimeout(function () { vezes.push(Date.now()); try { desenhar(); } catch (e) {} }, 250);
+    }).observe(P, { childList: true });
+    try { desenhar(); } catch (e) {}
     return true;
   }
   function subPastas() {
