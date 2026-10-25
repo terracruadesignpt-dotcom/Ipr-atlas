@@ -2519,6 +2519,127 @@
   // camadas.js já desenha (Superficial, Subterrânea, Pontos de água, Propriedade, Limites administrativos…) passam a pastas
   // que se abrem e fecham, com o número de camadas e de ligadas. Abrem-se sozinhas quando têm camadas ligadas; o estado
   // fica guardado neste aparelho. Não muda as camadas nem os interruptores.
+  // §52 Organização como espelho do Drive (Nuno 25/10, 19h28 e 20h03): primeiro o nome da organização, depois só a lista
+  // dos projectos por ordem do número (os da organização e os da IPR Cloud), cada um na sua pasta. Dentro, as secções
+  // como no Drive: Análise, Projecto Terracrua Design (com as subpastas), AutoCADs. Quinta Linda e Santa Comba Dão em
+  // pastas separadas. Desenha-se a partir dos dados do org.js (window.tcdOrg.dados()), não do HTML dele.
+  function orgVista() {
+    var P = document.querySelector('.ipe-pane[data-pane="org"]'); if (!P || !window.tcdOrg) return false;
+    if (window.__iprOrgV) return true; window.__iprOrgV = 1; window.__iprOrgP = 1; // o §36 antigo deixa de mexer aqui
+    var st = document.createElement("style");
+    st.textContent = "#ipr-orgv{font:13px Inter,sans-serif;color:var(--tx)}" +
+      "#ipr-orgv .ov-cab{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:2px 0 10px;border-bottom:1px solid var(--ln2,rgba(127,127,127,.25));margin-bottom:10px}" +
+      "#ipr-orgv .ov-cab h3{margin:0;font:700 15px Inter,sans-serif;letter-spacing:.01em}#ipr-orgv .ov-cab small{display:block;font:500 11px Inter,sans-serif;color:var(--mu);margin-top:2px}" +
+      "#ipr-orgv .ov-cab a{font-size:12px;color:var(--ac2,#75834a);white-space:nowrap}#ipr-orgv .ov-lbl{font:600 11px Inter,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--mu);margin:4px 0 6px}" +
+      "#ipr-orgv details{border:1px solid var(--ln2,rgba(127,127,127,.25));border-radius:10px;margin:0 0 6px;overflow:hidden}" +
+      "#ipr-orgv details details{border:0;border-top:1px solid var(--ln2,rgba(127,127,127,.18));border-radius:0;margin:0}" +
+      "#ipr-orgv summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;padding:9px 10px;font-weight:600}" +
+      "#ipr-orgv summary::-webkit-details-marker{display:none}#ipr-orgv summary:before{content:'';width:6px;height:6px;border-right:1.6px solid currentColor;border-bottom:1.6px solid currentColor;transform:rotate(-45deg);opacity:.6;flex:none;transition:transform .15s}" +
+      "#ipr-orgv details[open]>summary:before{transform:rotate(45deg)}#ipr-orgv .ov-p>summary{background:var(--p3,rgba(127,127,127,.07))}" +
+      "#ipr-orgv summary em{font-style:normal;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#ipr-orgv summary small{font:500 11px Inter,sans-serif;color:var(--mu);white-space:nowrap}" +
+      "#ipr-orgv .ov-p>summary em{white-space:normal}#ipr-orgv .ov-p>summary b{font:700 12px Inter,sans-serif;color:var(--mu);min-width:38px}#ipr-orgv .ov-s>summary{font-weight:500;padding-left:18px}#ipr-orgv .ov-s .ov-s>summary{padding-left:30px}" +
+      "#ipr-orgv .ov-c{display:flex;align-items:center;gap:8px;padding:5px 8px 5px 30px;border-top:1px solid var(--ln2,rgba(127,127,127,.12))}#ipr-orgv .ov-s .ov-s .ov-c{padding-left:42px}" +
+      "#ipr-orgv .ov-c label{flex:1;min-width:0;display:flex;gap:8px;align-items:center;cursor:pointer}#ipr-orgv .ov-c label span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}" +
+      "#ipr-orgv .ov-c small{color:var(--mu);white-space:nowrap;font-size:11px}#ipr-orgv button.ov-z{font:12px Inter,sans-serif;border:1px solid var(--ln);background:var(--p3);color:var(--ac2);border-radius:6px;padding:2px 7px;cursor:pointer}" +
+      "#ipr-orgv .ov-acc{display:flex;flex-wrap:wrap;gap:6px;padding:6px 10px 9px}#ipr-orgv .ov-acc button{font:12px Inter,sans-serif;border:1px solid var(--ln);background:transparent;color:var(--ac2,#75834a);border-radius:99px;padding:3px 10px;cursor:pointer}" +
+      "#ipr-orgv .ov-vz{padding:5px 8px 7px 30px;color:var(--mu);font-size:12px}#ipr-orgv .ov-cl{font:500 10.5px Inter,sans-serif;border:1px solid var(--ln);border-radius:99px;padding:0 6px;color:var(--mu)}" +
+      "#ipr-orgv i.ov-cor{width:9px;height:9px;border-radius:50%;flex:none}";
+    document.head.appendChild(st);
+    var EST = {}; try { EST = JSON.parse(localStorage.getItem("ipr_org_vista") || "{}") || {}; } catch (e) {}
+    function guardar() { try { localStorage.setItem("ipr_org_vista", JSON.stringify(EST)); } catch (e) {} }
+    function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+    function nf(x) { return Number(x || 0).toLocaleString("pt-PT"); }
+    var cloud = null, ligadas = {};
+    try { fetch("/wp-json/tcd/v1/cloud/meus", { credentials: "same-origin", headers: { "X-WP-Nonce": window.tcdNonce || "" } }).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { cloud = (j && (j.terrenos || j)) || []; if (!Array.isArray(cloud)) cloud = []; desenhar(); }).catch(function () { cloud = []; }); } catch (e) { cloud = []; }
+    function num(s) { var m = /^(\d{2,6})\s/.exec(String(s || "")); return m ? m[1] : ""; }
+    function sobrepoe(a, b) { return a && b && a.length === 4 && b.length === 4 && a[0] <= b[2] && b[0] <= a[2] && a[1] <= b[3] && b[1] <= a[3]; }
+    function detalhe(cls, k, html, porOmissao) { var abre = k in EST ? EST[k] : porOmissao; return '<details class="' + cls + '" data-k="' + esc(k) + '"' + (abre ? " open" : "") + "><summary>" + html + "</summary>"; }
+    function contas(cs) { var l = cs.filter(function (c) { return ligadas[c.id]; }).length; return cs.length + (cs.length === 1 ? " camada" : " camadas") + (l ? " · " + l + " ligada" + (l > 1 ? "s" : "") : ""); }
+    function linha(c, prefixo) {
+      var nome = c.nome; if (prefixo && nome.indexOf(prefixo + " · ") === 0) nome = nome.slice(prefixo.length + 3);
+      return '<div class="ov-c"><label title="' + esc(c.nome) + '"><input type="checkbox" data-ov-c="' + c.id + '"' + (ligadas[c.id] ? " checked" : "") + '><span>' + esc(nome) + "</span></label><small>" + nf(c.n) + (c.ha > 0 ? " · " + nf(Math.round(c.ha * 10) / 10) + " ha" : "") + '</small><button type="button" class="ov-z" data-ov-z="' + c.id + '" title="Ajustar o mapa a esta camada">⤢</button></div>';
+    }
+    var ORD = { "análise": 0, "analise": 0, "projecto terracrua design": 1, "projeto terracrua design": 1, "autocads": 2, "autocad": 2 };
+    function desenhar() {
+      var d = window.tcdOrg.dados && window.tcdOrg.dados(); if (!d || !d.org) return;
+      var gs = d.grupos || [], cs = d.camadas || [], projs = {}, outros = [];
+      gs.forEach(function (g) {
+        var m = /^(\d{2,6})\s+(.+?)(?:\s·\s(.+))?$/.exec(g.nome || ""), camadas = cs.filter(function (c) { return c.grupo === g.id; });
+        if (!m) { if (camadas.length) outros.push({ g: g, cs: camadas }); return; }
+        var k = m[1]; if (!projs[k]) projs[k] = { num: k, nome: m[2], prefixo: m[1] + " " + m[2], secs: [], cs: [], cor: g.cor };
+        var p = projs[k]; camadas.forEach(function (c) { p.cs.push(c); });
+        var resto = m[3] ? m[3].split(" · ") : [];
+        p.secs.push({ sec: resto[0] || "", sub: resto.slice(1).join(" · "), g: g, cs: camadas });
+      });
+      (cloud || []).forEach(function (t) {
+        var n2 = num(t.nome) || num(t.codigo) || ""; var alvo = n2 && projs[n2];
+        if (!alvo) Object.keys(projs).some(function (k) { if (projs[k].cs.some(function (c) { return sobrepoe(c.bbox, t.bbox); })) { alvo = projs[k]; return true; } });
+        if (alvo) { alvo.cloud = t; return; }
+        var k = n2 || "c:" + (t.codigo || t.nome); projs[k] = { num: n2, nome: n2 ? String(t.nome).replace(/^\d+\s+/, "") : t.nome, prefixo: "", secs: [], cs: [], cloud: t, soCloud: 1 };
+      });
+      var lista = Object.keys(projs).map(function (k) { return projs[k]; }).sort(function (a, b) { var x = a.num ? +a.num : 1e9, y = b.num ? +b.num : 1e9; return x - y || String(a.nome).localeCompare(String(b.nome), "pt"); });
+      var O = window.IPR_ORGS, h = '<div class="ov-cab"><div>';
+      if (O && O.lista && O.lista.length > 1) { h += '<select class="ipr-orgsel" aria-label="Organização activa">' + O.lista.map(function (o) { return '<option value="' + esc(o.id) + '"' + (+o.id === +O.activa ? " selected" : "") + ">" + esc(o.nome) + "</option>"; }).join("") + "</select>"; }
+      else h += "<h3>" + esc(d.org.nome) + "</h3>";
+      h += "<small>" + lista.length + (lista.length === 1 ? " projecto" : " projectos") + (d.org.estado === "activa" ? "" : " · só leitura") + '</small></div><a href="/oficina/#camadas">Gerir na Oficina</a></div>';
+      h += '<div class="ov-lbl">Projectos</div>';
+      if (!lista.length) h += '<div class="ipe-vazio">Ainda não há projectos nesta organização.</div>';
+      lista.forEach(function (p) {
+        var t = p.cloud, sub = (t && t.local ? esc(t.local) : "") || (p.cs.length ? contas(p.cs) : "");
+        var nomeCloud = t && t.nome && String(t.nome).replace(/^\d+\s+/, "") !== p.nome ? " · " + String(t.nome).replace(/^\d+\s+/, "") : "";
+        h += detalhe("ov-p", "p:" + (p.num || p.nome), (p.num ? "<b>" + esc(p.num) + "</b>" : "") + "<em>" + esc(p.nome + nomeCloud) + "</em>" + (t ? '<span class="ov-cl" title="Está na IPR Cloud">Cloud</span>' : "") + "<small>" + sub + "</small>", false);
+        h += '<div class="ov-acc">' + (p.cs.length || (t && t.bbox) ? '<button type="button" data-ov-ir="' + esc(p.num || p.nome) + '">Ir para o terreno</button>' : "") + (p.cs.length ? '<button type="button" data-ov-todas="' + esc(p.num || p.nome) + '">Ligar todas</button><button type="button" data-ov-nenhuma="' + esc(p.num || p.nome) + '">Desligar</button>' : "") + (t ? '<button type="button" data-ov-cloud="1">Abrir na Cloud</button>' : "") + "</div>";
+        // secções como no Drive
+        var secs = {}, ordem = [];
+        p.secs.forEach(function (s) { var k = s.sec || ""; if (!secs[k]) { secs[k] = { nome: k, itens: [] }; ordem.push(k); } secs[k].itens.push(s); });
+        ordem.sort(function (a, b) { var x = ORD[a.toLowerCase()], y = ORD[b.toLowerCase()]; x = x == null ? 5 : x; y = y == null ? 5 : y; return x - y; });
+        ordem.forEach(function (k) {
+          var S = secs[k], todas = []; S.itens.forEach(function (s) { todas = todas.concat(s.cs); });
+          if (!k) { todas.forEach(function (c) { h += linha(c, p.prefixo); }); return; }
+          h += detalhe("ov-s", "s:" + p.num + "|" + k, "<em>" + esc(k) + "</em><small>" + (todas.length ? contas(todas) : "vazia") + "</small>", false);
+          S.itens.forEach(function (s) {
+            if (!s.sub) { s.cs.forEach(function (c) { h += linha(c, p.prefixo); }); if (!s.cs.length && S.itens.length === 1) h += '<div class="ov-vz">Ainda sem ficheiros.</div>'; return; }
+            h += detalhe("ov-s", "u:" + p.num + "|" + k + "|" + s.sub, '<i class="ov-cor" style="background:' + esc(s.g.cor || "#75834a") + '"></i><em>' + esc(s.sub) + "</em><small>" + (s.cs.length ? contas(s.cs) : "vazia") + "</small>", false);
+            s.cs.forEach(function (c) { h += linha(c, p.prefixo); }); if (!s.cs.length) h += '<div class="ov-vz">Ainda sem ficheiros.</div>';
+            h += "</details>";
+          });
+          h += "</details>";
+        });
+        if (p.soCloud && !p.cs.length) h += '<div class="ov-vz">Projecto na IPR Cloud, ainda sem camadas na organização.</div>';
+        h += "</details>";
+      });
+      if (outros.length) {
+        h += detalhe("ov-p", "p:outras", "<em>Outras camadas da organização</em><small>" + contas([].concat.apply([], outros.map(function (o) { return o.cs; }))) + "</small>", false);
+        outros.forEach(function (o) { h += detalhe("ov-s", "u:outras|" + o.g.id, '<i class="ov-cor" style="background:' + esc(o.g.cor || "#75834a") + '"></i><em>' + esc(o.g.nome) + "</em><small>" + contas(o.cs) + "</small>", false); o.cs.forEach(function (c) { h += linha(c, ""); }); h += "</details>"; });
+        h += "</details>";
+      }
+      var V = P.querySelector("#ipr-orgv");
+      [].slice.call(P.children).forEach(function (el) { if (el.id !== "ipr-orgv") el.hidden = true; });
+      if (!V) { V = document.createElement("div"); V.id = "ipr-orgv"; P.appendChild(V); }
+      V.__ov = { projs: projs }; desenhando = true; V.innerHTML = h; desenhando = false;
+      var sel = V.querySelector(".ipr-orgsel"); if (sel && O) sel.addEventListener("change", function () { location.href = "/atlas/?ipr_org=" + encodeURIComponent(sel.value) + "&_ipr_org=" + encodeURIComponent(O.nonce) + "&separador=org"; });
+    }
+    function proj(k) { var V = P.querySelector("#ipr-orgv"), ps = V && V.__ov && V.__ov.projs || {}; return ps[k] || Object.keys(ps).map(function (x) { return ps[x]; }).filter(function (p) { return p.nome === k; })[0]; }
+    function caixa(cs) { var b = null; cs.forEach(function (c) { if (!c.bbox) return; b = b ? [Math.min(b[0], c.bbox[0]), Math.min(b[1], c.bbox[1]), Math.max(b[2], c.bbox[2]), Math.max(b[3], c.bbox[3])] : c.bbox.slice(); }); return b; }
+    function porId(id) { var d = window.tcdOrg.dados(); return ((d && d.camadas) || []).filter(function (c) { return c.id === id; })[0]; }
+    function liga(id, sim) { ligadas[id] = sim; if (sim) window.tcdOrg.ligar(id); else window.tcdOrg.desligar(id); var o = P.querySelector('[data-ipo-c="' + id + '"]'); if (o) o.checked = sim; }
+    P.addEventListener("toggle", function (ev) { var d = ev.target; if (d && d.dataset && d.dataset.k && !desenhando) { EST[d.dataset.k] = d.open; guardar(); } }, true);
+    P.addEventListener("change", function (ev) { var cb = ev.target; if (!cb || !cb.dataset || !cb.dataset.ovC) return; liga(+cb.dataset.ovC, cb.checked); actualizar(); });
+    P.addEventListener("click", function (ev) {
+      var b = ev.target.closest && ev.target.closest("button"); if (!b || !P.querySelector("#ipr-orgv").contains(b)) return;
+      if (b.dataset.ovZ) { var c = porId(+b.dataset.ovZ); if (c) { liga(c.id, true); window.tcdOrg.ajustar(c.bbox); var cb = P.querySelector('[data-ov-c="' + c.id + '"]'); if (cb) cb.checked = true; actualizar(); } return; }
+      if (b.dataset.ovCloud) { var t = document.querySelector('.ipe-tab[data-tab="cloud"]'); if (t) t.click(); return; }
+      var p = proj(b.dataset.ovIr || b.dataset.ovTodas || b.dataset.ovNenhuma); if (!p) return;
+      if (b.dataset.ovIr) { var bx = caixa(p.cs) || (p.cloud && p.cloud.bbox); if (bx) window.tcdOrg.ajustar(bx); return; }
+      var sim = !!b.dataset.ovTodas; p.cs.forEach(function (c) { liga(c.id, sim); }); P.querySelectorAll("#ipr-orgv [data-ov-c]").forEach(function (cb) { if (p.cs.some(function (c) { return c.id === +cb.dataset.ovC; })) cb.checked = sim; });
+      if (sim) { var bx2 = caixa(p.cs); if (bx2) window.tcdOrg.ajustar(bx2); } actualizar();
+    });
+    var desenhando = false;
+    function actualizar() { clearTimeout(actualizar.t); actualizar.t = setTimeout(function () { var y = P.scrollTop; desenhar(); P.scrollTop = y; }, 60); }
+    new MutationObserver(function () { if (desenhando) return; var outro = [].slice.call(P.children).some(function (el) { return el.id !== "ipr-orgv" && !el.hidden; }); if (outro) actualizar(); }).observe(P, { childList: true });
+    desenhar();
+    return true;
+  }
   function subPastas() {
     var cam = document.getElementById("ipe-cam"); if (!cam) return false;
     if (cam.__ipr51) return true; cam.__ipr51 = 1;
@@ -2612,7 +2733,7 @@
   }
   function correr() {
     voltas++;
-    [["marca", marca], ["puxadores", puxadores], ["creditos", creditos], ["estado", estado], ["formiga", formiga], ["projectos", projectos], ["editavel", editavel], ["semBug", semBug], ["rosa", rosa], ["arrumar", arrumar], ["projDir", projDir], ["testarEsq", testarEsq], ["contaTopo", contaTopo], ["camadasTopo", camadasTopo], ["sintetizar", sintetizar], ["opcoesCamadas", opcoesCamadas], ["projFechados", projFechados], ["todasMais", todasMais], ["painelTopo", painelTopo], ["qfieldQR", qfieldQR], ["temas", temas], ["natural", natural], ["aprenderDesenho", aprenderDesenho], ["fichas", fichasCamada], ["natureza", fichasNatureza], ["parcelas", parcelasPonto], ["partilhaQR", partilhaQR], ["teclado", tecladoVirtual], ["prefs", prefsConta], ["cronologia", cronologia], ["alcanena", pilotoAlcanena], ["estilosOrg", estilosOrg], ["fimDoVoo", fimDoVoo], ["orgNomes", orgNomes], ["projRecolhidos", projRecolhidos], ["instalarApp", instalarApp], ["temaEscuro", temaEscuro], ["orgPastas", orgPastas], ["discricao", discricao], ["estradas", estradas], ["cloudLimpo", cloudLimpo], ["navEsquerda", navEsquerda], ["encomendaCompacta", encomendaCompacta], ["testarLigacao", testarLigacao], ["linguetaEsq", linguetaEsq], ["longe", longe], ["arrumarCamadas", arrumarCamadas], ["separadores", separadores], ["processar", processar], ["cartoes", cartoes], ["diagMundo", diagMundo], ["foraDoPais", foraDoPais], ["subPastas", subPastas]].forEach(function (f) { if (!feito[f[0]]) { try { feito[f[0]] = f[1](); } catch (e) {} } });
+    [["marca", marca], ["puxadores", puxadores], ["creditos", creditos], ["estado", estado], ["formiga", formiga], ["projectos", projectos], ["editavel", editavel], ["semBug", semBug], ["rosa", rosa], ["arrumar", arrumar], ["projDir", projDir], ["testarEsq", testarEsq], ["contaTopo", contaTopo], ["camadasTopo", camadasTopo], ["sintetizar", sintetizar], ["opcoesCamadas", opcoesCamadas], ["projFechados", projFechados], ["todasMais", todasMais], ["painelTopo", painelTopo], ["qfieldQR", qfieldQR], ["temas", temas], ["natural", natural], ["aprenderDesenho", aprenderDesenho], ["fichas", fichasCamada], ["natureza", fichasNatureza], ["parcelas", parcelasPonto], ["partilhaQR", partilhaQR], ["teclado", tecladoVirtual], ["prefs", prefsConta], ["cronologia", cronologia], ["alcanena", pilotoAlcanena], ["estilosOrg", estilosOrg], ["fimDoVoo", fimDoVoo], ["orgNomes", orgNomes], ["projRecolhidos", projRecolhidos], ["instalarApp", instalarApp], ["temaEscuro", temaEscuro], ["orgPastas", orgVista], ["discricao", discricao], ["estradas", estradas], ["cloudLimpo", cloudLimpo], ["navEsquerda", navEsquerda], ["encomendaCompacta", encomendaCompacta], ["testarLigacao", testarLigacao], ["linguetaEsq", linguetaEsq], ["longe", longe], ["arrumarCamadas", arrumarCamadas], ["separadores", separadores], ["processar", processar], ["cartoes", cartoes], ["diagMundo", diagMundo], ["foraDoPais", foraDoPais], ["subPastas", subPastas]].forEach(function (f) { if (!feito[f[0]]) { try { feito[f[0]] = f[1](); } catch (e) {} } });
     try { nomes(); } catch (e) {}
     try { equipa(); } catch (e) {}
     try { if (window.__iprTodas && !document.getElementById("ipr-todas")) todasBases(); } catch (e) {}
