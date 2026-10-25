@@ -368,7 +368,7 @@
     var E = window.tcdEquipa; if (!E || !E.email) return true;
     var f = document.getElementById("ipe-form"); if (!f) return false;
     var tab = document.querySelector('#ipe-tabs .ipe-tab[data-tab="enc"]');
-    if (tab && tab.firstChild && tab.firstChild.nodeType === 3 && tab.firstChild.nodeValue !== "Processar") { tab.firstChild.nodeValue = "Processar"; tab.title = "Processar a Base Cartográfica (equipa)"; }
+    if (tab && tab.firstChild && tab.firstChild.nodeType === 3 && tab.firstChild.nodeValue !== "Processos") { tab.firstChild.nodeValue = "Processos"; tab.title = "Processar a Base Cartográfica (equipa)"; }
     var nome = document.getElementById("ipe-nome"), em = document.getElementById("ipe-email");
     if (nome && !nome.value) nome.value = E.nome || E.email; if (em) em.value = E.email;
     var ck = f.querySelector('input[name="consentimento"]'); if (ck) ck.checked = true;
@@ -2225,7 +2225,7 @@
       ordem.forEach(function (k) { var b = tabs.querySelector('.ipe-tab[data-tab="' + k + '"]'); if (b) tabs.appendChild(b); });
       bs.forEach(function (b) { if (ordem.indexOf(b.dataset.tab) < 0) tabs.appendChild(b); });
       var enc = tabs.querySelector('.ipe-tab[data-tab="enc"]');
-      if (enc && enc.firstChild && enc.firstChild.nodeType === 3 && enc.firstChild.nodeValue !== "Processar") { enc.firstChild.nodeValue = "Processar"; enc.title = "Base Cartográfica e conversão de ficheiros"; }
+      if (enc && enc.firstChild && enc.firstChild.nodeType === 3 && enc.firstChild.nodeValue !== "Processos") { enc.firstChild.nodeValue = "Processos"; enc.title = "Base Cartográfica e conversão de ficheiros"; }
       var cl = tabs.querySelector('.ipe-tab[data-tab="cloud"]'); if (cl && !cl.hidden) cl.hidden = true;
       var org = document.querySelector('.ipe-pane[data-pane="org"]');
       if (org && cl && !document.getElementById("ipr-org-cloud")) {
@@ -2398,6 +2398,42 @@
     return true;
   }
 
+  // §50 Camadas de outro país fora do sítio (Nuno 25/10, 19h00: «que camada é esta?»). As camadas de Espanha, França e dos
+  // outros países europeus ficam ligadas de uma visita para a outra, mas o seu grupo só aparece com o mapa nesse país: o
+  // «Mapa IGN Base» de Espanha, por exemplo, ficava por cima de Portugal sem caixa à vista para o desligar. Agora cada uma só
+  // se vê com o centro do mapa no seu país; volta a aparecer sozinha quando se regressa lá. Não desliga nada nem mexe nos módulos.
+  function foraDoPais() {
+    var m = window.__ipe && window.__ipe.mapa; if (!m || !m.getStyle || !m.getCenter) return false;
+    function regras() {
+      var r = [], c = m.getCenter(), x = c.lng, y = c.lat;
+      [window.__tcdEsCamadas, window.__tcdFrCamadas].forEach(function (P) {
+        if (!P || !P.CAT || !P.dentro) return; var em = false; try { em = !!P.dentro(x, y); } catch (e) {}
+        P.CAT.forEach(function (g) { (g.itens || []).forEach(function (it) { r.push([it.id, em]); }); });
+      });
+      var E = window.__tcdEuCamadas;
+      if (E && E.CAT) {
+        var cc = ""; try { cc = E.pais ? E.pais(x, y) : ""; } catch (e) {}
+        Object.keys(E.CAT).forEach(function (k) { E.CAT[k].forEach(function (g) { (g[1] || []).forEach(function (it) { r.push([it.id, k === cc]); }); }); });
+        (E.COMUM || []).forEach(function (it) { r.push([it.id, !!cc]); });
+      }
+      return r;
+    }
+    function aplicar() {
+      var st = m.getStyle(); if (!st || !st.layers) return; var R = regras(); if (!R.length) return;
+      st.layers.forEach(function (l) {
+        for (var i = 0; i < R.length; i++) {
+          var id = R[i][0]; if (l.id !== id && l.id.indexOf(id + "-") !== 0) continue;
+          var v = R[i][1] ? "visible" : "none";
+          try { if ((m.getLayoutProperty(l.id, "visibility") || "visible") !== v) m.setLayoutProperty(l.id, "visibility", v); } catch (e) {}
+          break;
+        }
+      });
+    }
+    var t = 0; function depois() { clearTimeout(t); t = setTimeout(aplicar, 80); }
+    m.on("moveend", depois); m.on("styledata", depois); aplicar();
+    return true;
+  }
+
   function cartoes() {
     if (!document.getElementById("ipr-jorg-css")) { var cs = document.createElement("style"); cs.id = "ipr-jorg-css"; cs.textContent = ".ipr-jorg-esc{display:inline-flex;gap:4px;margin-left:6px;align-items:center}.ipr-jorg-esc select{font:12px Inter,sans-serif;max-width:160px;background:var(--p3,transparent);color:var(--tx);border:1px solid var(--ln);border-radius:6px;padding:2px 4px}.ipr-jorg-esc button{font:600 12px Inter,sans-serif;border:1px solid var(--ln);border-radius:6px;padding:2px 8px;background:var(--ac,#75834a);color:#fff;cursor:pointer}"; document.head.appendChild(cs); }
     var P = document.getElementById("ipe-proj"); if (!P || !window.tcdNonce) return false;
@@ -2457,7 +2493,7 @@
   }
   function correr() {
     voltas++;
-    [["marca", marca], ["puxadores", puxadores], ["creditos", creditos], ["estado", estado], ["formiga", formiga], ["projectos", projectos], ["editavel", editavel], ["semBug", semBug], ["rosa", rosa], ["arrumar", arrumar], ["projDir", projDir], ["testarEsq", testarEsq], ["contaTopo", contaTopo], ["camadasTopo", camadasTopo], ["sintetizar", sintetizar], ["opcoesCamadas", opcoesCamadas], ["projFechados", projFechados], ["todasMais", todasMais], ["painelTopo", painelTopo], ["qfieldQR", qfieldQR], ["temas", temas], ["natural", natural], ["aprenderDesenho", aprenderDesenho], ["fichas", fichasCamada], ["natureza", fichasNatureza], ["parcelas", parcelasPonto], ["partilhaQR", partilhaQR], ["teclado", tecladoVirtual], ["prefs", prefsConta], ["cronologia", cronologia], ["alcanena", pilotoAlcanena], ["estilosOrg", estilosOrg], ["fimDoVoo", fimDoVoo], ["orgNomes", orgNomes], ["projRecolhidos", projRecolhidos], ["instalarApp", instalarApp], ["temaEscuro", temaEscuro], ["orgPastas", orgPastas], ["discricao", discricao], ["estradas", estradas], ["cloudLimpo", cloudLimpo], ["navEsquerda", navEsquerda], ["encomendaCompacta", encomendaCompacta], ["testarLigacao", testarLigacao], ["linguetaEsq", linguetaEsq], ["longe", longe], ["arrumarCamadas", arrumarCamadas], ["separadores", separadores], ["processar", processar], ["cartoes", cartoes], ["diagMundo", diagMundo]].forEach(function (f) { if (!feito[f[0]]) { try { feito[f[0]] = f[1](); } catch (e) {} } });
+    [["marca", marca], ["puxadores", puxadores], ["creditos", creditos], ["estado", estado], ["formiga", formiga], ["projectos", projectos], ["editavel", editavel], ["semBug", semBug], ["rosa", rosa], ["arrumar", arrumar], ["projDir", projDir], ["testarEsq", testarEsq], ["contaTopo", contaTopo], ["camadasTopo", camadasTopo], ["sintetizar", sintetizar], ["opcoesCamadas", opcoesCamadas], ["projFechados", projFechados], ["todasMais", todasMais], ["painelTopo", painelTopo], ["qfieldQR", qfieldQR], ["temas", temas], ["natural", natural], ["aprenderDesenho", aprenderDesenho], ["fichas", fichasCamada], ["natureza", fichasNatureza], ["parcelas", parcelasPonto], ["partilhaQR", partilhaQR], ["teclado", tecladoVirtual], ["prefs", prefsConta], ["cronologia", cronologia], ["alcanena", pilotoAlcanena], ["estilosOrg", estilosOrg], ["fimDoVoo", fimDoVoo], ["orgNomes", orgNomes], ["projRecolhidos", projRecolhidos], ["instalarApp", instalarApp], ["temaEscuro", temaEscuro], ["orgPastas", orgPastas], ["discricao", discricao], ["estradas", estradas], ["cloudLimpo", cloudLimpo], ["navEsquerda", navEsquerda], ["encomendaCompacta", encomendaCompacta], ["testarLigacao", testarLigacao], ["linguetaEsq", linguetaEsq], ["longe", longe], ["arrumarCamadas", arrumarCamadas], ["separadores", separadores], ["processar", processar], ["cartoes", cartoes], ["diagMundo", diagMundo], ["foraDoPais", foraDoPais]].forEach(function (f) { if (!feito[f[0]]) { try { feito[f[0]] = f[1](); } catch (e) {} } });
     try { nomes(); } catch (e) {}
     try { equipa(); } catch (e) {}
     try { if (window.__iprTodas && !document.getElementById("ipr-todas")) todasBases(); } catch (e) {}
