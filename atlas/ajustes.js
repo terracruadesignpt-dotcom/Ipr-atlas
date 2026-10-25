@@ -405,18 +405,26 @@
   // 15. Barra da esquerda só com «Pesquisar» e «Camadas»; «Os meus projectos» e «Comece aqui» passam para o painel da
   //     direita (Nuno, 23/10, 00h55: «à esquerda fica só camadas e o procurar [...] à direita projectos, processar,
   //     comunidade, cloud e conta»). Nada se perde: os blocos mudam de sítio com tudo o que já faziam.
+  // 25/10, 19h17 (Nuno): «saca fora os terrenos guardados [...] ali à esquerda pode ter uma coisa chamada Os meus locais [...]
+  // guardar pontos, polígonos, linhas». A lista dos projectos fica à direita (separador Projectos); o grupo dos locais volta
+  // para a esquerda, no topo das camadas, para todos (sem sessão guarda no navegador), com Ponto, Linha e Área.
   function arrumar() {
-    var loc = document.getElementById("ipc-loc"), tme = document.getElementById("tme");
+    var loc = document.getElementById("ipc-loc"), tme = document.getElementById("tme"), cam = document.getElementById("ipe-cam");
     var pp = document.querySelector('#ipe .ipe-pane[data-pane="proj"]'), pe = document.querySelector('#ipe .ipe-pane[data-pane="enc"]');
-    if (window.tcdNonce) {
-      if (!loc || !pp) return false;
-      if (loc.parentNode !== pp) { loc.classList.add("ipr-loc-dir"); pp.insertBefore(loc, pp.firstChild); }
-      if (loc.classList.contains("fechado")) { var g = loc.querySelector(".ipr-gt"); if (g) g.click(); }
-      return true;
+    if (!loc || !cam) return false;
+    var dest = window.tcdNonce ? pp : pe;
+    if (tme && dest && tme.parentNode !== dest) { tme.classList.add(window.tcdNonce ? "tme-dentro" : "tme-dir"); dest.insertBefore(tme, dest.firstChild); }
+    function pôr() {
+      var arv = cam.querySelector(".ipr-arv") || cam;
+      if (loc.style.display === "none") loc.style.display = "";
+      loc.classList.remove("ipr-loc-dir");
+      if (loc.parentNode !== arv || arv.firstElementChild !== loc) arv.insertBefore(loc, arv.firstChild);
+      var gn = loc.querySelector(".ipr-gn"); if (gn && gn.textContent !== "Os meus locais") gn.textContent = "Os meus locais";
     }
-    if (loc) loc.style.display = "none"; // sem sessão não há projectos: a esquerda fica só com Pesquisar e Camadas
-    if (!tme || !pe) return false;
-    if (tme.parentNode !== pe) { tme.classList.add("tme-dir"); pe.insertBefore(tme, pe.firstChild); }
+    if (!document.getElementById("ipr-loc-css")) { var cs = document.createElement("style"); cs.id = "ipr-loc-css"; cs.textContent = "#ipe #ipc-loc.ipr-g:not(.ipr-fechou)>.ipe-sbc{display:block!important}#ipe #ipc-loc.ipr-g:not(.ipr-fechou) .ipr-car{transform:rotate(90deg)}#ipe #ipc-loc.ipr-g.ipr-fechou>.ipe-sbc{display:none!important}"; document.head.appendChild(cs); }
+    var gtb = loc.querySelector(".ipr-gt"); if (gtb && !gtb.__iprM) { gtb.__iprM = 1; gtb.addEventListener("click", function () { loc.classList.toggle("ipr-fechou"); }, true); }
+    pôr();
+    if (!arrumar.obs) { arrumar.obs = 1; new MutationObserver(function () { clearTimeout(arrumar.t); arrumar.t = setTimeout(pôr, 60); }).observe(cam, { childList: true, subtree: true }); }
     return true;
   }
 
@@ -948,6 +956,8 @@
   var NAT_ON = ["r_somb","hidro","o_agua","o_planos","bacias","habitats","copa18","swf21","o_cobertura"]; // água, floresta, estrutura natural, bacias
   var natAntes = null;
   function natural() {
+    // 25/10, 19h33 (Nuno): «tirar esse botão por agora, porque não está a funcionar». Fica desligado até ser refeito.
+    if (!natural.on) { var xb = document.getElementById("ipr-natural"); if (xb) xb.remove(); return true; }
     var tm = document.getElementById("ipe-tema"); if (!tm || !tm.parentNode) return false; if (document.getElementById("ipr-natural")) return true;
     if (!viz()) return false;
     var b = document.createElement("button"); b.type = "button"; b.id = "ipr-natural"; b.className = tm.className + " ipr-natural";
@@ -2210,6 +2220,8 @@
     if (!document.getElementById("ipr-arr-css")) {
       var st = document.createElement("style"); st.id = "ipr-arr-css";
       st.textContent = '#ipe-cam .ipr-g[data-g="base"],#ipe-cam .ipr-g[data-g="meus"]{display:none!important}' +
+        // 25/10, 19h24 (Nuno: «duas oficinas?»): fica só o botão destacado do topo; a ligação de texto repetida sai.
+        'body:has(a.ipr-painel) #ipr-painel-b{display:none!important}' +
         '#tao.ipr-mundo{padding:9px 10px;border-bottom:1px solid var(--ln,#ddd);border-top:0}#tao.ipr-mundo h4{font:600 13.5px Inter,system-ui,sans-serif}' +
         '#tao.ipr-mundo h4 svg{flex:none;opacity:.85}';
       document.head.appendChild(st);
