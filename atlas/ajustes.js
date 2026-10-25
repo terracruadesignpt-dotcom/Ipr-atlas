@@ -2271,9 +2271,12 @@
   function separadores() {
     var tabs = document.getElementById("ipe-tabs"); if (!tabs) return false;
     function arrumar() {
+      // 25/10, 23h50: só mexe quando a ordem está errada. Antes voltava a pôr os separadores no fim a cada mudança, o que gerava
+      // outra mudança, num ciclo de 40 ms: o botão saía e voltava a entrar entre o carregar e o largar, e o clique perdia-se.
       var ordem = ["enc", "proj", "org", "com"], bs = [].slice.call(tabs.querySelectorAll(".ipe-tab"));
-      ordem.forEach(function (k) { var b = tabs.querySelector('.ipe-tab[data-tab="' + k + '"]'); if (b) tabs.appendChild(b); });
-      bs.forEach(function (b) { if (ordem.indexOf(b.dataset.tab) < 0) tabs.appendChild(b); });
+      var quero = ordem.map(function (k) { return tabs.querySelector('.ipe-tab[data-tab="' + k + '"]'); }).filter(Boolean).concat(bs.filter(function (b) { return ordem.indexOf(b.dataset.tab) < 0; }));
+      var agora = [].slice.call(tabs.querySelectorAll(".ipe-tab"));
+      if (quero.some(function (b, i) { return agora[i] !== b; })) quero.forEach(function (b) { tabs.appendChild(b); });
       var enc = tabs.querySelector('.ipe-tab[data-tab="enc"]');
       if (enc && enc.firstChild && enc.firstChild.nodeType === 3 && enc.firstChild.nodeValue !== "Processos") { enc.firstChild.nodeValue = "Processos"; enc.title = "Base Cartográfica e conversão de ficheiros"; }
       var cl = tabs.querySelector('.ipe-tab[data-tab="cloud"]'); if (cl && !cl.hidden) cl.hidden = true;
