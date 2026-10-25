@@ -2399,6 +2399,7 @@
   }
 
   function cartoes() {
+    if (!document.getElementById("ipr-jorg-css")) { var cs = document.createElement("style"); cs.id = "ipr-jorg-css"; cs.textContent = ".ipr-jorg-esc{display:inline-flex;gap:4px;margin-left:6px;align-items:center}.ipr-jorg-esc select{font:12px Inter,sans-serif;max-width:160px;background:var(--p3,transparent);color:var(--tx);border:1px solid var(--ln);border-radius:6px;padding:2px 4px}.ipr-jorg-esc button{font:600 12px Inter,sans-serif;border:1px solid var(--ln);border-radius:6px;padding:2px 8px;background:var(--ac,#75834a);color:#fff;cursor:pointer}"; document.head.appendChild(cs); }
     var P = document.getElementById("ipe-proj"); if (!P || !window.tcdNonce) return false;
     if (P.__ipr48) return true; P.__ipr48 = 1;
     var arq = [], mostrarArq = false;
@@ -2421,14 +2422,32 @@
       if (n && !b) { b = document.createElement("button"); b.type = "button"; b.id = "ipr-arq-b"; P.insertBefore(b, P.firstChild); b.addEventListener("click", function () { mostrarArq = !mostrarArq; P.classList.toggle("ipr-ver-arq", mostrarArq); aplicar(); }); }
       if (b) { b.hidden = !n; b.textContent = (mostrarArq ? "Esconder" : "Mostrar") + " arquivados (" + n + ")"; }
     }
+    var orgsJ = null;
     P.addEventListener("click", function (e) {
       var b = e.target.closest("[data-arq],[data-jorg]"); if (!b) return; e.stopPropagation(); e.preventDefault();
       if (b.dataset.arq) {
         var id = +b.dataset.arq, sim = arq.indexOf(id) < 0; b.disabled = true;
         api("projecto/arquivar", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ projecto: id, arquivar: sim ? 1 : 0 }) }).then(function (j) { arq = j.ids || []; aplicar(); }).catch(function (x) { b.title = x.message; }).then(function () { b.disabled = false; });
       } else {
-        b.disabled = true; var t = b.textContent; b.textContent = "A juntar…";
-        api("org/juntar", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ projecto: +b.dataset.jorg }) }).then(function (j) { b.textContent = "Juntado"; }).catch(function (x) { b.textContent = t; b.disabled = false; b.title = x.message; b.textContent = "Sem acesso"; setTimeout(function () { b.textContent = t; }, 3000); });
+        // 25/10, 18h31 (Nuno): com mais de uma organização, escolhe-se qual; o projecto passa inteiro para a sua pasta.
+        var t = b.dataset.t || (b.dataset.t = b.textContent);
+        function juntar(org) {
+          b.disabled = true; b.textContent = "A juntar…";
+          api("org/juntar", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ projecto: +b.dataset.jorg, org: org || 0 }) })
+            .then(function (j) { b.textContent = "Na organização"; b.title = j.m || ""; var w = b.parentNode.querySelector(".ipr-jorg-esc"); if (w) w.remove(); })
+            .catch(function (x) { b.disabled = false; b.title = x.message; b.textContent = "Não foi possível"; setTimeout(function () { b.textContent = t; }, 4000); });
+        }
+        (orgsJ || (orgsJ = api("org/grupos-meus"))).then(function (j) {
+          var os = (j && j.orgs) || [];
+          if (os.length < 2) return juntar(os[0] ? os[0].id : 0);
+          var w = b.parentNode.querySelector(".ipr-jorg-esc"); if (w) { w.remove(); return; }
+          w = document.createElement("span"); w.className = "ipr-jorg-esc";
+          w.innerHTML = '<select aria-label="Organização"></select><button type="button">Juntar</button>';
+          var sel = w.querySelector("select"); os.forEach(function (o) { var op = document.createElement("option"); op.value = o.id; op.textContent = o.nome; if (+o.id === +j.org) op.selected = true; sel.appendChild(op); });
+          w.querySelector("button").addEventListener("click", function (ev) { ev.stopPropagation(); ev.preventDefault(); juntar(+sel.value); });
+          w.addEventListener("click", function (ev) { ev.stopPropagation(); });
+          b.insertAdjacentElement("afterend", w);
+        }).catch(function () { juntar(0); });
       }
     }, true);
     api("projecto/arquivados").then(function (j) { arq = j.ids || []; aplicar(); }).catch(function () {});
