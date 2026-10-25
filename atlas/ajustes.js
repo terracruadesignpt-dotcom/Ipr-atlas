@@ -2770,7 +2770,8 @@
     var arq = [], mostrarArq = false;
     var st = document.createElement("style");
     st.textContent = ".ipr-ca{display:flex;gap:10px;margin-top:6px}.ipr-ca button{all:unset;cursor:pointer;font:600 11.5px Inter,sans-serif;color:var(--mu)}.ipr-ca button:hover{color:var(--tx)}" +
-      "#ipe-proj .ipe-card.ipr-arq{display:none}#ipe-proj.ipr-ver-arq .ipe-card.ipr-arq{display:block;opacity:.55}#ipr-arq-b{all:unset;cursor:pointer;display:block;margin:6px 0;font:600 12px Inter,sans-serif;color:var(--mu)}";
+      "#ipe-proj .ipe-card.ipr-arq{display:none}#ipe-proj.ipr-ver-arq .ipe-card.ipr-arq{display:block;opacity:.55}#ipr-arq-b{all:unset;cursor:pointer;display:block;margin:6px 0;font:600 12px Inter,sans-serif;color:var(--mu)}" +
+      ".ipr-ca{flex-wrap:wrap}.ipr-ca button.ipr-del{color:#d9725b}.ipr-pf{display:flex;flex-wrap:wrap;gap:8px;align-items:center;flex:1 0 100%}.ipr-pf input{flex:1 1 12em;min-width:0;font:13px Inter,sans-serif;background:var(--p3,transparent);color:var(--tx);border:1px solid var(--ln);border-radius:6px;padding:4px 8px}.ipr-pf small{flex:1 0 100%;color:var(--mu);font:12px Inter,sans-serif}";
     document.head.appendChild(st);
     function enc(c) { var m = /#(\d+)/.exec((c.querySelector(".mono") || {}).textContent || ""); return m ? +m[1] : 0; }
     function aplicar() {
@@ -2780,16 +2781,48 @@
         var a = arq.indexOf(id) >= 0; c.classList.toggle("ipr-arq", a); if (a) n++;
         var ct = c.querySelector(".ipe-ct"); if (!ct || ct.querySelector(".ipr-ca")) { var bt = ct && ct.querySelector("[data-arq]"); if (bt) bt.textContent = a ? "Desarquivar" : "Arquivar"; return; }
         var d = document.createElement("div"); d.className = "ipr-ca";
-        d.innerHTML = '<button type="button" data-arq="' + id + '">' + (a ? "Desarquivar" : "Arquivar") + '</button><button type="button" data-jorg="' + id + '">Juntar à organização</button>';
+        // 25/10, 22h59 (Nuno): editar, partilhar e eliminar na própria lista (m90360).
+        d.innerHTML = '<button type="button" data-pnome="' + id + '">Editar nome</button><button type="button" data-psh="' + id + '">Partilhar</button><button type="button" data-arq="' + id + '">' + (a ? "Desarquivar" : "Arquivar") + '</button><button type="button" data-jorg="' + id + '">Juntar à organização</button>' + (ADM ? '<button type="button" data-pdel="' + id + '" class="ipr-del">Eliminar</button>' : "");
         ct.appendChild(d);
       });
       var b = document.getElementById("ipr-arq-b");
       if (n && !b) { b = document.createElement("button"); b.type = "button"; b.id = "ipr-arq-b"; P.insertBefore(b, P.firstChild); b.addEventListener("click", function () { mostrarArq = !mostrarArq; P.classList.toggle("ipr-ver-arq", mostrarArq); aplicar(); }); }
       if (b) { b.hidden = !n; b.textContent = (mostrarArq ? "Esconder" : "Mostrar") + " arquivados (" + n + ")"; }
     }
-    var orgsJ = null;
+    var orgsJ = null, ADM = false;
+    api("projecto/gestao").then(function (j) { if (j && j.admin) { ADM = true; P.querySelectorAll(".ipr-ca").forEach(function (x) { x.remove(); }); aplicar(); } }).catch(function () {});
+    function cartao(id) { return [].slice.call(P.querySelectorAll(".ipe-card")).filter(function (c) { return enc(c) === id; })[0]; }
     P.addEventListener("click", function (e) {
-      var b = e.target.closest("[data-arq],[data-jorg]"); if (!b) return; e.stopPropagation(); e.preventDefault();
+      var b = e.target.closest("[data-arq],[data-jorg],[data-pnome],[data-psh],[data-pdel],[data-pok],[data-pnao]"); if (!b) return; e.stopPropagation(); e.preventDefault();
+      var ca = b.closest(".ipr-ca"), c, id;
+      if (b.dataset.pnome) {
+        id = +b.dataset.pnome; c = cartao(id); var st0 = c && c.querySelector(".ipe-ct strong"); if (!st0 || ca.querySelector("input")) return;
+        var f = document.createElement("span"); f.className = "ipr-pf"; f.innerHTML = '<input type="text" maxlength="90"><button type="button" data-pok="n' + id + '">Guardar</button><button type="button" data-pnao="1">Cancelar</button>';
+        f.querySelector("input").value = st0.textContent.trim(); ca.appendChild(f); f.querySelector("input").focus(); f.querySelector("input").select();
+        f.addEventListener("click", function (ev) { ev.stopPropagation(); }); f.querySelector("input").addEventListener("keydown", function (ev) { ev.stopPropagation(); if (ev.key === "Enter") f.querySelector("[data-pok]").click(); if (ev.key === "Escape") f.remove(); });
+        return;
+      }
+      if (b.dataset.pnao) { var f0 = b.closest(".ipr-pf"); if (f0) f0.remove(); return; }
+      if (b.dataset.pok) {
+        var tipo = b.dataset.pok[0]; id = +b.dataset.pok.slice(1); var fx = b.closest(".ipr-pf"); b.disabled = true;
+        if (tipo === "n") {
+          var nome = fx.querySelector("input").value.trim();
+          api("projecto/nome", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ projecto: id, nome: nome }) }).then(function (j) { var cc = cartao(id), s1 = cc && cc.querySelector(".ipe-ct strong"); if (s1) s1.textContent = j.nome; fx.remove(); }).catch(function (x) { b.disabled = false; b.textContent = x.message; });
+        } else {
+          api("projecto/eliminar", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ projecto: id }) }).then(function (j) { var cc = cartao(id); if (cc) cc.remove(); }).catch(function (x) { fx.innerHTML = "<small>" + String(x.message).replace(/</g, "&lt;") + "</small>"; });
+        }
+        return;
+      }
+      if (b.dataset.pdel) {
+        id = +b.dataset.pdel; if (ca.querySelector(".ipr-pf")) return;
+        var fd = document.createElement("span"); fd.className = "ipr-pf"; fd.innerHTML = '<small>Eliminar o projecto #' + id + '? Vai para o lixo e recupera-se no WooCommerce.</small><button type="button" data-pok="d' + id + '" class="ipr-del">Sim, eliminar</button><button type="button" data-pnao="1">Não</button>';
+        ca.appendChild(fd); return;
+      }
+      if (b.dataset.psh) {
+        id = +b.dataset.psh; c = cartao(id); if (!c) return; var t0 = c.querySelector(".ipe-ct strong") || c; t0.click();
+        var n = 0; (function ver() { var sh = P.querySelector(".ipe-sh"); if (sh && sh.offsetParent) { try { sh.scrollIntoView({ block: "center" }); } catch (e2) {} var em = sh.querySelector("[data-sh-email]"); if (em) em.focus(); return; } if (n++ < 30) setTimeout(ver, 200); })();
+        return;
+      }
       if (b.dataset.arq) {
         var id = +b.dataset.arq, sim = arq.indexOf(id) < 0; b.disabled = true;
         api("projecto/arquivar", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ projecto: id, arquivar: sim ? 1 : 0 }) }).then(function (j) { arq = j.ids || []; aplicar(); }).catch(function (x) { b.title = x.message; }).then(function () { b.disabled = false; });
