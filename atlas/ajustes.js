@@ -1883,7 +1883,7 @@
       ".ipr-of>button:after,.ipr-sf>button:after{content:'';width:7px;height:7px;border-right:1.6px solid currentColor;border-bottom:1.6px solid currentColor;transform:rotate(45deg);margin:0 4px 3px 2px;transition:transform .15s;opacity:.7}" +
       ".ipr-of.rec>button:after,.ipr-sf.rec>button:after{transform:rotate(-45deg);margin-bottom:0}" +
       ".ipr-of.rec>.ipr-of-b,.ipr-sf.rec>.ipr-sf-b{display:none}.ipr-of-b{padding:0 6px 6px}.ipr-sf>button{padding:8px 6px;font-weight:500;border-top:1px solid var(--ln2,rgba(127,127,127,.2))}" +
-      ".ipr-sf-b{padding-left:14px}.ipe-pane[data-pane=org] .ipo-g{display:none}" +
+      ".ipr-sf-b{padding-left:14px}.ipr-sec>button{font-weight:600;text-transform:none;letter-spacing:.01em}.ipr-sec>button em:before{content:'';display:inline-block;width:3px;height:12px;background:var(--ac,#75834a);border-radius:2px;margin-right:8px;vertical-align:-1px}.ipe-pane[data-pane=org] .ipo-g{display:none}" +
       ".ipr-orgsel{font:600 13px Inter,sans-serif;background:var(--p3,transparent);color:var(--tx);border:1px solid var(--ln);border-radius:8px;padding:5px 8px;max-width:100%}";
     document.head.appendChild(st);
     var EST = {}; try { EST = JSON.parse(localStorage.getItem("ipr_org_pastas") || "{}") || {}; } catch (e) {}
@@ -1916,25 +1916,34 @@
       var projs = {}, ordem = [];
       gs.forEach(function (g) {
         var nome = g.textContent.trim(), cor = (g.querySelector("i") || {}).style ? g.querySelector("i").style.background : "";
-        var m = /^(\d+\s[^·]{2,60}?)\s·\s(.+)$/.exec(nome), proj, sub;
-        if (m) { proj = m[1]; sub = m[2].charAt(0).toUpperCase() + m[2].slice(1); }
+        var m = /^(\d+\s[^·]{2,60}?)\s·\s(.+)$/.exec(nome), proj, sub, sec = "";
+        if (m) { proj = m[1]; sub = m[2].charAt(0).toUpperCase() + m[2].slice(1); var pp = sub.split(" · "); if (pp.length > 1) { sec = pp[0]; sub = pp.slice(1).join(" · "); } }
         else if (/Temas do projecto/i.test(nome)) { proj = ordem.length === 1 ? ordem[0] : "Temas"; sub = "Temas do projecto (QGIS)"; }
         else { proj = nome; sub = ""; }
         var linhas = []; var n = g.nextElementSibling; while (n && n.classList.contains("ipo-c")) { linhas.push(n); n = n.nextElementSibling; }
         linhas.forEach(function (c) { var b = c.querySelector("label b"); if (b && !b.dataset.ipoN) { b.dataset.ipoN = "1"; var mm = /^(\d+\s[^·]{2,60}?)\s·\s(.+)$/.exec(b.textContent); if (mm && (mm[1] === proj || !m)) { b.title = b.textContent; b.textContent = mm[2]; } } });
         if (!projs[proj]) { projs[proj] = { cor: cor, subs: [] }; ordem.push(proj); }
-        projs[proj].subs.push({ nome: sub, cor: cor, g: g, linhas: linhas });
+        projs[proj].subs.push({ nome: sub, sec: sec, cor: cor, g: g, linhas: linhas });
       });
       var ancora = gs[0];
       ordem.forEach(function (proj) {
         var p = projs[proj], F = pasta("ipr-of", "p:" + chave(proj), proj, p.cor, false), FB = F.querySelector(".ipr-of-b");
         ancora.parentNode.insertBefore(F, ancora);
+        // 25/10 (Nuno, 16h55): três níveis quando o grupo se chama «268 Quinta Linda · Projecto Terracrua Design · Água»:
+        // projecto, secção (Análise, Projecto Terracrua Design, AutoCADs) e subpasta. Sem secção, fica como antes.
+        var secs = {};
         p.subs.forEach(function (s) {
           FB.appendChild(s.g);
-          if (!s.nome || p.subs.length === 1) { s.linhas.forEach(function (c) { FB.appendChild(c); }); return; }
-          var S = pasta("ipr-sf", "s:" + chave(proj + "|" + s.nome), s.nome, s.cor, true), SB = S.querySelector(".ipr-sf-b");
-          s.linhas.forEach(function (c) { SB.appendChild(c); }); FB.appendChild(S); contar(S);
+          var alvo = FB;
+          if (s.sec) {
+            if (!secs[s.sec]) { secs[s.sec] = pasta("ipr-sf ipr-sec", "c:" + chave(proj + "|" + s.sec), s.sec, "", false); FB.appendChild(secs[s.sec]); }
+            alvo = secs[s.sec].querySelector(".ipr-sf-b");
+          }
+          if (!s.nome || (!s.sec && p.subs.length === 1)) { s.linhas.forEach(function (c) { alvo.appendChild(c); }); return; }
+          var S = pasta("ipr-sf", "s:" + chave(proj + "|" + s.sec + "|" + s.nome), s.nome, s.cor, true), SB = S.querySelector(".ipr-sf-b");
+          s.linhas.forEach(function (c) { SB.appendChild(c); }); alvo.appendChild(S); contar(S);
         });
+        Object.keys(secs).forEach(function (k) { contar(secs[k]); });
         contar(F);
       });
     }
@@ -2173,9 +2182,219 @@
     aplicar();
     return true;
   }
+  // §47 Painel das camadas arrumado (Nuno 25/10, 17h36): o «Mundo» passa para baixo de «Testar camadas / Testar internet»,
+  // como mais uma categoria; «A minha Base Cartográfica» e «O meu terreno» saem da esquerda, porque a Base e os projectos vivem
+  // à direita (Projectos e Organização). As camadas entregues continuam a ligar-se pelo cartão do projecto.
+  function arrumarCamadas() {
+    if (!document.getElementById("ipr-arr-css")) {
+      var st = document.createElement("style"); st.id = "ipr-arr-css";
+      st.textContent = '#ipe-cam .ipr-g[data-g="base"],#ipe-cam .ipr-g[data-g="meus"]{display:none!important}' +
+        '#tao.ipr-mundo{padding:9px 10px;border-bottom:1px solid var(--ln,#ddd);border-top:0}#tao.ipr-mundo h4{font:600 13.5px Inter,system-ui,sans-serif}' +
+        '#tao.ipr-mundo h4 svg{flex:none;opacity:.85}';
+      document.head.appendChild(st);
+    }
+    var tao = document.getElementById("tao"), linha = document.querySelector("#ipe-cam .ipr-testes");
+    if (!tao || !linha) return false;
+    var depois = document.getElementById("ipr-lig-r") || linha;
+    if (tao.previousElementSibling !== depois) depois.parentNode.insertBefore(tao, depois.nextSibling);
+    if (!tao.classList.contains("ipr-mundo")) {
+      tao.classList.add("ipr-mundo");
+      var h = tao.querySelector("h4");
+      if (h && !h.querySelector("svg")) { h.firstChild && (h.firstChild.nodeValue = "Mundo"); h.insertAdjacentHTML("beforeend", '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true" style="order:-1"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.8 3 2.8 15 0 18M12 3c-2.8 3-2.8 15 0 18"/></svg>'); }
+    }
+    // O Atlas redesenha a lista: volta a pôr o Mundo no sítio sempre que mexe.
+    if (!window.__iprArrObs) { window.__iprArrObs = 1; new MutationObserver(function () { clearTimeout(arrumarCamadas.t); arrumarCamadas.t = setTimeout(arrumarCamadas, 50); }).observe(document.getElementById("ipe-cam"), { childList: true, subtree: false }); }
+    return true;
+  }
+  // §48 Separadores e «Processar» (Nuno 25/10, 17h37-17h44): ordem Processar, Projectos, Organização, Comunidade; a IPR Cloud
+  // deixa de ter separador próprio e abre-se a partir da Organização. «Processar» junta a Base Cartográfica (descarregar ou
+  // encomendar, como antes) e a conversão de ficheiros: AutoCAD (DWG, DXF), KML, KMZ, GeoPackage, Shapefile, GeoJSON e GPX,
+  // de uns para os outros (m90353 v2 e worker 1.0.26). Nos cartões dos projectos: «Arquivar» e «Juntar à organização» (m90355).
+  var API = "/wp-json/tcd/v1/";
+  function api(rota, op) {
+    op = op || {}; op.credentials = "same-origin"; op.headers = Object.assign({ "X-WP-Nonce": window.tcdNonce || "" }, op.headers || {});
+    return fetch(API + rota, op).then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) throw new Error(j && j.message || ("Erro " + r.status)); return j; }); });
+  }
+  function esc48(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+  function separadores() {
+    var tabs = document.getElementById("ipe-tabs"); if (!tabs) return false;
+    function arrumar() {
+      var ordem = ["enc", "proj", "org", "com"], bs = [].slice.call(tabs.querySelectorAll(".ipe-tab"));
+      ordem.forEach(function (k) { var b = tabs.querySelector('.ipe-tab[data-tab="' + k + '"]'); if (b) tabs.appendChild(b); });
+      bs.forEach(function (b) { if (ordem.indexOf(b.dataset.tab) < 0) tabs.appendChild(b); });
+      var enc = tabs.querySelector('.ipe-tab[data-tab="enc"]');
+      if (enc && enc.firstChild && enc.firstChild.nodeType === 3 && enc.firstChild.nodeValue !== "Processar") { enc.firstChild.nodeValue = "Processar"; enc.title = "Base Cartográfica e conversão de ficheiros"; }
+      var cl = tabs.querySelector('.ipe-tab[data-tab="cloud"]'); if (cl && !cl.hidden) cl.hidden = true;
+      var org = document.querySelector('.ipe-pane[data-pane="org"]');
+      if (org && cl && !document.getElementById("ipr-org-cloud")) {
+        var b = document.createElement("button"); b.type = "button"; b.id = "ipr-org-cloud"; b.className = "ipe-b ipe-b--s";
+        b.textContent = "IPR Cloud: projectos partilhados e QField"; b.style.cssText = "margin:8px 0;width:100%";
+        b.addEventListener("click", function () { cl.click(); });
+        org.insertBefore(b, org.firstChild);
+      }
+    }
+    if (!tabs.__ipr48) { tabs.__ipr48 = 1; new MutationObserver(function () { clearTimeout(arrumar.t); arrumar.t = setTimeout(arrumar, 40); }).observe(tabs, { childList: true }); }
+    arrumar();
+    return true;
+  }
+
+  var FORM_E = [["DWG", "AutoCAD"], ["DXF", "AutoCAD"], ["KML", "Google Earth"], ["KMZ", "Google Earth"], ["GPKG", "GeoPackage"], ["SHP", "Shapefile em .zip"], ["GeoJSON", ""], ["GPX", "GPS"]];
+  var FORM_S = [["gpkg", "GeoPackage", "QGIS, com cotas, layers e estilos do AutoCAD"], ["kmz", "KMZ", "Google Earth"], ["kml", "KML", ""], ["shp", "Shapefile", ".zip"], ["dxf", "DXF", "AutoCAD"], ["gpx", "GPX", "GPS"], ["geojson", "GeoJSON", "web"]];
+  function processar() {
+    var P = document.querySelector('.ipe-pane[data-pane="enc"]'); if (!P) return false;
+    if (document.getElementById("ipr-proc-sel")) return true;
+    // O Atlas pode redesenhar o painel: se a barra desaparecer, volta a montar-se.
+    if (!window.__ipr48w) { window.__ipr48w = setInterval(function () { if (!document.getElementById("ipr-proc-sel")) { try { processar(); } catch (e) {} } }, 2500); }
+    var st = document.createElement("style");
+    st.textContent = "#ipr-proc-sel{display:flex;gap:4px;margin:4px 0 10px;padding:3px;border:1px solid var(--ln);border-radius:10px;background:var(--p2,transparent)}" +
+      "#ipr-proc-sel button{all:unset;box-sizing:border-box;flex:1;text-align:center;padding:7px 6px;border-radius:7px;font:600 12.5px Inter,sans-serif;color:var(--mu);cursor:pointer}" +
+      "#ipr-proc-sel button.on{background:var(--ac,#75834a);color:#fff}" +
+      "#ipr-conv h3{margin:2px 0 4px;font:600 15px Inter,sans-serif;color:var(--tx)}#ipr-conv .m{font:12.5px/1.45 Inter,sans-serif;color:var(--mu);margin:0 0 8px}" +
+      "#ipr-conv .fm{display:flex;flex-wrap:wrap;gap:4px;margin:4px 0 8px}#ipr-conv .fm span{font:600 11px 'IBM Plex Mono',monospace;padding:3px 7px;border:1px solid var(--ln);border-radius:20px;color:var(--tx)}" +
+      "#ipr-conv .fm span.a{border-color:var(--ac,#75834a);color:var(--ac,#75834a)}#ipr-conv .lb{font:600 11px Inter,sans-serif;text-transform:uppercase;letter-spacing:.05em;color:var(--mu);margin:8px 0 3px}" +
+      "#ipr-conv .sai{display:grid;grid-template-columns:1fr 1fr;gap:2px 8px}#ipr-conv .sai label{display:flex;gap:6px;align-items:flex-start;font:12.5px/1.3 Inter,sans-serif;color:var(--tx)}#ipr-conv .sai small{display:block;color:var(--mu);font-size:11px}" +
+      "#ipr-conv select{width:100%;font:13px Inter,sans-serif;padding:6px;border:1px solid var(--ln);border-radius:7px;background:var(--p1);color:var(--tx)}" +
+      "#ipr-drop{margin:10px 0 6px;border:1.5px dashed var(--ln);border-radius:10px;padding:16px 10px;text-align:center;font:13px Inter,sans-serif;color:var(--mu);cursor:pointer}#ipr-drop.on{border-color:var(--ac,#75834a);color:var(--tx)}" +
+      "#ipr-conv-l{list-style:none;margin:8px 0 0;padding:0}#ipr-conv-l li{border:1px solid var(--ln);border-radius:9px;padding:8px 9px;margin:0 0 6px;font:12.5px/1.4 Inter,sans-serif;color:var(--tx)}" +
+      "#ipr-conv-l li b{display:block;font-size:13px;word-break:break-all}#ipr-conv-l li .e{color:var(--mu)}#ipr-conv-l li .e.ok{color:#7fae4a}#ipr-conv-l li .e.mau{color:#d9534f}" +
+      "#ipr-conv-l .ac{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}#ipr-conv-l .ac a,#ipr-conv-l .ac button{font:600 11.5px Inter,sans-serif;padding:4px 8px;border:1px solid var(--ln);border-radius:6px;color:var(--tx);background:transparent;text-decoration:none;cursor:pointer}";
+    document.head.appendChild(st);
+    var sel = document.createElement("div"); sel.id = "ipr-proc-sel";
+    sel.innerHTML = '<button type="button" data-v="base" class="on">Base Cartográfica</button><button type="button" data-v="conv">Converter ficheiros</button>';
+    var C = document.createElement("div"); C.id = "ipr-conv"; C.hidden = true;
+    var logado = !!window.tcdNonce;
+    C.innerHTML = '<h3>Converter ficheiros</h3><p class="m">AutoCAD para SIG e entre formatos, sem perder cotas, layers, cores e tracejados. Desenhos em coordenadas locais são acertados pelo limite de um terreno seu.</p>' +
+      '<div class="lb">Entra</div><div class="fm">' + FORM_E.map(function (f) { return '<span class="' + (/DWG|DXF/.test(f[0]) ? "a" : "") + '" title="' + esc48(f[1]) + '">' + f[0] + "</span>"; }).join("") + "</div>" +
+      '<div class="lb">Sai</div><div class="sai">' + FORM_S.map(function (f) { return '<label><input type="checkbox" data-sai="' + f[0] + '"' + (/gpkg|kmz|shp/.test(f[0]) ? " checked" : "") + (f[0] === "gpkg" ? " disabled" : "") + "><span>" + f[1] + (f[2] ? "<small>" + esc48(f[2]) + "</small>" : "") + "</span></label>"; }).join("") + "</div>" +
+      '<div class="lb">Acertar e guardar em</div><select id="ipr-conv-p"><option value="0">Nenhum projecto (o desenho já tem coordenadas)</option></select>' +
+      (logado ? '<div id="ipr-drop" tabindex="0" role="button">Largue aqui o ficheiro ou toque para escolher<br><small>até 300 MB · DWG, DXF, KML, KMZ, GPKG, ZIP, GeoJSON, GPX</small></div><input type="file" id="ipr-conv-f" hidden accept=".dwg,.dxf,.kml,.kmz,.gpkg,.zip,.geojson,.json,.gpx" multiple><div id="ipr-conv-msg" class="m"></div><ul id="ipr-conv-l"></ul>'
+        : '<p class="m"><b>Entre na sua conta para converter.</b> A conversão corre nos nossos servidores e os ficheiros ficam só para si.</p>');
+    P.insertBefore(C, P.firstChild); P.insertBefore(sel, P.firstChild);
+    var atual = "base";
+    new MutationObserver(function () { if (atual === "conv") { clearTimeout(ver.t); ver.t = setTimeout(function () { ver("conv", true); }, 30); } }).observe(P, { childList: true });
+    function ver(v, so) {
+      atual = v;
+      [].forEach.call(sel.querySelectorAll("button"), function (b) { b.classList.toggle("on", b.dataset.v === v); });
+      [].forEach.call(P.children, function (el) { if (el === sel) return; if (el === C) { C.hidden = v !== "conv"; return; } if (v === "conv") { if (!el.hidden) { el.dataset.iprEsc = "1"; el.hidden = true; } } else if (el.dataset.iprEsc) { el.hidden = false; delete el.dataset.iprEsc; } });
+      try { localStorage.setItem("ipr_proc_v", v); } catch (e) {}
+      if (v === "conv" && !so) { projectos(); if (logado) lista(); }
+    }
+    sel.addEventListener("click", function (e) { var b = e.target.closest("button"); if (b) ver(b.dataset.v); });
+    function projectos() {
+      var s = document.getElementById("ipr-conv-p"); if (!s || s.options.length > 1) return;
+      document.querySelectorAll("#ipe-proj .ipe-card").forEach(function (c) {
+        var m = /#(\d+)/.exec((c.querySelector(".mono") || {}).textContent || ""); if (!m) return;
+        var nome = ((c.querySelector(".ipe-ct strong") || {}).textContent || "Terreno").trim();
+        var o = document.createElement("option"); o.value = m[1]; o.textContent = nome + " · #" + m[1]; s.appendChild(o);
+      });
+    }
+    if (!logado) { try { if (localStorage.getItem("ipr_proc_v") === "conv") ver("conv"); } catch (e) {} return true; }
+    var drop = document.getElementById("ipr-drop"), inp = document.getElementById("ipr-conv-f"), msg = document.getElementById("ipr-conv-msg"), L = document.getElementById("ipr-conv-l");
+    drop.addEventListener("click", function () { inp.click(); });
+    drop.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); inp.click(); } });
+    ["dragenter", "dragover"].forEach(function (t) { drop.addEventListener(t, function (e) { e.preventDefault(); drop.classList.add("on"); }); });
+    ["dragleave", "drop"].forEach(function (t) { drop.addEventListener(t, function (e) { e.preventDefault(); drop.classList.remove("on"); }); });
+    drop.addEventListener("drop", function (e) { enviarVarios(e.dataTransfer.files); });
+    inp.addEventListener("change", function () { enviarVarios(inp.files); inp.value = ""; });
+    function saidas() { return [].map.call(C.querySelectorAll("[data-sai]:checked"), function (c) { return c.dataset.sai; }).concat(["gpkg", "geojson"]).filter(function (v, i, a) { return a.indexOf(v) === i; }).join(","); }
+    function sha(buf) { return crypto.subtle.digest("SHA-256", buf).then(function (h) { return [].map.call(new Uint8Array(h), function (b) { return ("0" + b.toString(16)).slice(-2); }).join(""); }); }
+    function enviarVarios(fs) { var a = [].slice.call(fs || []); (function um() { var f = a.shift(); if (f) enviar(f).then(um, um); })(); }
+    function enviar(f) {
+      var PARTE = 8 * 1048576, n = Math.max(1, Math.ceil(f.size / PARTE)), proj = document.getElementById("ipr-conv-p").value;
+      if (f.size > 300 * 1048576) { msg.textContent = f.name + ": acima de 300 MB."; return Promise.resolve(); }
+      msg.textContent = "A preparar " + f.name + "…";
+      return f.arrayBuffer().then(sha).then(function (h) {
+        var i = 0;
+        function parte() {
+          var q = "carregar/parte?projecto=" + encodeURIComponent(proj) + "&alinhar=" + encodeURIComponent(proj) + "&nome=" + encodeURIComponent(f.name) + "&parte=" + i + "&partes=" + n + "&tamanho=" + f.size + "&saida=" + saidas() + (i === n - 1 ? "&sha256=" + h : "");
+          msg.textContent = "A enviar " + f.name + (n > 1 ? " (" + (i + 1) + " de " + n + ")" : "") + "…";
+          return api(q, { method: "POST", body: f.slice(i * PARTE, (i + 1) * PARTE), headers: { "Content-Type": "application/octet-stream" } }).then(function (j) { i++; return i < n ? parte() : j; });
+        }
+        return parte();
+      }).then(function () { msg.textContent = f.name + ": na fila. A conversão de um AutoCAD demora um a dois minutos."; lista(); }).catch(function (e) { msg.textContent = f.name + ": " + e.message; });
+    }
+    var EST = { fila: "Na fila", converter: "A converter…", pronto: "Pronto", erro: "Não converteu", georref: "Sem posição" }, rel = 0;
+    function lista() {
+      api("carregar/meus").then(function (j) {
+        var fs = j.ficheiros || [];
+        L.innerHTML = fs.slice(0, 20).map(function (x) {
+          var ac = FORM_S.filter(function (f) { return x[f[0]]; }).map(function (f) { return '<a href="' + esc48(x[f[0]]) + (f[0] === "geojson" ? "&dl=1" : "") + '" download>' + f[1] + "</a>"; }).join("");
+          if (x.geojson) ac = '<button type="button" data-mapa="' + x.id + '">Ver no mapa</button>' + ac + '<button type="button" data-org="' + x.id + '">Juntar à organização</button>';
+          ac += '<button type="button" data-lixo="' + x.id + '">Apagar</button>';
+          var cls = x.estado === "pronto" ? "ok" : (x.estado === "erro" || x.estado === "georref") ? "mau" : "";
+          return '<li><b>' + esc48(x.nome) + '</b><span class="e ' + cls + '">' + esc48(EST[x.estado] || x.estado) + (x.enc ? " · #" + x.enc : "") + "</span>" + (x.msg && x.estado !== "fila" ? '<div class="e">' + esc48(x.msg) + "</div>" : "") + '<div class="ac">' + ac + "</div></li>";
+        }).join("") || '<li class="e">Ainda não converteu nenhum ficheiro.</li>';
+        clearTimeout(rel); if (fs.some(function (x) { return x.estado === "fila" || x.estado === "converter"; })) rel = setTimeout(lista, 8000);
+      }).catch(function (e) { L.innerHTML = '<li class="e mau">' + esc48(e.message) + "</li>"; });
+    }
+    L.addEventListener("click", function (e) {
+      var b = e.target.closest("button"); if (!b) return;
+      if (b.dataset.lixo) { b.disabled = true; api("carregar/apagar", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: +b.dataset.lixo }) }).then(lista, function (x) { msg.textContent = x.message; }); }
+      if (b.dataset.org) { b.disabled = true; api("org/juntar", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ficheiro: +b.dataset.org }) }).then(function (j) { msg.textContent = j.m || "Juntado à organização."; }, function (x) { msg.textContent = x.message; b.disabled = false; }); }
+      if (b.dataset.mapa) mostrar(+b.dataset.mapa, b);
+    });
+    function mostrar(id, b) {
+      var m = window.__ipe && window.__ipe.mapa; if (!m) return;
+      var sid = "ipr-conv-" + id;
+      if (m.getSource(sid)) { ["-l", "-a", "-p"].forEach(function (s) { if (m.getLayer(sid + s)) m.removeLayer(sid + s); }); m.removeSource(sid); b.textContent = "Ver no mapa"; return; }
+      b.textContent = "A carregar…";
+      fetch(API + "carregar/f?id=" + id + "&k=geojson", { credentials: "same-origin", headers: { "X-WP-Nonce": window.tcdNonce || "" } }).then(function (r) { return r.json(); }).then(function (gj) {
+        m.addSource(sid, { type: "geojson", data: gj });
+        var cor = ["coalesce", ["get", "cor"], "#ff9a3c"];
+        m.addLayer({ id: sid + "-a", type: "fill", source: sid, filter: ["==", ["geometry-type"], "Polygon"], paint: { "fill-color": cor, "fill-opacity": 0.25 } });
+        m.addLayer({ id: sid + "-l", type: "line", source: sid, filter: ["!=", ["geometry-type"], "Point"], paint: { "line-color": cor, "line-width": 1.2 } });
+        m.addLayer({ id: sid + "-p", type: "circle", source: sid, filter: ["==", ["geometry-type"], "Point"], paint: { "circle-color": cor, "circle-radius": 2.5 } });
+        var bb = [180, 90, -180, -90]; (function per(c) { if (typeof c[0] === "number") { bb[0] = Math.min(bb[0], c[0]); bb[1] = Math.min(bb[1], c[1]); bb[2] = Math.max(bb[2], c[0]); bb[3] = Math.max(bb[3], c[1]); } else c.forEach(per); })((gj.features || []).map(function (f) { return f.geometry ? f.geometry.coordinates : []; }));
+        if (bb[0] < bb[2]) m.fitBounds([[bb[0], bb[1]], [bb[2], bb[3]]], { padding: 40, duration: 900 });
+        b.textContent = "Tirar do mapa";
+      }).catch(function () { b.textContent = "Ver no mapa"; msg.textContent = "Não foi possível abrir no mapa."; });
+    }
+    try { if (localStorage.getItem("ipr_proc_v") === "conv") ver("conv"); } catch (e) {}
+    return true;
+  }
+
+  // Cartões dos projectos: «Arquivar» (esconde da lista, não apaga nada) e «Juntar à organização» (limite do terreno).
+  function cartoes() {
+    var P = document.getElementById("ipe-proj"); if (!P || !window.tcdNonce) return false;
+    if (P.__ipr48) return true; P.__ipr48 = 1;
+    var arq = [], mostrarArq = false;
+    var st = document.createElement("style");
+    st.textContent = ".ipr-ca{display:flex;gap:10px;margin-top:6px}.ipr-ca button{all:unset;cursor:pointer;font:600 11.5px Inter,sans-serif;color:var(--mu)}.ipr-ca button:hover{color:var(--tx)}" +
+      "#ipe-proj .ipe-card.ipr-arq{display:none}#ipe-proj.ipr-ver-arq .ipe-card.ipr-arq{display:block;opacity:.55}#ipr-arq-b{all:unset;cursor:pointer;display:block;margin:6px 0;font:600 12px Inter,sans-serif;color:var(--mu)}";
+    document.head.appendChild(st);
+    function enc(c) { var m = /#(\d+)/.exec((c.querySelector(".mono") || {}).textContent || ""); return m ? +m[1] : 0; }
+    function aplicar() {
+      var n = 0;
+      P.querySelectorAll(".ipe-card").forEach(function (c) {
+        var id = enc(c); if (!id) return;
+        var a = arq.indexOf(id) >= 0; c.classList.toggle("ipr-arq", a); if (a) n++;
+        var ct = c.querySelector(".ipe-ct"); if (!ct || ct.querySelector(".ipr-ca")) { var bt = ct && ct.querySelector("[data-arq]"); if (bt) bt.textContent = a ? "Desarquivar" : "Arquivar"; return; }
+        var d = document.createElement("div"); d.className = "ipr-ca";
+        d.innerHTML = '<button type="button" data-arq="' + id + '">' + (a ? "Desarquivar" : "Arquivar") + '</button><button type="button" data-jorg="' + id + '">Juntar à organização</button>';
+        ct.appendChild(d);
+      });
+      var b = document.getElementById("ipr-arq-b");
+      if (n && !b) { b = document.createElement("button"); b.type = "button"; b.id = "ipr-arq-b"; P.insertBefore(b, P.firstChild); b.addEventListener("click", function () { mostrarArq = !mostrarArq; P.classList.toggle("ipr-ver-arq", mostrarArq); aplicar(); }); }
+      if (b) { b.hidden = !n; b.textContent = (mostrarArq ? "Esconder" : "Mostrar") + " arquivados (" + n + ")"; }
+    }
+    P.addEventListener("click", function (e) {
+      var b = e.target.closest("[data-arq],[data-jorg]"); if (!b) return; e.stopPropagation(); e.preventDefault();
+      if (b.dataset.arq) {
+        var id = +b.dataset.arq, sim = arq.indexOf(id) < 0; b.disabled = true;
+        api("projecto/arquivar", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ projecto: id, arquivar: sim ? 1 : 0 }) }).then(function (j) { arq = j.ids || []; aplicar(); }).catch(function (x) { b.title = x.message; }).then(function () { b.disabled = false; });
+      } else {
+        b.disabled = true; var t = b.textContent; b.textContent = "A juntar…";
+        api("org/juntar", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ projecto: +b.dataset.jorg }) }).then(function (j) { b.textContent = "Juntado"; }).catch(function (x) { b.textContent = t; b.disabled = false; b.title = x.message; b.textContent = "Sem acesso"; setTimeout(function () { b.textContent = t; }, 3000); });
+      }
+    }, true);
+    api("projecto/arquivados").then(function (j) { arq = j.ids || []; aplicar(); }).catch(function () {});
+    new MutationObserver(function () { clearTimeout(aplicar.t); aplicar.t = setTimeout(aplicar, 60); }).observe(P, { childList: true, subtree: true });
+    aplicar();
+    return true;
+  }
   function correr() {
     voltas++;
-    [["marca", marca], ["puxadores", puxadores], ["creditos", creditos], ["estado", estado], ["formiga", formiga], ["projectos", projectos], ["editavel", editavel], ["semBug", semBug], ["rosa", rosa], ["arrumar", arrumar], ["projDir", projDir], ["testarEsq", testarEsq], ["contaTopo", contaTopo], ["camadasTopo", camadasTopo], ["sintetizar", sintetizar], ["opcoesCamadas", opcoesCamadas], ["projFechados", projFechados], ["todasMais", todasMais], ["painelTopo", painelTopo], ["qfieldQR", qfieldQR], ["temas", temas], ["natural", natural], ["aprenderDesenho", aprenderDesenho], ["fichas", fichasCamada], ["natureza", fichasNatureza], ["parcelas", parcelasPonto], ["partilhaQR", partilhaQR], ["teclado", tecladoVirtual], ["prefs", prefsConta], ["cronologia", cronologia], ["alcanena", pilotoAlcanena], ["estilosOrg", estilosOrg], ["fimDoVoo", fimDoVoo], ["orgNomes", orgNomes], ["projRecolhidos", projRecolhidos], ["instalarApp", instalarApp], ["temaEscuro", temaEscuro], ["orgPastas", orgPastas], ["discricao", discricao], ["estradas", estradas], ["cloudLimpo", cloudLimpo], ["navEsquerda", navEsquerda], ["encomendaCompacta", encomendaCompacta], ["testarLigacao", testarLigacao], ["linguetaEsq", linguetaEsq], ["longe", longe]].forEach(function (f) { if (!feito[f[0]]) { try { feito[f[0]] = f[1](); } catch (e) {} } });
+    [["marca", marca], ["puxadores", puxadores], ["creditos", creditos], ["estado", estado], ["formiga", formiga], ["projectos", projectos], ["editavel", editavel], ["semBug", semBug], ["rosa", rosa], ["arrumar", arrumar], ["projDir", projDir], ["testarEsq", testarEsq], ["contaTopo", contaTopo], ["camadasTopo", camadasTopo], ["sintetizar", sintetizar], ["opcoesCamadas", opcoesCamadas], ["projFechados", projFechados], ["todasMais", todasMais], ["painelTopo", painelTopo], ["qfieldQR", qfieldQR], ["temas", temas], ["natural", natural], ["aprenderDesenho", aprenderDesenho], ["fichas", fichasCamada], ["natureza", fichasNatureza], ["parcelas", parcelasPonto], ["partilhaQR", partilhaQR], ["teclado", tecladoVirtual], ["prefs", prefsConta], ["cronologia", cronologia], ["alcanena", pilotoAlcanena], ["estilosOrg", estilosOrg], ["fimDoVoo", fimDoVoo], ["orgNomes", orgNomes], ["projRecolhidos", projRecolhidos], ["instalarApp", instalarApp], ["temaEscuro", temaEscuro], ["orgPastas", orgPastas], ["discricao", discricao], ["estradas", estradas], ["cloudLimpo", cloudLimpo], ["navEsquerda", navEsquerda], ["encomendaCompacta", encomendaCompacta], ["testarLigacao", testarLigacao], ["linguetaEsq", linguetaEsq], ["longe", longe], ["arrumarCamadas", arrumarCamadas], ["separadores", separadores], ["processar", processar], ["cartoes", cartoes]].forEach(function (f) { if (!feito[f[0]]) { try { feito[f[0]] = f[1](); } catch (e) {} } });
     try { nomes(); } catch (e) {}
     try { equipa(); } catch (e) {}
     try { if (window.__iprTodas && !document.getElementById("ipr-todas")) todasBases(); } catch (e) {}
