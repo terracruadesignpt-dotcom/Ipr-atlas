@@ -1895,7 +1895,7 @@
       var bt = document.createElement("button"); bt.type = "button"; bt.setAttribute("aria-expanded", String(!rec));
       bt.innerHTML = (cor ? '<i style="background:' + cor + '"></i>' : "") + "<em></em><small></small>"; bt.querySelector("em").textContent = titulo;
       bt.addEventListener("click", function () { var r = d.classList.toggle("rec"); EST[k] = r; guardar(); bt.setAttribute("aria-expanded", String(!r)); });
-      var b = document.createElement("div"); b.className = cls + "-b"; d.appendChild(bt); d.appendChild(b); return d;
+      var b = document.createElement("div"); b.className = cls.split(" ")[0] + "-b"; d.appendChild(bt); d.appendChild(b); return d;
     }
     function contar(d) {
       var t = d.querySelectorAll(".ipo-c").length, l = d.querySelectorAll(".ipo-c input:checked").length;
@@ -1927,8 +1927,10 @@
       });
       var ancora = gs[0];
       ordem.forEach(function (proj) {
-        var p = projs[proj], F = pasta("ipr-of", "p:" + chave(proj), proj, p.cor, false), FB = F.querySelector(".ipr-of-b");
-        ancora.parentNode.insertBefore(F, ancora);
+        // 25/10, 18h14 (Nuno): «só ver uma vez 268 Quinta Linda». Se a pasta do projecto já existe, junta-se a ela.
+        var p = projs[proj], F = P.querySelector('.ipr-of[data-k="p:' + chave(proj).replace(/"/g, "") + '"]');
+        if (!F) { F = pasta("ipr-of", "p:" + chave(proj).replace(/"/g, ""), proj, p.cor, false); ancora.parentNode.insertBefore(F, ancora); }
+        var FB = F.querySelector(".ipr-of-b");
         // 25/10 (Nuno, 16h55): três níveis quando o grupo se chama «268 Quinta Linda · Projecto Terracrua Design · Água»:
         // projecto, secção (Análise, Projecto Terracrua Design, AutoCADs) e subpasta. Sem secção, fica como antes.
         var secs = {};
@@ -1936,7 +1938,7 @@
           FB.appendChild(s.g);
           var alvo = FB;
           if (s.sec) {
-            if (!secs[s.sec]) { secs[s.sec] = pasta("ipr-sf ipr-sec", "c:" + chave(proj + "|" + s.sec), s.sec, "", false); FB.appendChild(secs[s.sec]); }
+            if (!secs[s.sec]) { secs[s.sec] = FB.querySelector(':scope>.ipr-sec[data-k="c:' + chave(proj + "|" + s.sec).replace(/"/g, "") + '"]') || pasta("ipr-sf ipr-sec", "c:" + chave(proj + "|" + s.sec).replace(/"/g, ""), s.sec, "", false); FB.appendChild(secs[s.sec]); }
             alvo = secs[s.sec].querySelector(".ipr-sf-b");
           }
           if (!s.nome || (!s.sec && p.subs.length === 1)) { s.linhas.forEach(function (c) { alvo.appendChild(c); }); return; }
