@@ -2537,7 +2537,7 @@
       "#ipr-orgv summary::-webkit-details-marker{display:none}#ipr-orgv summary:before{content:'';width:6px;height:6px;border-right:1.6px solid currentColor;border-bottom:1.6px solid currentColor;transform:rotate(-45deg);opacity:.6;flex:none;transition:transform .15s}" +
       "#ipr-orgv details[open]>summary:before{transform:rotate(45deg)}#ipr-orgv .ov-p>summary{background:var(--p3,rgba(127,127,127,.07))}" +
       "#ipr-orgv summary em{font-style:normal;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#ipr-orgv summary small{font:500 11px Inter,sans-serif;color:var(--mu);white-space:nowrap}" +
-      "#ipr-orgv .ov-p>summary em{white-space:normal}#ipr-orgv .ov-p>summary b{font:700 12px Inter,sans-serif;color:var(--mu);min-width:38px}#ipr-orgv .ov-s>summary{font-weight:500;padding-left:18px}#ipr-orgv .ov-s .ov-s>summary{padding-left:30px}" +
+      "#ipr-orgv .ov-p>summary{flex-wrap:wrap;row-gap:2px}#ipr-orgv .ov-p>summary em{white-space:normal;flex:1 1 9em;min-width:9em}#ipr-orgv .ov-p>summary small{flex:1 0 100%;padding-left:14px;white-space:normal}#ipr-orgv .ov-p>summary b{font:700 12px Inter,sans-serif;color:var(--mu);min-width:38px}#ipr-orgv .ov-s>summary{font-weight:500;padding-left:18px}#ipr-orgv .ov-s .ov-s>summary{padding-left:30px}" +
       "#ipr-orgv .ov-c{display:flex;align-items:center;gap:8px;padding:5px 8px 5px 30px;border-top:1px solid var(--ln2,rgba(127,127,127,.12))}#ipr-orgv .ov-s .ov-s .ov-c{padding-left:42px}" +
       "#ipr-orgv .ov-c label{flex:1;min-width:0;display:flex;gap:8px;align-items:center;cursor:pointer}#ipr-orgv .ov-c label span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}" +
       "#ipr-orgv .ov-c small{color:var(--mu);white-space:nowrap;font-size:11px}#ipr-orgv button.ov-z{font:12px Inter,sans-serif;border:1px solid var(--ln);background:var(--p3);color:var(--ac2);border-radius:6px;padding:2px 7px;cursor:pointer}" +
@@ -2549,9 +2549,11 @@
     function guardar() { try { localStorage.setItem("ipr_org_vista", JSON.stringify(EST)); } catch (e) {} }
     function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
     function nf(x) { return Number(x || 0).toLocaleString("pt-PT"); }
-    var cloud = null, ligadas = {};
+    var cloud = null, ligadas = {}, bases = null;
+    // 25/10, 21h19 (Nuno): os projectos juntados à organização levam a Base cartográfica inteira, sem cópias (m90355).
+    try { fetch("/wp-json/tcd/v1/org/projectos", { credentials: "same-origin", headers: { "X-WP-Nonce": window.tcdNonce || "" } }).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { bases = (j && j.projectos) || []; desenhar(); }).catch(function () { bases = []; }); } catch (e) { bases = []; }
     try { fetch("/wp-json/tcd/v1/cloud/meus", { credentials: "same-origin", headers: { "X-WP-Nonce": window.tcdNonce || "" } }).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { cloud = (j && (j.terrenos || j)) || []; if (!Array.isArray(cloud)) cloud = []; desenhar(); }).catch(function () { cloud = []; }); } catch (e) { cloud = []; }
-    function num(s) { var m = /^(\d{2,6})\s/.exec(String(s || "")); return m ? m[1] : ""; }
+    function num(s) { var m = /^(\d{2,6})(\s|$)/.exec(String(s || "").trim()); return m ? m[1] : ""; }
     function sobrepoe(a, b) { return a && b && a.length === 4 && b.length === 4 && a[0] <= b[2] && b[0] <= a[2] && a[1] <= b[3] && b[1] <= a[3]; }
     function detalhe(cls, k, html, porOmissao) { var abre = k in EST ? EST[k] : porOmissao; return '<details class="' + cls + '" data-k="' + esc(k) + '"' + (abre ? " open" : "") + "><summary>" + html + "</summary>"; }
     function contas(cs) { var l = cs.filter(function (c) { return ligadas[c.id]; }).length; return cs.length + (cs.length === 1 ? " camada" : " camadas") + (l ? " · " + l + " ligada" + (l > 1 ? "s" : "") : ""); }
@@ -2571,11 +2573,15 @@
         var resto = m[3] ? m[3].split(" · ") : [];
         p.secs.push({ sec: resto[0] || "", sub: resto.slice(1).join(" · "), g: g, cs: camadas });
       });
+      (bases || []).forEach(function (b) {
+        var k = String(b.id); if (!projs[k]) projs[k] = { num: k, nome: String(b.nome || "").replace(/^\d+\s+/, "") || ("Projecto " + k), prefixo: "", secs: [], cs: [], cor: "#ff9a3c" };
+        projs[k].base = b;
+      });
       (cloud || []).forEach(function (t) {
         var n2 = num(t.nome) || num(t.codigo) || ""; var alvo = n2 && projs[n2];
-        if (!alvo) Object.keys(projs).some(function (k) { if (projs[k].cs.some(function (c) { return sobrepoe(c.bbox, t.bbox); })) { alvo = projs[k]; return true; } });
+        if (!alvo) Object.keys(projs).some(function (k) { if (projs[k].cs.some(function (c) { return sobrepoe(c.bbox, t.bbox); }) || (projs[k].base && sobrepoe(projs[k].base.bbox, t.bbox))) { alvo = projs[k]; return true; } });
         if (alvo) { alvo.cloud = t; return; }
-        var k = n2 || "c:" + (t.codigo || t.nome); projs[k] = { num: n2, nome: n2 ? String(t.nome).replace(/^\d+\s+/, "") : t.nome, prefixo: "", secs: [], cs: [], cloud: t, soCloud: 1 };
+        var k = n2 || "c:" + (t.codigo || t.nome); var nm = String(t.nome || "").trim() || String(t.local || "").split(",")[0].replace(/\(pelo mapa\)/, "").trim() || String(t.codigo || "Projecto na Cloud"); projs[k] = { num: n2, nome: n2 ? nm.replace(/^\d+\s+/, "") : nm, prefixo: "", secs: [], cs: [], cloud: t, soCloud: 1 };
       });
       var lista = Object.keys(projs).map(function (k) { return projs[k]; }).sort(function (a, b) { var x = a.num ? +a.num : 1e9, y = b.num ? +b.num : 1e9; return x - y || String(a.nome).localeCompare(String(b.nome), "pt"); });
       var O = window.IPR_ORGS, h = '<div class="ov-cab"><div>';
@@ -2585,10 +2591,10 @@
       h += '<div class="ov-lbl">Projectos</div>';
       if (!lista.length) h += '<div class="ipe-vazio">Ainda não há projectos nesta organização.</div>';
       lista.forEach(function (p) {
-        var t = p.cloud, sub = (t && t.local ? esc(t.local) : "") || (p.cs.length ? contas(p.cs) : "");
+        var t = p.cloud, sub = (p.base ? "Base cartográfica completa" + (p.cs.length ? " · " + contas(p.cs) : "") : "") || (p.cs.length ? contas(p.cs) : "") || (t && t.local ? esc(t.local) : "");
         var nomeCloud = t && t.nome && String(t.nome).replace(/^\d+\s+/, "") !== p.nome ? " · " + String(t.nome).replace(/^\d+\s+/, "") : "";
-        h += detalhe("ov-p", "p:" + (p.num || p.nome), (p.num ? "<b>" + esc(p.num) + "</b>" : "") + "<em>" + esc(p.nome + nomeCloud) + "</em>" + (t ? '<span class="ov-cl" title="Está na IPR Cloud">Cloud</span>' : "") + "<small>" + sub + "</small>", false);
-        h += '<div class="ov-acc">' + (p.cs.length || (t && t.bbox) ? '<button type="button" data-ov-ir="' + esc(p.num || p.nome) + '">Ir para o terreno</button>' : "") + (p.cs.length ? '<button type="button" data-ov-todas="' + esc(p.num || p.nome) + '">Ligar todas</button><button type="button" data-ov-nenhuma="' + esc(p.num || p.nome) + '">Desligar</button>' : "") + (t ? '<button type="button" data-ov-cloud="1">Abrir na Cloud</button>' : "") + "</div>";
+        h += detalhe("ov-p", "p:" + (p.num || p.nome), (p.num ? "<b>" + esc(p.num) + "</b>" : "") + "<em>" + esc(p.nome + nomeCloud) + "</em>" + (p.base ? '<span class="ov-cl" title="Base cartográfica do projecto, uma só cópia partilhada">Base</span>' : "") + (t ? '<span class="ov-cl" title="Está na IPR Cloud">Cloud</span>' : "") + "<small>" + sub + "</small>", false);
+        h += '<div class="ov-acc">' + (p.base ? '<button type="button" data-ov-base="' + esc(p.base.id) + '">Abrir a Base cartográfica</button>' : "") + (p.cs.length || (t && t.bbox) || (p.base && p.base.bbox) ? '<button type="button" data-ov-ir="' + esc(p.num || p.nome) + '">Ir para o terreno</button>' : "") + (p.cs.length ? '<button type="button" data-ov-todas="' + esc(p.num || p.nome) + '">Ligar todas</button><button type="button" data-ov-nenhuma="' + esc(p.num || p.nome) + '">Desligar</button>' : "") + (t ? '<button type="button" data-ov-cloud="1">Abrir na Cloud</button>' : "") + "</div>";
         // secções como no Drive
         var secs = {}, ordem = [];
         p.secs.forEach(function (s) { var k = s.sec || ""; if (!secs[k]) { secs[k] = { nome: k, itens: [] }; ordem.push(k); } secs[k].itens.push(s); });
@@ -2619,6 +2625,17 @@
       V.__ov = { projs: projs }; desenhando = true; V.innerHTML = h; desenhando = false;
       var sel = V.querySelector(".ipr-orgsel"); if (sel && O) sel.addEventListener("change", function () { location.href = "/atlas/?ipr_org=" + encodeURIComponent(sel.value) + "&_ipr_org=" + encodeURIComponent(O.nonce) + "&separador=org"; });
     }
+    // Abre a Base no separador Projectos (o mesmo cartão que o dono vê; quem é da organização recebe-o por partilha).
+    function abrirBase(id) {
+      var tab = document.querySelector('.ipe-tab[data-tab="proj"]'); if (tab) tab.click();
+      var n = 0;
+      (function procurar() {
+        var c = [].slice.call(document.querySelectorAll("#ipe-proj article.ipe-card[data-i]")).filter(function (a) { return [].some.call(a.querySelectorAll(".mono"), function (m) { return new RegExp("#" + id + "\\b").test(m.textContent); }); })[0];
+        if (c) { var alvo = c.querySelector(".ipe-ct strong") || c; alvo.click(); try { c.scrollIntoView({ block: "nearest" }); } catch (e) {} return; }
+        if (n++ < 40) return setTimeout(procurar, 250);
+        var p = proj(String(id)); if (p && p.base && p.base.bbox) window.tcdOrg.ajustar(p.base.bbox);
+      })();
+    }
     function proj(k) { var V = P.querySelector("#ipr-orgv"), ps = V && V.__ov && V.__ov.projs || {}; return ps[k] || Object.keys(ps).map(function (x) { return ps[x]; }).filter(function (p) { return p.nome === k; })[0]; }
     function caixa(cs) { var b = null; cs.forEach(function (c) { if (!c.bbox) return; b = b ? [Math.min(b[0], c.bbox[0]), Math.min(b[1], c.bbox[1]), Math.max(b[2], c.bbox[2]), Math.max(b[3], c.bbox[3])] : c.bbox.slice(); }); return b; }
     function porId(id) { var d = window.tcdOrg.dados(); return ((d && d.camadas) || []).filter(function (c) { return c.id === id; })[0]; }
@@ -2628,9 +2645,10 @@
     P.addEventListener("click", function (ev) {
       var b = ev.target.closest && ev.target.closest("button"); if (!b || !P.querySelector("#ipr-orgv").contains(b)) return;
       if (b.dataset.ovZ) { var c = porId(+b.dataset.ovZ); if (c) { liga(c.id, true); window.tcdOrg.ajustar(c.bbox); var cb = P.querySelector('[data-ov-c="' + c.id + '"]'); if (cb) cb.checked = true; actualizar(); } return; }
+      if (b.dataset.ovBase) { abrirBase(+b.dataset.ovBase); return; }
       if (b.dataset.ovCloud) { var t = document.querySelector('.ipe-tab[data-tab="cloud"]'); if (t) t.click(); return; }
       var p = proj(b.dataset.ovIr || b.dataset.ovTodas || b.dataset.ovNenhuma); if (!p) return;
-      if (b.dataset.ovIr) { var bx = caixa(p.cs) || (p.cloud && p.cloud.bbox); if (bx) window.tcdOrg.ajustar(bx); return; }
+      if (b.dataset.ovIr) { var bx = caixa(p.cs) || (p.base && p.base.bbox) || (p.cloud && p.cloud.bbox); if (bx) window.tcdOrg.ajustar(bx); return; }
       var sim = !!b.dataset.ovTodas; p.cs.forEach(function (c) { liga(c.id, sim); }); P.querySelectorAll("#ipr-orgv [data-ov-c]").forEach(function (cb) { if (p.cs.some(function (c) { return c.id === +cb.dataset.ovC; })) cb.checked = sim; });
       if (sim) { var bx2 = caixa(p.cs); if (bx2) window.tcdOrg.ajustar(bx2); } actualizar();
     });
