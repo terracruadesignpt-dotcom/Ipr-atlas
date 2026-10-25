@@ -2334,23 +2334,38 @@
     }
     sel.addEventListener("click", function (e) { var b = e.target.closest("button"); if (b) ver(b.dataset.v); });
     var MEUS = [];
+    // 25/10, 22h55 (Nuno): «devia dar todos os projectos que eu tenho acesso, por ordem alfabética», incluindo os da organização.
+    function ordenar() { MEUS.sort(function (a, b) { return a[1].localeCompare(b[1], "pt", { sensitivity: "base" }) || (+a[0] - +b[0]); }); }
+    function opcoes() { return MEUS.map(function (p) { return '<option value="' + esc48(p[0]) + '">' + esc48(p[1]) + " · #" + esc48(p[0]) + (p[2] ? " · " + esc48(p[2]) : "") + "</option>"; }).join(""); }
+    function juntarMeus(lst) {
+      lst.forEach(function (p) { if (!p[0] || MEUS.some(function (x) { return x[0] === p[0]; })) return; MEUS.push(p); });
+      ordenar();
+      var s = document.getElementById("ipr-conv-p"), g1 = s && s.querySelector("optgroup[data-meus]");
+      if (s) { var v = s.value; if (!g1) { g1 = document.createElement("optgroup"); g1.label = "Os meus projectos"; g1.dataset.meus = "1"; s.insertBefore(g1, s.options[0] ? s.options[0].nextSibling : null); } g1.innerHTML = opcoes(); s.value = v; if (s.selectedIndex < 0) s.selectedIndex = 0; }
+      var bs = document.querySelector("#ipr-conv-ligar select"); if (bs) { var bv = bs.value; bs.innerHTML = opcoes(); if (bv) bs.value = bv; if (bs.selectedIndex < 0) bs.selectedIndex = 0; }
+    }
+    var projFeito = false;
     function projectos() {
-      var s = document.getElementById("ipr-conv-p"); if (!s || s.options.length > 1) return;
-      var g1 = document.createElement("optgroup"); g1.label = "Os meus projectos"; MEUS = [];
+      var s = document.getElementById("ipr-conv-p"); if (!s) return;
+      var lst = [];
       document.querySelectorAll("#ipe-proj .ipe-card").forEach(function (c) {
         var m = /#(\d+)/.exec((c.querySelector(".mono") || {}).textContent || ""); if (!m) return;
-        var nome = ((c.querySelector(".ipe-ct strong") || {}).textContent || "Terreno").trim();
-        if (MEUS.some(function (x) { return x[0] === m[1]; })) return; MEUS.push([m[1], nome]);
-        var o = document.createElement("option"); o.value = m[1]; o.textContent = nome + " · #" + m[1]; g1.appendChild(o);
+        lst.push([m[1], ((c.querySelector(".ipe-ct strong") || {}).textContent || "Terreno").trim()]);
       });
-      if (g1.children.length) s.appendChild(g1);
-      // 25/10, 18h56 (Nuno): os projectos da organização também («os que estão na organização não me aparecem»).
-      if (logado) api("org/grupos-meus").then(function (j) {
+      juntarMeus(lst);
+      if (!logado || projFeito) return; projFeito = true;
+      // Projectos ligados à organização (Base inteira, acesso partilhado pelo m90355).
+      api("org/projectos").then(function (j) {
+        var ps = (j && (j.projectos || j.lista)) || (Array.isArray(j) ? j : []);
+        juntarMeus(ps.map(function (p) { return [String(p.id || ""), String(p.nome || p.local || "Projecto").trim(), "organização"]; }));
+      }).catch(function () {});
+      // Grupos de desenhos da organização sem encomenda (só para acertar a posição).
+      api("org/grupos-meus").then(function (j) {
         if (!j || !j.org || !j.pode) return; var vistos = {}, ps = [];
         (j.grupos || []).forEach(function (g) { var m = /^(\d+\s[^·]{2,40}?)(?:\s·|$)/.exec((g.nome || "").trim()); if (m && !vistos[m[1]]) { vistos[m[1]] = 1; ps.push(m[1]); } });
         if (!ps.length) return;
-        ps.sort(function (a, b) { return parseInt(a, 10) - parseInt(b, 10); });
-        var g2 = document.createElement("optgroup"); g2.label = "Organização · " + (j.nome || "");
+        ps.sort(function (a, b) { return a.localeCompare(b, "pt", { sensitivity: "base" }); });
+        var g2 = document.createElement("optgroup"); g2.label = "Organização · " + (j.nome || "") + " · pastas";
         ps.forEach(function (p) { var o = document.createElement("option"); o.value = "o:" + j.org + ":" + p; o.textContent = p; g2.appendChild(o); });
         s.appendChild(g2);
       }).catch(function () {});
@@ -2397,7 +2412,9 @@
         var bar = document.getElementById("ipr-conv-ligar");
         if (fs.some(function (x) { return x.estado === "pronto"; })) {
           if (!bar) { bar = document.createElement("div"); bar.id = "ipr-conv-ligar"; L.parentNode.insertBefore(bar, L); }
-          bar.innerHTML = '<span>Ligar os escolhidos a</span><select>' + MEUS.map(function (p) { return '<option value="' + esc48(p[0]) + '">' + esc48(p[1]) + " · #" + esc48(p[0]) + "</option>"; }).join("") + '</select><button type="button">Ligar</button>';
+          var bvAnt = bar.querySelector("select") ? bar.querySelector("select").value : "";
+          bar.innerHTML = '<span>Ligar os escolhidos a</span><select>' + opcoes() + '</select><button type="button">Ligar</button>';
+          if (bvAnt) { bar.querySelector("select").value = bvAnt; if (bar.querySelector("select").selectedIndex < 0) bar.querySelector("select").selectedIndex = 0; }
           bar.querySelector("button").onclick = function () {
             var ids = [].map.call(L.querySelectorAll("[data-esc]:checked"), function (c) { return +c.dataset.esc; }), pj = +bar.querySelector("select").value;
             if (!ids.length) { msg.textContent = "Escolha primeiro os ficheiros (caixa à esquerda do nome)."; return; }
