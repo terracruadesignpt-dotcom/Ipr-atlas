@@ -1930,8 +1930,12 @@
         if (m) { proj = m[1]; sub = m[2].charAt(0).toUpperCase() + m[2].slice(1); var pp = sub.split(" · "); if (pp.length > 1) { sec = pp[0]; sub = pp.slice(1).join(" · "); } }
         else if (/Temas do projecto/i.test(nome)) { proj = ordem.length === 1 ? ordem[0] : "Temas"; sub = "Temas do projecto (QGIS)"; }
         else { proj = nome; sub = ""; }
-        var linhas = []; var n = g.nextElementSibling; while (n && n.classList.contains("ipo-c")) { linhas.push(n); n = n.nextElementSibling; }
+        var linhas = [];
+        // 25/10, 19h28 (Nuno): na Organização só a lista dos projectos, cada um na sua pasta, como no Drive. Grupos sem número
+        // de projecto e vazios (os grupos-modelo «Áreas e acordos», «Observações»…) escondem-se; com camadas, vão para o fim.
+        var semNum = !/^\d+\s/.test(proj) && !/^\d+\s/.test(nome); var n = g.nextElementSibling; while (n && n.classList.contains("ipo-c")) { linhas.push(n); n = n.nextElementSibling; }
         linhas.forEach(function (c) { var b = c.querySelector("label b"); if (b && !b.dataset.ipoN) { b.dataset.ipoN = "1"; var mm = /^(\d+\s[^·]{2,60}?)\s·\s(.+)$/.exec(b.textContent); if (mm && (mm[1] === proj || !m)) { b.title = b.textContent; b.textContent = mm[2]; } } });
+        if (semNum) { if (!linhas.length) { g.style.display = "none"; return; } sub = proj; sec = ""; proj = "Outras camadas da organização"; }
         if (!projs[proj]) { projs[proj] = { cor: cor, subs: [] }; ordem.push(proj); }
         projs[proj].subs.push({ nome: sub, sec: sec, cor: cor, g: g, linhas: linhas });
       });
@@ -1958,6 +1962,12 @@
         Object.keys(secs).forEach(function (k) { contar(secs[k]); });
         contar(F);
       });
+      // Pastas por ordem do número do projecto; «Outras camadas» no fim.
+      var fs = [].slice.call(P.querySelectorAll(".ipr-of")); if (fs.length > 1) {
+        var num = function (f) { var t = (f.querySelector(":scope>button em") || {}).textContent || ""; var m2 = /^(\d+)/.exec(t); return m2 ? +m2[1] : 1e9; };
+        var srt = fs.slice().sort(function (a, b) { return num(a) - num(b); });
+        if (srt.some(function (f, i) { return f !== fs[i]; }) && fs.every(function (f) { return f.parentNode === fs[0].parentNode; })) { var pai = fs[0].parentNode, marca = document.createComment(""); pai.insertBefore(marca, fs[0]); srt.forEach(function (f) { pai.insertBefore(f, marca); }); marca.remove(); }
+      }
     }
     P.addEventListener("change", function () { setTimeout(function () { P.querySelectorAll(".ipr-of,.ipr-sf").forEach(contar); }, 0); });
     new MutationObserver(function () { clearTimeout(organizar.t); organizar.t = setTimeout(organizar, 30); }).observe(P, { childList: true, subtree: true });
@@ -2101,6 +2111,15 @@
     linha.appendChild(b);
     function juntar() { var t = document.getElementById("tcd-testar-cam"); if (t && t.parentNode !== linha) linha.insertBefore(t, b); }
     juntar(); new MutationObserver(juntar).observe(arv, { childList: true });
+    // 25/10, 19h56 (Nuno: «porque é que tiraste o botão de testar camadas?»): o botão vem do m90295 e às vezes não chega a ser
+    // criado (a página demora mais do que a espera dele). Para a equipa, se ao fim de 5 s não existir, cria-se aqui o mesmo botão.
+    setTimeout(function () {
+      if (document.getElementById("tcd-testar-cam") || !(window.tcdEquipa || window.tcdAdmin || document.body.classList.contains("admin-bar"))) return;
+      var t = document.createElement("button"); t.type = "button"; t.id = "tcd-testar-cam"; t.title = "Testar todas as camadas (só equipa)";
+      t.innerHTML = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg><span>Testar camadas</span>';
+      t.addEventListener("click", function () { var c = document.getElementById("ipe-cfg"); if (!c) return; c.click(); var n = 0, j = setInterval(function () { var d = document.querySelector("[data-cfga=diag]"); if (d) { clearInterval(j); d.click(); } else if (++n > 40) clearInterval(j); }, 100); });
+      linha.insertBefore(t, b);
+    }, 5000);
     var r = document.createElement("div"); r.id = "ipr-lig-r"; r.hidden = true; linha.parentNode.insertBefore(r, linha.nextSibling);
     function tempo(u, ms) {
       var c = new AbortController(), t0 = performance.now(), to = setTimeout(function () { c.abort(); }, ms || 8000);
@@ -2290,6 +2309,7 @@
       "#ipr-drop{margin:10px 0 6px;border:1.5px dashed var(--ln);border-radius:10px;padding:16px 10px;text-align:center;font:13px Inter,sans-serif;color:var(--mu);cursor:pointer}#ipr-drop.on{border-color:var(--ac,#75834a);color:var(--tx)}" +
       "#ipr-conv-l{list-style:none;margin:8px 0 0;padding:0}#ipr-conv-l li{border:1px solid var(--ln);border-radius:9px;padding:8px 9px;margin:0 0 6px;font:12.5px/1.4 Inter,sans-serif;color:var(--tx)}" +
       "#ipr-conv-l li b{display:block;font-size:13px;word-break:break-all}#ipr-conv-l li .e{color:var(--mu)}#ipr-conv-l li .e.ok{color:#7fae4a}#ipr-conv-l li .e.mau{color:#d9534f}" +
+      "#ipr-conv-l li .esc{float:left;margin:1px 7px 0 0}#ipr-conv-ligar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:8px 0 2px;font:12.5px Inter,sans-serif;color:var(--mu)}#ipr-conv-ligar select{flex:1;min-width:140px;width:auto}#ipr-conv-ligar button{font:600 12px Inter,sans-serif;padding:6px 10px;border:1px solid var(--ac,#75834a);border-radius:7px;background:var(--ac,#75834a);color:#fff;cursor:pointer}" +
       "#ipr-conv-l .ac{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}#ipr-conv-l .ac a,#ipr-conv-l .ac button{font:600 11.5px Inter,sans-serif;padding:4px 8px;border:1px solid var(--ln);border-radius:6px;color:var(--tx);background:transparent;text-decoration:none;cursor:pointer}";
     document.head.appendChild(st);
     var sel = document.createElement("div"); sel.id = "ipr-proc-sel";
@@ -2313,13 +2333,27 @@
       if (v === "conv" && !so) { projectos(); if (logado) lista(); }
     }
     sel.addEventListener("click", function (e) { var b = e.target.closest("button"); if (b) ver(b.dataset.v); });
+    var MEUS = [];
     function projectos() {
       var s = document.getElementById("ipr-conv-p"); if (!s || s.options.length > 1) return;
+      var g1 = document.createElement("optgroup"); g1.label = "Os meus projectos"; MEUS = [];
       document.querySelectorAll("#ipe-proj .ipe-card").forEach(function (c) {
         var m = /#(\d+)/.exec((c.querySelector(".mono") || {}).textContent || ""); if (!m) return;
         var nome = ((c.querySelector(".ipe-ct strong") || {}).textContent || "Terreno").trim();
-        var o = document.createElement("option"); o.value = m[1]; o.textContent = nome + " · #" + m[1]; s.appendChild(o);
+        if (MEUS.some(function (x) { return x[0] === m[1]; })) return; MEUS.push([m[1], nome]);
+        var o = document.createElement("option"); o.value = m[1]; o.textContent = nome + " · #" + m[1]; g1.appendChild(o);
       });
+      if (g1.children.length) s.appendChild(g1);
+      // 25/10, 18h56 (Nuno): os projectos da organização também («os que estão na organização não me aparecem»).
+      if (logado) api("org/grupos-meus").then(function (j) {
+        if (!j || !j.org || !j.pode) return; var vistos = {}, ps = [];
+        (j.grupos || []).forEach(function (g) { var m = /^(\d+\s[^·]{2,40}?)(?:\s·|$)/.exec((g.nome || "").trim()); if (m && !vistos[m[1]]) { vistos[m[1]] = 1; ps.push(m[1]); } });
+        if (!ps.length) return;
+        ps.sort(function (a, b) { return parseInt(a, 10) - parseInt(b, 10); });
+        var g2 = document.createElement("optgroup"); g2.label = "Organização · " + (j.nome || "");
+        ps.forEach(function (p) { var o = document.createElement("option"); o.value = "o:" + j.org + ":" + p; o.textContent = p; g2.appendChild(o); });
+        s.appendChild(g2);
+      }).catch(function () {});
     }
     if (!logado) { try { if (localStorage.getItem("ipr_proc_v") === "conv") ver("conv"); } catch (e) {} return true; }
     var drop = document.getElementById("ipr-drop"), inp = document.getElementById("ipr-conv-f"), msg = document.getElementById("ipr-conv-msg"), L = document.getElementById("ipr-conv-l");
@@ -2339,7 +2373,8 @@
       return f.arrayBuffer().then(sha).then(function (h) {
         var i = 0;
         function parte() {
-          var q = "carregar/parte?projecto=" + encodeURIComponent(proj) + "&alinhar=" + encodeURIComponent(proj) + "&nome=" + encodeURIComponent(f.name) + "&parte=" + i + "&partes=" + n + "&tamanho=" + f.size + "&saida=" + saidas() + (i === n - 1 ? "&sha256=" + h : "");
+          var og = /^o:(\d+):(.+)$/.exec(proj), pj = og ? "0" : proj;
+          var q = "carregar/parte?projecto=" + encodeURIComponent(pj) + "&alinhar=" + encodeURIComponent(pj) + (og ? "&org=" + og[1] + "&orgproj=" + encodeURIComponent(og[2]) : "") + "&nome=" + encodeURIComponent(f.name) + "&parte=" + i + "&partes=" + n + "&tamanho=" + f.size + "&saida=" + saidas() + (i === n - 1 ? "&sha256=" + h : "");
           msg.textContent = "A enviar " + f.name + (n > 1 ? " (" + (i + 1) + " de " + n + ")" : "") + "…";
           return api(q, { method: "POST", body: f.slice(i * PARTE, (i + 1) * PARTE), headers: { "Content-Type": "application/octet-stream" } }).then(function (j) { i++; return i < n ? parte() : j; });
         }
@@ -2353,15 +2388,29 @@
         L.innerHTML = fs.slice(0, 20).map(function (x) {
           var ac = FORM_S.filter(function (f) { return x[f[0]]; }).map(function (f) { return '<a href="' + esc48(x[f[0]]) + (f[0] === "geojson" ? "&dl=1" : "") + '" download>' + f[1] + "</a>"; }).join("");
           if (x.geojson) ac = '<button type="button" data-mapa="' + x.id + '">Ver no mapa</button>' + ac + '<button type="button" data-org="' + x.id + '">Juntar à organização</button>';
+          if (x.estado === "erro" || x.estado === "georref") ac = '<button type="button" data-rep="' + x.id + '">Tentar outra vez</button>' + ac;
           ac += '<button type="button" data-lixo="' + x.id + '">Apagar</button>';
           var cls = x.estado === "pronto" ? "ok" : (x.estado === "erro" || x.estado === "georref") ? "mau" : "";
-          return '<li><b>' + esc48(x.nome) + '</b><span class="e ' + cls + '">' + esc48(EST[x.estado] || x.estado) + (x.enc ? " · #" + x.enc : "") + "</span>" + (x.msg && x.estado !== "fila" ? '<div class="e">' + esc48(x.msg) + "</div>" : "") + '<div class="ac">' + ac + "</div></li>";
+          return '<li>' + (x.estado === "pronto" ? '<label class="esc"><input type="checkbox" data-esc="' + x.id + '"> </label>' : "") + '<b>' + esc48(x.nome) + '</b><span class="e ' + cls + '">' + esc48(EST[x.estado] || x.estado) + (x.enc ? " · #" + x.enc : "") + "</span>" + (x.msg && x.estado !== "fila" ? '<div class="e">' + esc48(x.msg) + "</div>" : "") + '<div class="ac">' + ac + "</div></li>";
         }).join("") || '<li class="e">Ainda não converteu nenhum ficheiro.</li>';
+        // 25/10, 19h44 (Nuno): escolher ficheiros convertidos e ligá-los a um projecto.
+        var bar = document.getElementById("ipr-conv-ligar");
+        if (fs.some(function (x) { return x.estado === "pronto"; })) {
+          if (!bar) { bar = document.createElement("div"); bar.id = "ipr-conv-ligar"; L.parentNode.insertBefore(bar, L); }
+          bar.innerHTML = '<span>Ligar os escolhidos a</span><select>' + MEUS.map(function (p) { return '<option value="' + esc48(p[0]) + '">' + esc48(p[1]) + " · #" + esc48(p[0]) + "</option>"; }).join("") + '</select><button type="button">Ligar</button>';
+          bar.querySelector("button").onclick = function () {
+            var ids = [].map.call(L.querySelectorAll("[data-esc]:checked"), function (c) { return +c.dataset.esc; }), pj = +bar.querySelector("select").value;
+            if (!ids.length) { msg.textContent = "Escolha primeiro os ficheiros (caixa à esquerda do nome)."; return; }
+            if (!pj) { msg.textContent = "Não tem projectos para ligar."; return; }
+            api("carregar/ligar", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ids: ids, projecto: pj }) }).then(function (j) { msg.textContent = (j.n || 0) + " ficheiro(s) ligado(s) ao projecto #" + pj + "."; lista(); }, function (x) { msg.textContent = x.message; });
+          };
+        } else if (bar) bar.remove();
         clearTimeout(rel); if (fs.some(function (x) { return x.estado === "fila" || x.estado === "converter"; })) rel = setTimeout(lista, 8000);
       }).catch(function (e) { L.innerHTML = '<li class="e mau">' + esc48(e.message) + "</li>"; });
     }
     L.addEventListener("click", function (e) {
       var b = e.target.closest("button"); if (!b) return;
+      if (b.dataset.rep) { b.disabled = true; api("carregar/repetir", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: +b.dataset.rep }) }).then(lista, function (x) { msg.textContent = x.message; b.disabled = false; }); }
       if (b.dataset.lixo) { b.disabled = true; api("carregar/apagar", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: +b.dataset.lixo }) }).then(lista, function (x) { msg.textContent = x.message; }); }
       if (b.dataset.org) { b.disabled = true; api("org/juntar", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ficheiro: +b.dataset.org }) }).then(function (j) { msg.textContent = j.m || "Juntado à organização."; }, function (x) { msg.textContent = x.message; b.disabled = false; }); }
       if (b.dataset.mapa) mostrar(+b.dataset.mapa, b);
