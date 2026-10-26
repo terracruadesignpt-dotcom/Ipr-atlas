@@ -2929,6 +2929,57 @@
     }, 2000);
     return true;
   }
+
+  // §59 Vista 3D do terreno dentro da ficha do projecto (especificação de 26/10, cap. 2; Nuno, 08h24: «o polígono que
+  // identifica cada projecto está ok; o 3D vai para dentro da ficha do projecto»). A miniatura do polígono fica como está.
+  // Modelo navegável (não vídeo): relevo Mapterhorn (LiDAR DGT 0,5 m onde existe; Copernicus GLO-30 no resto), imagem de
+  // satélite, limite do terreno por cima. Abre parado, enquadra a propriedade com margem, perspectiva oblíqua. Arrastar roda e
+  // inclina, roda do rato aproxima; botões: vista inicial, norte, ecrã inteiro, exagero vertical 1× / 2×. Também por
+  // «Ver em 3D» nas linhas dos projectos. Carrega só quando se abre (não atrasa a ficha).
+  function vista3d(alvo, id, emJanela) {
+    if (!window.maplibregl) return;
+    alvo.innerHTML = '<div class="ipr-3d-c"><div class="m"></div><div class="b"><button type="button" data-v="ini" title="Vista inicial">⟲</button><button type="button" data-v="n" title="Orientar a norte">N</button><button type="button" data-v="ex" title="Exagero vertical">1×</button><button type="button" data-v="ec" title="Ecrã inteiro">⤢</button>' + (emJanela ? '<button type="button" data-v="x" title="Fechar">✕</button>' : "") + '</div><div class="s">A carregar o relevo…</div></div>';
+    var C = alvo.querySelector(".m"), S = alvo.querySelector(".s");
+    plGeo(id).then(function (T) {
+      var gj = { type: "FeatureCollection", features: T.aneis.map(function (r) { return { type: "Feature", properties: {}, geometry: { type: "LineString", coordinates: r } }; }) };
+      var bx = [180, 90, -180, -90]; T.aneis.forEach(function (r) { r.forEach(function (c) { bx[0] = Math.min(bx[0], c[0]); bx[1] = Math.min(bx[1], c[1]); bx[2] = Math.max(bx[2], c[0]); bx[3] = Math.max(bx[3], c[1]); }); });
+      var m = new window.maplibregl.Map({ container: C, attributionControl: false, pitch: 60, bearing: -20, maxPitch: 85, interactive: true,
+        style: { version: 8, sources: { sat: { type: "raster", tiles: ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"], tileSize: 256, maxzoom: 19 }, dem: { type: "raster-dem", tiles: ["https://tiles.mapterhorn.com/{z}/{x}/{y}.webp"], encoding: "terrarium", tileSize: 512, maxzoom: 15 }, lim: { type: "geojson", data: gj } },
+          layers: [{ id: "sat", type: "raster", source: "sat" }, { id: "lim-s", type: "line", source: "lim", paint: { "line-color": "#000", "line-width": 5, "line-opacity": 0.35 } }, { id: "lim", type: "line", source: "lim", paint: { "line-color": "#ffd23f", "line-width": 2.5 } }], terrain: { source: "dem", exaggeration: 1 } } });
+      var ex = 1, ini = function () { m.fitBounds([[bx[0], bx[1]], [bx[2], bx[3]]], { padding: 40, pitch: 60, bearing: -20, duration: 0 }); };
+      m.on("load", function () { ini(); S.textContent = "Relevo: Mapterhorn (LiDAR DGT 0,5 m onde existe; Copernicus GLO-30 no resto) · imagem Esri World Imagery · escala vertical real (1×). Arraste para rodar e inclinar; roda do rato para aproximar."; });
+      m.on("error", function () { S.textContent = "Parte do relevo ou da imagem não carregou. Tente outra vez dentro de momentos."; });
+      alvo.querySelector(".b").addEventListener("click", function (e) {
+        var v = e.target.dataset && e.target.dataset.v; if (!v) return;
+        if (v === "ini") ini(); else if (v === "n") m.easeTo({ bearing: 0, duration: 400 });
+        else if (v === "ex") { ex = ex === 1 ? 2 : 1; m.setTerrain({ source: "dem", exaggeration: ex }); e.target.textContent = ex + "×"; S.textContent = ex === 1 ? "Escala vertical real (1×)." : "Exagero vertical 2× (só para leitura; as cotas e medições usam a escala real)."; }
+        else if (v === "ec") { var el = alvo.querySelector(".ipr-3d-c"); try { if (document.fullscreenElement) document.exitFullscreen(); else el.requestFullscreen(); } catch (x) {} setTimeout(function () { m.resize(); }, 300); }
+        else if (v === "x") { m.remove(); var j = document.getElementById("ipr-3d-j"); if (j) j.remove(); }
+      });
+      document.addEventListener("fullscreenchange", function () { setTimeout(function () { try { m.resize(); } catch (x) {} }, 200); });
+    }).catch(function (e) { S.textContent = e.message || "Sem limite do terreno para mostrar em 3D."; });
+  }
+  window.__iprVista3d = vista3d;
+  function vista3dFicha() {
+    if (!document.getElementById("ipr-3d-css")) {
+      var st = document.createElement("style"); st.id = "ipr-3d-css";
+      st.textContent = ".ipr-3d{margin:8px 0}.ipr-3d>button{font:600 12px Inter,sans-serif;padding:7px 10px;border-radius:8px;border:1px solid var(--ln,#333);background:transparent;color:var(--tx);cursor:pointer;width:100%}.ipr-3d-c{position:relative;background:#111}.ipr-3d-c .m{height:260px;border-radius:8px;overflow:hidden}.ipr-3d-c:fullscreen .m{height:100vh;border-radius:0}.ipr-3d-c .b{position:absolute;top:8px;right:8px;display:flex;flex-direction:column;gap:4px}.ipr-3d-c .b button{width:30px;height:30px;border-radius:7px;border:0;background:rgba(20,24,20,.82);color:#fff;font:700 13px Inter,sans-serif;cursor:pointer}.ipr-3d-c .s{font:11px Inter,sans-serif;color:var(--mu,#9aa08f);padding:4px 2px}#ipr-3d-j{position:fixed;inset:0;z-index:100003;background:rgba(10,12,10,.6);display:flex;align-items:center;justify-content:center;padding:16px}#ipr-3d-j>div{width:min(900px,100%);background:var(--p1,#141814);border-radius:12px;padding:10px}#ipr-3d-j .m{height:min(70vh,560px)}";
+      document.head.appendChild(st);
+    }
+    function porCartao() {
+      document.querySelectorAll("#ipe .ipe-card.on").forEach(function (c) {
+        if (c.querySelector(".ipr-3d")) return;
+        var id = +(c.querySelector(".mono") || {}).textContent.replace(/^#?(\d+).*/, "$1"); if (!id) return;
+        var d = document.createElement("div"); d.className = "ipr-3d"; d.innerHTML = '<button type="button">Ver o terreno em 3D</button>';
+        var cc = c.querySelector(".ipe-cc"); (cc ? cc.parentNode : c).insertBefore(d, cc ? cc.nextSibling : c.firstChild);
+        d.querySelector("button").addEventListener("click", function (e) { e.stopPropagation(); vista3d(d, id, false); });
+      });
+    }
+    porCartao();
+    if (!vista3dFicha.obs) { var ipe = document.getElementById("ipe"); if (!ipe) return false; vista3dFicha.obs = 1; new MutationObserver(function () { clearTimeout(vista3dFicha.t); vista3dFicha.t = setTimeout(porCartao, 150); }).observe(ipe, { childList: true, subtree: true }); }
+    return true;
+  }
+  function vista3dJanela(id) { var j = document.getElementById("ipr-3d-j"); if (j) j.remove(); j = document.createElement("div"); j.id = "ipr-3d-j"; j.innerHTML = "<div></div>"; document.body.appendChild(j); j.addEventListener("click", function (e) { if (e.target === j) j.remove(); }); vista3d(j.firstChild, id, true); }
   // §56 «Os meus locais» só uma vez (Nuno, 26/10, 00h37: «remove os meus locais em duplicado»). O app.js chama «Os meus locais»
   // a todos os grupos .ipc-loc e o arrumar() também; quando um grupo fica dentro do outro, ou dois ficam lado a lado, o título
   // aparece duas vezes. Não se mexe em texto (evita guerra de observadores): esconde-se só a linha de título repetida e o
@@ -3135,13 +3186,14 @@
       document.querySelectorAll("li.tme-t").forEach(function (li) {
         if (li.querySelector(".ipr-tma")) return; var id = idDe(li); if (!id) return;
         var d = document.createElement("div"); d.className = "ipr-tma"; d.dataset.id = id;
-        d.innerHTML = '<button type="button" data-a="planta">Planta de localização</button><button type="button" data-a="nome">Editar nome</button><button type="button" data-a="partilhar">Partilhar</button>' + (ADM ? '<button type="button" data-a="eliminar" class="del">Eliminar</button>' : "");
+        d.innerHTML = '<button type="button" data-a="v3d">Ver em 3D</button><button type="button" data-a="planta">Planta de localização</button><button type="button" data-a="nome">Editar nome</button><button type="button" data-a="partilhar">Partilhar</button>' + (ADM ? '<button type="button" data-a="eliminar" class="del">Eliminar</button>' : "");
         ["click", "mousedown", "pointerdown", "touchstart"].forEach(function (t) { d.addEventListener(t, function (e) { e.stopPropagation(); }); });
         d.addEventListener("click", function (e) {
           var b = e.target.closest("button"); if (!b) return; e.preventDefault();
           var nomeEl = li.querySelector("b"), f = d.querySelector(".f");
           if (b.dataset.a === "nome") { if (f) return; f = document.createElement("span"); f.className = "f"; f.innerHTML = '<input type="text" maxlength="90"><button type="button" data-a="gn">Guardar</button><button type="button" data-a="nao">Cancelar</button>'; f.querySelector("input").value = (nomeEl ? nomeEl.textContent : "").trim(); d.appendChild(f); f.querySelector("input").focus(); f.querySelector("input").addEventListener("keydown", function (ev) { ev.stopPropagation(); if (ev.key === "Enter") f.querySelector('[data-a="gn"]').click(); }); return; }
           if (b.dataset.a === "planta") { plantaDialogo(id); return; }
+          if (b.dataset.a === "v3d") { vista3dJanela(id); return; }
           if (b.dataset.a === "nao") { if (f) f.remove(); return; }
           if (b.dataset.a === "gn") { b.disabled = true; api("projecto/nome", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ projecto: id, nome: f.querySelector("input").value.trim() }) }).then(function (j) { if (nomeEl) nomeEl.textContent = j.nome; f.remove(); }).catch(function (x) { b.disabled = false; b.textContent = x.message; }); return; }
           if (b.dataset.a === "partilhar") { if (/[?&]mapa=(\d+)/.exec(location.search) && +RegExp.$1 === id) { var c = [].slice.call(document.querySelectorAll("#ipe-proj .ipe-card")).filter(function (k) { return new RegExp("#" + id + "\\b").test(k.textContent); })[0]; var bt = c && c.querySelector("[data-psh]"); if (bt) { bt.click(); return; } } location.href = "/atlas/?mapa=" + id + "#partilhar"; return; }
@@ -3336,7 +3388,7 @@
   }
   function correr() {
     voltas++;
-    [["marca", marca], ["puxadores", puxadores], ["creditos", creditos], ["estado", estado], ["formiga", formiga], ["projectos", projectos], ["editavel", editavel], ["semBug", semBug], ["rosa", rosa], ["arrumar", arrumar], ["projDir", projDir], ["testarEsq", testarEsq], ["contaTopo", contaTopo], ["camadasTopo", camadasTopo], ["sintetizar", sintetizar], ["opcoesCamadas", opcoesCamadas], ["projFechados", projFechados], ["todasMais", todasMais], ["painelTopo", painelTopo], ["qfieldQR", qfieldQR], ["temas", temas], ["natural", natural], ["aprenderDesenho", aprenderDesenho], ["fichas", fichasCamada], ["natureza", fichasNatureza], ["parcelas", parcelasPonto], ["partilhaQR", partilhaQR], ["teclado", tecladoVirtual], ["prefs", prefsConta], ["cronologia", cronologia], ["alcanena", pilotoAlcanena], ["estilosOrg", estilosOrg], ["fimDoVoo", fimDoVoo], ["orgNomes", orgNomes], ["projRecolhidos", projRecolhidos], ["instalarApp", instalarApp], ["temaEscuro", temaEscuro], ["orgPastas", orgVista], ["discricao", discricao], ["estradas", estradas], ["cloudLimpo", cloudLimpo], ["navEsquerda", navEsquerda], ["encomendaCompacta", encomendaCompacta], ["testarLigacao", testarLigacao], ["linguetaEsq", linguetaEsq], ["longe", longe], ["arrumarCamadas", arrumarCamadas], ["separadores", separadores], ["processar", processar], ["cartoes", cartoes], ["diagMundo", diagMundo], ["foraDoPais", foraDoPais], ["subPastas", subPastas], ["projOrg", projOrg], ["linhasProj", linhasProj], ["locaisUnico", locaisUnico], ["perfil", perfil], ["rosaSegura", rosaSegura]].forEach(function (f) { if (!feito[f[0]]) { try { feito[f[0]] = f[1](); } catch (e) {} } });
+    [["marca", marca], ["puxadores", puxadores], ["creditos", creditos], ["estado", estado], ["formiga", formiga], ["projectos", projectos], ["editavel", editavel], ["semBug", semBug], ["rosa", rosa], ["arrumar", arrumar], ["projDir", projDir], ["testarEsq", testarEsq], ["contaTopo", contaTopo], ["camadasTopo", camadasTopo], ["sintetizar", sintetizar], ["opcoesCamadas", opcoesCamadas], ["projFechados", projFechados], ["todasMais", todasMais], ["painelTopo", painelTopo], ["qfieldQR", qfieldQR], ["temas", temas], ["natural", natural], ["aprenderDesenho", aprenderDesenho], ["fichas", fichasCamada], ["natureza", fichasNatureza], ["parcelas", parcelasPonto], ["partilhaQR", partilhaQR], ["teclado", tecladoVirtual], ["prefs", prefsConta], ["cronologia", cronologia], ["alcanena", pilotoAlcanena], ["estilosOrg", estilosOrg], ["fimDoVoo", fimDoVoo], ["orgNomes", orgNomes], ["projRecolhidos", projRecolhidos], ["instalarApp", instalarApp], ["temaEscuro", temaEscuro], ["orgPastas", orgVista], ["discricao", discricao], ["estradas", estradas], ["cloudLimpo", cloudLimpo], ["navEsquerda", navEsquerda], ["encomendaCompacta", encomendaCompacta], ["testarLigacao", testarLigacao], ["linguetaEsq", linguetaEsq], ["longe", longe], ["arrumarCamadas", arrumarCamadas], ["separadores", separadores], ["processar", processar], ["cartoes", cartoes], ["diagMundo", diagMundo], ["foraDoPais", foraDoPais], ["subPastas", subPastas], ["projOrg", projOrg], ["linhasProj", linhasProj], ["locaisUnico", locaisUnico], ["perfil", perfil], ["rosaSegura", rosaSegura], ["vista3dFicha", vista3dFicha]].forEach(function (f) { if (!feito[f[0]]) { try { feito[f[0]] = f[1](); } catch (e) {} } });
     try { nomes(); } catch (e) {}
     try { equipa(); } catch (e) {}
     try { if (window.__iprTodas && !document.getElementById("ipr-todas")) todasBases(); } catch (e) {}
