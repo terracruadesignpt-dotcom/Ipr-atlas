@@ -4689,9 +4689,145 @@
     pinta(); lg.parentNode.insertBefore(w, lg); zoomAplicar67(val());
     return true;
   }
+  // §68 Perfis municipais (Município de Almodôvar, Nuno 26/10/2026; módulo m90377 do Núcleo). Quem entra por um código do
+  // Município traz um perfil (Presidência, Protecção Civil / GTF, Urbanismo, Ambiente e clima, Obras, Junta de Freguesia),
+  // posto pelo site em window.IPR_PERFIL_ORG (e em window.IPR_PERFIL.municipal, sem mexer no resto do IPR_PERFIL do m90208).
+  // Na primeira abertura do Atlas em cada sessão (e se o endereço não pede outro sítio: ?mapa=, ?org_camada=, ?ll=), abre o
+  // tema do perfil (§62), liga as camadas do perfil e centra no concelho ou na freguesia (limite CAOP quando o site o tem, senão
+  // um centro aproximado). Na primeira vez neste navegador mostra boas-vindas próprias, em português e inglês, que substituem a
+  // triagem do §63; voltam pelo botão com o nome da entidade no topo. Sem perfil municipal, nada disto corre.
+  var L68 = {
+    pt: {
+      ola: "Bem-vindo ao IPR Atlas, {e}", sub: "Oferta do IPR – Instituto de Planeamento Regenerativo e da Terracrua Design ao Município de Almodôvar.",
+      perfil: "Perfil", tema: "Tema aberto", ligadas: "Camadas ligadas", ferr: "Ferramentas úteis", pastas: "Pastas de trabalho",
+      pastasT: "No separador Organização: Comum (todo o concelho), a pasta da sua entidade e as que lhe forem partilhadas.",
+      verConcelho: "Ver o concelho", verFreguesia: "Ver a freguesia", abrirOrg: "Abrir as pastas", comecar: "Começar", rever: "Boas-vindas",
+      aprox: "Centro aproximado: o limite oficial (CAOP 2025) entra quando a equipa o carregar.",
+      base: "Base Cartográfica oferecida: {n} por pedir, até {ha} ha.", baseJ: "Desenhe o terreno dentro da freguesia e peça-a em Encomendar. O que passar da oferta é pago.",
+      baseC: "Peça-as em Encomendar. O que passar da oferta é pago.", baseFim: "A Base Cartográfica oferecida já foi pedida. Outras Bases são pagas.", pedirBase: "Pedir a Base",
+      p_pres: "Síntese do concelho: limites das freguesias, perigosidade de incêndio, ordenamento do PDM e ocupação do solo, para ver o território inteiro de uma vez.",
+      p_pc: "Fogo: perigosidade estrutural, áreas ardidas, rede primária de faixas de gestão de combustível, zonas de intervenção florestal, pontos de água DFCI e caminhos. Use a vista 3D para o relevo e o QField para as notas de campo.",
+      p_urb: "Condicionantes: qualificação do solo do PDM, REN, RAN, domínio público hídrico, servidões oficiais (SRUP) e cadastro. A Planta de Localização faz-se a partir de um terreno guardado num projecto.",
+      p_amb: "Ecologia, água e seca, solo e vegetação: habitats, Rede Natura 2000, áreas protegidas, densidade de copa, árvores isoladas e sebes, ocupação e carta de solos, linhas de água. Serve de base ao Plano Municipal de Acção Climática.",
+      p_obras: "Caminhos, linhas de água e relevo, com ortofotos de vários anos (Imagens antigas) e notas no mapa para registar o que se vê no terreno.",
+      p_junta: "Conhecer o terreno da freguesia: caminhos, pontos de água, nascentes e poços, cadastro e linhas de água. Marque notas no mapa e leve o trabalho para o QField."
+    },
+    en: {
+      ola: "Welcome to the IPR Atlas, {e}", sub: "Offered by IPR – Instituto de Planeamento Regenerativo and Terracrua Design to the Municipality of Almodôvar.",
+      perfil: "Profile", tema: "Theme opened", ligadas: "Layers turned on", ferr: "Useful tools", pastas: "Working folders",
+      pastasT: "In the Organisation tab: Common (the whole municipality), your own body's folder and any shared with you.",
+      verConcelho: "Show the municipality", verFreguesia: "Show the parish", abrirOrg: "Open the folders", comecar: "Start", rever: "Welcome",
+      aprox: "Approximate centre: the official boundary (CAOP 2025) appears once the team uploads it.",
+      base: "Base Map offered: {n} left to order, up to {ha} ha.", baseJ: "Draw the plot inside the parish and order it under Order. Anything beyond the offer is paid.",
+      baseC: "Order them under Order. Anything beyond the offer is paid.", baseFim: "The Base Map offered has already been ordered. Further Base Maps are paid.", pedirBase: "Order the Base Map",
+      p_pres: "Overview of the municipality: parish boundaries, wildfire hazard, municipal plan (PDM) zoning and land cover, to see the whole territory at once.",
+      p_pc: "Fire: structural hazard, burnt areas, the primary fuel-break network, forest intervention zones, DFCI water points and tracks. Use the 3D view for terrain and QField for field notes.",
+      p_urb: "Constraints: PDM land classification, REN, RAN, public water domain, official easements (SRUP) and land registry. The Location Plan is made from a plot saved in a project.",
+      p_amb: "Ecology, water and drought, soil and vegetation: habitats, Natura 2000, protected areas, canopy density, isolated trees and hedgerows, land cover, soil map and watercourses. A base for the Municipal Climate Action Plan.",
+      p_obras: "Tracks, watercourses and terrain, with orthophotos from several years (Older imagery) and notes on the map to record what you see on site.",
+      p_junta: "Get to know the parish: tracks, water points, springs and wells, land registry and watercourses. Drop notes on the map and take the work into QField."
+    }
+  };
+  function t68(k, v) {
+    var l = window.IPR_LINGUA, s = (L68[l] && L68[l][k] != null) ? L68[l][k] : (L68.pt[k] != null ? L68.pt[k] : k);
+    if (v) Object.keys(v).forEach(function (x) { s = s.split("{" + x + "}").join(v[x]); });
+    return s;
+  }
+  function perfil68() { var p = window.IPR_PERFIL_ORG || (window.IPR_PERFIL && window.IPR_PERFIL.municipal); return p && p.perfil ? p : null; }
+  // com perfil municipal, a triagem genérica do §63 não abre sozinha: as boas-vindas fazem esse papel
+  (function () { if (perfil68() && !ler("ipr_triagem_v1")) gravar("ipr_triagem_v1", JSON.stringify({ q: null, p: 0, t: Date.now(), m68: 1 })); })();
+  function chave68(P) { return "ipr_m68_" + P.perfil + "_" + (P.entidade || ""); }
+  function centrar68(P) {
+    var M = mapa(); if (!M) return;
+    var b = P.bbox;
+    try {
+      if (b && b.length === 4) M.fitBounds([[b[0], b[1]], [b[2], b[3]]], { padding: 40, duration: 900 });
+      else if (P.centro) M.easeTo({ center: P.centro, zoom: P.zoom || 11, duration: 900 });
+    } catch (e) {}
+  }
+  function pintar68() {
+    var P = perfil68(), o = document.getElementById("ipr-m68"); if (!P || !o) return;
+    var C = catIdx(), J = /^j_/.test(P.entidade || ""), nomePerfil = window.IPR_LINGUA === "pt" ? P.perfil_nome : (P.perfil_en || P.perfil_nome);
+    var cam = (P.camadas || []).map(function (id) { return C[id] ? nomeCamada(C[id]) : ""; }).filter(Boolean);
+    var h = '<div class="ipr-m68-c" role="dialog" aria-modal="false" aria-labelledby="ipr-m68-t"><div class="ipr-m68-top">' + selLingua("ipr-lg-t") + '<button type="button" class="x" data-a68="fechar" aria-label="' + esc62(t62("fechar")) + '">×</button></div>';
+    h += '<h2 id="ipr-m68-t">' + esc62(t68("ola", { e: P.entidade_curta || P.entidade_nome || "" })) + '</h2><p class="sub">' + esc62(t68("sub")) + "</p>";
+    h += '<p class="k">' + esc62(t68("perfil")) + " · <b>" + esc62(nomePerfil) + "</b></p><p>" + esc62(t68("p_" + P.perfil)) + "</p>";
+    if (P.tema) h += '<p class="k">' + esc62(t68("tema")) + " · <b>" + esc62(t62("t_" + P.tema)) + "</b></p>";
+    if (cam.length) h += '<p class="k">' + esc62(t68("ligadas")) + '</p><p class="l">' + cam.map(esc62).join(" · ") + "</p>";
+    if ((P.ferr || []).length) h += '<p class="k">' + esc62(t68("ferr")) + '</p><div class="a">' + P.ferr.map(function (f) { return '<button type="button" data-f68="' + esc62(f) + '">' + esc62(t62("f_" + f)) + "</button>"; }).join("") + "</div>";
+    h += '<p class="k">' + esc62(t68("pastas")) + "</p><p>" + esc62(t68("pastasT")) + "</p>";
+    if (P.base) {
+      if (P.base.resta_n > 0) h += '<p class="bs">' + esc62(t68("base", { n: P.base.resta_n, ha: Math.round(P.base.resta_ha) })) + " " + esc62(t68(J ? "baseJ" : "baseC")) + "</p>";
+      else h += '<p class="bs">' + esc62(t68("baseFim")) + "</p>";
+    }
+    if (P.aprox) h += '<p class="n">' + esc62(t68("aprox")) + "</p>";
+    h += '<div class="a fim"><button type="button" data-a68="centrar">' + esc62(t68(J ? "verFreguesia" : "verConcelho")) + '</button><button type="button" data-a68="org">' + esc62(t68("abrirOrg")) + "</button>" +
+      (P.base && P.base.resta_n > 0 ? '<button type="button" data-a68="base">' + esc62(t68("pedirBase")) + "</button>" : "") +
+      '<button type="button" class="pri" data-a68="fechar">' + esc62(t68("comecar")) + "</button></div></div>";
+    o.innerHTML = h;
+    var f = o.querySelector("h2"); if (f) { f.setAttribute("tabindex", "-1"); try { f.focus({ preventScroll: true }); } catch (e) {} }
+  }
+  function abrir68() {
+    var o = document.getElementById("ipr-m68");
+    if (!o) {
+      o = document.createElement("div"); o.id = "ipr-m68"; (document.getElementById("ipe") || document.body).appendChild(o);
+      o.addEventListener("click", function (e) {
+        var b, P = perfil68();
+        if ((b = e.target.closest("[data-f68]"))) { fechar68(); ferramenta(b.getAttribute("data-f68")); return; }
+        if (!(b = e.target.closest("[data-a68]"))) { if (e.target === o) fechar68(); return; }
+        var a = b.getAttribute("data-a68");
+        if (a === "fechar") return fechar68();
+        if (a === "centrar") { fechar68(); centrar68(P); return; }
+        if (a === "org") { fechar68(); if (!abrirSeparador("org")) abrirSeparador("proj"); return; }
+        if (a === "base") { fechar68(); produto("base"); return; }
+      });
+      o.addEventListener("keydown", function (e) { if (e.key === "Escape") { e.stopPropagation(); fechar68(); } });
+      document.addEventListener("ipr:lingua", function () { if (!o.hidden) pintar68(); });
+    }
+    o.hidden = false; pintar68();
+  }
+  function fechar68() { var o = document.getElementById("ipr-m68"), P = perfil68(); if (o) o.hidden = true; if (P) gravar(chave68(P) + "_bv", "1"); }
+  function municipal68() {
+    var P = perfil68(); if (!P || !noAtlas()) return true;
+    var R = viz(), M = mapa(); if (!R || !M || !window.__iprTemas) return false;
+    var k = chave68(P), sess = null; try { sess = sessionStorage.getItem(k); } catch (e) {}
+    var q = location.search, proprio = /[?&](mapa|org_camada|ll)=/.test(q);
+    if (!sess && !proprio) {
+      try { sessionStorage.setItem(k, "1"); } catch (e) {}
+      if (P.tema) { try { window.__iprTemas.aplicar(P.tema); } catch (e) {} }
+      (P.camadas || []).forEach(function (id) { try { if (R.activas().indexOf(id) < 0) R.ligar(id, true); } catch (e) {} });
+      setTimeout(function () { centrar68(P); }, 350);
+    }
+    var top = document.querySelector("#ipe .ipe-top .ipe-tr") || document.querySelector("#ipe .ipe-tr");
+    if (top && !document.getElementById("ipr-m68-b")) {
+      var b = document.createElement("button"); b.type = "button"; b.id = "ipr-m68-b"; b.className = "ipr-comecar";
+      function rot() { b.textContent = P.entidade_curta || t68("rever"); b.title = t68("rever"); b.setAttribute("aria-label", t68("rever") + " · " + (P.entidade_curta || "")); }
+      rot(); document.addEventListener("ipr:lingua", rot);
+      b.addEventListener("click", function () { var o = document.getElementById("ipr-m68"); if (o && !o.hidden) fechar68(); else abrir68(); });
+      var ref = document.getElementById("ipr-comecar"); if (ref && ref.parentNode === top) top.insertBefore(b, ref); else top.insertBefore(b, top.firstChild);
+    }
+    if (!ler(k + "_bv")) abrir68();
+    return true;
+  }
+  (function () {
+    if (document.getElementById("ipr-m68-css")) return;
+    var st = document.createElement("style"); st.id = "ipr-m68-css";
+    st.textContent =
+      "#ipr-m68{position:fixed;inset:0;z-index:100002;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(10,12,10,.55);font:14px Inter,sans-serif;color:var(--tx,#e9eadf)}#ipr-m68[hidden]{display:none}" +
+      "#ipr-m68 .ipr-m68-c{width:min(600px,100%);max-height:calc(100dvh - 32px);overflow:auto;background:var(--p1,#141814);border:1px solid var(--ln,#2c312a);border-radius:16px;padding:20px 22px 18px;box-shadow:0 20px 60px rgba(0,0,0,.4)}" +
+      "#ipr-m68 .ipr-m68-top{display:flex;justify-content:flex-end;align-items:center;gap:10px;margin:-6px -8px 4px 0}#ipr-m68 .x{width:36px;height:36px;border-radius:50%;border:1px solid var(--ln,#2c312a);background:transparent;color:var(--tx,#e9eadf);font-size:20px;line-height:1;cursor:pointer}" +
+      "#ipr-m68 h2{font:600 21px/1.25 Inter,sans-serif;margin:0 0 4px;outline:none}#ipr-m68 .sub{margin:0 0 12px;color:var(--mu,#9aa08f);font-size:13px;line-height:1.45}" +
+      "#ipr-m68 p{margin:0 0 8px;line-height:1.5}#ipr-m68 .k{margin:12px 0 4px;font:600 10.5px Inter,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--mu,#9aa08f)}#ipr-m68 .k b{text-transform:none;letter-spacing:0;font-size:13px;color:var(--tx,#e9eadf)}" +
+      "#ipr-m68 .l{font-size:12.5px;color:var(--tx,#e9eadf)}#ipr-m68 .bs{padding:8px 10px;border-left:3px solid var(--ac,#b5c46a);background:var(--p2,#1d221c);font-size:13px}#ipr-m68 .n{font-size:12px;color:var(--mu,#9aa08f)}" +
+      "#ipr-m68 .a{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 6px}#ipr-m68 .a button{font:500 13px Inter,sans-serif;padding:8px 12px;border-radius:9px;border:1px solid var(--ln,#2c312a);background:transparent;color:var(--tx,#e9eadf);cursor:pointer;min-height:38px}#ipr-m68 .a button:hover{border-color:var(--ac,#b5c46a)}" +
+      "#ipr-m68 .a.fim{border-top:1px solid var(--ln,#2c312a);padding-top:12px;margin-top:12px}#ipr-m68 .a button.pri{margin-left:auto;background:var(--ac,#b5c46a);border-color:var(--ac,#b5c46a);color:#141814;font-weight:600}" +
+      "@media (max-width:600px){#ipr-m68{padding:0;align-items:flex-end}#ipr-m68 .ipr-m68-c{width:100%;max-height:92dvh;border-radius:16px 16px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom))}#ipr-m68 h2{font-size:18px}#ipr-m68 .a.fim button{flex:1 1 45%}#ipr-m68 .a button.pri{margin-left:0}#ipr-m68-b{max-width:110px;overflow:hidden;text-overflow:ellipsis}}";
+    (document.head || document.documentElement).appendChild(st);
+  })();
+
   function correr() {
     voltas++;
-    [["marca", marca], ["puxadores", puxadores], ["creditos", creditos], ["estado", estado], ["formiga", formiga], ["projectos", projectos], ["editavel", editavel], ["semBug", semBug], ["rosa", rosa], ["arrumar", arrumar], ["projDir", projDir], ["testarEsq", testarEsq], ["contaTopo", contaTopo], ["camadasTopo", camadasTopo], ["sintetizar", sintetizar], ["opcoesCamadas", opcoesCamadas], ["projFechados", projFechados], ["todasMais", todasMais], ["painelTopo", painelTopo], ["qfieldQR", qfieldQR], ["temas", temas], ["natural", natural], ["aprenderDesenho", aprenderDesenho], ["fichas", fichasCamada], ["natureza", fichasNatureza], ["parcelas", parcelasPonto], ["partilhaQR", partilhaQR], ["teclado", tecladoVirtual], ["prefs", prefsConta], ["cronologia", cronologia], ["alcanena", pilotoAlcanena], ["estilosOrg", estilosOrg], ["fimDoVoo", fimDoVoo], ["orgNomes", orgNomes], ["projRecolhidos", projRecolhidos], ["instalarApp", instalarApp], ["temaEscuro", temaEscuro], ["orgPastas", orgVista], ["discricao", discricao], ["estradas", estradas], ["cloudLimpo", cloudLimpo], ["navEsquerda", navEsquerda], ["encomendaCompacta", encomendaCompacta], ["testarLigacao", testarLigacao], ["linguetaEsq", linguetaEsq], ["longe", longe], ["arrumarCamadas", arrumarCamadas], ["separadores", separadores], ["processar", processar], ["cartoes", cartoes], ["diagMundo", diagMundo], ["foraDoPais", foraDoPais], ["subPastas", subPastas], ["projOrg", projOrg], ["linhasProj", linhasProj], ["locaisUnico", locaisUnico], ["perfil", perfil], ["rosaSegura", rosaSegura], ["vista3dFicha", vista3dFicha], ["temas62", temas62], ["triagem63", triagem63], ["grande65", grande65], ["nav65", nav65], ["guarda65", guarda65], ["refresh65", refresh65], ["esquerda66", esquerda66], ["zoom67", zoom67]].forEach(function (f) { if (!feito[f[0]]) { try { feito[f[0]] = f[1](); } catch (e) {} } });
+    [["marca", marca], ["puxadores", puxadores], ["creditos", creditos], ["estado", estado], ["formiga", formiga], ["projectos", projectos], ["editavel", editavel], ["semBug", semBug], ["rosa", rosa], ["arrumar", arrumar], ["projDir", projDir], ["testarEsq", testarEsq], ["contaTopo", contaTopo], ["camadasTopo", camadasTopo], ["sintetizar", sintetizar], ["opcoesCamadas", opcoesCamadas], ["projFechados", projFechados], ["todasMais", todasMais], ["painelTopo", painelTopo], ["qfieldQR", qfieldQR], ["temas", temas], ["natural", natural], ["aprenderDesenho", aprenderDesenho], ["fichas", fichasCamada], ["natureza", fichasNatureza], ["parcelas", parcelasPonto], ["partilhaQR", partilhaQR], ["teclado", tecladoVirtual], ["prefs", prefsConta], ["cronologia", cronologia], ["alcanena", pilotoAlcanena], ["estilosOrg", estilosOrg], ["fimDoVoo", fimDoVoo], ["orgNomes", orgNomes], ["projRecolhidos", projRecolhidos], ["instalarApp", instalarApp], ["temaEscuro", temaEscuro], ["orgPastas", orgVista], ["discricao", discricao], ["estradas", estradas], ["cloudLimpo", cloudLimpo], ["navEsquerda", navEsquerda], ["encomendaCompacta", encomendaCompacta], ["testarLigacao", testarLigacao], ["linguetaEsq", linguetaEsq], ["longe", longe], ["arrumarCamadas", arrumarCamadas], ["separadores", separadores], ["processar", processar], ["cartoes", cartoes], ["diagMundo", diagMundo], ["foraDoPais", foraDoPais], ["subPastas", subPastas], ["projOrg", projOrg], ["linhasProj", linhasProj], ["locaisUnico", locaisUnico], ["perfil", perfil], ["rosaSegura", rosaSegura], ["vista3dFicha", vista3dFicha], ["temas62", temas62], ["triagem63", triagem63], ["grande65", grande65], ["nav65", nav65], ["guarda65", guarda65], ["refresh65", refresh65], ["esquerda66", esquerda66], ["zoom67", zoom67], ["municipal68", municipal68]].forEach(function (f) { if (!feito[f[0]]) { try { feito[f[0]] = f[1](); } catch (e) {} } });
     try { nomes(); } catch (e) {}
     try { equipa(); } catch (e) {}
     try { if (window.__iprTodas && !document.getElementById("ipr-todas")) todasBases(); } catch (e) {}
