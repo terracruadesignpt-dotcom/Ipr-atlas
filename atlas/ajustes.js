@@ -3674,7 +3674,7 @@
       '<label>Finalidade<select data-k="finalidade"><option>Apresentação</option><option>Trabalho técnico</option><option>Processo municipal</option></select></label>' +
       '<div class="mun" hidden><label>Município<input data-k="municipio" type="text"></label><label>Procedimento<input data-k="proc" type="text" placeholder="ex.: comunicação prévia"></label></div>' +
       '<div class="g"><label>Papel<select data-k="papel"><option>A4</option><option>A3</option></select></label><label>Orientação<select data-k="orient"><option value="auto">Automática</option><option value="h">Horizontal</option><option value="v">Vertical</option></select></label>' +
-      '<label>Escala<select data-k="escala"><option value="0">A maior que cabe</option><option value="1000">1:1 000</option><option value="2000">1:2 000</option><option value="5000">1:5 000</option><option value="10000">1:10 000</option><option value="25000">1:25 000</option></select></label>' +
+      '<label>Escala<select data-k="escala"><option value="0">A menor possível (mais pormenor)</option><option value="1000">1:1 000</option><option value="2000">1:2 000</option><option value="5000">1:5 000</option><option value="10000">1:10 000</option><option value="25000">1:25 000</option></select></label>' +
       '<label>Fundo<select data-k="fundo"><option value="orto">Ortofotomapa 2025</option><option value="sat">Satélite 2023</option></select></label></div>' +
       '<label>Requerente (opcional)<input data-k="requerente" type="text"></label>' +
       '<fieldset class="fl"><legend>Folhas a incluir</legend><label class="ck"><input type="checkbox" checked disabled> Localização</label>' +
@@ -4591,9 +4591,27 @@
     rever(); new MutationObserver(function () { clearTimeout(guarda65.t); guarda65.t = setTimeout(rever, 200); }).observe(cam, { childList: true, subtree: true });
     return true;
   }
+
+  // Botão «Actualizar» ao lado do botão App (Nuno, 26/10/2026, 18h45: «a app não tem um botão de refresh»). Na app instalada
+  // não há barra do navegador; o botão recarrega o Atlas sem perder o sítio (o endereço leva o #).
+  function refresh65() {
+    var tm = document.getElementById("ipe-tema"); if (!tm || !tm.parentNode) return false;
+    if (document.getElementById("ipr-ref")) return true;
+    var b = document.createElement("button"); b.type = "button"; b.id = "ipr-ref"; b.className = tm.className;
+    var pt = (window.IPR_LINGUA || "pt") === "pt";
+    b.title = pt ? "Actualizar o Atlas" : "Reload the Atlas"; b.setAttribute("aria-label", b.title);
+    b.innerHTML = '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg>';
+    var ap = document.getElementById("ipr-app-b"); tm.parentNode.insertBefore(b, ap && ap.parentNode === tm.parentNode ? ap.nextSibling : tm.nextSibling);
+    b.addEventListener("click", function () {
+      b.disabled = true; b.style.opacity = ".5";
+      try { var u = new URL(location.href); u.searchParams.set("r", String(Date.now()).slice(-6)); location.replace(u.toString()); } catch (e) { location.reload(); }
+    });
+    document.addEventListener("ipr:lingua", function () { var p2 = (window.IPR_LINGUA || "pt") === "pt"; b.title = p2 ? "Actualizar o Atlas" : "Reload the Atlas"; b.setAttribute("aria-label", b.title); });
+    return true;
+  }
   function correr() {
     voltas++;
-    [["marca", marca], ["puxadores", puxadores], ["creditos", creditos], ["estado", estado], ["formiga", formiga], ["projectos", projectos], ["editavel", editavel], ["semBug", semBug], ["rosa", rosa], ["arrumar", arrumar], ["projDir", projDir], ["testarEsq", testarEsq], ["contaTopo", contaTopo], ["camadasTopo", camadasTopo], ["sintetizar", sintetizar], ["opcoesCamadas", opcoesCamadas], ["projFechados", projFechados], ["todasMais", todasMais], ["painelTopo", painelTopo], ["qfieldQR", qfieldQR], ["temas", temas], ["natural", natural], ["aprenderDesenho", aprenderDesenho], ["fichas", fichasCamada], ["natureza", fichasNatureza], ["parcelas", parcelasPonto], ["partilhaQR", partilhaQR], ["teclado", tecladoVirtual], ["prefs", prefsConta], ["cronologia", cronologia], ["alcanena", pilotoAlcanena], ["estilosOrg", estilosOrg], ["fimDoVoo", fimDoVoo], ["orgNomes", orgNomes], ["projRecolhidos", projRecolhidos], ["instalarApp", instalarApp], ["temaEscuro", temaEscuro], ["orgPastas", orgVista], ["discricao", discricao], ["estradas", estradas], ["cloudLimpo", cloudLimpo], ["navEsquerda", navEsquerda], ["encomendaCompacta", encomendaCompacta], ["testarLigacao", testarLigacao], ["linguetaEsq", linguetaEsq], ["longe", longe], ["arrumarCamadas", arrumarCamadas], ["separadores", separadores], ["processar", processar], ["cartoes", cartoes], ["diagMundo", diagMundo], ["foraDoPais", foraDoPais], ["subPastas", subPastas], ["projOrg", projOrg], ["linhasProj", linhasProj], ["locaisUnico", locaisUnico], ["perfil", perfil], ["rosaSegura", rosaSegura], ["vista3dFicha", vista3dFicha], ["temas62", temas62], ["triagem63", triagem63], ["grande65", grande65], ["nav65", nav65], ["guarda65", guarda65]].forEach(function (f) { if (!feito[f[0]]) { try { feito[f[0]] = f[1](); } catch (e) {} } });
+    [["marca", marca], ["puxadores", puxadores], ["creditos", creditos], ["estado", estado], ["formiga", formiga], ["projectos", projectos], ["editavel", editavel], ["semBug", semBug], ["rosa", rosa], ["arrumar", arrumar], ["projDir", projDir], ["testarEsq", testarEsq], ["contaTopo", contaTopo], ["camadasTopo", camadasTopo], ["sintetizar", sintetizar], ["opcoesCamadas", opcoesCamadas], ["projFechados", projFechados], ["todasMais", todasMais], ["painelTopo", painelTopo], ["qfieldQR", qfieldQR], ["temas", temas], ["natural", natural], ["aprenderDesenho", aprenderDesenho], ["fichas", fichasCamada], ["natureza", fichasNatureza], ["parcelas", parcelasPonto], ["partilhaQR", partilhaQR], ["teclado", tecladoVirtual], ["prefs", prefsConta], ["cronologia", cronologia], ["alcanena", pilotoAlcanena], ["estilosOrg", estilosOrg], ["fimDoVoo", fimDoVoo], ["orgNomes", orgNomes], ["projRecolhidos", projRecolhidos], ["instalarApp", instalarApp], ["temaEscuro", temaEscuro], ["orgPastas", orgVista], ["discricao", discricao], ["estradas", estradas], ["cloudLimpo", cloudLimpo], ["navEsquerda", navEsquerda], ["encomendaCompacta", encomendaCompacta], ["testarLigacao", testarLigacao], ["linguetaEsq", linguetaEsq], ["longe", longe], ["arrumarCamadas", arrumarCamadas], ["separadores", separadores], ["processar", processar], ["cartoes", cartoes], ["diagMundo", diagMundo], ["foraDoPais", foraDoPais], ["subPastas", subPastas], ["projOrg", projOrg], ["linhasProj", linhasProj], ["locaisUnico", locaisUnico], ["perfil", perfil], ["rosaSegura", rosaSegura], ["vista3dFicha", vista3dFicha], ["temas62", temas62], ["triagem63", triagem63], ["grande65", grande65], ["nav65", nav65], ["guarda65", guarda65], ["refresh65", refresh65]].forEach(function (f) { if (!feito[f[0]]) { try { feito[f[0]] = f[1](); } catch (e) {} } });
     try { nomes(); } catch (e) {}
     try { equipa(); } catch (e) {}
     try { if (window.__iprTodas && !document.getElementById("ipr-todas")) todasBases(); } catch (e) {}
