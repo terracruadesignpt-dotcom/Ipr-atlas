@@ -2703,6 +2703,202 @@
     desenhar();
     return true;
   }
+
+
+  // §56 «Os meus locais» só uma vez (Nuno, 26/10, 00h37: «remove os meus locais em duplicado»). O app.js chama «Os meus locais»
+  // a todos os grupos .ipc-loc e o arrumar() também; quando um grupo fica dentro do outro, ou dois ficam lado a lado, o título
+  // aparece duas vezes. Não se mexe em texto (evita guerra de observadores): esconde-se só a linha de título repetida e o
+  // conteúdo continua visível. Um grupo repetido e vazio esconde-se todo.
+  function locaisUnico() {
+    if (!document.getElementById("ipr-lu-css")) { var st = document.createElement("style"); st.id = "ipr-lu-css"; st.textContent = "#ipe .ipr-lu-sem>.ipr-gt{display:none!important}#ipe .ipr-lu-sem>.ipe-sbc{display:block!important;padding-left:0}#ipe .ipr-lu-fora{display:none!important}"; document.head.appendChild(st); }
+    function tit(g) { var n = g.querySelector(":scope>.ipr-gt .ipr-gn") || g.querySelector(".ipr-gn"); return n ? n.textContent.replace(/\s+/g, " ").trim().toLowerCase() : ""; }
+    function vazio(g) { var b = g.querySelector(":scope>.ipe-sbc"); return !b || !b.textContent.trim() && !b.querySelector("button,input,canvas,svg,li"); }
+    function rever() {
+      var gs = [].slice.call(document.querySelectorAll("#ipe .ipr-g")).filter(function (g) { return /^os meus locais/.test(tit(g)); });
+      gs.forEach(function (g) { g.classList.remove("ipr-lu-sem"); g.classList.remove("ipr-lu-fora"); });
+      if (gs.length < 2) return;
+      // aninhados: o de fora perde o título; fica o de dentro, que tem os botões Ponto, Linha e Área
+      gs.forEach(function (g) { if (gs.some(function (h) { return h !== g && g.contains(h); })) g.classList.add("ipr-lu-sem"); });
+      // lado a lado: fica o #ipc-loc (ou o primeiro); os outros perdem o título, ou desaparecem se estiverem vazios
+      var soltos = gs.filter(function (g) { return !g.classList.contains("ipr-lu-sem") && !gs.some(function (h) { return h !== g && h.contains(g) && !h.classList.contains("ipr-lu-sem"); }); });
+      var fica = soltos.filter(function (g) { return g.id === "ipc-loc" || g.closest("#ipc-loc"); })[0] || soltos[0];
+      soltos.forEach(function (g) { if (g !== fica) g.classList.add(vazio(g) ? "ipr-lu-fora" : "ipr-lu-sem"); });
+    }
+    rever();
+    if (!locaisUnico.obs) { var ipe = document.getElementById("ipe"); if (!ipe) return false; locaisUnico.obs = 1; new MutationObserver(function () { clearTimeout(locaisUnico.t); locaisUnico.t = setTimeout(rever, 120); }).observe(ipe, { childList: true, subtree: true }); }
+    return true;
+  }
+  // §55 Planta de localização em PDF (documento de execução de 25/10/2026, P1; Nuno, 26/10, 00h37: «instala a cena da planta
+  // de localização já»). Composição controlada, não captura de ecrã: o ortofotomapa da DGT é pedido em PT-TM06 (EPSG:3763) com a
+  // caixa exacta do papel à escala escolhida, e o limite, a quadrícula, a escala e o norte são desenhados em vector. Primeira
+  // versão: A4 ou A3, horizontal ou vertical, 1:1 000 a 1:25 000; segunda página com o quadro de vértices para processo municipal.
+  // Não é PDF/A validado nem peça municipal; diz-se isso no próprio documento.
+  var PL = { libs: null };
+  function plLibs() {
+    if (PL.libs) return PL.libs;
+    function carregar(u) { return new Promise(function (ok, ko) { var s = document.createElement("script"); s.src = u; s.onload = ok; s.onerror = function () { ko(new Error("Não foi possível carregar " + u)); }; document.head.appendChild(s); }); }
+    PL.libs = Promise.all([window.jspdf ? 0 : carregar("https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"), window.proj4 ? 0 : carregar("https://cdn.jsdelivr.net/npm/proj4@2.11.0/dist/proj4.js")]).then(function () {
+      window.proj4.defs("EPSG:3763", "+proj=tmerc +lat_0=39.66825833333333 +lon_0=-8.133108333333334 +k=1 +x_0=0 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");
+    });
+    PL.libs.catch(function () { PL.libs = null; });
+    return PL.libs;
+  }
+  function plGeo(id) {
+    return fetch("/wp-json/tcd/v1/meus-mapas", { credentials: "same-origin", headers: { "X-WP-Nonce": window.tcdNonce || "" } }).then(function (r) { return r.json(); }).then(function (d) {
+      var achado = null;
+      ["mapas", "partilhados", "rever"].forEach(function (k) { (d[k] || []).forEach(function (x) { if (!achado && x && +(x.encomenda || x.id) === +id && x.geojson) achado = x; }); });
+      if (!achado) throw new Error("Este projecto não tem limite do terreno guardado.");
+      var gj = achado.geojson; if (typeof gj === "string") { try { gj = JSON.parse(gj); } catch (e) { gj = null; } }
+      var aneis = [];
+      (function andar(g) {
+        if (!g) return;
+        if (g.type === "FeatureCollection") return g.features.forEach(andar);
+        if (g.type === "Feature") return andar(g.geometry);
+        if (g.type === "Polygon") return g.coordinates.forEach(function (r) { aneis.push(r); });
+        if (g.type === "MultiPolygon") return g.coordinates.forEach(function (p) { p.forEach(function (r) { aneis.push(r); }); });
+        if (g.type === "GeometryCollection") return g.geometries.forEach(andar);
+      })(gj);
+      if (!aneis.length) throw new Error("O limite deste projecto não é uma área.");
+      return { nome: achado.local || achado.nome || ("Projecto " + id), aneis: aneis, ha: achado.area_ha };
+    });
+  }
+  function plNice(v) { var e = Math.pow(10, Math.floor(Math.log10(v))), f = v / e; return (f >= 5 ? 5 : f >= 2 ? 2 : 1) * e; }
+  function plImg(url, wpx, hpx) {
+    return fetch("/wp-json/tcd/v1/viz/px?u=" + encodeURIComponent(url), { credentials: "same-origin", headers: { "X-WP-Nonce": window.tcdNonce || "" } }).then(function (r) {
+      var ct = r.headers.get("content-type") || ""; if (!r.ok || ct.indexOf("image") < 0) throw new Error("serviço " + r.status);
+      return r.blob();
+    }).then(function (b) { return new Promise(function (ok, ko) { var fr = new FileReader(); fr.onload = function () { ok(fr.result); }; fr.onerror = ko; fr.readAsDataURL(b); }); });
+  }
+  function plWms(caixa, wpx, hpx, preferir) {
+    var fontes = [["https://cartografia.dgterritorio.gov.pt/wms/ortos2025", "Ortos2025-RGB", "Ortofotomapa 2025, 25 cm (DGT)"], ["https://ortos.dgterritorio.gov.pt/wms/ortosat2023", "ortoSat2023-CorVerdadeira", "OrtoSat 2023, imagem de satélite (DGT)"]];
+    if (preferir === "sat") fontes.reverse();
+    var i = 0;
+    function um() {
+      var f = fontes[i]; if (!f) return Promise.reject(new Error("Os serviços de ortofotomapa da DGT não responderam. Tente outra vez dentro de momentos."));
+      var u = f[0] + "?SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&LAYERS=" + f[1] + "&STYLES=&SRS=EPSG:3763&BBOX=" + caixa.map(function (v) { return v.toFixed(2); }).join(",") + "&WIDTH=" + wpx + "&HEIGHT=" + hpx + "&FORMAT=image/jpeg";
+      return plImg(u).then(function (d) { return { dados: d, fonte: f[2] }; }, function () { i++; return um(); });
+    }
+    return um();
+  }
+  function plSitio(lon, lat) {
+    var u = "https://ogcapi.dgterritorio.gov.pt/collections/cont_freguesias/items?f=json&limit=1&bbox=" + [lon - 0.0001, lat - 0.0001, lon + 0.0001, lat + 0.0001].join(",");
+    return fetch(u).then(function (r) { return r.json(); }).then(function (j) {
+      var p = (j.features && j.features[0] && j.features[0].properties) || {}, fr = "", mu = "";
+      Object.keys(p).forEach(function (k) { if (!fr && /fregues/i.test(k) && typeof p[k] === "string") fr = p[k]; if (!mu && /munic|concelho/i.test(k) && typeof p[k] === "string") mu = p[k]; });
+      return { freguesia: fr, municipio: mu };
+    }).catch(function () { return { freguesia: "", municipio: "" }; });
+  }
+  function plGerar(id, op, msg) {
+    msg("A preparar…");
+    return plLibs().then(function () { return plGeo(id); }).then(function (T) {
+      var P = window.proj4("EPSG:4326", "EPSG:3763");
+      var an = T.aneis.map(function (r) { return r.map(function (c) { return P.forward([+c[0], +c[1]]); }); });
+      var bx = [1e12, 1e12, -1e12, -1e12]; an.forEach(function (r) { r.forEach(function (p) { bx[0] = Math.min(bx[0], p[0]); bx[1] = Math.min(bx[1], p[1]); bx[2] = Math.max(bx[2], p[0]); bx[3] = Math.max(bx[3], p[1]); }); });
+      var area = 0; an.forEach(function (r) { var a = 0; for (var i = 0; i < r.length - 1; i++) a += r[i][0] * r[i + 1][1] - r[i + 1][0] * r[i][1]; area += Math.abs(a) / 2; });
+      var bw = bx[2] - bx[0], bh = bx[3] - bx[1];
+      var A3 = op.papel === "A3", vert = op.orient === "v" || (op.orient === "auto" && bh > bw * 1.1);
+      var W = A3 ? (vert ? 297 : 420) : (vert ? 210 : 297), H = A3 ? (vert ? 420 : 297) : (vert ? 297 : 210);
+      var M = 10, BAND = 46, fw = W - 2 * M, fh = H - 2 * M - BAND - 4;
+      var escalas = [1000, 2000, 5000, 10000, 25000], esc = +op.escala;
+      function cabe(e) { return bw * 1.12 <= fw / 1000 * e && bh * 1.12 <= fh / 1000 * e; }
+      if (!esc) { esc = escalas.filter(cabe)[0]; if (!esc) throw new Error("O terreno não cabe numa folha " + (A3 ? "A3" : "A4") + " a 1:25 000. Escolha A3 ou peça folhas de detalhe."); }
+      else if (!cabe(esc)) throw new Error("À escala 1:" + esc.toLocaleString("pt-PT") + " o terreno não cabe numa folha " + (A3 ? "A3" : "A4") + ". Escolha uma escala maior (" + (escalas.filter(cabe)[0] ? "1:" + escalas.filter(cabe)[0].toLocaleString("pt-PT") : "A3") + ") ou outro papel. A escala não é reduzida sem o dizer.");
+      var gw = fw / 1000 * esc, gh = fh / 1000 * esc, cx = (bx[0] + bx[2]) / 2, cy = (bx[1] + bx[3]) / 2;
+      var caixa = [cx - gw / 2, cy - gh / 2, cx + gw / 2, cy + gh / 2];
+      var dpi = 150, wpx = Math.min(4000, Math.round(fw / 25.4 * dpi)), hpx = Math.min(4000, Math.round(fh / 25.4 * dpi));
+      var ll = window.proj4("EPSG:3763", "EPSG:4326", [cx, cy]);
+      msg("A pedir o ortofotomapa à DGT…");
+      var gi = 30000, gj2 = gi * (fh / fw);
+      var ixw = 52, ixh = 38;
+      return Promise.all([plWms(caixa, wpx, hpx, op.fundo), plWms([cx - 15000, cy - 15000 * ixh / ixw, cx + 15000, cy + 15000 * ixh / ixw], 420, Math.round(420 * ixh / ixw), "sat").catch(function () { return null; }), plSitio(ll[0], ll[1])]).then(function (R) {
+        msg("A compor a planta…");
+        var J = window.jspdf.jsPDF, doc = new J({ orientation: W > H ? "landscape" : "portrait", unit: "mm", format: A3 ? "a3" : "a4", compress: true });
+        var agora = new Date(), carimbo = agora.getFullYear() + ("0" + (agora.getMonth() + 1)).slice(-2) + ("0" + agora.getDate()).slice(-2) + ("0" + agora.getHours()).slice(-2) + ("0" + agora.getMinutes()).slice(-2);
+        var ident = "IPR-PL-" + id + "-" + carimbo;
+        function mm(p) { return [M + (p[0] - caixa[0]) / gw * fw, M + (caixa[3] - p[1]) / gh * fh]; }
+        doc.addImage(R[0].dados, "JPEG", M, M, fw, fh, undefined, "FAST");
+        // limite
+        doc.setDrawColor(230, 30, 30); doc.setLineWidth(0.6);
+        an.forEach(function (r) { for (var i = 0; i < r.length - 1; i++) { var a = mm(r[i]), b = mm(r[i + 1]); doc.line(a[0], a[1], b[0], b[1]); } });
+        // moldura e quadrícula nas margens
+        doc.setDrawColor(0); doc.setLineWidth(0.3); doc.rect(M, M, fw, fh);
+        var passo = plNice(gw / 5); doc.setFontSize(6); doc.setTextColor(0);
+        for (var x = Math.ceil(caixa[0] / passo) * passo; x < caixa[2]; x += passo) { var px = M + (x - caixa[0]) / gw * fw; doc.line(px, M, px, M + 2.5); doc.line(px, M + fh, px, M + fh - 2.5); doc.text("M " + Math.round(x), px + 0.6, M + 4.5); }
+        for (var y = Math.ceil(caixa[1] / passo) * passo; y < caixa[3]; y += passo) { var py = M + (caixa[3] - y) / gh * fh; doc.line(M, py, M + 2.5, py); doc.line(M + fw, py, M + fw - 2.5, py); doc.text("P " + Math.round(y), M + 3.2, py - 0.6); }
+        // norte
+        var nx = M + fw - 12, ny = M + 8; doc.setFillColor(255, 255, 255); doc.circle(nx, ny + 3, 5.5, "F"); doc.setFillColor(0, 0, 0);
+        doc.triangle(nx, ny - 1.5, nx - 2.3, ny + 5.5, nx + 2.3, ny + 5.5, "F"); doc.setFontSize(7); doc.text("N", nx - 1.1, ny + 9.2);
+        // faixa de informação
+        var by = M + fh + 4; doc.setLineWidth(0.3); doc.rect(M, by, fw, BAND);
+        var col2 = M + fw * 0.42, col3 = M + fw * 0.72;
+        doc.line(col2 - 3, by, col2 - 3, by + BAND); doc.line(col3 - 3, by, col3 - 3, by + BAND);
+        doc.setFontSize(11); doc.setFont("helvetica", "bold"); doc.text("PLANTA DE LOCALIZAÇÃO", M + 3, by + 6);
+        doc.setFont("helvetica", "normal"); doc.setFontSize(8);
+        var linhas1 = [String(T.nome).slice(0, 70), "Projecto #" + id + (R[2].municipio || R[2].freguesia ? " · " + [R[2].freguesia ? "Freguesia de " + R[2].freguesia : "", R[2].municipio ? "Concelho de " + R[2].municipio : ""].filter(Boolean).join(", ") : ""), "Finalidade: " + op.finalidade + (op.municipio ? " · " + op.municipio : "") + (op.proc ? " · " + op.proc : ""), op.requerente ? "Requerente: " + op.requerente : "", "Área do limite: " + (area / 10000).toLocaleString("pt-PT", { maximumFractionDigits: 2 }) + " ha (calculada em PT-TM06)"].filter(Boolean);
+        linhas1.forEach(function (t, i) { doc.text(doc.splitTextToSize(t, col2 - M - 8)[0], M + 3, by + 12 + i * 4.6); });
+        // escala gráfica
+        var L = plNice(gw / 6), Lmm = L / esc * 1000, sx = M + 3, sy = by + BAND - 7;
+        doc.setFontSize(9); doc.setFont("helvetica", "bold"); doc.text("Escala 1:" + esc.toLocaleString("pt-PT"), sx, sy - 4.5); doc.setFont("helvetica", "normal");
+        for (var k = 0; k < 4; k++) { doc.setFillColor(k % 2 ? 255 : 0, k % 2 ? 255 : 0, k % 2 ? 255 : 0); doc.rect(sx + k * Lmm / 4, sy - 1.6, Lmm / 4, 1.6, "FD"); }
+        doc.setFontSize(6.5); doc.text("0", sx - 0.6, sy + 3); doc.text(L >= 1000 ? (L / 1000) + " km" : L + " m", sx + Lmm - 2, sy + 3);
+        doc.text("Imprimir a 100 % (sem ajustar à página) em " + (A3 ? "A3" : "A4") + ".", sx + Lmm + 4, sy);
+        doc.setFontSize(7.2);
+        var linhas2 = ["Sistema de referência: PT-TM06/ETRS89 (EPSG:3763)", "Norte da quadrícula PT-TM06", "Centro: M " + Math.round(cx) + " · P " + Math.round(cy), "WGS84: " + ll[1].toFixed(6) + ", " + ll[0].toFixed(6), "Quadrícula de " + (passo >= 1000 ? passo / 1000 + " km" : passo + " m"), "Fundo: " + R[0].fonte];
+        linhas2.forEach(function (t, i) { doc.text(doc.splitTextToSize(t, col3 - col2 - 4)[0], col2, by + 6 + i * 4.3); });
+        if (R[1]) { var ix = col3, iy = by + 3; doc.addImage(R[1].dados, "JPEG", ix, iy, ixw * 0.5, ixh * 0.5, undefined, "FAST"); doc.setDrawColor(230, 30, 30); doc.setLineWidth(0.5); doc.rect(ix + ixw * 0.25 - 1.2, iy + ixh * 0.25 - 1.2, 2.4, 2.4); doc.setDrawColor(0); doc.setLineWidth(0.2); doc.rect(ix, iy, ixw * 0.5, ixh * 0.5); doc.setFontSize(5.5); doc.text("Enquadramento, cerca de 30 km", ix, iy + ixh * 0.5 + 2.6); }
+        doc.setFontSize(5.4); doc.setTextColor(60);
+        var notas = ["Fontes: " + R[0].fonte + "; limites administrativos CAOP (DGT); limite do terreno indicado no IPR Atlas, sem verificação no terreno.", "Documento informativo: não é prova de propriedade, não substitui levantamento topográfico nem é emitido pela câmara municipal.", "Emitido por IPR Atlas · Terracrua Design, " + agora.toLocaleString("pt-PT") + " · " + ident + " · versão 1"];
+        var nyy = by + 3 + ixh * 0.5 + 6; notas.forEach(function (t) { doc.splitTextToSize(t, W - col3 - M - 3).forEach(function (l) { doc.text(l, col3, nyy); nyy += 2.25; }); });
+        doc.setTextColor(0);
+        if (op.vertices) {
+          doc.addPage(A3 ? "a3" : "a4", "portrait"); doc.setFontSize(11); doc.setFont("helvetica", "bold"); doc.text("Quadro de vértices · PT-TM06/ETRS89 (EPSG:3763)", 12, 16); doc.setFont("helvetica", "normal"); doc.setFontSize(8);
+          doc.text(String(T.nome).slice(0, 90) + " · " + ident, 12, 22);
+          var vs = []; an.forEach(function (r, ri) { r.slice(0, -1).forEach(function (p) { vs.push([ri + 1, p[0], p[1]]); }); });
+          var yy = 30, colx = 12; doc.setFontSize(7.5);
+          vs.slice(0, 400).forEach(function (v, i) {
+            if (yy > (A3 ? 405 : 282)) { yy = 30; colx += 64; if (colx > (A3 ? 240 : 150)) { doc.addPage(A3 ? "a3" : "a4", "portrait"); colx = 12; } }
+            doc.text((i + 1) + (an.length > 1 ? " (" + v[0] + ")" : ""), colx, yy); doc.text("M " + v[1].toFixed(2), colx + 12, yy); doc.text("P " + v[2].toFixed(2), colx + 36, yy); yy += 4.2;
+          });
+          if (vs.length > 400) doc.text("… e mais " + (vs.length - 400) + " vértices (ver ficheiro do limite).", 12, yy + 6);
+        }
+        doc.save("Planta-de-localizacao-" + id + "-1-" + esc + ".pdf");
+        msg("Planta gerada: " + ident + " · 1:" + esc.toLocaleString("pt-PT") + " · " + (A3 ? "A3" : "A4") + ".");
+      });
+    });
+  }
+  function plantaDialogo(id) {
+    var o = document.getElementById("ipr-pl"); if (o) o.remove();
+    o = document.createElement("div"); o.id = "ipr-pl";
+    o.innerHTML = '<div class="c"><b>Planta de localização · projecto #' + id + '</b>' +
+      '<label>Finalidade<select data-k="finalidade"><option>Apresentação</option><option>Trabalho técnico</option><option>Processo municipal</option></select></label>' +
+      '<div class="mun" hidden><label>Município<input data-k="municipio" type="text"></label><label>Procedimento<input data-k="proc" type="text" placeholder="ex.: comunicação prévia"></label></div>' +
+      '<div class="g"><label>Papel<select data-k="papel"><option>A4</option><option>A3</option></select></label><label>Orientação<select data-k="orient"><option value="auto">Automática</option><option value="h">Horizontal</option><option value="v">Vertical</option></select></label>' +
+      '<label>Escala<select data-k="escala"><option value="0">A maior que cabe</option><option value="1000">1:1 000</option><option value="2000">1:2 000</option><option value="5000">1:5 000</option><option value="10000">1:10 000</option><option value="25000">1:25 000</option></select></label>' +
+      '<label>Fundo<select data-k="fundo"><option value="orto">Ortofotomapa 2025</option><option value="sat">Satélite 2023</option></select></label></div>' +
+      '<label>Requerente (opcional)<input data-k="requerente" type="text"></label><label class="ck"><input data-k="vertices" type="checkbox"> Quadro de vértices (2.ª página)</label>' +
+      '<p class="m">PDF em PT-TM06 à escala exacta, com ortofotomapa da DGT, limite, quadrícula, escala, norte, fontes e identificador. Não é prova de propriedade nem documento municipal.</p>' +
+      '<div class="a"><button type="button" data-a="ok">Gerar PDF</button><button type="button" data-a="x">Fechar</button></div><div class="s"></div></div>';
+    document.body.appendChild(o);
+    var fin = o.querySelector('[data-k="finalidade"]'); fin.addEventListener("change", function () { o.querySelector(".mun").hidden = fin.value !== "Processo municipal"; if (fin.value === "Processo municipal") { o.querySelector('[data-k="escala"]').value = "1000"; o.querySelector('[data-k="vertices"]').checked = true; } });
+    o.addEventListener("click", function (e) {
+      if (e.target === o || (e.target.dataset && e.target.dataset.a === "x")) { o.remove(); return; }
+      if (e.target.dataset && e.target.dataset.a === "ok") {
+        var op = {}; o.querySelectorAll("[data-k]").forEach(function (el) { op[el.dataset.k] = el.type === "checkbox" ? el.checked : el.value.trim(); });
+        var s = o.querySelector(".s"), b = e.target; b.disabled = true;
+        plGerar(id, op, function (t) { s.textContent = t; }).catch(function (x) { s.textContent = x.message || String(x); }).then(function () { b.disabled = false; });
+      }
+    });
+  }
+  window.__iprPlanta = plantaDialogo;
+  (function () {
+    if (document.getElementById("ipr-pl-css")) return;
+    var st = document.createElement("style"); st.id = "ipr-pl-css";
+    st.textContent = "#ipr-pl{position:fixed;inset:0;z-index:100001;background:rgba(10,12,10,.55);display:flex;align-items:center;justify-content:center;padding:16px}#ipr-pl .c{width:min(460px,100%);max-height:calc(100vh - 32px);overflow:auto;background:var(--p1,#141814);color:var(--tx,#e9eadf);border:1px solid var(--ln,#333);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px;font:13px Inter,sans-serif}" +
+      "#ipr-pl label{display:flex;flex-direction:column;gap:4px;font:600 11px Inter,sans-serif;color:var(--mu,#9aa08f);text-transform:uppercase;letter-spacing:.04em}#ipr-pl label.ck{flex-direction:row;align-items:center;text-transform:none;font-size:13px;color:var(--tx)}" +
+      "#ipr-pl select,#ipr-pl input[type=text]{font:13px Inter,sans-serif;padding:7px;border:1px solid var(--ln,#333);border-radius:7px;background:var(--p2,#1d221c);color:var(--tx,#e9eadf);text-transform:none}#ipr-pl .g{display:grid;grid-template-columns:1fr 1fr;gap:8px}#ipr-pl .mun{display:grid;grid-template-columns:1fr 1fr;gap:8px}#ipr-pl .mun[hidden]{display:none}" +
+      "#ipr-pl .m{margin:0;color:var(--mu,#9aa08f);font-size:12px}#ipr-pl .a{display:flex;gap:8px;justify-content:flex-end}#ipr-pl .a button{font:600 13px Inter,sans-serif;padding:8px 14px;border-radius:8px;border:1px solid var(--ln,#333);background:transparent;color:var(--tx,#e9eadf);cursor:pointer}#ipr-pl .a button[data-a=ok]{background:var(--ac,#b5c46a);border-color:var(--ac,#b5c46a);color:#141814}#ipr-pl .s{font-size:12px;color:var(--ac2,#c9d36a);min-height:16px}";
+    (document.head || document.documentElement).appendChild(st);
+  })();
   // 26/10, 00h05 (Nuno: «na lista de projectos continuo sem ver os botões editar, eliminar»). A lista que se vê é a do
   // entrada.js (li.tme-t, «Abrir»), não os cartões do app.js: os botões passam a ir também para cada linha dessa lista.
   var ADM = null;
@@ -2715,12 +2911,13 @@
       document.querySelectorAll("li.tme-t").forEach(function (li) {
         if (li.querySelector(".ipr-tma")) return; var id = idDe(li); if (!id) return;
         var d = document.createElement("div"); d.className = "ipr-tma"; d.dataset.id = id;
-        d.innerHTML = '<button type="button" data-a="nome">Editar nome</button><button type="button" data-a="partilhar">Partilhar</button>' + (ADM ? '<button type="button" data-a="eliminar" class="del">Eliminar</button>' : "");
+        d.innerHTML = '<button type="button" data-a="planta">Planta de localização</button><button type="button" data-a="nome">Editar nome</button><button type="button" data-a="partilhar">Partilhar</button>' + (ADM ? '<button type="button" data-a="eliminar" class="del">Eliminar</button>' : "");
         ["click", "mousedown", "pointerdown", "touchstart"].forEach(function (t) { d.addEventListener(t, function (e) { e.stopPropagation(); }); });
         d.addEventListener("click", function (e) {
           var b = e.target.closest("button"); if (!b) return; e.preventDefault();
           var nomeEl = li.querySelector("b"), f = d.querySelector(".f");
           if (b.dataset.a === "nome") { if (f) return; f = document.createElement("span"); f.className = "f"; f.innerHTML = '<input type="text" maxlength="90"><button type="button" data-a="gn">Guardar</button><button type="button" data-a="nao">Cancelar</button>'; f.querySelector("input").value = (nomeEl ? nomeEl.textContent : "").trim(); d.appendChild(f); f.querySelector("input").focus(); f.querySelector("input").addEventListener("keydown", function (ev) { ev.stopPropagation(); if (ev.key === "Enter") f.querySelector('[data-a="gn"]').click(); }); return; }
+          if (b.dataset.a === "planta") { plantaDialogo(id); return; }
           if (b.dataset.a === "nao") { if (f) f.remove(); return; }
           if (b.dataset.a === "gn") { b.disabled = true; api("projecto/nome", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ projecto: id, nome: f.querySelector("input").value.trim() }) }).then(function (j) { if (nomeEl) nomeEl.textContent = j.nome; f.remove(); }).catch(function (x) { b.disabled = false; b.textContent = x.message; }); return; }
           if (b.dataset.a === "partilhar") { if (/[?&]mapa=(\d+)/.exec(location.search) && +RegExp.$1 === id) { var c = [].slice.call(document.querySelectorAll("#ipe-proj .ipe-card")).filter(function (k) { return new RegExp("#" + id + "\\b").test(k.textContent); })[0]; var bt = c && c.querySelector("[data-psh]"); if (bt) { bt.click(); return; } } location.href = "/atlas/?mapa=" + id + "#partilhar"; return; }
@@ -2841,7 +3038,7 @@
         var ct = c.querySelector(".ipe-ct"); if (!ct || ct.querySelector(".ipr-ca")) { var bt = ct && ct.querySelector("[data-arq]"); var tx0 = a ? "Desarquivar" : "Arquivar"; if (bt && bt.textContent !== tx0) bt.textContent = tx0; return; }
         var d = document.createElement("div"); d.className = "ipr-ca";
         // 25/10, 22h59 (Nuno): editar, partilhar e eliminar na própria lista (m90360).
-        d.innerHTML = '<button type="button" data-pnome="' + id + '">Editar nome</button><button type="button" data-psh="' + id + '">Partilhar</button><button type="button" data-arq="' + id + '">' + (a ? "Desarquivar" : "Arquivar") + '</button><button type="button" data-jorg="' + id + '">Juntar à organização</button>' + (ADM ? '<button type="button" data-pdel="' + id + '" class="ipr-del">Eliminar</button>' : "");
+        d.innerHTML = '<button type="button" data-ppl="' + id + '">Planta de localização</button><button type="button" data-pnome="' + id + '">Editar nome</button><button type="button" data-psh="' + id + '">Partilhar</button><button type="button" data-arq="' + id + '">' + (a ? "Desarquivar" : "Arquivar") + '</button><button type="button" data-jorg="' + id + '">Juntar à organização</button>' + (ADM ? '<button type="button" data-pdel="' + id + '" class="ipr-del">Eliminar</button>' : "");
         ct.appendChild(d);
       });
       var b = document.getElementById("ipr-arq-b");
@@ -2852,7 +3049,8 @@
     api("projecto/gestao").then(function (j) { if (j && j.admin) { ADM = true; P.querySelectorAll(".ipr-ca").forEach(function (x) { x.remove(); }); aplicar(); } }).catch(function () {});
     function cartao(id) { return [].slice.call(P.querySelectorAll(".ipe-card")).filter(function (c) { return enc(c) === id; })[0]; }
     P.addEventListener("click", function (e) {
-      var b = e.target.closest("[data-arq],[data-jorg],[data-pnome],[data-psh],[data-pdel],[data-pok],[data-pnao]"); if (!b) return; e.stopPropagation(); e.preventDefault();
+      var b = e.target.closest("[data-arq],[data-jorg],[data-pnome],[data-psh],[data-pdel],[data-pok],[data-pnao],[data-ppl]"); if (!b) return; e.stopPropagation(); e.preventDefault();
+      if (b.dataset.ppl) { plantaDialogo(+b.dataset.ppl); return; }
       var ca = b.closest(".ipr-ca"), c, id;
       if (b.dataset.pnome) {
         id = +b.dataset.pnome; c = cartao(id); var st0 = c && c.querySelector(".ipe-ct strong"); if (!st0 || ca.querySelector("input")) return;
@@ -2914,7 +3112,7 @@
   }
   function correr() {
     voltas++;
-    [["marca", marca], ["puxadores", puxadores], ["creditos", creditos], ["estado", estado], ["formiga", formiga], ["projectos", projectos], ["editavel", editavel], ["semBug", semBug], ["rosa", rosa], ["arrumar", arrumar], ["projDir", projDir], ["testarEsq", testarEsq], ["contaTopo", contaTopo], ["camadasTopo", camadasTopo], ["sintetizar", sintetizar], ["opcoesCamadas", opcoesCamadas], ["projFechados", projFechados], ["todasMais", todasMais], ["painelTopo", painelTopo], ["qfieldQR", qfieldQR], ["temas", temas], ["natural", natural], ["aprenderDesenho", aprenderDesenho], ["fichas", fichasCamada], ["natureza", fichasNatureza], ["parcelas", parcelasPonto], ["partilhaQR", partilhaQR], ["teclado", tecladoVirtual], ["prefs", prefsConta], ["cronologia", cronologia], ["alcanena", pilotoAlcanena], ["estilosOrg", estilosOrg], ["fimDoVoo", fimDoVoo], ["orgNomes", orgNomes], ["projRecolhidos", projRecolhidos], ["instalarApp", instalarApp], ["temaEscuro", temaEscuro], ["orgPastas", orgVista], ["discricao", discricao], ["estradas", estradas], ["cloudLimpo", cloudLimpo], ["navEsquerda", navEsquerda], ["encomendaCompacta", encomendaCompacta], ["testarLigacao", testarLigacao], ["linguetaEsq", linguetaEsq], ["longe", longe], ["arrumarCamadas", arrumarCamadas], ["separadores", separadores], ["processar", processar], ["cartoes", cartoes], ["diagMundo", diagMundo], ["foraDoPais", foraDoPais], ["subPastas", subPastas], ["projOrg", projOrg], ["linhasProj", linhasProj]].forEach(function (f) { if (!feito[f[0]]) { try { feito[f[0]] = f[1](); } catch (e) {} } });
+    [["marca", marca], ["puxadores", puxadores], ["creditos", creditos], ["estado", estado], ["formiga", formiga], ["projectos", projectos], ["editavel", editavel], ["semBug", semBug], ["rosa", rosa], ["arrumar", arrumar], ["projDir", projDir], ["testarEsq", testarEsq], ["contaTopo", contaTopo], ["camadasTopo", camadasTopo], ["sintetizar", sintetizar], ["opcoesCamadas", opcoesCamadas], ["projFechados", projFechados], ["todasMais", todasMais], ["painelTopo", painelTopo], ["qfieldQR", qfieldQR], ["temas", temas], ["natural", natural], ["aprenderDesenho", aprenderDesenho], ["fichas", fichasCamada], ["natureza", fichasNatureza], ["parcelas", parcelasPonto], ["partilhaQR", partilhaQR], ["teclado", tecladoVirtual], ["prefs", prefsConta], ["cronologia", cronologia], ["alcanena", pilotoAlcanena], ["estilosOrg", estilosOrg], ["fimDoVoo", fimDoVoo], ["orgNomes", orgNomes], ["projRecolhidos", projRecolhidos], ["instalarApp", instalarApp], ["temaEscuro", temaEscuro], ["orgPastas", orgVista], ["discricao", discricao], ["estradas", estradas], ["cloudLimpo", cloudLimpo], ["navEsquerda", navEsquerda], ["encomendaCompacta", encomendaCompacta], ["testarLigacao", testarLigacao], ["linguetaEsq", linguetaEsq], ["longe", longe], ["arrumarCamadas", arrumarCamadas], ["separadores", separadores], ["processar", processar], ["cartoes", cartoes], ["diagMundo", diagMundo], ["foraDoPais", foraDoPais], ["subPastas", subPastas], ["projOrg", projOrg], ["linhasProj", linhasProj], ["locaisUnico", locaisUnico]].forEach(function (f) { if (!feito[f[0]]) { try { feito[f[0]] = f[1](); } catch (e) {} } });
     try { nomes(); } catch (e) {}
     try { equipa(); } catch (e) {}
     try { if (window.__iprTodas && !document.getElementById("ipr-todas")) todasBases(); } catch (e) {}
