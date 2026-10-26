@@ -4554,25 +4554,28 @@
       }
       st.textContent = nivel(1.2, 1900) + nivel(1.4, 2400) + nivel(1.75, 3200) +
         "#ipe .ipr-tri-sai{display:flex;gap:14px;flex-wrap:wrap}#ipe .ipr-lu-cam>.ipr-gt{display:none!important}#ipe .ipr-lu-cam>.ipe-sbc{display:block!important;padding-left:0}" +
-        "@media (min-width:901px){#ipe .ipr-nav.ipr-nav65{left:auto!important;right:var(--n65r,8px)!important;top:var(--n65t,8px)!important;bottom:auto!important;align-items:center}}";
+        "";
       document.head.appendChild(st);
     }
     return true;
   }
-  // Rosa dos ventos, aproximar, afastar e localizar ficam por baixo da barra das ferramentas (à direita do mapa), no computador.
+  // Rosa dos ventos, aproximar, afastar e localizar passam para dentro da barra das ferramentas (à direita do mapa), no
+  // computador. O contentor do MapLibre muda de sítio inteiro, por isso os botões continuam a funcionar; no telemóvel volta
+  // ao canto do mapa. Nuno, 18h46: «a rosa apareceu, mas depois [...] desapareceu»: deixa de depender de posições calculadas.
   function nav65() {
-    var nav = document.querySelector("#ipe .maplibregl-ctrl-top-left.ipr-nav"), tools = document.querySelector("#ipe .ipe-tools"), mapa = document.getElementById("ipe-mapa");
-    if (!nav || !tools || !mapa) return false;
+    var nav = document.querySelector("#ipe .maplibregl-ctrl-top-left.ipr-nav"), tools = document.querySelector("#ipe .ipe-tools");
+    if (!nav || !tools) return false;
+    var casa = nav.parentNode;
+    if (!document.getElementById("ipr-65n-css")) { var st = document.createElement("style"); st.id = "ipr-65n-css";
+      st.textContent = "#ipe .ipe-tools>.ipr-nav{position:static!important;inset:auto!important;transform:none!important;display:flex!important;flex-direction:column;align-items:center;gap:6px;margin:8px 0 2px;padding:0;pointer-events:auto;float:none}#ipe .ipe-tools>.ipr-nav .maplibregl-ctrl{margin:0!important;float:none}#ipe .ipe-tools>.ipr-nav .maplibregl-ctrl-group button{width:32px!important;height:32px!important}#ipe .ipe-tools>.ipr-nav .ipe-rosa,#ipe .ipe-tools>.ipr-nav .ipe-rosa svg{width:34px!important;height:34px!important}";
+      document.head.appendChild(st); }
     function pos() {
-      if (window.innerWidth <= 900) { nav.classList.remove("ipr-nav65"); return; }
-      var m = mapa.getBoundingClientRect(), t = tools.getBoundingClientRect(); if (!t.height) return;
-      var z = parseFloat(getComputedStyle(nav).zoom) || 1;
-      nav.style.setProperty("--n65t", Math.round((t.bottom - m.top + 10) / z) + "px");
-      nav.style.setProperty("--n65r", Math.round((m.right - t.right) / z) + "px");
-      nav.classList.add("ipr-nav65");
+      var n = document.querySelector("#ipe .maplibregl-ctrl-top-left.ipr-nav") || nav;
+      if (window.innerWidth > 900) { if (n.parentNode !== tools) tools.appendChild(n); }
+      else if (casa && n.parentNode !== casa) casa.appendChild(n);
     }
     pos(); window.addEventListener("resize", function () { clearTimeout(nav65.t); nav65.t = setTimeout(pos, 150); });
-    setInterval(function () { if (!document.hidden) pos(); }, 2500);
+    setInterval(function () { if (!document.hidden) pos(); }, 2000);
     return true;
   }
   // Os temas voltam quando o app.js redesenha a árvore das camadas (acontece depois de entrar, quando chegam as camadas da
