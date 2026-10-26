@@ -3943,7 +3943,7 @@
       v_org: "Camadas de trabalho da sua organização por cima do relevo, da água e do cadastro.",
       p_leitura: "Leitura do Terreno", p_planta: "Planta de Localização", p_base: "Base Cartográfica", p_intel: "Acesso Intelligence", p_org: "Abrir a organização",
       pr_leitura: "desde 250 € + IVA", pr_base: "desde 99 € + IVA",
-      f_busca: "Procurar local", f_desenhar: "Desenhar o terreno", f_parcelas: "Escolher parcelas", f_importar: "Carregar ficheiro",
+      m_cadastro: "Parcelas do cadastro", m_desenhar: "Desenhar no mapa", m_ficheiro: "Carregar ficheiro", m_artigo: "Artigo matricial ou caderneta", mh_cadastro: "Clique nas parcelas do seu terreno no mapa.", mh_desenhar: "Clique nos cantos do terreno; termine no primeiro ponto.", mh_ficheiro: "KML, KMZ, GeoJSON, Shapefile ou GPX.", mh_artigo: "Sem mapa? Indique o concelho, a freguesia e o artigo; nós localizamos.", mfalta: "Abra o separador Processos à direita e escolha a forma de indicar o terreno.", f_busca: "Procurar local", f_desenhar: "Desenhar o terreno", f_parcelas: "Escolher parcelas", f_importar: "Carregar ficheiro",
       f_area: "Medir área", f_regua: "Medir distância", f_perfil: "Perfil de elevação", f_3d: "Vista 3D", f_sol: "Sol e sombra",
       f_historico: "Imagens antigas", f_marcador: "Nota no mapa", f_gps: "A minha posição", f_qfield: "QField",
       qfieldN: "A ligação ao QField está na IPR Cloud, no separador Projectos.",
@@ -3964,7 +3964,7 @@
       q_planta: "Preciso de uma planta do terreno", qs_planta: "Uma planta à escala para a câmara, um projecto ou uma escritura.",
       q_planear: "Quero planear ou trabalhar o meu terreno", qs_planear: "Água, relevo, solo, acessos e trabalho de campo.",
       q_prof: "Trabalho com terrenos", qs_prof: "Arquitectos, engenheiros, topógrafos, técnicos, mediadores e associações.",
-      triRodape: "Pode voltar a este ecrã pelo botão «Por onde começar?» no topo.", explorar: "Explorar sozinho",
+      triRodape: "Pode voltar a este ecrã pelo botão «Por onde começar?» no topo.", sair: "Sair do assistente e ver o mapa", sairCurto: "Sair", explorar: "Explorar sozinho",
       fechar: "Fechar", voltar: "Voltar", seguinte: "Seguinte", inicio: "Voltar às perguntas iniciais", terminar: "Terminar",
       passo: "Passo {i} de {n}", continuar: "Continuar", minimizar: "Ver o mapa",
       s1t: "Procure o sítio", s1h: "Escreva o nome de uma localidade, uma morada, coordenadas ou o NIC do prédio na caixa de pesquisa. O mapa leva-o lá.",
@@ -4008,7 +4008,7 @@
       v_org: "Your organisation's working layers on top of terrain, water and land registry.",
       p_leitura: "Land Reading", p_planta: "Location Plan", p_base: "Base Map", p_intel: "Intelligence access", p_org: "Open the organisation",
       pr_leitura: "from €250 + VAT", pr_base: "from €99 + VAT",
-      f_busca: "Search a place", f_desenhar: "Draw the plot", f_parcelas: "Pick parcels", f_importar: "Upload a file",
+      m_cadastro: "Land registry parcels", m_desenhar: "Draw on the map", m_ficheiro: "Upload a file", m_artigo: "Tax article or title deed", mh_cadastro: "Click the parcels of your land on the map.", mh_desenhar: "Click the corners of the land; finish on the first point.", mh_ficheiro: "KML, KMZ, GeoJSON, Shapefile or GPX.", mh_artigo: "No map? Give the municipality, parish and article; we will locate it.", mfalta: "Open the Processes tab on the right and choose how to indicate the land.", f_busca: "Search a place", f_desenhar: "Draw the plot", f_parcelas: "Pick parcels", f_importar: "Upload a file",
       f_area: "Measure area", f_regua: "Measure distance", f_perfil: "Elevation profile", f_3d: "3D view", f_sol: "Sun and shade",
       f_historico: "Older imagery", f_marcador: "Note on the map", f_gps: "My position", f_qfield: "QField",
       qfieldN: "The QField connection is in IPR Cloud, under the Projects tab.",
@@ -4028,7 +4028,7 @@
       q_planta: "I need a plan of the land", qs_planta: "A scaled plan for the council, a project or a deed.",
       q_planear: "I want to plan or work my land", qs_planear: "Water, terrain, soil, access and fieldwork.",
       q_prof: "I work with land", qs_prof: "Architects, engineers, surveyors, consultants, agents and associations.",
-      triRodape: "You can come back to this screen with the «Where to start?» button at the top.", explorar: "Explore on my own",
+      triRodape: "You can come back to this screen with the «Where to start?» button at the top.", sair: "Leave the assistant and see the map", sairCurto: "Leave", explorar: "Explore on my own",
       fechar: "Close", voltar: "Back", seguinte: "Next", inicio: "Back to the first questions", terminar: "Finish",
       passo: "Step {i} of {n}", continuar: "Continue", minimizar: "See the map",
       s1t: "Find the place", s1h: "Type a town, an address, coordinates or the property's NIC in the search box. The map takes you there.",
@@ -4365,7 +4365,7 @@
     var h, q = Q63.filter(function (x) { return x.id === TRI.q; })[0];
     o.classList.toggle("min", !!(TRI.min && q));
     if (TRI.min && q) {
-      h = '<div class="ipr-tri-bar"><span class="pp">' + esc62(t62("passo", { i: TRI.p + 1, n: N63 })) + "</span><b>" + esc62(passoTitulo(q, TRI.p)) + '</b><button type="button" data-a63="max">' + esc62(t62("continuar")) + '</button><button type="button" class="x" data-a63="fechar" aria-label="' + esc62(t62("fechar")) + '">×</button></div>';
+      h = '<div class="ipr-tri-bar"><span class="pp">' + esc62(t62("passo", { i: TRI.p + 1, n: N63 })) + "</span><b>" + esc62(passoTitulo(q, TRI.p)) + '</b><button type="button" data-a63="max">' + esc62(t62("continuar")) + '</button><button type="button" data-a63="fechar">' + esc62(t62("sairCurto")) + '</button></div>';
       o.innerHTML = h; return;
     }
     h = '<div class="ipr-tri-c" role="dialog" aria-modal="false" aria-labelledby="ipr-tri-t"><div class="ipr-tri-top">' + selLingua("ipr-lg-t") + '<button type="button" class="x" data-a63="fechar" aria-label="' + esc62(t62("fechar")) + '" title="' + esc62(t62("fechar")) + '">×</button></div>';
@@ -4378,7 +4378,7 @@
       h += '<h2 id="ipr-tri-t">' + esc62(passoTitulo(q, TRI.p)) + "</h2>" + passoCorpo(q, TRI.p);
       h += '<div class="ipr-tri-n"><button type="button" data-a63="voltar">' + esc62(t62("voltar")) + "</button>" +
         (TRI.p < N63 - 1 ? '<button type="button" class="pri" data-a63="seguinte">' + esc62(t62("seguinte")) + "</button>" : '<button type="button" class="pri" data-a63="fechar">' + esc62(t62("terminar")) + "</button>") +
-        '</div><button type="button" class="ipr-tri-i" data-a63="inicio">' + esc62(t62("inicio")) + "</button>";
+        '</div><div class="ipr-tri-sai"><button type="button" class="ipr-tri-i" data-a63="inicio">' + esc62(t62("inicio")) + '</button><button type="button" class="ipr-tri-i" data-a63="fechar">' + esc62(t62("sair")) + "</button></div>";
     }
     o.innerHTML = h + "</div>";
     var f = o.querySelector("h2"); if (f) { f.setAttribute("tabindex", "-1"); try { f.focus({ preventScroll: true }); } catch (e) {} }
@@ -4387,7 +4387,7 @@
   function passoCorpo(q, p) {
     function bt(a, txt, pri) { return '<button type="button" class="' + (pri ? "pri" : "") + '" data-f63="' + a + '">' + esc62(txt) + "</button>"; }
     if (p === 0) return "<p>" + esc62(t62("s1h")) + '</p><div class="ipr-tri-a">' + bt("busca", t62("s1b"), 1) + "</div>";
-    if (p === 1) return "<p>" + esc62(t62("s2h")) + '</p><div class="ipr-tri-a">' + bt("desenhar", t62("f_desenhar"), 1) + bt("parcelas", t62("f_parcelas")) + bt("importar", t62("f_importar")) + "</div>";
+    if (p === 1) return "<p>" + esc62(t62("s2h")) + '</p><div class="ipr-tri-m4">' + ["cadastro", "desenhar", "ficheiro", "artigo"].map(function (m, i) { return '<button type="button" class="' + (i ? "" : "pri") + '" data-f63="m:' + m + '"><b>' + esc62(t62("m_" + m)) + "</b><small>" + esc62(t62("mh_" + m)) + "</small></button>"; }).join("") + '</div><p class="ipr-tri-m" hidden></p>';
     if (p === 2) return "<p>" + esc62(t62("s3h")) + '</p><div class="ipr-tri-a">' + bt("ficha", t62("s3b"), 1) + '</div><p class="ipr-tri-m" hidden></p>';
     if (p === 3) {
       var pr = q.pr ? t62(q.pr) : t62("precoSob");
@@ -4404,7 +4404,16 @@
   function fechar63() {
     var o = document.getElementById("ipr-tri"); if (o) o.hidden = true; document.documentElement.classList.remove("ipr-tri-on");
     TRI.min = false; guardar63();
+    try { abrirCamadas(); } catch (x) {}
     var b = document.getElementById("ipr-comecar"); if (b) try { b.focus({ preventScroll: true }); } catch (e) {}
+  }
+  // Enquanto o assistente está encolhido no passo da ficha, volta a abrir sozinho quando o terreno fica escolhido.
+  function vigiarTerreno63() {
+    var n = 0, t = setInterval(function () {
+      n++; var r = document.querySelector("#ipe .ipe-res:not([hidden])");
+      if (!TRI.min || TRI.p !== 2 || n > 400) { clearInterval(t); return; }
+      if (r && r.offsetParent) { clearInterval(t); TRI.min = false; document.documentElement.classList.add("ipr-tri-on"); pintar63(); }
+    }, 1500);
   }
   function minimizar63() { TRI.min = true; document.documentElement.classList.remove("ipr-tri-on"); pintar63(); }
   function ligar63(o) {
@@ -4428,6 +4437,19 @@
           return;
         }
         if (f.indexOf("p:") === 0) { minimizar63(); produto(f.slice(2)); return; }
+        if (f.indexOf("m:") === 0) {
+          // as mesmas quatro formas do separador Processos › Base Cartográfica (botões .ipe-mb[data-metodo])
+          var mt = f.slice(2); abrirSeparador("enc");
+          setTimeout(function () {
+            var mb = document.querySelector('#ipe .ipe-mb[data-metodo="' + mt + '"]');
+            if (!mb) { var w = o.querySelector(".ipr-tri-m"); if (w) { w.hidden = false; w.textContent = t62("mfalta"); } return; }
+            mb.click();
+            if (mt === "cadastro" || mt === "desenhar") { fecharPainelMovel(); minimizar63(); }
+            else { minimizar63(); try { mb.scrollIntoView({ block: "start", behavior: "smooth" }); } catch (x) {} }
+            TRI.p = 2; guardar63(); pintar63(); vigiarTerreno63();
+          }, 200);
+          return;
+        }
         if (f.indexOf("t:") === 0) { window.__iprTemas.aplicar(f.slice(2)); abrirCamadas(); TRI.p = N63 - 1; fechar63(); return; }
         minimizar63(); ferramenta(f); if (TRI.p < 2) { TRI.p++; guardar63(); pintar63(); }
       }
@@ -4500,7 +4522,7 @@
       "#ipr-tri .ipr-tri-q{display:grid;grid-template-columns:1fr 1fr;gap:10px}#ipr-tri .ipr-tri-q button{display:flex;flex-direction:column;align-items:flex-start;gap:5px;text-align:left;padding:16px;border-radius:12px;border:1px solid var(--ln,#2c312a);background:var(--p2,#1d221c);color:var(--tx,#e9eadf);cursor:pointer;min-height:112px}" +
       "#ipr-tri .ipr-tri-q button:hover,#ipr-tri .ipr-tri-q button:focus-visible{border-color:var(--ac,#b5c46a)}#ipr-tri .ipr-tri-q i{font:600 11px 'IBM Plex Mono',monospace;font-style:normal;color:var(--ac,#b5c46a)}#ipr-tri .ipr-tri-q b{font:600 16px/1.3 Inter,sans-serif}#ipr-tri .ipr-tri-q small{font-size:12.5px;line-height:1.45;color:var(--mu,#9aa08f)}" +
       "#ipr-tri .ipr-tri-r{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:16px}#ipr-tri .ipr-tri-r p{margin:0;font-size:12px;color:var(--mu,#9aa08f)}" +
-      "#ipr-tri button{font-family:Inter,sans-serif}#ipr-tri .ipr-tri-r button,#ipr-tri .ipr-tri-n button,#ipr-tri .ipr-tri-a button{font-size:13.5px;font-weight:500;padding:9px 14px;border-radius:9px;border:1px solid var(--ln,#2c312a);background:transparent;color:var(--tx,#e9eadf);cursor:pointer;min-height:40px}" +
+      "#ipr-tri .ipr-tri-m4{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}#ipr-tri .ipr-tri-m4 button{display:flex;flex-direction:column;align-items:flex-start;gap:3px;text-align:left;padding:10px 12px;border-radius:10px;border:1px solid var(--ln,#2c312a);background:transparent;color:var(--tx,#e9eadf);cursor:pointer;min-height:56px}#ipr-tri .ipr-tri-m4 button.pri{border-color:var(--ac,#9fb06a)}#ipr-tri .ipr-tri-m4 small{opacity:.75;font-size:12px;line-height:1.35}@media (max-width:520px){#ipr-tri .ipr-tri-m4{grid-template-columns:1fr}}" + "#ipr-tri button{font-family:Inter,sans-serif}#ipr-tri .ipr-tri-r button,#ipr-tri .ipr-tri-n button,#ipr-tri .ipr-tri-a button{font-size:13.5px;font-weight:500;padding:9px 14px;border-radius:9px;border:1px solid var(--ln,#2c312a);background:transparent;color:var(--tx,#e9eadf);cursor:pointer;min-height:40px}" +
       "#ipr-tri button.pri{background:var(--ac,#b5c46a);border-color:var(--ac,#b5c46a);color:#141814;font-weight:600}" +
       "#ipr-tri .ipr-tri-k{margin:0 0 8px;font:600 11px 'IBM Plex Mono',monospace;letter-spacing:.04em;color:var(--mu,#9aa08f);text-transform:uppercase}" +
       "#ipr-tri .ipr-tri-pp{display:flex;gap:4px;list-style:none;padding:0;margin:0 0 14px}#ipr-tri .ipr-tri-pp li{flex:1;height:3px;border-radius:2px;background:var(--ln,#2c312a)}#ipr-tri .ipr-tri-pp li.f{background:var(--ac2,#8f9a55)}#ipr-tri .ipr-tri-pp li.a{background:var(--ac,#b5c46a)}" +
@@ -4517,9 +4539,61 @@
     (document.head || document.documentElement).appendChild(st);
   })();
 
+
+  // §65 Ecrãs grandes, controlos do mapa junto à barra das ferramentas, temas que não desaparecem, «Os meus locais» uma vez
+  // (Nuno, 26/10/2026, 18h32, com fotografias num monitor AOC grande: barras muito pequenas, rosa dos ventos e localizador
+  // desaparecidos, «Os meus locais» em duplicado, temas em falta, espaço livre desequilibrado à direita).
+  function grande65() {
+    if (!document.getElementById("ipr-65-css")) {
+      var st = document.createElement("style"); st.id = "ipr-65-css";
+      function nivel(f, w) {
+        var z = String(f);
+        return "@media (min-width:" + w + "px) and (pointer:fine){" +
+          ".ipe{--wl:" + Math.round(268 * f) + "px!important;--wr:" + Math.round(330 * f) + "px!important;grid-template-rows:calc(" + Math.round(48 * f) + "px + env(safe-area-inset-top)) minmax(0,1fr) " + Math.round(28 * f) + "px!important}" +
+          "#ipe-esq>*,#ipe-dir>*,#ipe>.ipe-top>*,#ipe-st>*,#ipe .ipe-tools,#ipe .ipr-nav,#ipr-tri{zoom:" + z + "}}";
+      }
+      st.textContent = nivel(1.2, 1900) + nivel(1.4, 2400) + nivel(1.75, 3200) +
+        "#ipe .ipr-tri-sai{display:flex;gap:14px;flex-wrap:wrap}#ipe .ipr-lu-cam>.ipr-gt{display:none!important}#ipe .ipr-lu-cam>.ipe-sbc{display:block!important;padding-left:0}" +
+        "@media (min-width:901px){#ipe .ipr-nav.ipr-nav65{left:auto!important;right:var(--n65r,8px)!important;top:var(--n65t,8px)!important;bottom:auto!important;align-items:center}}";
+      document.head.appendChild(st);
+    }
+    return true;
+  }
+  // Rosa dos ventos, aproximar, afastar e localizar ficam por baixo da barra das ferramentas (à direita do mapa), no computador.
+  function nav65() {
+    var nav = document.querySelector("#ipe .maplibregl-ctrl-top-left.ipr-nav"), tools = document.querySelector("#ipe .ipe-tools"), mapa = document.getElementById("ipe-mapa");
+    if (!nav || !tools || !mapa) return false;
+    function pos() {
+      if (window.innerWidth <= 900) { nav.classList.remove("ipr-nav65"); return; }
+      var m = mapa.getBoundingClientRect(), t = tools.getBoundingClientRect(); if (!t.height) return;
+      var z = parseFloat(getComputedStyle(nav).zoom) || 1;
+      nav.style.setProperty("--n65t", Math.round((t.bottom - m.top + 10) / z) + "px");
+      nav.style.setProperty("--n65r", Math.round((m.right - t.right) / z) + "px");
+      nav.classList.add("ipr-nav65");
+    }
+    pos(); window.addEventListener("resize", function () { clearTimeout(nav65.t); nav65.t = setTimeout(pos, 150); });
+    setInterval(function () { if (!document.hidden) pos(); }, 2500);
+    return true;
+  }
+  // Os temas voltam quando o app.js redesenha a árvore das camadas (acontece depois de entrar, quando chegam as camadas da
+  // organização); o grupo que leva o nome «Os meus locais» mas contém as camadas perde esse título.
+  function guarda65() {
+    var cam = document.getElementById("ipe-cam"); if (!cam) return false;
+    var n = 0;
+    function rever() {
+      if (!document.getElementById("ipr-t62") && cam.querySelector(".ipr-arv") && n < 20) { n++; try { temas62(); } catch (e) {} }
+      [].forEach.call(document.querySelectorAll("#ipe .ipr-g"), function (g) {
+        var gn = g.querySelector(":scope>.ipr-gt .ipr-gn"); if (!gn) return;
+        var leva = !!g.querySelector('.ipr-arv-l, input[placeholder*="iltrar"], input[placeholder*="ilter"]');
+        g.classList.toggle("ipr-lu-cam", /^os meus locais/i.test(gn.textContent.trim()) && leva);
+      });
+    }
+    rever(); new MutationObserver(function () { clearTimeout(guarda65.t); guarda65.t = setTimeout(rever, 200); }).observe(cam, { childList: true, subtree: true });
+    return true;
+  }
   function correr() {
     voltas++;
-    [["marca", marca], ["puxadores", puxadores], ["creditos", creditos], ["estado", estado], ["formiga", formiga], ["projectos", projectos], ["editavel", editavel], ["semBug", semBug], ["rosa", rosa], ["arrumar", arrumar], ["projDir", projDir], ["testarEsq", testarEsq], ["contaTopo", contaTopo], ["camadasTopo", camadasTopo], ["sintetizar", sintetizar], ["opcoesCamadas", opcoesCamadas], ["projFechados", projFechados], ["todasMais", todasMais], ["painelTopo", painelTopo], ["qfieldQR", qfieldQR], ["temas", temas], ["natural", natural], ["aprenderDesenho", aprenderDesenho], ["fichas", fichasCamada], ["natureza", fichasNatureza], ["parcelas", parcelasPonto], ["partilhaQR", partilhaQR], ["teclado", tecladoVirtual], ["prefs", prefsConta], ["cronologia", cronologia], ["alcanena", pilotoAlcanena], ["estilosOrg", estilosOrg], ["fimDoVoo", fimDoVoo], ["orgNomes", orgNomes], ["projRecolhidos", projRecolhidos], ["instalarApp", instalarApp], ["temaEscuro", temaEscuro], ["orgPastas", orgVista], ["discricao", discricao], ["estradas", estradas], ["cloudLimpo", cloudLimpo], ["navEsquerda", navEsquerda], ["encomendaCompacta", encomendaCompacta], ["testarLigacao", testarLigacao], ["linguetaEsq", linguetaEsq], ["longe", longe], ["arrumarCamadas", arrumarCamadas], ["separadores", separadores], ["processar", processar], ["cartoes", cartoes], ["diagMundo", diagMundo], ["foraDoPais", foraDoPais], ["subPastas", subPastas], ["projOrg", projOrg], ["linhasProj", linhasProj], ["locaisUnico", locaisUnico], ["perfil", perfil], ["rosaSegura", rosaSegura], ["vista3dFicha", vista3dFicha], ["temas62", temas62], ["triagem63", triagem63]].forEach(function (f) { if (!feito[f[0]]) { try { feito[f[0]] = f[1](); } catch (e) {} } });
+    [["marca", marca], ["puxadores", puxadores], ["creditos", creditos], ["estado", estado], ["formiga", formiga], ["projectos", projectos], ["editavel", editavel], ["semBug", semBug], ["rosa", rosa], ["arrumar", arrumar], ["projDir", projDir], ["testarEsq", testarEsq], ["contaTopo", contaTopo], ["camadasTopo", camadasTopo], ["sintetizar", sintetizar], ["opcoesCamadas", opcoesCamadas], ["projFechados", projFechados], ["todasMais", todasMais], ["painelTopo", painelTopo], ["qfieldQR", qfieldQR], ["temas", temas], ["natural", natural], ["aprenderDesenho", aprenderDesenho], ["fichas", fichasCamada], ["natureza", fichasNatureza], ["parcelas", parcelasPonto], ["partilhaQR", partilhaQR], ["teclado", tecladoVirtual], ["prefs", prefsConta], ["cronologia", cronologia], ["alcanena", pilotoAlcanena], ["estilosOrg", estilosOrg], ["fimDoVoo", fimDoVoo], ["orgNomes", orgNomes], ["projRecolhidos", projRecolhidos], ["instalarApp", instalarApp], ["temaEscuro", temaEscuro], ["orgPastas", orgVista], ["discricao", discricao], ["estradas", estradas], ["cloudLimpo", cloudLimpo], ["navEsquerda", navEsquerda], ["encomendaCompacta", encomendaCompacta], ["testarLigacao", testarLigacao], ["linguetaEsq", linguetaEsq], ["longe", longe], ["arrumarCamadas", arrumarCamadas], ["separadores", separadores], ["processar", processar], ["cartoes", cartoes], ["diagMundo", diagMundo], ["foraDoPais", foraDoPais], ["subPastas", subPastas], ["projOrg", projOrg], ["linhasProj", linhasProj], ["locaisUnico", locaisUnico], ["perfil", perfil], ["rosaSegura", rosaSegura], ["vista3dFicha", vista3dFicha], ["temas62", temas62], ["triagem63", triagem63], ["grande65", grande65], ["nav65", nav65], ["guarda65", guarda65]].forEach(function (f) { if (!feito[f[0]]) { try { feito[f[0]] = f[1](); } catch (e) {} } });
     try { nomes(); } catch (e) {}
     try { equipa(); } catch (e) {}
     try { if (window.__iprTodas && !document.getElementById("ipr-todas")) todasBases(); } catch (e) {}
