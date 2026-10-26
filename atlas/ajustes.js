@@ -2268,6 +2268,15 @@
     return fetch(API + rota, op).then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) throw new Error(j && j.message || ("Erro " + r.status)); return j; }); });
   }
   function esc48(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+  (function () {
+    if (document.getElementById("ipr-pb-css")) return;
+    var st = document.createElement("style"); st.id = "ipr-pb-css";
+    st.textContent = ".ipr-pb{height:6px;border-radius:4px;background:var(--ln2,rgba(127,127,127,.2));overflow:hidden;margin:2px 0 6px}.ipr-pb i{display:block;height:100%;background:var(--ac,#9cbf4f);transition:width .6s}" +
+      ".ipr-pb.mau i{background:#d9725b}.ipr-pb.fila i{background:var(--mu,#888)}.ipr-pb.vivo i{background-image:linear-gradient(45deg,rgba(255,255,255,.25) 25%,transparent 25%,transparent 50%,rgba(255,255,255,.25) 50%,rgba(255,255,255,.25) 75%,transparent 75%);background-size:14px 14px;animation:iprpb 1s linear infinite}" +
+      "@keyframes iprpb{to{background-position:14px 0}}#ipr-conv-res{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;font:600 12px Inter,sans-serif;color:var(--mu);margin:8px 0}#ipr-conv-res .vivo{color:var(--ac,#9cbf4f)}#ipr-conv-res .mau{color:#d9725b}" +
+      "#ipr-conv-res button{margin-left:auto;font:600 12px Inter,sans-serif;border:1px solid var(--ln);background:transparent;color:var(--tx);border-radius:6px;padding:3px 9px;cursor:pointer}";
+    (document.head || document.documentElement).appendChild(st);
+  })();
   function separadores() {
     var tabs = document.getElementById("ipe-tabs"); if (!tabs) return false;
     function arrumar() {
@@ -2403,15 +2412,24 @@
     function lista() {
       api("carregar/meus").then(function (j) {
         var fs = j.ficheiros || [];
-        L.innerHTML = fs.slice(0, 20).map(function (x) {
+        L.innerHTML = fs.slice(0, 60).map(function (x) {
           var ac = FORM_S.filter(function (f) { return x[f[0]]; }).map(function (f) { return '<a href="' + esc48(x[f[0]]) + (f[0] === "geojson" ? "&dl=1" : "") + '" download>' + f[1] + "</a>"; }).join("");
           if (x.geojson) ac = '<button type="button" data-mapa="' + x.id + '">Ver no mapa</button>' + ac + '<button type="button" data-org="' + x.id + '">Juntar à organização</button>';
           if (x.estado === "erro" || x.estado === "georref") ac = '<button type="button" data-rep="' + x.id + '">Tentar outra vez</button>' + ac;
           ac += '<button type="button" data-lixo="' + x.id + '">Apagar</button>';
           var cls = x.estado === "pronto" ? "ok" : (x.estado === "erro" || x.estado === "georref") ? "mau" : "";
-          return '<li>' + (x.estado === "pronto" ? '<label class="esc"><input type="checkbox" data-esc="' + x.id + '"> </label>' : "") + '<b>' + esc48(x.nome) + '</b><span class="e ' + cls + '">' + esc48(EST[x.estado] || x.estado) + (x.enc ? " · #" + x.enc : "") + "</span>" + (x.msg && x.estado !== "fila" ? '<div class="e">' + esc48(x.msg) + "</div>" : "") + '<div class="ac">' + ac + "</div></li>";
+          // 26/10, 00h05 (Nuno): uma barra de progresso em cada processo (worker 1.0.31 envia info.passo / info.passos).
+          var inf = x.info || {}, pc = x.estado === "pronto" ? 100 : x.estado === "converter" ? Math.max(8, Math.round(100 * (+inf.passo || 1) / (+inf.passos || 6))) : x.estado === "fila" ? 3 : 100;
+          var barra = '<div class="ipr-pb ' + (x.estado === "converter" ? "vivo" : x.estado === "fila" ? "fila" : cls) + '"><i style="width:' + pc + '%"></i></div>' +
+            (x.estado === "converter" ? '<div class="e">' + esc48(inf.fase || x.msg || "A converter") + " · passo " + (+inf.passo || 1) + " de " + (+inf.passos || 6) + (inf.seg ? " · " + inf.seg + " s" : "") + "</div>" : x.estado === "fila" ? '<div class="e">À espera de vez (' + (fs.filter(function (y) { return y.estado === "fila" && y.id < x.id; }).length + 1) + ".º da sua fila)</div>" : "");
+          return '<li>' + barra.replace(/^/, "") + (x.estado === "pronto" ? '<label class="esc"><input type="checkbox" data-esc="' + x.id + '"> </label>' : "") + '<b>' + esc48(x.nome) + '</b><span class="e ' + cls + '">' + esc48(EST[x.estado] || x.estado) + (x.enc ? " · #" + x.enc : "") + "</span>" + (x.msg && x.estado !== "fila" ? '<div class="e">' + esc48(x.msg) + "</div>" : "") + '<div class="ac">' + ac + "</div></li>";
         }).join("") || '<li class="e">Ainda não converteu nenhum ficheiro.</li>';
         // 25/10, 19h44 (Nuno): escolher ficheiros convertidos e ligá-los a um projecto.
+        var nF = fs.filter(function (x) { return x.estado === "fila"; }).length, nC = fs.filter(function (x) { return x.estado === "converter"; }).length, nP = fs.filter(function (x) { return x.estado === "pronto"; }).length, nE = fs.filter(function (x) { return x.estado === "erro" || x.estado === "georref"; }).length;
+        var res = document.getElementById("ipr-conv-res");
+        if (!res) { res = document.createElement("div"); res.id = "ipr-conv-res"; L.parentNode.insertBefore(res, L); }
+        res.innerHTML = '<span class="' + (nC ? "vivo" : "") + '">' + (nC ? "● A converter agora: " + nC : "○ Nada a converter neste momento") + "</span><span>Na fila: " + nF + "</span><span>Prontos: " + nP + "</span>" + (nE ? '<span class="mau">Com erro: ' + nE + "</span>" : "") + '<button type="button" id="ipr-conv-act">Actualizar</button>';
+        res.querySelector("#ipr-conv-act").onclick = function () { lista(); };
         var bar = document.getElementById("ipr-conv-ligar");
         if (fs.some(function (x) { return x.estado === "pronto"; })) {
           if (!bar) { bar = document.createElement("div"); bar.id = "ipr-conv-ligar"; L.parentNode.insertBefore(bar, L); }
@@ -2685,6 +2703,39 @@
     desenhar();
     return true;
   }
+  // 26/10, 00h05 (Nuno: «na lista de projectos continuo sem ver os botões editar, eliminar»). A lista que se vê é a do
+  // entrada.js (li.tme-t, «Abrir»), não os cartões do app.js: os botões passam a ir também para cada linha dessa lista.
+  var ADM = null;
+  function linhasProj() {
+    if (!window.tcdNonce) return false;
+    if (ADM === null) { ADM = false; api("projecto/gestao").then(function (j) { ADM = !!(j && j.admin); document.querySelectorAll(".ipr-tma").forEach(function (x) { x.remove(); }); aplicarLinhas(); }).catch(function () {}); }
+    if (!document.getElementById("ipr-tma-css")) { var st = document.createElement("style"); st.id = "ipr-tma-css"; st.textContent = ".ipr-tma{display:flex;flex-wrap:wrap;gap:4px 12px;flex:1 0 100%;margin-top:4px}.ipr-tma button{all:unset;cursor:pointer;font:600 11.5px Inter,sans-serif;color:var(--mu)}.ipr-tma button:hover{color:var(--tx)}.ipr-tma button.del{color:#d9725b}.ipr-tma .f{display:flex;flex-wrap:wrap;gap:6px;align-items:center;flex:1 0 100%}.ipr-tma .f input{flex:1 1 10em;min-width:0;font:13px Inter,sans-serif;background:var(--p3,transparent);color:var(--tx);border:1px solid var(--ln);border-radius:6px;padding:4px 8px}.ipr-tma .f small{flex:1 0 100%;color:var(--mu)}li.tme-t{flex-wrap:wrap}"; document.head.appendChild(st); }
+    function idDe(li) { var a = li.querySelector('a[href*="mapa="]'), b = li.querySelector("[data-id]"); var m = a && /mapa=(\d+)/.exec(a.getAttribute("href") || ""); return m ? +m[1] : (b ? +b.dataset.id : (/#(\d+)/.exec(li.textContent || "") || [])[1] | 0); }
+    function aplicarLinhas() {
+      document.querySelectorAll("li.tme-t").forEach(function (li) {
+        if (li.querySelector(".ipr-tma")) return; var id = idDe(li); if (!id) return;
+        var d = document.createElement("div"); d.className = "ipr-tma"; d.dataset.id = id;
+        d.innerHTML = '<button type="button" data-a="nome">Editar nome</button><button type="button" data-a="partilhar">Partilhar</button>' + (ADM ? '<button type="button" data-a="eliminar" class="del">Eliminar</button>' : "");
+        ["click", "mousedown", "pointerdown", "touchstart"].forEach(function (t) { d.addEventListener(t, function (e) { e.stopPropagation(); }); });
+        d.addEventListener("click", function (e) {
+          var b = e.target.closest("button"); if (!b) return; e.preventDefault();
+          var nomeEl = li.querySelector("b"), f = d.querySelector(".f");
+          if (b.dataset.a === "nome") { if (f) return; f = document.createElement("span"); f.className = "f"; f.innerHTML = '<input type="text" maxlength="90"><button type="button" data-a="gn">Guardar</button><button type="button" data-a="nao">Cancelar</button>'; f.querySelector("input").value = (nomeEl ? nomeEl.textContent : "").trim(); d.appendChild(f); f.querySelector("input").focus(); f.querySelector("input").addEventListener("keydown", function (ev) { ev.stopPropagation(); if (ev.key === "Enter") f.querySelector('[data-a="gn"]').click(); }); return; }
+          if (b.dataset.a === "nao") { if (f) f.remove(); return; }
+          if (b.dataset.a === "gn") { b.disabled = true; api("projecto/nome", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ projecto: id, nome: f.querySelector("input").value.trim() }) }).then(function (j) { if (nomeEl) nomeEl.textContent = j.nome; f.remove(); }).catch(function (x) { b.disabled = false; b.textContent = x.message; }); return; }
+          if (b.dataset.a === "partilhar") { if (/[?&]mapa=(\d+)/.exec(location.search) && +RegExp.$1 === id) { var c = [].slice.call(document.querySelectorAll("#ipe-proj .ipe-card")).filter(function (k) { return new RegExp("#" + id + "\\b").test(k.textContent); })[0]; var bt = c && c.querySelector("[data-psh]"); if (bt) { bt.click(); return; } } location.href = "/atlas/?mapa=" + id + "#partilhar"; return; }
+          if (b.dataset.a === "eliminar") { if (f) return; f = document.createElement("span"); f.className = "f"; f.innerHTML = "<small>Eliminar o projecto #" + id + "? Vai para o lixo e recupera-se no WooCommerce.</small>" + '<button type="button" data-a="sim" class="del">Sim, eliminar</button><button type="button" data-a="nao">Não</button>'; d.appendChild(f); return; }
+          if (b.dataset.a === "sim") { b.disabled = true; api("projecto/eliminar", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ projecto: id }) }).then(function () { li.remove(); }).catch(function (x) { f.innerHTML = "<small>" + String(x.message).replace(/</g, "&lt;") + "</small>"; }); }
+        });
+        li.appendChild(d);
+      });
+    }
+    aplicarLinhas();
+    if (!linhasProj.obs) { linhasProj.obs = 1; var t = 0; new MutationObserver(function () { clearTimeout(t); t = setTimeout(aplicarLinhas, 200); }).observe(document.body, { childList: true, subtree: true }); }
+    // «Partilhar» vindo de outra linha: abre o cartão e o campo do e-mail.
+    if (location.hash === "#partilhar" && !linhasProj.ph) { linhasProj.ph = 1; var n = 0; (function ver() { var bt = document.querySelector("#ipe-proj .ipe-card [data-psh]"); var id = (/[?&]mapa=(\d+)/.exec(location.search) || [])[1]; var c = id && [].slice.call(document.querySelectorAll("#ipe-proj .ipe-card")).filter(function (k) { return new RegExp("#" + id + "\\b").test(k.textContent); })[0]; var b2 = c && c.querySelector("[data-psh]"); if (b2) { var tab = document.querySelector('.ipe-tab[data-tab="proj"]'); if (tab) tab.click(); b2.click(); } else if (n++ < 40) setTimeout(ver, 400); })(); }
+    return true;
+  }
   // 25/10, 22h57 (Nuno): «nos projectos aparecem todos os projectos em que eu estou envolvido», também os das organizações.
   function projOrg() {
     var P = document.getElementById("ipe-proj"); if (!P || !window.tcdNonce || !window.tcdOrg || !window.tcdOrg.dados) return false;
@@ -2787,7 +2838,7 @@
       P.querySelectorAll(".ipe-card").forEach(function (c) {
         var id = enc(c); if (!id) return;
         var a = arq.indexOf(id) >= 0; c.classList.toggle("ipr-arq", a); if (a) n++;
-        var ct = c.querySelector(".ipe-ct"); if (!ct || ct.querySelector(".ipr-ca")) { var bt = ct && ct.querySelector("[data-arq]"); if (bt) bt.textContent = a ? "Desarquivar" : "Arquivar"; return; }
+        var ct = c.querySelector(".ipe-ct"); if (!ct || ct.querySelector(".ipr-ca")) { var bt = ct && ct.querySelector("[data-arq]"); var tx0 = a ? "Desarquivar" : "Arquivar"; if (bt && bt.textContent !== tx0) bt.textContent = tx0; return; }
         var d = document.createElement("div"); d.className = "ipr-ca";
         // 25/10, 22h59 (Nuno): editar, partilhar e eliminar na própria lista (m90360).
         d.innerHTML = '<button type="button" data-pnome="' + id + '">Editar nome</button><button type="button" data-psh="' + id + '">Partilhar</button><button type="button" data-arq="' + id + '">' + (a ? "Desarquivar" : "Arquivar") + '</button><button type="button" data-jorg="' + id + '">Juntar à organização</button>' + (ADM ? '<button type="button" data-pdel="' + id + '" class="ipr-del">Eliminar</button>' : "");
@@ -2795,7 +2846,7 @@
       });
       var b = document.getElementById("ipr-arq-b");
       if (n && !b) { b = document.createElement("button"); b.type = "button"; b.id = "ipr-arq-b"; P.insertBefore(b, P.firstChild); b.addEventListener("click", function () { mostrarArq = !mostrarArq; P.classList.toggle("ipr-ver-arq", mostrarArq); aplicar(); }); }
-      if (b) { b.hidden = !n; b.textContent = (mostrarArq ? "Esconder" : "Mostrar") + " arquivados (" + n + ")"; }
+      if (b) { if (b.hidden !== !n) b.hidden = !n; var tx1 = (mostrarArq ? "Esconder" : "Mostrar") + " arquivados (" + n + ")"; if (b.textContent !== tx1) b.textContent = tx1; }
     }
     var orgsJ = null, ADM = false;
     api("projecto/gestao").then(function (j) { if (j && j.admin) { ADM = true; P.querySelectorAll(".ipr-ca").forEach(function (x) { x.remove(); }); aplicar(); } }).catch(function () {});
@@ -2863,7 +2914,7 @@
   }
   function correr() {
     voltas++;
-    [["marca", marca], ["puxadores", puxadores], ["creditos", creditos], ["estado", estado], ["formiga", formiga], ["projectos", projectos], ["editavel", editavel], ["semBug", semBug], ["rosa", rosa], ["arrumar", arrumar], ["projDir", projDir], ["testarEsq", testarEsq], ["contaTopo", contaTopo], ["camadasTopo", camadasTopo], ["sintetizar", sintetizar], ["opcoesCamadas", opcoesCamadas], ["projFechados", projFechados], ["todasMais", todasMais], ["painelTopo", painelTopo], ["qfieldQR", qfieldQR], ["temas", temas], ["natural", natural], ["aprenderDesenho", aprenderDesenho], ["fichas", fichasCamada], ["natureza", fichasNatureza], ["parcelas", parcelasPonto], ["partilhaQR", partilhaQR], ["teclado", tecladoVirtual], ["prefs", prefsConta], ["cronologia", cronologia], ["alcanena", pilotoAlcanena], ["estilosOrg", estilosOrg], ["fimDoVoo", fimDoVoo], ["orgNomes", orgNomes], ["projRecolhidos", projRecolhidos], ["instalarApp", instalarApp], ["temaEscuro", temaEscuro], ["orgPastas", orgVista], ["discricao", discricao], ["estradas", estradas], ["cloudLimpo", cloudLimpo], ["navEsquerda", navEsquerda], ["encomendaCompacta", encomendaCompacta], ["testarLigacao", testarLigacao], ["linguetaEsq", linguetaEsq], ["longe", longe], ["arrumarCamadas", arrumarCamadas], ["separadores", separadores], ["processar", processar], ["cartoes", cartoes], ["diagMundo", diagMundo], ["foraDoPais", foraDoPais], ["subPastas", subPastas], ["projOrg", projOrg]].forEach(function (f) { if (!feito[f[0]]) { try { feito[f[0]] = f[1](); } catch (e) {} } });
+    [["marca", marca], ["puxadores", puxadores], ["creditos", creditos], ["estado", estado], ["formiga", formiga], ["projectos", projectos], ["editavel", editavel], ["semBug", semBug], ["rosa", rosa], ["arrumar", arrumar], ["projDir", projDir], ["testarEsq", testarEsq], ["contaTopo", contaTopo], ["camadasTopo", camadasTopo], ["sintetizar", sintetizar], ["opcoesCamadas", opcoesCamadas], ["projFechados", projFechados], ["todasMais", todasMais], ["painelTopo", painelTopo], ["qfieldQR", qfieldQR], ["temas", temas], ["natural", natural], ["aprenderDesenho", aprenderDesenho], ["fichas", fichasCamada], ["natureza", fichasNatureza], ["parcelas", parcelasPonto], ["partilhaQR", partilhaQR], ["teclado", tecladoVirtual], ["prefs", prefsConta], ["cronologia", cronologia], ["alcanena", pilotoAlcanena], ["estilosOrg", estilosOrg], ["fimDoVoo", fimDoVoo], ["orgNomes", orgNomes], ["projRecolhidos", projRecolhidos], ["instalarApp", instalarApp], ["temaEscuro", temaEscuro], ["orgPastas", orgVista], ["discricao", discricao], ["estradas", estradas], ["cloudLimpo", cloudLimpo], ["navEsquerda", navEsquerda], ["encomendaCompacta", encomendaCompacta], ["testarLigacao", testarLigacao], ["linguetaEsq", linguetaEsq], ["longe", longe], ["arrumarCamadas", arrumarCamadas], ["separadores", separadores], ["processar", processar], ["cartoes", cartoes], ["diagMundo", diagMundo], ["foraDoPais", foraDoPais], ["subPastas", subPastas], ["projOrg", projOrg], ["linhasProj", linhasProj]].forEach(function (f) { if (!feito[f[0]]) { try { feito[f[0]] = f[1](); } catch (e) {} } });
     try { nomes(); } catch (e) {}
     try { equipa(); } catch (e) {}
     try { if (window.__iprTodas && !document.getElementById("ipr-todas")) todasBases(); } catch (e) {}
