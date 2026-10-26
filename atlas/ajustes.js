@@ -2936,7 +2936,7 @@
   // satélite, limite do terreno por cima. Abre parado, enquadra a propriedade com margem, perspectiva oblíqua. Arrastar roda e
   // inclina, roda do rato aproxima; botões: vista inicial, norte, ecrã inteiro, exagero vertical 1× / 2×. Também por
   // «Ver em 3D» nas linhas dos projectos. Carrega só quando se abre (não atrasa a ficha).
-  function vista3d(alvo, id, emJanela) {
+  function vista3d(alvo, id, emJanela, vivo) {
     if (!window.maplibregl) return;
     alvo.innerHTML = '<div class="ipr-3d-c"><div class="m"></div><div class="b"><button type="button" data-v="ini" title="Vista inicial">⟲</button><button type="button" data-v="n" title="Orientar a norte">N</button><button type="button" data-v="ex" title="Exagero vertical">1×</button><button type="button" data-v="ec" title="Ecrã inteiro">⤢</button>' + (emJanela ? '<button type="button" data-v="x" title="Fechar">✕</button>' : "") + '</div><div class="s">A carregar o relevo…</div></div>';
     var C = alvo.querySelector(".m"), S = alvo.querySelector(".s");
@@ -2949,6 +2949,17 @@
       var ex = 1, ini = function () { m.fitBounds([[bx[0], bx[1]], [bx[2], bx[3]]], { padding: 40, pitch: 60, bearing: -20, duration: 0 }); };
       m.on("load", function () { ini(); S.textContent = "Relevo: Mapterhorn (LiDAR DGT 0,5 m onde existe; Copernicus GLO-30 no resto) · imagem Esri World Imagery · escala vertical real (1×). Arraste para rodar e inclinar; roda do rato para aproximar."; });
       m.on("error", function () { S.textContent = "Parte do relevo ou da imagem não carregou. Tente outra vez dentro de momentos."; });
+      // §60: na ficha, o modelo fica parado; ao passar o rato roda devagar; ao clicar fica navegável.
+      if (vivo) {
+        var hs = ["dragRotate", "dragPan", "scrollZoom", "touchZoomRotate", "doubleClickZoom", "keyboard", "touchPitch"], solto = false, gira = 0;
+        hs.forEach(function (h) { try { m[h].disable(); } catch (x) {} });
+        var dica = document.createElement("div"); dica.className = "ipr-fx-dica"; dica.textContent = "Passe o rato para rodar · clique para explorar"; C.parentNode.appendChild(dica);
+        function rodar() { if (solto) return; m.setBearing(m.getBearing() + 0.12); gira = requestAnimationFrame(rodar); }
+        C.addEventListener("mouseenter", function () { if (!solto && !gira) gira = requestAnimationFrame(rodar); });
+        C.addEventListener("mouseleave", function () { cancelAnimationFrame(gira); gira = 0; });
+        C.addEventListener("click", function () { if (solto) return; solto = true; cancelAnimationFrame(gira); gira = 0; hs.forEach(function (h) { try { m[h].enable(); } catch (x) {} }); dica.textContent = "Arraste para rodar e inclinar · roda do rato para aproximar"; });
+        C.addEventListener("touchstart", function () { if (!solto) { solto = true; hs.forEach(function (h) { try { m[h].enable(); } catch (x) {} }); dica.textContent = "Dois dedos para rodar e inclinar"; } }, { passive: true });
+      }
       alvo.querySelector(".b").addEventListener("click", function (e) {
         var v = e.target.dataset && e.target.dataset.v; if (!v) return;
         if (v === "ini") ini(); else if (v === "n") m.easeTo({ bearing: 0, duration: 400 });
@@ -2960,23 +2971,81 @@
     }).catch(function (e) { S.textContent = e.message || "Sem limite do terreno para mostrar em 3D."; });
   }
   window.__iprVista3d = vista3d;
+  // §60 Ficha do projecto mais completa (Nuno, 26/10, 10h27: «tem que ser um ambiente mais completo [...] cada user quando
+  // entra vê toda aquela informação, os layers, vê o 3D, que está parado, mas [...] passa o rato e ele mexe, ou clica e mexe
+  // [...] dependendo dos acessos vê mais ou menos»). Dentro da ficha aberta, por baixo do cabeçalho: o 3D já carregado
+  // (parado; roda ao passar o rato; navegável ao clicar), os dados do terreno calculados no próprio navegador (área, freguesia e
+  // concelho, altitude mínima, média e máxima, declive médio e máximo, exposição dominante, a partir do mesmo relevo do perfil),
+  // as acções (3D em ecrã inteiro, perfil de elevação, planta de localização) e o que o nível de acesso dá: no Explorer, o que
+  // o Intelligence mostra neste terreno; no Intelligence, os temas activos. A miniatura do polígono fica como está.
   function vista3dFicha() {
     if (!document.getElementById("ipr-3d-css")) {
       var st = document.createElement("style"); st.id = "ipr-3d-css";
-      st.textContent = ".ipr-3d{margin:8px 0}.ipr-3d>button{font:600 12px Inter,sans-serif;padding:7px 10px;border-radius:8px;border:1px solid var(--ln,#333);background:transparent;color:var(--tx);cursor:pointer;width:100%}.ipr-3d-c{position:relative;background:#111}.ipr-3d-c .m{height:260px;border-radius:8px;overflow:hidden}.ipr-3d-c:fullscreen .m{height:100vh;border-radius:0}.ipr-3d-c .b{position:absolute;top:8px;right:8px;display:flex;flex-direction:column;gap:4px}.ipr-3d-c .b button{width:30px;height:30px;border-radius:7px;border:0;background:rgba(20,24,20,.82);color:#fff;font:700 13px Inter,sans-serif;cursor:pointer}.ipr-3d-c .s{font:11px Inter,sans-serif;color:var(--mu,#9aa08f);padding:4px 2px}#ipr-3d-j{position:fixed;inset:0;z-index:100003;background:rgba(10,12,10,.6);display:flex;align-items:center;justify-content:center;padding:16px}#ipr-3d-j>div{width:min(900px,100%);background:var(--p1,#141814);border-radius:12px;padding:10px}#ipr-3d-j .m{height:min(70vh,560px)}";
+      st.textContent = ".ipr-fx{margin:8px 0 10px;display:grid;gap:8px}.ipr-fx .ipr-3d-c{position:relative;background:#0d100d;border-radius:10px;overflow:hidden;height:240px}.ipr-fx .ipr-3d-c .m{position:absolute;inset:0}.ipr-fx .ipr-3d-c .b{position:absolute;top:6px;right:6px;display:flex;gap:4px;z-index:2}.ipr-fx .ipr-3d-c .b button{font:600 11px Inter,sans-serif;padding:4px 7px;border-radius:6px;border:1px solid rgba(255,255,255,.25);background:rgba(20,24,20,.75);color:#fff;cursor:pointer}.ipr-fx .ipr-3d-c .s{display:none}.ipr-fx-dica{position:absolute;left:8px;bottom:6px;z-index:2;font:500 11px Inter,sans-serif;color:#fff;background:rgba(20,24,20,.6);padding:3px 7px;border-radius:6px;pointer-events:none}.ipr-3d-c:fullscreen{height:100%}.ipr-fx-g{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:6px}.ipr-fx-g div{border:1px solid var(--ln,#333);border-radius:8px;padding:6px 8px}.ipr-fx-g b{display:block;font:600 14px Inter,sans-serif;color:var(--tx)}.ipr-fx-g span{font:500 10px/1.3 Inter,sans-serif;letter-spacing:.04em;text-transform:uppercase;color:var(--mu,#999)}.ipr-fx-a{display:flex;flex-wrap:wrap;gap:6px}.ipr-fx-a button{font:600 12px Inter,sans-serif;padding:6px 9px;border-radius:8px;border:1px solid var(--ln,#333);background:transparent;color:var(--tx);cursor:pointer}.ipr-fx-n{font:13px/1.45 Inter,sans-serif;color:var(--mu,#aaa);border-left:3px solid #75834a;padding:4px 8px}.ipr-fx-n b{color:var(--tx)}";
       document.head.appendChild(st);
     }
+    var cache = {};
+    function tile(z, x, y) {
+      var k = z + "/" + x + "/" + y; if (cache[k]) return cache[k];
+      return (cache[k] = new Promise(function (ok) { var im = new Image(); im.crossOrigin = "anonymous"; im.onload = function () { try { var cv = document.createElement("canvas"); cv.width = im.width; cv.height = im.height; var c2 = cv.getContext("2d"); c2.drawImage(im, 0, 0); ok({ w: im.width, d: c2.getImageData(0, 0, im.width, im.height).data }); } catch (e) { ok(null); } }; im.onerror = function () { ok(null); }; im.src = "https://tiles.mapterhorn.com/" + k + ".webp"; }));
+    }
+    function alt(lon, lat, z) {
+      var n = Math.pow(2, z), xt = (lon + 180) / 360 * n, la = lat * Math.PI / 180, yt = (1 - Math.log(Math.tan(la) + 1 / Math.cos(la)) / Math.PI) / 2 * n, tx = Math.floor(xt), ty = Math.floor(yt);
+      return tile(z, tx, ty).then(function (t) { if (!t) return NaN; var px = Math.min(t.w - 1, Math.floor((xt - tx) * t.w)), py = Math.min(t.w - 1, Math.floor((yt - ty) * t.w)), i = (py * t.w + px) * 4; return t.d[i + 3] === 0 ? NaN : t.d[i] * 256 + t.d[i + 1] + t.d[i + 2] / 256 - 32768; });
+    }
+    function dentro(p, aneis) { var c = false; aneis.forEach(function (r) { for (var i = 0, j = r.length - 1; i < r.length; j = i++) { if ((r[i][1] > p[1]) !== (r[j][1] > p[1]) && p[0] < (r[j][0] - r[i][0]) * (p[1] - r[i][1]) / (r[j][1] - r[i][1]) + r[i][0]) c = !c; } }); return c; }
+    function terreno(T) {
+      var bx = [180, 90, -180, -90]; T.aneis.forEach(function (r) { r.forEach(function (c) { bx[0] = Math.min(bx[0], c[0]); bx[1] = Math.min(bx[1], c[1]); bx[2] = Math.max(bx[2], c[0]); bx[3] = Math.max(bx[3], c[1]); }); });
+      var N = 28, dx = (bx[2] - bx[0]) / N, dy = (bx[3] - bx[1]) / N, mx = 111320 * Math.cos((bx[1] + bx[3]) / 2 * Math.PI / 180), my = 110574;
+      var larg = Math.max((bx[2] - bx[0]) * mx, (bx[3] - bx[1]) * my), z = larg > 20000 ? 12 : larg > 5000 ? 13 : larg > 1500 ? 14 : 15;
+      var pts = []; for (var i = 0; i <= N; i++) for (var j = 0; j <= N; j++) pts.push([bx[0] + i * dx, bx[1] + j * dy, i, j]);
+      return Promise.all(pts.map(function (p) { return alt(p[0], p[1], z); })).then(function (h) {
+        var G = {}; pts.forEach(function (p, k) { G[p[2] + "," + p[3]] = h[k]; });
+        var hs = [], dec = [], asp = [0, 0, 0, 0, 0, 0, 0, 0];
+        pts.forEach(function (p, k) {
+          if (!dentro(p, T.aneis) || isNaN(h[k])) return; hs.push(h[k]);
+          var e = G[(p[2] + 1) + "," + p[3]], w = G[(p[2] - 1) + "," + p[3]], n = G[p[2] + "," + (p[3] + 1)], s2 = G[p[2] + "," + (p[3] - 1)];
+          if ([e, w, n, s2].some(function (v) { return v === undefined || isNaN(v); })) return;
+          var gx = (e - w) / (2 * dx * mx), gy = (n - s2) / (2 * dy * my), g = Math.sqrt(gx * gx + gy * gy); dec.push(g * 100);
+          if (g > 0.02) { var a = (Math.atan2(-gx, -gy) * 180 / Math.PI + 360) % 360; asp[Math.round(a / 45) % 8]++; }
+        });
+        if (!hs.length) return null;
+        hs.sort(function (a, b) { return a - b; }); dec.sort(function (a, b) { return a - b; });
+        var med = hs.reduce(function (a, b) { return a + b; }, 0) / hs.length, dm = dec.length ? dec.reduce(function (a, b) { return a + b; }, 0) / dec.length : NaN;
+        var rs = ["Norte", "Nordeste", "Este", "Sudeste", "Sul", "Sudoeste", "Oeste", "Noroeste"], ai = asp.indexOf(Math.max.apply(null, asp)), at = asp.reduce(function (a, b) { return a + b; }, 0);
+        return { min: hs[0], max: hs[hs.length - 1], med: med, dm: dm, dx: dec.length ? dec[Math.floor(dec.length * 0.95)] : NaN, exp: at ? rs[ai] + " (" + Math.round(asp[ai] / at * 100) + " %)" : "plano", centro: [(bx[0] + bx[2]) / 2, (bx[1] + bx[3]) / 2] };
+      });
+    }
+    function num(v, d) { return isNaN(v) ? "—" : v.toLocaleString("pt-PT", { maximumFractionDigits: d || 0 }); }
     function porCartao() {
       document.querySelectorAll("#ipe .ipe-card.on").forEach(function (c) {
-        if (c.querySelector(".ipr-3d")) return;
+        if (c.querySelector(".ipr-fx")) return;
         var id = +(c.querySelector(".mono") || {}).textContent.replace(/^#?(\d+).*/, "$1"); if (!id) return;
-        var d = document.createElement("div"); d.className = "ipr-3d"; d.innerHTML = '<button type="button">Ver o terreno em 3D</button>';
+        var d = document.createElement("div"); d.className = "ipr-fx";
+        var intel = window.IPR_NIVEL !== "explorer";
+        d.innerHTML = '<div class="ipr-fx-3"></div><div class="ipr-fx-g"><div><span>A carregar</span><b>…</b></div></div><div class="ipr-fx-a"><button type="button" data-fx="ec">3D em ecrã inteiro</button><button type="button" data-fx="pf">Perfil de elevação</button><button type="button" data-fx="pl">Planta de localização</button></div>' +
+          (intel ? '<p class="ipr-fx-n"><b>Intelligence activo.</b> Neste terreno pode ligar as condicionantes (PDM, REN, RAN, Rede Natura), a água, os solos e a ocupação, a perigosidade de incêndio e os ortofotos, nas camadas do Atlas.</p>' : '<p class="ipr-fx-n"><b>No Intelligence vê também, sobre este terreno:</b> condicionantes (PDM, REN, RAN, Rede Natura), água, solos e ocupação do solo, perigosidade de incêndio. Vem incluído com qualquer Base Cartográfica ou plano da IPR Cloud.</p>');
         var cc = c.querySelector(".ipe-cc"); (cc ? cc.parentNode : c).insertBefore(d, cc ? cc.nextSibling : c.firstChild);
-        d.querySelector("button").addEventListener("click", function (e) { e.stopPropagation(); vista3d(d, id, false); });
+        d.addEventListener("click", function (e) { e.stopPropagation(); }, false);
+        vista3d(d.querySelector(".ipr-fx-3"), id, false, true);
+        d.querySelector(".ipr-fx-a").addEventListener("click", function (e) {
+          var v = e.target.dataset && e.target.dataset.fx; if (!v) return;
+          if (v === "ec") { var b = d.querySelector('.ipr-3d-c .b [data-v="ec"]'); if (b) b.click(); }
+          else if (v === "pf") { var p = document.getElementById("ipr-perfil-b"); if (p) p.click(); }
+          else if (v === "pl" && window.__iprPlanta) window.__iprPlanta(id);
+        });
+        plGeo(id).then(function (T) {
+          return terreno(T).then(function (r) {
+            var g = d.querySelector(".ipr-fx-g"), h = '<div><span>Área</span><b>' + num(+T.ha, 2) + ' ha</b></div>';
+            if (r) h += '<div><span>Altitude</span><b>' + num(r.min) + '–' + num(r.max) + ' m</b></div><div><span>Altitude média</span><b>' + num(r.med) + ' m</b></div><div><span>Declive médio</span><b>' + num(r.dm, 1) + ' %</b></div><div><span>Declive forte (95 %)</span><b>' + num(r.dx, 1) + ' %</b></div><div><span>Exposição</span><b>' + r.exp + '</b></div>';
+            g.innerHTML = h + '<div class="ipr-fx-sit"><span>Freguesia · concelho</span><b>…</b></div>';
+            if (r) plSitio(r.centro[0], r.centro[1]).then(function (s) { var x = g.querySelector(".ipr-fx-sit b"); if (x) x.textContent = [s.freguesia, s.municipio].filter(Boolean).join(" · ") || "—"; });
+          });
+        }).catch(function (e) { d.querySelector(".ipr-fx-g").innerHTML = '<div><span>Terreno</span><b>' + (e.message || "Sem limite guardado") + '</b></div>'; });
       });
     }
     porCartao();
-    if (!vista3dFicha.obs) { var ipe = document.getElementById("ipe"); if (!ipe) return false; vista3dFicha.obs = 1; new MutationObserver(function () { clearTimeout(vista3dFicha.t); vista3dFicha.t = setTimeout(porCartao, 150); }).observe(ipe, { childList: true, subtree: true }); }
+    if (!vista3dFicha.obs) { var ipe = document.getElementById("ipe"); if (!ipe) return false; vista3dFicha.obs = 1; new MutationObserver(function () { clearTimeout(vista3dFicha.t); vista3dFicha.t = setTimeout(porCartao, 150); }).observe(ipe, { childList: true, subtree: true, attributes: true, attributeFilter: ["class"] }); }
     return true;
   }
   function vista3dJanela(id) { var j = document.getElementById("ipr-3d-j"); if (j) j.remove(); j = document.createElement("div"); j.id = "ipr-3d-j"; j.innerHTML = "<div></div>"; document.body.appendChild(j); j.addEventListener("click", function (e) { if (e.target === j) j.remove(); }); vista3d(j.firstChild, id, true); }
