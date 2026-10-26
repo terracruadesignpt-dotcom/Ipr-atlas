@@ -414,13 +414,9 @@
     if (!loc || !cam) return false;
     var dest = window.tcdNonce ? pp : pe;
     if (tme && dest && tme.parentNode !== dest) { tme.classList.add(window.tcdNonce ? "tme-dentro" : "tme-dir"); dest.insertBefore(tme, dest.firstChild); }
-    function pôr() {
-      var arv = cam.querySelector(".ipr-arv") || cam;
-      if (loc.style.display === "none") loc.style.display = "";
-      loc.classList.remove("ipr-loc-dir");
-      if (loc.parentNode !== arv || arv.firstElementChild !== loc) arv.insertBefore(loc, arv.firstChild);
-      var gn = loc.querySelector(".ipr-gn"); if (gn && gn.textContent !== "Os meus locais") gn.textContent = "Os meus locais";
-    }
+    // 26/10, 18h52 (Nuno): o #ipc-loc é a lista dos projectos (terrenos guardados), já no separador Projectos à direita;
+    // aparecia em cima com o nome «Os meus locais» e duplicava os locais verdadeiros. Fica escondido à esquerda.
+    function pôr() { loc.classList.add("ipr-proj-fora"); }
     if (!document.getElementById("ipr-loc-css")) { var cs = document.createElement("style"); cs.id = "ipr-loc-css"; cs.textContent = "#ipe #ipc-loc.ipr-g:not(.ipr-fechou)>.ipe-sbc{display:block!important}#ipe #ipc-loc.ipr-g:not(.ipr-fechou) .ipr-car{transform:rotate(90deg)}#ipe #ipc-loc.ipr-g.ipr-fechou>.ipe-sbc{display:none!important}#ipe #ipc-loc .ipe-loc-s,#ipe #ipc-loc .ipe-loc-p:has([data-am]){display:none!important}#ipe #ipc-loc>.ipe-sbc{max-height:30vh;overflow:auto}"; document.head.appendChild(cs); }
     var gtb = loc.querySelector(".ipr-gt"); if (gtb && !gtb.__iprM) { gtb.__iprM = 1; gtb.addEventListener("click", function () { loc.classList.toggle("ipr-fechou"); }, true); }
     pôr();
@@ -4612,9 +4608,57 @@
     document.addEventListener("ipr:lingua", function () { var p2 = (window.IPR_LINGUA || "pt") === "pt"; b.title = p2 ? "Actualizar o Atlas" : "Reload the Atlas"; b.setAttribute("aria-label", b.title); });
     return true;
   }
+
+  // §66 Barra da esquerda arrumada (Nuno, 26/10/2026, 18h52: «está desordenado e pouco intuitivo [...] repetição e uma grande
+  // misturada»). Ordem fixa: Pesquisa · Os meus locais (um só, com Ponto, Linha e Área) · Temas (encolhe-se) · Camadas
+  // (filtro, Cronologia, Desligar e os testes numa só faixa; a seguir os grupos). Sai o botão «Os meus» dos temas antigos,
+  // que repetia os temas de cima.
+  function esquerda66() {
+    var cam = document.getElementById("ipe-cam"), arv = cam && cam.querySelector(".ipr-arv"); if (!arv) return false;
+    if (!document.getElementById("ipr-66-css")) {
+      var st = document.createElement("style"); st.id = "ipr-66-css";
+      st.textContent = "#ipe .ipr-proj-fora,#ipe .ipr-g.ipc-loc:not(.ipr-66-loc){display:none!important}" +
+        "#ipe .ipr-arv-cab .ipr-temas-b:not(.ipr-crono-b){display:none!important}" +
+        "#ipe .ipr-arv-cab{display:flex!important;flex-wrap:wrap;gap:6px;align-items:center;padding:8px 10px 4px}" +
+        "#ipe .ipr-arv-cab .ipr-busca{order:-1;flex:1 1 100%!important;width:100%!important;min-width:0;height:32px;display:block!important}" +
+        "#ipe .ipr-arv-cab>button{flex:0 0 auto}#ipe .ipr-testes{display:flex;gap:6px;padding:0 10px 8px;flex-wrap:wrap}" +
+        "#ipe .ipr-testes button{font-size:12px!important;padding:4px 8px!important;min-height:28px!important;opacity:.85}" +
+        "#ipr-t62 .ipr-t62-cab{cursor:pointer;display:flex;align-items:center;justify-content:space-between;user-select:none}" +
+        "#ipr-t62 .ipr-t62-cab::after{content:'';width:8px;height:8px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg);margin-right:6px;opacity:.7;transition:transform .15s}" +
+        "#ipr-t62.ipr-66-fech .ipr-t62-cab::after{transform:rotate(-45deg)}" +
+        "#ipr-t62.ipr-66-fech .ipr-t62-sub,#ipr-t62.ipr-66-fech .ipr-t62-g,#ipr-t62.ipr-66-fech .ipr-t62-c{display:none!important}" +
+        "#ipe .ipr-66-loc{margin-bottom:6px}";
+      document.head.appendChild(st);
+    }
+    var t = document.getElementById("ipr-t62");
+    if (t && !t.__66) {
+      t.__66 = 1; if (ler("ipr_t66_temas") === "0") t.classList.add("ipr-66-fech");
+      t.addEventListener("click", function (e) { if (e.target.closest(".ipr-t62-cab")) { var f = t.classList.toggle("ipr-66-fech"); gravar("ipr_t66_temas", f ? "0" : "1"); } });
+    }
+    // «Os meus locais»: o grupo que tem o botão Ponto vai para o topo das camadas; os outros com o mesmo nome escondem-se
+    var bts = [].slice.call(document.querySelectorAll("#ipe-esq button")).filter(function (b) { return /^(Ponto|Point)$/.test((b.textContent || "").trim()); });
+    var g = bts.length ? (bts[0].closest(".ipr-g") || bts[0].closest("section")) : null;
+    if (g && g !== arv && arv.contains(g)) {
+      g.classList.add("ipr-66-loc");
+      if (arv.firstElementChild !== g) arv.insertBefore(g, arv.firstChild);
+    }
+    var vistos66 = 0;
+    if (g) [].forEach.call(g.querySelectorAll("*"), function (el) {
+      if (el.classList.contains("ipr-gn") || el.closest(".ipr-gt") || el.closest(".ipe-sbh") || el.children.length > 2) return;
+      if (!vistos66++ && !g.querySelector(".ipr-gt .ipr-gn, .ipe-sbh")) return;
+      var tx = (el.firstChild && el.firstChild.nodeType === 3 ? el.firstChild.nodeValue : el.textContent || "").trim();
+      if (/^(Os meus locais|My places)$/i.test(tx)) { var row = el.parentElement && el.parentElement !== g && el.parentElement.querySelector("svg") ? el.parentElement : el; row.style.display = "none"; }
+    });
+    [].forEach.call(document.querySelectorAll("#ipe-esq .ipr-gn"), function (n) {
+      var gg = n.closest(".ipr-g"); if (!gg || gg === g || (g && (g.contains(gg) || gg.contains(g)))) return;
+      if (/^os meus locais/i.test(n.textContent.trim())) gg.classList.add("ipr-proj-fora");
+    });
+    if (!esquerda66.obs) { esquerda66.obs = 1; new MutationObserver(function () { clearTimeout(esquerda66.t); esquerda66.t = setTimeout(esquerda66, 250); }).observe(cam, { childList: true, subtree: true }); }
+    return true;
+  }
   function correr() {
     voltas++;
-    [["marca", marca], ["puxadores", puxadores], ["creditos", creditos], ["estado", estado], ["formiga", formiga], ["projectos", projectos], ["editavel", editavel], ["semBug", semBug], ["rosa", rosa], ["arrumar", arrumar], ["projDir", projDir], ["testarEsq", testarEsq], ["contaTopo", contaTopo], ["camadasTopo", camadasTopo], ["sintetizar", sintetizar], ["opcoesCamadas", opcoesCamadas], ["projFechados", projFechados], ["todasMais", todasMais], ["painelTopo", painelTopo], ["qfieldQR", qfieldQR], ["temas", temas], ["natural", natural], ["aprenderDesenho", aprenderDesenho], ["fichas", fichasCamada], ["natureza", fichasNatureza], ["parcelas", parcelasPonto], ["partilhaQR", partilhaQR], ["teclado", tecladoVirtual], ["prefs", prefsConta], ["cronologia", cronologia], ["alcanena", pilotoAlcanena], ["estilosOrg", estilosOrg], ["fimDoVoo", fimDoVoo], ["orgNomes", orgNomes], ["projRecolhidos", projRecolhidos], ["instalarApp", instalarApp], ["temaEscuro", temaEscuro], ["orgPastas", orgVista], ["discricao", discricao], ["estradas", estradas], ["cloudLimpo", cloudLimpo], ["navEsquerda", navEsquerda], ["encomendaCompacta", encomendaCompacta], ["testarLigacao", testarLigacao], ["linguetaEsq", linguetaEsq], ["longe", longe], ["arrumarCamadas", arrumarCamadas], ["separadores", separadores], ["processar", processar], ["cartoes", cartoes], ["diagMundo", diagMundo], ["foraDoPais", foraDoPais], ["subPastas", subPastas], ["projOrg", projOrg], ["linhasProj", linhasProj], ["locaisUnico", locaisUnico], ["perfil", perfil], ["rosaSegura", rosaSegura], ["vista3dFicha", vista3dFicha], ["temas62", temas62], ["triagem63", triagem63], ["grande65", grande65], ["nav65", nav65], ["guarda65", guarda65], ["refresh65", refresh65]].forEach(function (f) { if (!feito[f[0]]) { try { feito[f[0]] = f[1](); } catch (e) {} } });
+    [["marca", marca], ["puxadores", puxadores], ["creditos", creditos], ["estado", estado], ["formiga", formiga], ["projectos", projectos], ["editavel", editavel], ["semBug", semBug], ["rosa", rosa], ["arrumar", arrumar], ["projDir", projDir], ["testarEsq", testarEsq], ["contaTopo", contaTopo], ["camadasTopo", camadasTopo], ["sintetizar", sintetizar], ["opcoesCamadas", opcoesCamadas], ["projFechados", projFechados], ["todasMais", todasMais], ["painelTopo", painelTopo], ["qfieldQR", qfieldQR], ["temas", temas], ["natural", natural], ["aprenderDesenho", aprenderDesenho], ["fichas", fichasCamada], ["natureza", fichasNatureza], ["parcelas", parcelasPonto], ["partilhaQR", partilhaQR], ["teclado", tecladoVirtual], ["prefs", prefsConta], ["cronologia", cronologia], ["alcanena", pilotoAlcanena], ["estilosOrg", estilosOrg], ["fimDoVoo", fimDoVoo], ["orgNomes", orgNomes], ["projRecolhidos", projRecolhidos], ["instalarApp", instalarApp], ["temaEscuro", temaEscuro], ["orgPastas", orgVista], ["discricao", discricao], ["estradas", estradas], ["cloudLimpo", cloudLimpo], ["navEsquerda", navEsquerda], ["encomendaCompacta", encomendaCompacta], ["testarLigacao", testarLigacao], ["linguetaEsq", linguetaEsq], ["longe", longe], ["arrumarCamadas", arrumarCamadas], ["separadores", separadores], ["processar", processar], ["cartoes", cartoes], ["diagMundo", diagMundo], ["foraDoPais", foraDoPais], ["subPastas", subPastas], ["projOrg", projOrg], ["linhasProj", linhasProj], ["locaisUnico", locaisUnico], ["perfil", perfil], ["rosaSegura", rosaSegura], ["vista3dFicha", vista3dFicha], ["temas62", temas62], ["triagem63", triagem63], ["grande65", grande65], ["nav65", nav65], ["guarda65", guarda65], ["refresh65", refresh65], ["esquerda66", esquerda66]].forEach(function (f) { if (!feito[f[0]]) { try { feito[f[0]] = f[1](); } catch (e) {} } });
     try { nomes(); } catch (e) {}
     try { equipa(); } catch (e) {}
     try { if (window.__iprTodas && !document.getElementById("ipr-todas")) todasBases(); } catch (e) {}
