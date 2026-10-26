@@ -4623,7 +4623,7 @@
         "#ipe .ipr-arv-cab .ipr-busca{order:-1;flex:1 1 100%!important;width:100%!important;min-width:0;height:32px;display:block!important}" +
         "#ipe .ipr-arv-cab>button{flex:0 0 auto}#ipe .ipr-testes{display:flex;gap:6px;padding:0 10px 8px;flex-wrap:wrap}" +
         "#ipe .ipr-testes button{font-size:12px!important;padding:4px 8px!important;min-height:28px!important;opacity:.85}" +
-        "#ipr-t62 .ipr-t62-cab{cursor:pointer;display:flex;align-items:center;justify-content:space-between;user-select:none}" +
+        "#ipe #ipe-tabs{flex-wrap:wrap!important;overflow:visible!important;height:auto!important;row-gap:2px}#ipe #ipe-tabs .ipe-tab{flex:1 1 auto!important;min-width:0!important;white-space:nowrap}" + "#ipr-t62 .ipr-t62-cab{cursor:pointer;display:flex;align-items:center;justify-content:space-between;user-select:none}" +
         "#ipr-t62 .ipr-t62-cab::after{content:'';width:8px;height:8px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg);margin-right:6px;opacity:.7;transition:transform .15s}" +
         "#ipr-t62.ipr-66-fech .ipr-t62-cab::after{transform:rotate(-45deg)}" +
         "#ipr-t62.ipr-66-fech .ipr-t62-sub,#ipr-t62.ipr-66-fech .ipr-t62-g,#ipr-t62.ipr-66-fech .ipr-t62-c{display:none!important}" +
