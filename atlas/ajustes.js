@@ -2440,7 +2440,7 @@
     var EST = { fila: "Na fila", converter: "A converter…", pronto: "Pronto", erro: "Não converteu", georref: "Sem posição" }, rel = 0;
     function lista() {
       api("carregar/meus").then(function (j) {
-        var fs = j.ficheiros || [];
+        var fs = j.ficheiros || []; window.__iprConvFs = fs;
         L.innerHTML = fs.slice(0, 60).map(function (x) {
           var ac = FORM_S.filter(function (f) { return x[f[0]]; }).map(function (f) { return '<a href="' + esc48(x[f[0]]) + (f[0] === "geojson" ? "&dl=1" : "") + '" download>' + f[1] + "</a>"; }).join("");
           if (x.geojson) ac = '<button type="button" data-mapa="' + x.id + '">Ver no mapa</button>' + ac + '<button type="button" data-org="' + x.id + '">Juntar à organização</button>';
@@ -2448,6 +2448,8 @@
           var rec = x.estado === "erro" && /^Recusado/.test(x.msg || "");
           if (x.estado === "georref" && !rec) ac = '<button type="button" data-rep="' + x.id + '" title="Experimenta PT-TM06, Datum 73, Datum Lisboa (coordenadas militares), UTM 29N/30N e WGS84 e fica com o que põe o desenho em cima do terreno">Detectar sistema de coordenadas</button>' + ac;
           else if (x.estado === "erro" && !rec) ac = '<button type="button" data-rep="' + x.id + '">Tentar outra vez</button>' + ac;
+          // 26/10, 08h17 (Nuno: «quero sempre as coisas no sítio certo»): desenhos sem posição posicionam-se à mão no mapa.
+          if (x.info && x.info.local && (x.estado === "georref" || x.estado === "pronto")) ac = '<button type="button" data-pos="' + x.id + '">Posicionar no mapa</button>' + ac;
           ac += '<button type="button" data-lixo="' + x.id + '">Apagar</button>';
           var cls = x.estado === "pronto" ? "ok" : (x.estado === "erro" || x.estado === "georref") ? "mau" : "";
           // 26/10, 00h05 (Nuno): uma barra de progresso em cada processo (worker 1.0.31 envia info.passo / info.passos).
@@ -2484,8 +2486,57 @@
         clearTimeout(rel); if (fs.some(function (x) { return x.estado === "fila" || x.estado === "converter"; })) rel = setTimeout(lista, 8000);
       }).catch(function (e) { L.innerHTML = '<li class="e mau">' + esc48(e.message) + "</li>"; });
     }
+    // Posicionar à mão: escolher um ponto no desenho e o mesmo sítio no mapa, pelo menos duas vezes (escala, rotação e
+    // deslocação calculadas pelo worker 1.0.36). Painel flutuante por cima do mapa; o mapa continua a mexer-se.
+    function posicionar(id) {
+      var x = (window.__iprConvFs || []).filter(function (f) { return +f.id === +id; })[0], pv = x && x.info && x.info.local, M = mapa();
+      if (!pv || !M) { msg.textContent = "Sem prévia do desenho: carregue-o outra vez para o posicionar."; return; }
+      var velho = document.getElementById("ipr-pos"); if (velho) velho.__fechar();
+      if (!document.getElementById("ipr-pos-css")) { var st = document.createElement("style"); st.id = "ipr-pos-css"; st.textContent = "#ipr-pos{position:fixed;right:16px;bottom:16px;z-index:100002;width:min(380px,calc(100vw - 32px));background:var(--p1,#141814);color:var(--tx,#e9eadf);border:1px solid var(--ln,#333);border-radius:12px;padding:12px;font:13px Inter,sans-serif;box-shadow:0 8px 30px rgba(0,0,0,.35);display:flex;flex-direction:column;gap:8px}#ipr-pos svg{width:100%;height:240px;background:#f6f4ec;border-radius:8px;cursor:crosshair}#ipr-pos .p{font-size:12px;color:var(--mu,#9aa08f)}#ipr-pos .a{display:flex;gap:8px;justify-content:flex-end}#ipr-pos button{font:600 12.5px Inter,sans-serif;padding:7px 12px;border-radius:8px;border:1px solid var(--ln,#333);background:transparent;color:var(--tx,#e9eadf);cursor:pointer}#ipr-pos button.ok{background:var(--ac,#b5c46a);color:#141814;border-color:var(--ac,#b5c46a)}#ipr-pos button:disabled{opacity:.45;cursor:default}"; document.head.appendChild(st); }
+      var b0 = pv.bbox, W = 360, H = 240, sx = W / Math.max(1e-9, b0[2] - b0[0]), sy = H / Math.max(1e-9, b0[3] - b0[1]), k = Math.min(sx, sy) * 0.94;
+      var ox = (W - (b0[2] - b0[0]) * k) / 2, oy = (H - (b0[3] - b0[1]) * k) / 2;
+      function aS(px, py) { return [ox + (px - b0[0]) * k, H - oy - (py - b0[1]) * k]; }
+      function deS(sx2, sy2) { return [b0[0] + (sx2 - ox) / k, b0[1] + (H - oy - sy2) / k]; }
+      var linhas = pv.l.map(function (l) { var d = ""; for (var i = 0; i < l.length; i += 2) { var q = aS(l[i], l[i + 1]); d += (i ? "L" : "M") + q[0].toFixed(1) + " " + q[1].toFixed(1); } return d; }).join("");
+      var P = document.createElement("div"); P.id = "ipr-pos";
+      P.innerHTML = '<b>Posicionar «' + esc48(x.nome) + '»</b><div class="p"></div><svg viewBox="0 0 ' + W + " " + H + '"><path d="' + linhas + '" fill="none" stroke="#3d3a33" stroke-width=".6"/><g class="m"></g></svg><div class="p l"></div><div class="a"><button type="button" data-a="desfazer">Desfazer</button><button type="button" data-a="x">Cancelar</button><button type="button" class="ok" data-a="ok" disabled>Aplicar posição</button></div>';
+      document.body.appendChild(P);
+      var pares = [], espera = null, marcas = [], G = P.querySelector("g.m"), INS = P.querySelector(".p"), LS = P.querySelector(".l");
+      function cor(i) { return ["#d0482c", "#2f6f8f", "#4f6b3a", "#8a5a9e", "#c27a3a", "#3d3a33"][i % 6]; }
+      function desenhar() {
+        G.innerHTML = pares.map(function (p, i) { var q = aS(p[0], p[1]); return '<circle cx="' + q[0] + '" cy="' + q[1] + '" r="4" fill="' + cor(i) + '"/><text x="' + (q[0] + 6) + '" y="' + (q[1] - 5) + '" font-size="11" fill="' + cor(i) + '">' + (i + 1) + "</text>"; }).join("") + (espera ? '<circle cx="' + aS(espera[0], espera[1])[0] + '" cy="' + aS(espera[0], espera[1])[1] + '" r="5" fill="none" stroke="#d0482c" stroke-width="2"/>' : "");
+        INS.textContent = espera ? "Agora clique no mesmo sítio no mapa (ponto " + (pares.length + 1) + ")." : "Clique num ponto bem reconhecível do desenho (um canto do edifício, um cruzamento de muros) e depois no mesmo sítio no mapa. Pelo menos dois pontos, afastados um do outro.";
+        LS.textContent = pares.length ? pares.length + " ponto(s) marcado(s)." + (pares.length < 2 ? " Falta pelo menos mais um." : " Pode aplicar, ou marcar mais para afinar.") : "";
+        P.querySelector('[data-a="ok"]').disabled = pares.length < 2;
+      }
+      function noMapa(ev) {
+        if (!espera) return;
+        var ll = ev.lngLat; pares.push([espera[0], espera[1], +ll.lng.toFixed(7), +ll.lat.toFixed(7)]); espera = null;
+        try { var el = document.createElement("div"); el.style.cssText = "width:12px;height:12px;border-radius:50%;border:2px solid #fff;background:" + cor(pares.length - 1); marcas.push(new window.maplibregl.Marker({ element: el }).setLngLat(ll).addTo(M)); } catch (e2) {}
+        M.getCanvas().style.cursor = ""; desenhar();
+      }
+      M.on("click", noMapa);
+      P.querySelector("svg").addEventListener("click", function (ev) {
+        var r = this.getBoundingClientRect(), q = deS((ev.clientX - r.left) * W / r.width, (ev.clientY - r.top) * H / r.height);
+        espera = q; M.getCanvas().style.cursor = "crosshair"; desenhar();
+      });
+      P.__fechar = function () { M.off("click", noMapa); marcas.forEach(function (m) { try { m.remove(); } catch (e3) {} }); M.getCanvas().style.cursor = ""; P.remove(); };
+      P.addEventListener("click", function (ev) {
+        var a = ev.target.dataset && ev.target.dataset.a; if (!a) return;
+        if (a === "x") { P.__fechar(); return; }
+        if (a === "desfazer") { if (espera) espera = null; else if (pares.length) { pares.pop(); var mk = marcas.pop(); if (mk) mk.remove(); } desenhar(); return; }
+        if (a === "ok") {
+          ev.target.disabled = true; INS.textContent = "A enviar a posição…";
+          api("carregar/posicionar", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: +id, pontos: pares }) }).then(function (j) {
+            P.__fechar(); msg.textContent = "«" + x.nome + "» na fila com a posição marcada (" + (j.n || pares.length) + " pontos). Fica pronto em um a dois minutos."; lista();
+          }, function (e4) { INS.textContent = e4.message; ev.target.disabled = false; });
+        }
+      });
+      desenhar();
+    }
     L.addEventListener("click", function (e) {
       var b = e.target.closest("button"); if (!b) return;
+      if (b.dataset.pos) { posicionar(+b.dataset.pos); return; }
       if (b.dataset.rep) { b.disabled = true; api("carregar/repetir", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: +b.dataset.rep }) }).then(lista, function (x) { msg.textContent = x.message; b.disabled = false; }); }
       if (b.dataset.lixo) { b.disabled = true; api("carregar/apagar", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: +b.dataset.lixo }) }).then(lista, function (x) { msg.textContent = x.message; }); }
       if (b.dataset.org) { b.disabled = true; api("org/juntar", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ficheiro: +b.dataset.org }) }).then(function (j) { msg.textContent = j.m || "Juntado à organização."; }, function (x) { msg.textContent = x.message; b.disabled = false; }); }
