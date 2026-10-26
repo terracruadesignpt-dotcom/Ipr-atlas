@@ -2798,6 +2798,137 @@
   }
 
 
+
+  // §57 Perfil de elevação (especificação de 26/10/2026, cap. 3). Desenha-se uma linha no mapa (cliques; duplo clique ou
+  // «Terminar» acaba); o Atlas amostra a altitude ao longo do percurso nos mosaicos de relevo do próprio Atlas (Mapterhorn,
+  // terrarium: LiDAR DGT 0,5 m onde existe, Copernicus GLO-30 no resto) ao zoom 15, com intervalo escolhido pela extensão
+  // (nunca menos de 2 m nem mais de 600 amostras). Gráfico distância horizontal / altitude, indicador ligado ao mapa,
+  // comprimento horizontal, cotas, desnível, subida e descida acumuladas (limiar de 1 m contra o ruído), troço mais inclinado,
+  // inverter, CSV. Falta de dados interrompe o perfil (nunca altitude zero). Não substitui levantamento topográfico.
+  function perfil() {
+    var bar = document.querySelector("#ipe .ipe-tools .ipe-tg"), M = mapa(); if (!bar || !M) return false;
+    if (document.getElementById("ipr-perfil-b")) return true;
+    var b = document.createElement("button"); b.type = "button"; b.className = "ipe-t"; b.id = "ipr-perfil-b"; b.title = "Perfil de elevação"; b.setAttribute("aria-label", "Perfil de elevação");
+    b.innerHTML = '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M2 19l5-8 4 5 3-6 8 9z"/><path d="M2 21h20"/></svg>';
+    bar.appendChild(b);
+    var st = document.createElement("style");
+    st.textContent = "#ipr-pf{position:fixed;left:50%;transform:translateX(-50%);bottom:16px;z-index:100001;width:min(760px,calc(100vw - 32px));background:var(--p1,#141814);color:var(--tx,#e9eadf);border:1px solid var(--ln,#333);border-radius:12px;padding:10px 12px;font:12.5px Inter,sans-serif;box-shadow:0 8px 30px rgba(0,0,0,.35)}#ipr-pf .c{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}#ipr-pf .c b{font-size:13px}#ipr-pf .a{display:flex;gap:6px;flex-wrap:wrap}#ipr-pf button{font:600 12px Inter,sans-serif;padding:6px 10px;border-radius:7px;border:1px solid var(--ln,#333);background:transparent;color:var(--tx,#e9eadf);cursor:pointer}#ipr-pf button.ok{background:var(--ac,#b5c46a);color:#141814;border-color:var(--ac,#b5c46a)}#ipr-pf svg{width:100%;height:180px;display:block;margin:6px 0}#ipr-pf .k{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:4px 12px;color:var(--mu,#9aa08f)}#ipr-pf .k span b{color:var(--tx,#e9eadf);font-weight:600}#ipr-pf .n{color:var(--mu,#9aa08f);font-size:11px;margin-top:4px}";
+    document.head.appendChild(st);
+    var vs = [], ativo = false, P = null, dados = null, marca = null, cache = {};
+    function fonte() { if (!M.getSource("ipr-pf")) { M.addSource("ipr-pf", { type: "geojson", data: { type: "FeatureCollection", features: [] } }); M.addLayer({ id: "ipr-pf-l", type: "line", source: "ipr-pf", filter: ["==", ["geometry-type"], "LineString"], paint: { "line-color": "#d0482c", "line-width": 3 } }); M.addLayer({ id: "ipr-pf-p", type: "circle", source: "ipr-pf", filter: ["==", ["geometry-type"], "Point"], paint: { "circle-radius": 4, "circle-color": "#fff", "circle-stroke-color": "#d0482c", "circle-stroke-width": 2 } }); } }
+    function pintar() { try { fonte(); M.getSource("ipr-pf").setData({ type: "FeatureCollection", features: (vs.length > 1 ? [{ type: "Feature", properties: {}, geometry: { type: "LineString", coordinates: vs } }] : []).concat(vs.map(function (v) { return { type: "Feature", properties: {}, geometry: { type: "Point", coordinates: v } }; })) }); } catch (e) {} }
+    function dist(a, c) { var R = 6371008.8, r = Math.PI / 180, dl = (c[1] - a[1]) * r, dg = (c[0] - a[0]) * r, x = Math.sin(dl / 2) * Math.sin(dl / 2) + Math.cos(a[1] * r) * Math.cos(c[1] * r) * Math.sin(dg / 2) * Math.sin(dg / 2); return 2 * R * Math.asin(Math.sqrt(x)); }
+    function tile(z, x, y) {
+      var k = z + "/" + x + "/" + y; if (cache[k]) return cache[k];
+      cache[k] = new Promise(function (ok) {
+        var im = new Image(); im.crossOrigin = "anonymous";
+        im.onload = function () { try { var cv = document.createElement("canvas"); cv.width = im.width; cv.height = im.height; var c2 = cv.getContext("2d"); c2.drawImage(im, 0, 0); ok({ w: im.width, d: c2.getImageData(0, 0, im.width, im.height).data }); } catch (e) { ok(null); } };
+        im.onerror = function () { ok(null); };
+        im.src = "https://tiles.mapterhorn.com/" + k + ".webp";
+      });
+      return cache[k];
+    }
+    function alt(lon, lat) {
+      var z = 15, n = Math.pow(2, z), xt = (lon + 180) / 360 * n, la = lat * Math.PI / 180, yt = (1 - Math.log(Math.tan(la) + 1 / Math.cos(la)) / Math.PI) / 2 * n;
+      var tx = Math.floor(xt), ty = Math.floor(yt);
+      return tile(z, tx, ty).then(function (t) {
+        if (!t) return NaN;
+        var fx = (xt - tx) * t.w - 0.5, fy = (yt - ty) * t.w - 0.5, x0 = Math.max(0, Math.min(t.w - 2, Math.floor(fx))), y0 = Math.max(0, Math.min(t.w - 2, Math.floor(fy))), ax = Math.max(0, Math.min(1, fx - x0)), ay = Math.max(0, Math.min(1, fy - y0));
+        function h(x, y) { var i = (y * t.w + x) * 4; if (t.d[i + 3] === 0) return NaN; return t.d[i] * 256 + t.d[i + 1] + t.d[i + 2] / 256 - 32768; }
+        var a = h(x0, y0), b2 = h(x0 + 1, y0), c = h(x0, y0 + 1), d = h(x0 + 1, y0 + 1);
+        return (a * (1 - ax) + b2 * ax) * (1 - ay) + (c * (1 - ax) + d * ax) * ay;
+      });
+    }
+    function amostrar() {
+      var tot = 0, seg = []; for (var i = 1; i < vs.length; i++) { var d = dist(vs[i - 1], vs[i]); seg.push(d); tot += d; }
+      var passo = Math.max(2, tot / 600), pts = [], acc = 0;
+      for (var j = 0; j < seg.length; j++) {
+        var n = Math.max(1, Math.ceil(seg[j] / passo));
+        for (var k = 0; k < n; k++) { var f = k / n; pts.push({ d: acc + seg[j] * f, lon: vs[j][0] + (vs[j + 1][0] - vs[j][0]) * f, lat: vs[j][1] + (vs[j + 1][1] - vs[j][1]) * f }); }
+        acc += seg[j];
+      }
+      pts.push({ d: tot, lon: vs[vs.length - 1][0], lat: vs[vs.length - 1][1] });
+      return Promise.all(pts.map(function (p) { return alt(p.lon, p.lat).then(function (h) { p.h = Math.round(h * 10) / 10; return p; }); })).then(function (r) { return { pts: r, tot: tot, passo: passo }; });
+    }
+    function km(m) { return m >= 1000 ? (m / 1000).toLocaleString("pt-PT", { maximumFractionDigits: 2 }) + " km" : Math.round(m) + " m"; }
+    function desenhar() {
+      var pts = dados.pts, val = pts.filter(function (p) { return isFinite(p.h); }); if (!val.length) { P.querySelector(".g").innerHTML = '<p class="n">Sem dados de relevo neste percurso.</p>'; return; }
+      var mn = Math.min.apply(null, val.map(function (p) { return p.h; })), mx = Math.max.apply(null, val.map(function (p) { return p.h; })), W = 740, H = 180, L = 44, B = 22, Tp = 8, R = 8;
+      var esp = Math.max(1, mx - mn), y0 = mn - esp * 0.08, y1 = mx + esp * 0.08;
+      function X(d) { return L + d / dados.tot * (W - L - R); } function Y(h) { return Tp + (1 - (h - y0) / (y1 - y0)) * (H - Tp - B); }
+      var path = "", area = "", abre = false;
+      pts.forEach(function (p) { if (!isFinite(p.h)) { abre = false; return; } path += (abre ? "L" : "M") + X(p.d).toFixed(1) + " " + Y(p.h).toFixed(1); abre = true; });
+      var linhas = ""; for (var i = 0; i <= 4; i++) { var hv = y0 + (y1 - y0) * i / 4; linhas += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + Y(hv) + '" y2="' + Y(hv) + '" stroke="currentColor" stroke-opacity=".12"/><text x="' + (L - 4) + '" y="' + (Y(hv) + 3) + '" font-size="9" text-anchor="end" fill="currentColor" fill-opacity=".6">' + Math.round(hv) + "</text>"; }
+      for (var j = 0; j <= 4; j++) { var dv = dados.tot * j / 4; linhas += '<text x="' + X(dv) + '" y="' + (H - 6) + '" font-size="9" text-anchor="middle" fill="currentColor" fill-opacity=".6">' + km(dv) + "</text>"; }
+      var sub = 0, des = 0, ref = val[0].h; val.forEach(function (p) { var dlt = p.h - ref; if (dlt >= 1) { sub += dlt; ref = p.h; } else if (dlt <= -1) { des -= dlt; ref = p.h; } });
+      var ji = Math.max(1, Math.round(20 / dados.passo)), pior = 0, piorD = 0; for (var q = ji; q < pts.length; q++) { if (isFinite(pts[q].h) && isFinite(pts[q - ji].h)) { var dc = Math.abs(pts[q].h - pts[q - ji].h) / Math.max(1e-6, pts[q].d - pts[q - ji].d) * 100; if (dc > pior) { pior = dc; piorD = pts[q].d; } } }
+      var falta = pts.length - val.length;
+      P.querySelector(".g").innerHTML = '<svg viewBox="0 0 ' + W + " " + H + '" preserveAspectRatio="none">' + linhas + '<path d="' + path + '" fill="none" stroke="#d0482c" stroke-width="1.8"/><line class="cur" y1="' + Tp + '" y2="' + (H - B) + '" stroke="currentColor" stroke-opacity=".5" visibility="hidden"/><text class="curt" font-size="10" fill="currentColor" visibility="hidden"></text></svg>';
+      P.querySelector(".k").innerHTML = "<span>Comprimento horizontal <b>" + km(dados.tot) + "</b></span><span>Altitude inicial / final <b>" + (isFinite(pts[0].h) ? Math.round(pts[0].h) : "—") + " / " + (isFinite(pts[pts.length - 1].h) ? Math.round(pts[pts.length - 1].h) : "—") + " m</b></span><span>Mínima / máxima <b>" + Math.round(mn) + " / " + Math.round(mx) + " m</b></span><span>Desnível líquido <b>" + (isFinite(pts[0].h) && isFinite(pts[pts.length - 1].h) ? Math.round(pts[pts.length - 1].h - pts[0].h) : "—") + " m</b></span><span>Subida / descida acumuladas <b>" + Math.round(sub) + " / " + Math.round(des) + " m</b></span><span>Troço mais inclinado (20 m) <b>" + pior.toLocaleString("pt-PT", { maximumFractionDigits: 0 }) + " % aos " + km(piorD) + "</b></span>";
+      P.querySelector(".n").textContent = "Relevo: Mapterhorn (LiDAR DGT 0,5 m onde existe; Copernicus GLO-30 no resto), mosaicos ao zoom 15, altitude ortométrica aproximada. Amostra de " + (Math.round(dados.passo * 10) / 10).toLocaleString("pt-PT") + " em " + (Math.round(dados.passo * 10) / 10).toLocaleString("pt-PT") + " m. Subida e descida com limiar de 1 m." + (falta ? " " + falta + " amostra(s) sem dados: o perfil fica interrompido nesses troços." : "") + " Apoio à leitura do território; não substitui levantamento topográfico.";
+      var sv = P.querySelector("svg"), cur = sv.querySelector(".cur"), curt = sv.querySelector(".curt");
+      sv.addEventListener("mousemove", function (ev) {
+        var r = sv.getBoundingClientRect(), d = Math.max(0, Math.min(1, ((ev.clientX - r.left) * W / r.width - L) / (W - L - R))) * dados.tot, best = pts[0];
+        pts.forEach(function (p) { if (Math.abs(p.d - d) < Math.abs(best.d - d)) best = p; });
+        cur.setAttribute("x1", X(best.d)); cur.setAttribute("x2", X(best.d)); cur.setAttribute("visibility", "visible");
+        curt.textContent = km(best.d) + " · " + (isFinite(best.h) ? best.h.toLocaleString("pt-PT") + " m" : "sem dados"); curt.setAttribute("x", Math.min(W - 120, X(best.d) + 4)); curt.setAttribute("y", Tp + 10); curt.setAttribute("visibility", "visible");
+        try { if (!marca) { var el = document.createElement("div"); el.style.cssText = "width:12px;height:12px;border-radius:50%;background:#d0482c;border:2px solid #fff"; marca = new window.maplibregl.Marker({ element: el }); } marca.setLngLat([best.lon, best.lat]).addTo(M); } catch (e) {}
+      });
+      sv.addEventListener("mouseleave", function () { cur.setAttribute("visibility", "hidden"); curt.setAttribute("visibility", "hidden"); if (marca) marca.remove(); });
+    }
+    function calcular() {
+      if (vs.length < 2) { P.querySelector(".n").textContent = "Marque pelo menos dois pontos no mapa."; return; }
+      parar(); P.querySelector(".g").innerHTML = '<p class="n">A ler o relevo ao longo do percurso…</p>';
+      amostrar().then(function (r) { dados = r; desenhar(); });
+    }
+    function csv() {
+      if (!dados) return;
+      var t = "distancia_m;longitude;latitude;altitude_m\n" + dados.pts.map(function (p) { return Math.round(p.d * 10) / 10 + ";" + p.lon.toFixed(7) + ";" + p.lat.toFixed(7) + ";" + (isFinite(p.h) ? p.h : ""); }).join("\n");
+      var a = document.createElement("a"); a.href = URL.createObjectURL(new Blob(["﻿" + t], { type: "text/csv" })); a.download = "perfil-de-elevacao.csv"; document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+    }
+    function clique(e) { if (!ativo) return; vs.push([+e.lngLat.lng.toFixed(7), +e.lngLat.lat.toFixed(7)]); pintar(); P.querySelector(".n").textContent = vs.length + " ponto(s). Duplo clique ou «Terminar» acaba a linha."; }
+    function duplo(e) { if (!ativo) return; e.preventDefault(); calcular(); }
+    function parar() { ativo = false; M.getCanvas().style.cursor = ""; try { M.doubleClickZoom.enable(); } catch (e) {} }
+    function fechar() { parar(); vs = []; dados = null; pintar(); if (marca) marca.remove(); if (P) P.remove(); P = null; M.off("click", clique); M.off("dblclick", duplo); b.classList.remove("on"); b.setAttribute("aria-pressed", "false"); }
+    function abrir() {
+      if (P) { fechar(); return; }
+      P = document.createElement("div"); P.id = "ipr-pf";
+      P.innerHTML = '<div class="c"><b>Perfil de elevação</b><div class="a"><button type="button" data-a="fim" class="ok">Terminar</button><button type="button" data-a="inv">Inverter</button><button type="button" data-a="novo">Nova linha</button><button type="button" data-a="csv">CSV</button><button type="button" data-a="x">Fechar</button></div></div><div class="g"><p class="n">Clique no mapa para marcar o percurso (um ou vários segmentos).</p></div><div class="k"></div><div class="n"></div>';
+      document.body.appendChild(P); b.classList.add("on"); b.setAttribute("aria-pressed", "true");
+      ativo = true; vs = []; M.getCanvas().style.cursor = "crosshair"; try { M.doubleClickZoom.disable(); } catch (e) {}
+      M.on("click", clique); M.on("dblclick", duplo);
+      P.addEventListener("click", function (ev) {
+        var a = ev.target.dataset && ev.target.dataset.a; if (!a) return;
+        if (a === "x") fechar(); else if (a === "fim") calcular(); else if (a === "csv") csv();
+        else if (a === "inv") { vs.reverse(); pintar(); if (dados) calcular(); }
+        else if (a === "novo") { vs = []; dados = null; pintar(); ativo = true; M.getCanvas().style.cursor = "crosshair"; try { M.doubleClickZoom.disable(); } catch (e) {} P.querySelector(".g").innerHTML = '<p class="n">Clique no mapa para marcar o percurso.</p>'; P.querySelector(".k").innerHTML = ""; }
+      });
+    }
+    b.addEventListener("click", abrir);
+    return true;
+  }
+
+  // §58 Rosa dos ventos sempre visível (especificação de 26/10, cap. 4; Nuno, 00h55: «desapareceu a rosa dos ventos e o
+  // localizador»). A rosa do app.js vai para o canto superior esquerdo (§40); se, por qualquer razão, deixar de estar visível
+  // (removida, escondida, fora do ecrã ou atrás de um painel), aparece no canto inferior direito a bússola nativa do mapa, que
+  // acompanha a rotação e a inclinação e repõe o norte com um clique. Verificação de 2 em 2 segundos, sem duplicar.
+  function rosaSegura() {
+    var M = mapa(); if (!M || !window.maplibregl) return false;
+    if (rosaSegura.feito) return true; rosaSegura.feito = 1;
+    var ctl = null;
+    function visivel(el) {
+      if (!el || !el.isConnected) return false; var r = el.getBoundingClientRect(); if (r.width < 8 || r.height < 8) return false;
+      var cs = getComputedStyle(el); if (cs.display === "none" || cs.visibility === "hidden" || +cs.opacity === 0) return false;
+      var cx = r.left + r.width / 2, cy = r.top + r.height / 2; if (cx < 0 || cy < 0 || cx > innerWidth || cy > innerHeight) return false;
+      var topo = document.elementFromPoint(cx, cy); return !!topo && (el === topo || el.contains(topo));
+    }
+    setInterval(function () {
+      var ok = visivel(document.querySelector("#ipe .ipe-rosa"));
+      if (!ok && !ctl) { ctl = new window.maplibregl.NavigationControl({ showZoom: false, showCompass: true, visualizePitch: true }); try { M.addControl(ctl, "bottom-right"); } catch (e) { ctl = null; } }
+      else if (ok && ctl) { try { M.removeControl(ctl); } catch (e) {} ctl = null; }
+    }, 2000);
+    return true;
+  }
   // §56 «Os meus locais» só uma vez (Nuno, 26/10, 00h37: «remove os meus locais em duplicado»). O app.js chama «Os meus locais»
   // a todos os grupos .ipc-loc e o arrumar() também; quando um grupo fica dentro do outro, ou dois ficam lado a lado, o título
   // aparece duas vezes. Não se mexe em texto (evita guerra de observadores): esconde-se só a linha de título repetida e o
@@ -3205,7 +3336,7 @@
   }
   function correr() {
     voltas++;
-    [["marca", marca], ["puxadores", puxadores], ["creditos", creditos], ["estado", estado], ["formiga", formiga], ["projectos", projectos], ["editavel", editavel], ["semBug", semBug], ["rosa", rosa], ["arrumar", arrumar], ["projDir", projDir], ["testarEsq", testarEsq], ["contaTopo", contaTopo], ["camadasTopo", camadasTopo], ["sintetizar", sintetizar], ["opcoesCamadas", opcoesCamadas], ["projFechados", projFechados], ["todasMais", todasMais], ["painelTopo", painelTopo], ["qfieldQR", qfieldQR], ["temas", temas], ["natural", natural], ["aprenderDesenho", aprenderDesenho], ["fichas", fichasCamada], ["natureza", fichasNatureza], ["parcelas", parcelasPonto], ["partilhaQR", partilhaQR], ["teclado", tecladoVirtual], ["prefs", prefsConta], ["cronologia", cronologia], ["alcanena", pilotoAlcanena], ["estilosOrg", estilosOrg], ["fimDoVoo", fimDoVoo], ["orgNomes", orgNomes], ["projRecolhidos", projRecolhidos], ["instalarApp", instalarApp], ["temaEscuro", temaEscuro], ["orgPastas", orgVista], ["discricao", discricao], ["estradas", estradas], ["cloudLimpo", cloudLimpo], ["navEsquerda", navEsquerda], ["encomendaCompacta", encomendaCompacta], ["testarLigacao", testarLigacao], ["linguetaEsq", linguetaEsq], ["longe", longe], ["arrumarCamadas", arrumarCamadas], ["separadores", separadores], ["processar", processar], ["cartoes", cartoes], ["diagMundo", diagMundo], ["foraDoPais", foraDoPais], ["subPastas", subPastas], ["projOrg", projOrg], ["linhasProj", linhasProj], ["locaisUnico", locaisUnico]].forEach(function (f) { if (!feito[f[0]]) { try { feito[f[0]] = f[1](); } catch (e) {} } });
+    [["marca", marca], ["puxadores", puxadores], ["creditos", creditos], ["estado", estado], ["formiga", formiga], ["projectos", projectos], ["editavel", editavel], ["semBug", semBug], ["rosa", rosa], ["arrumar", arrumar], ["projDir", projDir], ["testarEsq", testarEsq], ["contaTopo", contaTopo], ["camadasTopo", camadasTopo], ["sintetizar", sintetizar], ["opcoesCamadas", opcoesCamadas], ["projFechados", projFechados], ["todasMais", todasMais], ["painelTopo", painelTopo], ["qfieldQR", qfieldQR], ["temas", temas], ["natural", natural], ["aprenderDesenho", aprenderDesenho], ["fichas", fichasCamada], ["natureza", fichasNatureza], ["parcelas", parcelasPonto], ["partilhaQR", partilhaQR], ["teclado", tecladoVirtual], ["prefs", prefsConta], ["cronologia", cronologia], ["alcanena", pilotoAlcanena], ["estilosOrg", estilosOrg], ["fimDoVoo", fimDoVoo], ["orgNomes", orgNomes], ["projRecolhidos", projRecolhidos], ["instalarApp", instalarApp], ["temaEscuro", temaEscuro], ["orgPastas", orgVista], ["discricao", discricao], ["estradas", estradas], ["cloudLimpo", cloudLimpo], ["navEsquerda", navEsquerda], ["encomendaCompacta", encomendaCompacta], ["testarLigacao", testarLigacao], ["linguetaEsq", linguetaEsq], ["longe", longe], ["arrumarCamadas", arrumarCamadas], ["separadores", separadores], ["processar", processar], ["cartoes", cartoes], ["diagMundo", diagMundo], ["foraDoPais", foraDoPais], ["subPastas", subPastas], ["projOrg", projOrg], ["linhasProj", linhasProj], ["locaisUnico", locaisUnico], ["perfil", perfil], ["rosaSegura", rosaSegura]].forEach(function (f) { if (!feito[f[0]]) { try { feito[f[0]] = f[1](); } catch (e) {} } });
     try { nomes(); } catch (e) {}
     try { equipa(); } catch (e) {}
     try { if (window.__iprTodas && !document.getElementById("ipr-todas")) todasBases(); } catch (e) {}
