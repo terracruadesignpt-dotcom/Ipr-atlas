@@ -4546,7 +4546,7 @@
         var z = String(f);
         return "@media (min-width:" + w + "px) and (pointer:fine){" +
           ".ipe{--wl:" + Math.round(268 * f) + "px!important;--wr:" + Math.round(330 * f) + "px!important;grid-template-rows:calc(" + Math.round(48 * f) + "px + env(safe-area-inset-top)) minmax(0,1fr) " + Math.round(28 * f) + "px!important}" +
-          "#ipe-esq>*,#ipe-dir>*,#ipe>.ipe-top>*,#ipe-st>*,#ipe .ipe-tools,#ipe .ipr-nav,#ipr-tri{zoom:" + z + "}}";
+          "#ipe-esq>*,#ipe-dir>*,#ipe>.ipe-top>*,#ipe-st>*,#ipe .ipe-tools,#ipe .maplibregl-ctrl-top-left.ipr-nav:not(.ipe-tools *),#ipr-tri{zoom:" + z + "}}";
       }
       st.textContent = nivel(1.2, 1900) + nivel(1.4, 2400) + nivel(1.75, 3200) +
         "#ipe .ipr-tri-sai{display:flex;gap:14px;flex-wrap:wrap}#ipe .ipr-lu-cam>.ipr-gt{display:none!important}#ipe .ipr-lu-cam>.ipe-sbc{display:block!important;padding-left:0}" +
@@ -4563,7 +4563,7 @@
     if (!nav || !tools) return false;
     var casa = nav.parentNode;
     if (!document.getElementById("ipr-65n-css")) { var st = document.createElement("style"); st.id = "ipr-65n-css";
-      st.textContent = "#ipe .ipe-tools>.ipr-nav{position:static!important;inset:auto!important;transform:none!important;display:flex!important;flex-direction:column;align-items:center;gap:6px;margin:8px 0 2px;padding:0;pointer-events:auto;float:none}#ipe .ipe-tools>.ipr-nav .maplibregl-ctrl{margin:0!important;float:none}#ipe .ipe-tools>.ipr-nav .maplibregl-ctrl-group button{width:32px!important;height:32px!important}#ipe .ipe-tools>.ipr-nav .ipe-rosa,#ipe .ipe-tools>.ipr-nav .ipe-rosa svg{width:34px!important;height:34px!important}";
+      st.textContent = "#ipe .ipe-tools>.ipr-nav .maplibregl-ctrl-group{background:transparent!important;border:0!important;box-shadow:none!important;border-radius:0!important}#ipe .ipe-tools>.ipr-nav .maplibregl-ctrl-group button{background:transparent!important;border:0!important;color:inherit}#ipe .ipe-tools>.ipr-nav .maplibregl-ctrl-group button+button{border-top:0!important}#ipe .ipe-tools>.ipr-nav{border-top:1px solid var(--railb,rgba(255,255,255,.14));padding-top:6px!important}#ipe .ipe-tools>.ipr-nav>button:not(.ipe-rosa),#ipe .ipe-tools>.ipr-nav>.maplibregl-ctrl:not(.maplibregl-ctrl-group) button{width:30px!important;height:30px!important;background:transparent!important;border:0!important;box-shadow:none!important}" + "#ipe .ipe-tools>.ipr-nav{position:static!important;inset:auto!important;transform:none!important;display:flex!important;flex-direction:column;align-items:center;gap:6px;margin:8px 0 2px;padding:0;pointer-events:auto;float:none}#ipe .ipe-tools>.ipr-nav .maplibregl-ctrl{margin:0!important;float:none}#ipe .ipe-tools>.ipr-nav .maplibregl-ctrl-group button{width:30px!important;height:28px!important}#ipe .ipe-tools>.ipr-nav .maplibregl-ctrl-group button .maplibregl-ctrl-icon{transform:scale(.85)}#ipe .ipe-tools>.ipr-nav .ipe-rosa,#ipe .ipe-tools>.ipr-nav .ipe-rosa svg{width:28px!important;height:28px!important}#ipe .ipe-tools>.ipr-nav svg{max-width:28px;max-height:28px}";
       document.head.appendChild(st); }
     function pos() {
       var n = document.querySelector("#ipe .maplibregl-ctrl-top-left.ipr-nav") || nav;
@@ -4656,9 +4656,42 @@
     if (!esquerda66.obs) { esquerda66.obs = 1; new MutationObserver(function () { clearTimeout(esquerda66.t); esquerda66.t = setTimeout(esquerda66, 250); }).observe(cam, { childList: true, subtree: true }); }
     return true;
   }
+
+  // Zoom geral do Atlas no topo, ao lado de PT/EN (Nuno, 26/10/2026, 19h00: «um zoom a todo o ecrã [...] para que os
+  // desenhadores possam adaptar isto aos seus diferentes monitores»). «Auto» segue o tamanho do ecrã (§65); − e + fixam um
+  // valor guardado neste navegador. O mapa não é ampliado (só as barras, painéis e textos), para não deformar o desenho.
+  var Z67 = [0.8, 0.9, 1, 1.1, 1.2, 1.3, 1.4, 1.5, 1.65, 1.8, 2];
+  function zoomAplicar67(v) {
+    var st = document.getElementById("ipr-67-z"); if (!st) { st = document.createElement("style"); st.id = "ipr-67-z"; document.head.appendChild(st); }
+    if (!v) { st.textContent = ""; return; }
+    st.textContent = ".ipe{--wl:" + Math.round(268 * v) + "px!important;--wr:" + Math.round(330 * v) + "px!important;grid-template-rows:calc(" + Math.round(48 * v) + "px + env(safe-area-inset-top)) minmax(0,1fr) " + Math.round(28 * v) + "px!important}" +
+      "#ipe-esq>*,#ipe-dir>*,#ipe>.ipe-top>*,#ipe-st>*,#ipe .ipe-tools,#ipe .maplibregl-ctrl-top-left.ipr-nav:not(.ipe-tools *),#ipr-tri{zoom:" + v + "!important}";
+  }
+  function zoom67() {
+    var lg = document.getElementById("ipr-lg-topo"); if (!lg || !lg.parentNode) return false;
+    if (document.getElementById("ipr-z67")) return true;
+    if (!document.getElementById("ipr-67-css")) { var c = document.createElement("style"); c.id = "ipr-67-css";
+      c.textContent = "#ipr-z67{display:inline-flex;align-items:center;border:1px solid var(--ln,#3a3f36);border-radius:999px;overflow:hidden;margin:0 6px;height:26px}#ipr-z67 button{border:0;background:transparent;color:inherit;font:600 12px Inter,sans-serif;padding:0 8px;height:26px;cursor:pointer;min-width:26px}#ipr-z67 button:hover{background:rgba(255,255,255,.08)}#ipr-z67 .v{min-width:44px;opacity:.85;font-weight:500}@media (max-width:900px){#ipr-z67{display:none}}";
+      document.head.appendChild(c); }
+    var w = document.createElement("span"); w.id = "ipr-z67";
+    function val() { var x = parseFloat(ler("ipr_zoom67") || ""); return Z67.indexOf(x) >= 0 ? x : 0; }
+    function pinta() { var v = val(), pt = (window.IPR_LINGUA || "pt") === "pt";
+      w.innerHTML = '<button type="button" data-z="-" title="' + (pt ? "Reduzir a interface" : "Make the interface smaller") + '">−</button><button type="button" class="v" data-z="0" title="' + (pt ? "Tamanho automático (conforme o ecrã)" : "Automatic size (by screen)") + '">' + (v ? Math.round(v * 100) + "%" : "Auto") + '</button><button type="button" data-z="+" title="' + (pt ? "Aumentar a interface" : "Make the interface larger") + '">+</button>';
+    }
+    function auto() { var W = window.innerWidth; return W >= 3200 ? 1.75 : W >= 2400 ? 1.4 : W >= 1900 ? 1.2 : 1; }
+    w.addEventListener("click", function (e) {
+      var b = e.target.closest("[data-z]"); if (!b) return; var k = b.getAttribute("data-z"), v = val() || auto(), i;
+      if (k === "0") { gravar("ipr_zoom67", ""); zoomAplicar67(0); }
+      else { i = Z67.indexOf(v); if (i < 0) { i = 0; while (i < Z67.length - 1 && Z67[i] < v) i++; } i = Math.max(0, Math.min(Z67.length - 1, i + (k === "+" ? 1 : -1))); gravar("ipr_zoom67", String(Z67[i])); zoomAplicar67(Z67[i]); }
+      pinta(); setTimeout(function () { try { var M = mapa(); if (M) M.resize(); } catch (x) {} window.dispatchEvent(new Event("resize")); }, 60);
+    });
+    document.addEventListener("ipr:lingua", pinta);
+    pinta(); lg.parentNode.insertBefore(w, lg); zoomAplicar67(val());
+    return true;
+  }
   function correr() {
     voltas++;
-    [["marca", marca], ["puxadores", puxadores], ["creditos", creditos], ["estado", estado], ["formiga", formiga], ["projectos", projectos], ["editavel", editavel], ["semBug", semBug], ["rosa", rosa], ["arrumar", arrumar], ["projDir", projDir], ["testarEsq", testarEsq], ["contaTopo", contaTopo], ["camadasTopo", camadasTopo], ["sintetizar", sintetizar], ["opcoesCamadas", opcoesCamadas], ["projFechados", projFechados], ["todasMais", todasMais], ["painelTopo", painelTopo], ["qfieldQR", qfieldQR], ["temas", temas], ["natural", natural], ["aprenderDesenho", aprenderDesenho], ["fichas", fichasCamada], ["natureza", fichasNatureza], ["parcelas", parcelasPonto], ["partilhaQR", partilhaQR], ["teclado", tecladoVirtual], ["prefs", prefsConta], ["cronologia", cronologia], ["alcanena", pilotoAlcanena], ["estilosOrg", estilosOrg], ["fimDoVoo", fimDoVoo], ["orgNomes", orgNomes], ["projRecolhidos", projRecolhidos], ["instalarApp", instalarApp], ["temaEscuro", temaEscuro], ["orgPastas", orgVista], ["discricao", discricao], ["estradas", estradas], ["cloudLimpo", cloudLimpo], ["navEsquerda", navEsquerda], ["encomendaCompacta", encomendaCompacta], ["testarLigacao", testarLigacao], ["linguetaEsq", linguetaEsq], ["longe", longe], ["arrumarCamadas", arrumarCamadas], ["separadores", separadores], ["processar", processar], ["cartoes", cartoes], ["diagMundo", diagMundo], ["foraDoPais", foraDoPais], ["subPastas", subPastas], ["projOrg", projOrg], ["linhasProj", linhasProj], ["locaisUnico", locaisUnico], ["perfil", perfil], ["rosaSegura", rosaSegura], ["vista3dFicha", vista3dFicha], ["temas62", temas62], ["triagem63", triagem63], ["grande65", grande65], ["nav65", nav65], ["guarda65", guarda65], ["refresh65", refresh65], ["esquerda66", esquerda66]].forEach(function (f) { if (!feito[f[0]]) { try { feito[f[0]] = f[1](); } catch (e) {} } });
+    [["marca", marca], ["puxadores", puxadores], ["creditos", creditos], ["estado", estado], ["formiga", formiga], ["projectos", projectos], ["editavel", editavel], ["semBug", semBug], ["rosa", rosa], ["arrumar", arrumar], ["projDir", projDir], ["testarEsq", testarEsq], ["contaTopo", contaTopo], ["camadasTopo", camadasTopo], ["sintetizar", sintetizar], ["opcoesCamadas", opcoesCamadas], ["projFechados", projFechados], ["todasMais", todasMais], ["painelTopo", painelTopo], ["qfieldQR", qfieldQR], ["temas", temas], ["natural", natural], ["aprenderDesenho", aprenderDesenho], ["fichas", fichasCamada], ["natureza", fichasNatureza], ["parcelas", parcelasPonto], ["partilhaQR", partilhaQR], ["teclado", tecladoVirtual], ["prefs", prefsConta], ["cronologia", cronologia], ["alcanena", pilotoAlcanena], ["estilosOrg", estilosOrg], ["fimDoVoo", fimDoVoo], ["orgNomes", orgNomes], ["projRecolhidos", projRecolhidos], ["instalarApp", instalarApp], ["temaEscuro", temaEscuro], ["orgPastas", orgVista], ["discricao", discricao], ["estradas", estradas], ["cloudLimpo", cloudLimpo], ["navEsquerda", navEsquerda], ["encomendaCompacta", encomendaCompacta], ["testarLigacao", testarLigacao], ["linguetaEsq", linguetaEsq], ["longe", longe], ["arrumarCamadas", arrumarCamadas], ["separadores", separadores], ["processar", processar], ["cartoes", cartoes], ["diagMundo", diagMundo], ["foraDoPais", foraDoPais], ["subPastas", subPastas], ["projOrg", projOrg], ["linhasProj", linhasProj], ["locaisUnico", locaisUnico], ["perfil", perfil], ["rosaSegura", rosaSegura], ["vista3dFicha", vista3dFicha], ["temas62", temas62], ["triagem63", triagem63], ["grande65", grande65], ["nav65", nav65], ["guarda65", guarda65], ["refresh65", refresh65], ["esquerda66", esquerda66], ["zoom67", zoom67]].forEach(function (f) { if (!feito[f[0]]) { try { feito[f[0]] = f[1](); } catch (e) {} } });
     try { nomes(); } catch (e) {}
     try { equipa(); } catch (e) {}
     try { if (window.__iprTodas && !document.getElementById("ipr-todas")) todasBases(); } catch (e) {}
