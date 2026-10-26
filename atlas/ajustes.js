@@ -1609,7 +1609,19 @@
         legenda(id, temas[id].leg, temas[id].nome);
         return;
       }
-      if (p0._z === undefined) return; // camada sem simbologia: fica como o org.js a desenhou
+      if (p0._z === undefined) {
+        // 26/10, 01h10 (Nuno, foto do quadrado roxo): nos desenhos de AutoCAD convertidos, os textos e pontos soltos eram
+        // círculos de 5 px com contorno branco, milhares por cima uns dos outros. Passam a pontos pequenos, sem contorno.
+        if (d.features.some(function (f) { return f.properties && f.properties.camada !== undefined; })) {
+          try {
+            m.setPaintProperty(src + "-p", "circle-radius", ["interpolate", ["linear"], ["zoom"], 13, 0.6, 18, 1.6, 21, 3]);
+            m.setPaintProperty(src + "-p", "circle-stroke-width", 0);
+            m.setPaintProperty(src + "-p", "circle-opacity", 0.7);
+            m.setPaintProperty(src + "-l", "line-width", ["interpolate", ["linear"], ["zoom"], 13, 0.6, 18, 1.2]);
+          } catch (e) {}
+        }
+        return; // camada sem simbologia: fica como o org.js a desenhou
+      }
       cor0[id] = 1;
       var tem = function (k) { return d.features.some(function (f) { return f.properties && f.properties[k] !== undefined && f.properties[k] !== null && f.properties[k] !== ""; }); };
       try {
@@ -2626,6 +2638,10 @@
       return '<div class="ov-c"><label title="' + esc(c.nome) + '"><input type="checkbox" data-ov-c="' + c.id + '"' + (ligadas[c.id] ? " checked" : "") + '><span>' + esc(nome) + "</span></label><small>" + nf(c.n) + (c.ha > 0 ? " · " + nf(Math.round(c.ha * 10) / 10) + " ha" : "") + '</small><button type="button" class="ov-z" data-ov-z="' + c.id + '" title="Ajustar o mapa a esta camada">⤢</button></div>';
     }
     var ORD = { "análise": 0, "analise": 0, "projecto terracrua design": 1, "projeto terracrua design": 1, "autocads": 2, "autocad": 2 };
+    // 26/10, 01h14 (Nuno): três partes fixas em cada projecto: 1 · Análise (Base Cartográfica), 2 · Projecto Terracrua Design,
+    // 3 · Outros documentos (só as plantas de AutoCAD). Só muda o nome mostrado; os grupos ficam como estão.
+    var SECN = { 0: "1 · Análise", 1: "2 · Projecto Terracrua Design", 2: "3 · Outros documentos" };
+    function secNome(k) { var o = ORD[String(k).toLowerCase()]; return o == null ? k : SECN[o]; }
     function desenhar() {
       var d = window.tcdOrg.dados && window.tcdOrg.dados(); if (!d || !d.org) return;
       var gs = d.grupos || [], cs = d.camadas || [], projs = {}, outros = [];
@@ -2666,7 +2682,7 @@
         ordem.forEach(function (k) {
           var S = secs[k], todas = []; S.itens.forEach(function (s) { todas = todas.concat(s.cs); });
           if (!k) { todas.forEach(function (c) { h += linha(c, p.prefixo); }); return; }
-          h += detalhe("ov-s", "s:" + p.num + "|" + k, "<em>" + esc(k) + "</em><small>" + (todas.length ? contas(todas) : "vazia") + "</small>", false);
+          h += detalhe("ov-s", "s:" + p.num + "|" + k, "<em>" + esc(secNome(k)) + "</em><small>" + (todas.length ? contas(todas) : "vazia") + "</small>", false);
           S.itens.forEach(function (s) {
             if (!s.sub) { s.cs.forEach(function (c) { h += linha(c, p.prefixo); }); if (!s.cs.length && S.itens.length === 1) h += '<div class="ov-vz">Ainda sem ficheiros.</div>'; return; }
             h += detalhe("ov-s", "u:" + p.num + "|" + k + "|" + s.sub, '<i class="ov-cor" style="background:' + esc(s.g.cor || "#75834a") + '"></i><em>' + esc(s.sub) + "</em><small>" + (s.cs.length ? contas(s.cs) : "vazia") + "</small>", false);
