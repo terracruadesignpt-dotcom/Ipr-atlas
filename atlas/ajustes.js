@@ -2434,7 +2434,8 @@
           if (x.geojson) ac = '<button type="button" data-mapa="' + x.id + '">Ver no mapa</button>' + ac + '<button type="button" data-org="' + x.id + '">Juntar à organização</button>';
           // 26/10, 00h40 (Nuno): só se convertem plantas; o worker 1.0.34 recusa cortes, alçados e pormenores («Recusado: …»).
           var rec = x.estado === "erro" && /^Recusado/.test(x.msg || "");
-          if ((x.estado === "erro" || x.estado === "georref") && !rec) ac = '<button type="button" data-rep="' + x.id + '">Tentar outra vez</button>' + ac;
+          if (x.estado === "georref" && !rec) ac = '<button type="button" data-rep="' + x.id + '" title="Experimenta PT-TM06, Datum 73, Datum Lisboa (coordenadas militares), UTM 29N/30N e WGS84 e fica com o que põe o desenho em cima do terreno">Detectar sistema de coordenadas</button>' + ac;
+          else if (x.estado === "erro" && !rec) ac = '<button type="button" data-rep="' + x.id + '">Tentar outra vez</button>' + ac;
           ac += '<button type="button" data-lixo="' + x.id + '">Apagar</button>';
           var cls = x.estado === "pronto" ? "ok" : (x.estado === "erro" || x.estado === "georref") ? "mau" : "";
           // 26/10, 00h05 (Nuno): uma barra de progresso em cada processo (worker 1.0.31 envia info.passo / info.passos).
