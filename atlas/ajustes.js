@@ -3132,6 +3132,443 @@
       return { freguesia: fr, municipio: mu };
     }).catch(function () { return { freguesia: "", municipio: "" }; });
   }
+  // §61 Moldura comum dos PDF de produto e planta de localização em dossier (Nuno, 26/10, 15h17: «a planta de localização
+  // passa a ser um pequeno dossier e todos os PDF dos produtos do IPR Atlas passam a ter uma moldura de excelência por
+  // omissão»). Funções pm*: cartucho com marca, título, projecto, referência, escala, data, sistema de coordenadas e folha
+  // n/N; rosa dos ventos em vector (o desenho da .ipe-rosa do app.js); régua de escalas com segmentos alternados; legenda;
+  // caixa «O que está a ver»; fonte, licença e aviso em cada folha. As folhas de extracto usam as camadas do catálogo do
+  // viz.js (mesmos URL e camadas), pedidas em PT-TM06 com a caixa exacta da folha de localização. As camadas vectoriais da
+  // OGC API da DGT são desenhadas e medidas a partir dos polígonos; as de imagem (ArcGIS/WMS) são medidas por amostragem dos
+  // píxeis dentro do limite, e isso fica escrito. Um serviço que falhe dá «serviço indisponível no momento» e o PDF segue.
+  var PM_MARCA = "IPR Atlas · Instituto de Planeamento Regenerativo", PM_SRC = "PT-TM06/ETRS89 (EPSG:3763)";
+  var PM_AVISO = "Extracto informativo, sem valor de certidão. Algumas câmaras municipais exigem plantas emitidas por elas ou certidões: confirme antes de entregar num processo. Vinculativo é o publicado em Diário da República e no SNIT.";
+  var PM_OGC = "https://ogcapi.dgterritorio.gov.pt", PM_ICNF = "https://sigservices.icnf.pt/server/rest/services/BDG/", PM_APA = "https://sniambgeoogc.apambiente.pt/getogc/rest/services/";
+  // Reserva, só para quando o catálogo do viz.js não estiver carregado: os mesmos URL e camadas que lá estão.
+  var PM_RES = {
+    ran: { id: "ran", n: "RAN", t: "mvt", col: "srup_ran", cor: "#c9a227", fonte: "DGT · SRUP" },
+    ren: { id: "ren", n: "REN", t: "mvt", col: "srup_ren_areal", cor: "#3a8a3a", fonte: "DGT · SRUP", lic: "r" },
+    n2k: { id: "n2k", n: "Rede Natura 2000", t: "ags", url: PM_ICNF + "RN2000/MapServer", layers: "show:0,1", cor: "#5aa05a", fonte: "ICNF" },
+    rnap: { id: "rnap", n: "Áreas protegidas", t: "ags", url: PM_ICNF + "RNAP/MapServer", layers: "show:0", cor: "#2f6f2f", fonte: "ICNF" },
+    la350: { id: "la350", n: "Linhas de água com bacia > 350 ha", t: "ags", url: PM_APA + "Visualizador/DominioPublicoHidrico/MapServer", layers: "show:43", cor: "#1f78b4", fonte: "APA" },
+    albzr: { id: "albzr", n: "Albufeiras e lagoas · zona reservada", t: "ags", url: PM_APA + "Visualizador/DominioPublicoHidrico/MapServer", layers: "show:34", cor: "#4fc3f7", fonte: "APA" },
+    albuf: { id: "albuf", n: "Albufeiras classificadas", t: "mvt", col: "srup_albufeiras", cor: "#4fc3f7", fonte: "DGT · SRUP" },
+    perig_e: { id: "perig_e", n: "Perigosidade estrutural 2020–2030", t: "ags", url: PM_ICNF + "perigosidade_estrutural/MapServer", cor: "#ef6c00", fonte: "ICNF" },
+    crus: { id: "crus", n: "PDM · qualificação do solo (CRUS)", t: "mvt", col: "crus", cor: "#c7b65a", nota: "Indicativo; vinculativo é o publicado em DR / SNIT", leg: [["#e9d66b", "Agrícola"], ["#5b9a4b", "Florestal"], ["#c7b65a", "Agroflorestal"], ["#2f6b3a", "Natural"], ["#d9534f", "Urbano"], ["#9b6bb5", "Actividades económicas"], ["#8c6d4f", "Recursos geológicos"], ["#5aa0d8", "Água"]] }
+  };
+  // Temas das folhas de extracto. «linear»: camadas de linhas, em que só se diz se tocam o terreno (a área não se aplica).
+  // PDM · condicionantes: o catálogo do Atlas não tem essa camada (só a CRUS, de ordenamento), por isso não há folha.
+  var PM_TEMAS = [
+    { k: "ran", t: "Reserva Agrícola Nacional (RAN)", c: ["ran"] },
+    { k: "ren", t: "Reserva Ecológica Nacional (REN)", c: ["ren"] },
+    { k: "natura", t: "Rede Natura 2000 e áreas protegidas", c: ["n2k", "rnap"] },
+    { k: "dph", t: "Domínio hídrico", c: ["la350", "albzr", "albuf"], linear: { la350: 1 } },
+    { k: "fogo", t: "Perigosidade de incêndio rural", c: ["perig_e"] },
+    { k: "pdm", t: "PDM · ordenamento (qualificação do solo)", c: ["crus"] }
+  ];
+  function pmHex(h) { h = String(h || "#888888").replace("#", ""); if (h.length === 3) h = h.replace(/./g, "$&$&"); var n = parseInt(h.slice(0, 6), 16) || 0; return [n >> 16 & 255, n >> 8 & 255, n & 255]; }
+  function pmBanda(W, H) { return W >= 400 || H >= 400 ? 60 : (W < H ? 56 : 48); }
+  function pmNum(v, d) { return (+v).toLocaleString("pt-PT", { minimumFractionDigits: d || 0, maximumFractionDigits: d || 0 }); }
+  function pmEsc(esc) { return "1:" + (+esc).toLocaleString("pt-PT"); }
+  function pmData(d) { return ("0" + d.getDate()).slice(-2) + "/" + ("0" + (d.getMonth() + 1)).slice(-2) + "/" + d.getFullYear(); }
+  function pmHora(d) { return pmData(d) + " " + ("0" + d.getHours()).slice(-2) + "h" + ("0" + d.getMinutes()).slice(-2); }
+  function pmSemAc(t) { return String(t || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/actividade/g, "atividade"); }
+  // Texto com quebra de linhas que não passa de ymax (corta com «…»). Devolve o y seguinte.
+  function pmTexto(doc, t, x, y, w, tam, lh, ymax, estilo, cor) {
+    doc.setFont("helvetica", estilo || "normal"); doc.setFontSize(tam); var c = cor || [0, 0, 0]; doc.setTextColor(c[0], c[1], c[2]);
+    var ls = doc.splitTextToSize(String(t), w);
+    for (var i = 0; i < ls.length; i++) {
+      if (y > ymax) break;
+      var l = ls[i]; if (y + lh > ymax && i < ls.length - 1) l = l.replace(/\s+\S*$/, "") + " …";
+      doc.text(l, x, y); y += lh;
+    }
+    doc.setTextColor(0);
+    return y;
+  }
+  // Rosa dos ventos: o mesmo desenho da .ipe-rosa do Atlas (viewBox 100 × 100), em vector. Norte da quadrícula PT-TM06.
+  function pmRosa(doc, cx, cy, R) {
+    var s = R / 45; function P(x, y) { return [cx + (x - 50) * s, cy + (y - 50) * s]; }
+    var esc = [63, 70, 48];
+    doc.setLineDashPattern([], 0);
+    doc.setFillColor(250, 247, 238); doc.setDrawColor(esc[0], esc[1], esc[2]); doc.setLineWidth(1.2 * s); doc.circle(cx, cy, 45 * s, "FD");
+    doc.setLineWidth(0.6 * s); doc.circle(cx, cy, 41 * s, "S");
+    for (var e = 0; e < 72; e++) {
+      var a = 5 * e * Math.PI / 180, t = e % 18 === 0 ? 33 : e % 2 === 0 ? 37 : 39;
+      var p1 = P(50 + 41 * Math.sin(a), 50 - 41 * Math.cos(a)), p2 = P(50 + t * Math.sin(a), 50 - t * Math.cos(a));
+      doc.setLineWidth((e % 18 === 0 ? 1.1 : 0.5) * s); doc.line(p1[0], p1[1], p2[0], p2[1]);
+    }
+    doc.setLineWidth(0.5 * s); doc.setLineDashPattern([1.5 * s, 1.5 * s], 0); doc.circle(cx, cy, 24 * s, "S"); doc.setLineDashPattern([], 0);
+    function ponta(g, comp, larg, ca, cb) {
+      var o = g * Math.PI / 180, i = (g + 90) * Math.PI / 180;
+      var q = [P(50 + comp * Math.sin(o), 50 - comp * Math.cos(o)), P(50 + larg * Math.sin(i), 50 - larg * Math.cos(i)), P(50, 50), P(50 - larg * Math.sin(i), 50 + larg * Math.cos(i))];
+      doc.setFillColor(ca[0], ca[1], ca[2]); doc.triangle(q[0][0], q[0][1], q[1][0], q[1][1], q[2][0], q[2][1], "F");
+      doc.setFillColor(cb[0], cb[1], cb[2]); doc.triangle(q[0][0], q[0][1], q[2][0], q[2][1], q[3][0], q[3][1], "F");
+    }
+    [45, 135, 225, 315].forEach(function (g) { ponta(g, 22, 4, [117, 131, 74], [227, 223, 204]); });
+    [90, 180, 270].forEach(function (g) { ponta(g, 31, 6, [63, 70, 48], [201, 195, 173]); });
+    ponta(0, 31, 6, [182, 67, 46], [124, 42, 28]);
+    doc.setFillColor(250, 247, 238); doc.setLineWidth(0.8 * s); doc.circle(cx, cy, 2.4 * s, "FD");
+    var pt = s * 2.835; doc.setFont("courier", "bold");
+    doc.setFontSize(11 * pt); doc.setTextColor(182, 67, 46); var n = P(50, 13.5); doc.text("N", n[0], n[1], { align: "center" });
+    doc.setFontSize(9 * pt); doc.setTextColor(esc[0], esc[1], esc[2]);
+    [["E", 88, 53.2], ["S", 50, 92.5], ["O", 12, 53.2]].forEach(function (l) { var q = P(l[1], l[2]); doc.text(l[0], q[0], q[1], { align: "center" }); });
+    doc.setTextColor(0); doc.setFont("helvetica", "normal");
+  }
+  // Régua de escalas: comprimento redondo (plNice), quatro segmentos alternados, 0, meio e fim, unidade m ou km.
+  function pmRegua(doc, x, y, esc, maxmm) {
+    var L = plNice(maxmm * esc / 1000), Lmm = L / esc * 1000, km = L >= 1000, u = km ? 1000 : 1;
+    function r(v) { return String(Math.round(v / u * 100) / 100).replace(".", ","); }
+    doc.setLineDashPattern([], 0); doc.setFillColor(255, 255, 255); doc.setDrawColor(90); doc.setLineWidth(0.2);
+    doc.roundedRect(x - 3, y - 8.6, Lmm + 14, 13.4, 1.2, 1.2, "FD");
+    doc.setTextColor(0); doc.setFont("helvetica", "bold"); doc.setFontSize(7.5); doc.text("Escala " + pmEsc(esc), x, y - 4.4);
+    doc.setDrawColor(0); doc.setLineWidth(0.2);
+    for (var k = 0; k < 4; k++) { var c = k % 2 ? 255 : 0; doc.setFillColor(c, c, c); doc.rect(x + k * Lmm / 4, y - 1.8, Lmm / 4, 1.8, "FD"); }
+    doc.setFont("helvetica", "normal"); doc.setFontSize(6);
+    doc.text("0", x, y + 2.8, { align: "center" }); doc.text(r(L / 2), x + Lmm / 2, y + 2.8, { align: "center" }); doc.text(r(L), x + Lmm, y + 2.8, { align: "center" });
+    doc.text(km ? "km" : "m", x + Lmm + 2.6, y - 0.2);
+    return L;
+  }
+  // Quadrícula PT-TM06 nas margens da mancha do mapa.
+  function pmQuadricula(doc, F) {
+    var M = F.M, fw = F.fw, fh = F.fh, caixa = F.caixa, gw = F.gw, gh = F.gh, passo = plNice(gw / 5);
+    doc.setDrawColor(0); doc.setLineWidth(0.3); doc.setFont("helvetica", "normal"); doc.setFontSize(6); doc.setTextColor(0);
+    for (var x = Math.ceil(caixa[0] / passo) * passo; x < caixa[2]; x += passo) { var px = M + (x - caixa[0]) / gw * fw; doc.line(px, M, px, M + 2.5); doc.line(px, M + fh, px, M + fh - 2.5); doc.text("M " + Math.round(x), px + 0.6, M + 4.5); }
+    for (var y = Math.ceil(caixa[1] / passo) * passo; y < caixa[3]; y += passo) { var py = M + (caixa[3] - y) / gh * fh; doc.line(M, py, M + 2.5, py); doc.line(M + fw, py, M + fw - 2.5, py); doc.text("P " + Math.round(y), M + 3.2, py - 0.6); }
+    return passo;
+  }
+  // Limite do terreno: traço vermelho com auréola branca, para se ler por cima de qualquer tema.
+  function pmLimite(doc, F) {
+    function mm(p) { return [F.M + (p[0] - F.caixa[0]) / F.gw * F.fw, F.M + (F.caixa[3] - p[1]) / F.gh * F.fh]; }
+    [[255, 255, 255, 1.3], [230, 30, 30, 0.6]].forEach(function (e) {
+      doc.setDrawColor(e[0], e[1], e[2]); doc.setLineWidth(e[3]);
+      F.an.forEach(function (r) { for (var i = 0; i < r.length - 1; i++) { var a = mm(r[i]), b = mm(r[i + 1]); doc.line(a[0], a[1], b[0], b[1]); } });
+    });
+    doc.setDrawColor(0);
+  }
+  // Legenda: itens {t: "linha"|"area"|"quadro"|"img", cor, src, iw, ih, txt}. Devolve o y seguinte.
+  function pmLegenda(doc, itens, x, y, w, ymax) {
+    var lh = 3.5, mostrados = 0;
+    for (var i = 0; i < itens.length; i++) {
+      if (y + lh > ymax) { pmTexto(doc, "… e mais " + (itens.length - i) + (itens.length - i === 1 ? " classe" : " classes") + " (ver o serviço de origem)", x, y, w, 5.4, 2.4, ymax + 2, "italic", [90, 90, 90]); return y + 2.6; }
+      var it = itens[i], c = it.cor || [0, 0, 0];
+      if (it.t === "linha") { doc.setDrawColor(255, 255, 255); doc.setLineWidth(1.3); doc.line(x, y - 1.1, x + 6, y - 1.1); doc.setDrawColor(c[0], c[1], c[2]); doc.setLineWidth(0.6); doc.line(x, y - 1.1, x + 6, y - 1.1); }
+      else if (it.t === "quadro") { doc.setDrawColor(c[0], c[1], c[2]); doc.setLineWidth(0.5); doc.rect(x + 1.8, y - 2.3, 2.4, 2.4); }
+      else if (it.t === "img" && it.src) { try { var ih = 2.8, iw = Math.min(6, ih * (it.iw || 1) / (it.ih || 1)); doc.addImage(it.src, "PNG", x, y - 2.6, iw, ih); } catch (e) { doc.setFillColor(c[0], c[1], c[2]); doc.rect(x, y - 2.6, 6, 2.8, "F"); } }
+      else { doc.setFillColor(c[0], c[1], c[2]); doc.setDrawColor(60); doc.setLineWidth(0.15); doc.rect(x, y - 2.6, 6, 2.8, "FD"); }
+      doc.setFont("helvetica", "normal"); doc.setFontSize(6);
+      var nl = Math.min(2, doc.splitTextToSize(String(it.txt), w - 7.5).length);
+      if (nl > 1 && y + lh + 2.4 > ymax) nl = 1;
+      pmTexto(doc, it.txt, x + 7.5, y, w - 7.5, 6, 2.4, y + (nl - 1) * 2.4 + 0.1);
+      y += lh + (nl - 1) * 2.4; mostrados++;
+    }
+    doc.setDrawColor(0);
+    return y;
+  }
+  // Moldura de uma folha: S = { titulo, mapa (bool), legenda [itens], legendaImg {src,w,h}, dados [linhas], oQue, fonte, aviso }.
+  function pmMoldura(doc, F, S, n, N) {
+    var W = doc.internal.pageSize.getWidth(), H = doc.internal.pageSize.getHeight(), M = F.M, B = pmBanda(W, H), fw = W - 2 * M;
+    var by = H - M - B, xa = M, xb = M + fw * 0.31, xc = M + fw * 0.655, xe = M + fw, p = 2.6, cinz = [85, 85, 85];
+    doc.setLineDashPattern([], 0);
+    if (S.mapa) {
+      doc.setDrawColor(0); doc.setLineWidth(0.3); doc.rect(M, M, F.fw, F.fh);
+      pmQuadricula(doc, F);
+      var R = F.A3 ? 13 : 10.5; pmRosa(doc, M + F.fw - R - 4, M + R + 7, R);
+      pmRegua(doc, M + 6, M + F.fh - 6.5, F.esc, Math.min(F.A3 ? 75 : 55, F.fw * 0.28));
+    }
+    doc.setDrawColor(0); doc.setLineWidth(0.35); doc.setFillColor(255, 255, 255); doc.rect(M, by, fw, B, "FD");
+    doc.setLineWidth(0.2); doc.line(xb, by, xb, by + B); doc.line(xc, by, xc, by + B);
+    var ymax = by + B - 1.8;
+    // A · legenda e dados
+    var y = pmTexto(doc, "Legenda", xa + p, by + 4.6, xb - xa - 2 * p, 7, 3.2, ymax, "bold") + 0.6;
+    var reserva = S.dados ? Math.min(S.dados.length, 9) * 2.55 + 1.5 : 0;
+    if (S.legendaImg) {
+      var lw = xb - xa - 2 * p, lhm = Math.max(8, ymax - reserva - y), k = Math.min(lw / S.legendaImg.w, lhm / S.legendaImg.h, 0.12);
+      try { doc.addImage(S.legendaImg.src, "PNG", xa + p, y - 1.5, S.legendaImg.w * k, S.legendaImg.h * k); y += S.legendaImg.h * k + 1; } catch (e) {}
+      y = pmLegenda(doc, (S.legenda || []).slice(0, 1), xa + p, y + 2, lw, ymax - reserva);
+    } else y = pmLegenda(doc, S.legenda || [], xa + p, y + 1.4, xb - xa - 2 * p, ymax - reserva);
+    if (S.dados) { y += 0.6; S.dados.forEach(function (t) { y = pmTexto(doc, t, xa + p, y, xb - xa - 2 * p, 5.8, 2.55, ymax); }); }
+    // B · o que está a ver, fonte e licença, aviso
+    var wb = xc - xb - 2 * p;
+    doc.setFont("helvetica", "italic"); doc.setFontSize(5.4);
+    var av = doc.splitTextToSize((S.aviso ? S.aviso + " " : "") + PM_AVISO, wb), yAv = by + B - 2 - (av.length - 1) * 2.3;
+    y = pmTexto(doc, "O que está a ver", xb + p, by + 4.6, wb, 7, 3.2, ymax, "bold") + 0.4;
+    y = pmTexto(doc, S.oQue || "", xb + p, y, wb, 6.2, 2.7, yAv - 9) + 1;
+    pmTexto(doc, S.fonte || "", xb + p, y, wb, 5.4, 2.3, yAv - 3.2, "normal", cinz);
+    doc.setDrawColor(170); doc.setLineWidth(0.15); doc.line(xb + p, yAv - 3, xc - p, yAv - 3);
+    pmTexto(doc, av.join(" "), xb + p, yAv, wb, 5.4, 2.3, by + B, "italic", cinz);
+    // C · cartucho
+    var wc = xe - xc, cx = xc + p;
+    doc.setFillColor(63, 70, 48); doc.rect(xc, by, wc, 6.2, "F");
+    doc.setFont("helvetica", "bold"); doc.setFontSize(6.6); doc.setTextColor(250, 247, 238);
+    doc.text(doc.splitTextToSize(PM_MARCA, wc - 2 * p)[0], cx, by + 4.1); doc.setTextColor(0);
+    var yT = pmTexto(doc, String(S.titulo || "").toUpperCase(), cx, by + 10.6, wc - 2 * p, 8.4, 3.4, by + 14.2, "bold");
+    var yP = Math.max(yT + 0.6, by + 17.4);
+    pmTexto(doc, "Projecto", cx, yP, wc - 2 * p, 5, 2, yP + 1, "normal", cinz);
+    pmTexto(doc, String(F.nome), cx, yP + 3.1, wc - 2 * p, 7.2, 3, yP + 3.2, "bold");
+    doc.setFont("courier", "normal"); doc.setFontSize(6.2); doc.text("Ref. " + F.ident + " · #" + F.id, cx, yP + 6.3);
+    var g0 = by + B - 17.5; doc.setDrawColor(0); doc.setLineWidth(0.2); doc.line(xc, g0, xe, g0); doc.line(xc, by + B - 9, xe, by + B - 9);
+    var cw = wc / 3; doc.line(xc + cw, g0, xc + cw, by + B - 9); doc.line(xc + 2 * cw, g0, xc + 2 * cw, by + B - 9);
+    [["Escala", S.mapa ? pmEsc(F.esc) : "—"], ["Data", pmData(F.agora)], ["Folha", n + " / " + N]].forEach(function (c, i) {
+      pmTexto(doc, c[0], xc + i * cw + p, g0 + 2.9, cw - 2 * p, 5, 2, g0 + 3, "normal", cinz);
+      pmTexto(doc, c[1], xc + i * cw + p, g0 + 6.7, cw - 2 * p, 7.4, 3, g0 + 6.8, "bold");
+    });
+    pmTexto(doc, "Sistema de coordenadas: " + PM_SRC, cx, by + B - 5.2, wc - 2 * p, 5.8, 2.4, by + B - 5, "normal");
+    pmTexto(doc, "Imprimir a 100 % (sem ajustar à página) em " + (W >= 400 || H >= 400 ? "A3" : "A4") + ".", cx, by + B - 2.2, wc - 2 * p, 5, 2.2, by + B - 2, "normal", cinz);
+    doc.setTextColor(0); doc.setFont("helvetica", "normal"); doc.setDrawColor(0);
+  }
+  // Pedidos com tempo-limite. As imagens vêm sempre pelo proxy do site (mesma origem: o canvas pode lê-las); o JSON tenta
+  // primeiro directo e depois pelo proxy.
+  function pmPedir(u, ms, px) {
+    var ac = window.AbortController ? new AbortController() : null, t = setTimeout(function () { if (ac) ac.abort(); }, ms || 25000);
+    var url = px ? "/wp-json/tcd/v1/viz/px?u=" + encodeURIComponent(u) : u;
+    return fetch(url, px ? { credentials: "same-origin", headers: { "X-WP-Nonce": window.tcdNonce || "" }, signal: ac && ac.signal } : { credentials: "omit", signal: ac && ac.signal }).then(function (r) { clearTimeout(t); return r; }, function (e) { clearTimeout(t); throw e; });
+  }
+  function pmJson(u, ms) {
+    function ler(r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); }
+    return pmPedir(u, ms, false).then(ler).catch(function () { return pmPedir(u, ms, true).then(ler); });
+  }
+  function pmImgPx(u, ms) {
+    return pmPedir(u, ms || 30000, true).then(function (r) {
+      var ct = r.headers.get("content-type") || ""; if (!r.ok || ct.indexOf("image") < 0) throw new Error("serviço " + r.status);
+      return r.blob();
+    }).then(function (b) { return new Promise(function (ok, ko) { var fr = new FileReader(); fr.onload = function () { ok(fr.result); }; fr.onerror = ko; fr.readAsDataURL(b); }); });
+  }
+  function pmImagem(src) { return new Promise(function (ok, ko) { var im = new Image(); im.onload = function () { ok(im); }; im.onerror = function () { ko(new Error("imagem inválida")); }; im.src = src; }); }
+  function pmCat(id) {
+    var c = window.IPRViz && window.IPRViz.catalogo, e = null;
+    if (c && c.forEach) c.forEach(function (x) { if (x && x.id === id) e = x; });
+    return e || PM_RES[id] || null;
+  }
+  function pmFicha(id) { try { return fichasDados()[id] || null; } catch (e) { return null; } }
+  function pmHost(e) { try { return new URL(e.t === "mvt" ? PM_OGC : e.url).host; } catch (x) { return ""; } }
+  // Máscara do limite na grelha da imagem da folha (wpx × hpx), só no rectângulo que o limite ocupa.
+  function pmMascara(F) {
+    var x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9, sx = F.wpx / F.gw, sy = F.hpx / F.gh;
+    var pr = F.an.map(function (r) { return r.map(function (p) { var q = [(p[0] - F.caixa[0]) * sx, (F.caixa[3] - p[1]) * sy]; x0 = Math.min(x0, q[0]); y0 = Math.min(y0, q[1]); x1 = Math.max(x1, q[0]); y1 = Math.max(y1, q[1]); return q; }); });
+    x0 = Math.max(0, Math.floor(x0)); y0 = Math.max(0, Math.floor(y0)); x1 = Math.min(F.wpx, Math.ceil(x1)); y1 = Math.min(F.hpx, Math.ceil(y1));
+    var w = Math.max(1, x1 - x0), h = Math.max(1, y1 - y0), cv = document.createElement("canvas"); cv.width = w; cv.height = h;
+    var c = cv.getContext("2d"); c.translate(-x0, -y0); c.beginPath(); pr.forEach(function (r) { r.forEach(function (q, i) { if (i) c.lineTo(q[0], q[1]); else c.moveTo(q[0], q[1]); }); c.closePath(); }); c.fill("evenodd");
+    var d = c.getImageData(0, 0, w, h).data, m = new Uint8Array(w * h), tot = 0;
+    for (var i = 0; i < m.length; i++) if (d[i * 4 + 3] > 127) { m[i] = 1; tot++; }
+    return { x0: x0, y0: y0, w: w, h: h, m: m, tot: tot };
+  }
+  function pmMedida(cnt, L, F) { var f = L.tot ? cnt / L.tot : 0; return { ha: f * F.area / 10000, pct: f * 100 }; }
+  // Elementos vectoriais da OGC API da DGT na caixa da folha (bbox em graus), projectados para PT-TM06.
+  function pmItems(col, F) {
+    var P = window.proj4("EPSG:3763", "EPSG:4326"), c = F.caixa, bb = [180, 90, -180, -90];
+    [[c[0], c[1]], [c[2], c[1]], [c[2], c[3]], [c[0], c[3]]].forEach(function (p) { var q = P.forward(p); bb[0] = Math.min(bb[0], q[0]); bb[1] = Math.min(bb[1], q[1]); bb[2] = Math.max(bb[2], q[0]); bb[3] = Math.max(bb[3], q[1]); });
+    var u = PM_OGC + "/collections/" + col + "/items?f=json&limit=1000&bbox=" + bb.map(function (v, i) { return (v + (i < 2 ? -0.0005 : 0.0005)).toFixed(6); }).join(",");
+    var fs = [], pag = 0, T = window.proj4("EPSG:4326", "EPSG:3763");
+    function um(url) {
+      return pmJson(url, 30000).then(function (j) {
+        if (!j || !j.features) throw new Error("resposta sem elementos");
+        fs = fs.concat(j.features);
+        var nx = (j.links || []).filter(function (l) { return l && l.rel === "next" && l.href; })[0];
+        if (nx && j.features.length && ++pag < 8) return um(nx.href);
+        return fs;
+      });
+    }
+    return um(u).then(function (fs) {
+      return fs.map(function (f) {
+        var g = f.geometry, pol = [], lin = [];
+        function pr(r) { return r.map(function (p) { return T.forward([+p[0], +p[1]]); }); }
+        (function andar(g) {
+          if (!g) return;
+          if (g.type === "Polygon") pol.push(g.coordinates.map(pr));
+          else if (g.type === "MultiPolygon") g.coordinates.forEach(function (p) { pol.push(p.map(pr)); });
+          else if (g.type === "LineString") lin.push(pr(g.coordinates));
+          else if (g.type === "MultiLineString") g.coordinates.forEach(function (l) { lin.push(pr(l)); });
+          else if (g.type === "GeometryCollection") g.geometries.forEach(andar);
+        })(g);
+        return { p: f.properties || {}, pol: pol, lin: lin };
+      });
+    });
+  }
+  // Classe de um elemento pela legenda do catálogo (nome contido num dos atributos de texto). Nomes mais longos primeiro.
+  function pmClasse(props, leg) {
+    if (!leg || !leg.length) return -1;
+    var txt = Object.keys(props).map(function (k) { return typeof props[k] === "string" ? pmSemAc(props[k]) : ""; }).join(" | ");
+    var ord = leg.map(function (l, i) { return i; }).sort(function (a, b) { return leg[b][1].length - leg[a][1].length; });
+    for (var i = 0; i < ord.length; i++) if (txt.indexOf(pmSemAc(leg[ord[i]][1])) >= 0) return ord[i];
+    return -1;
+  }
+  function pmDesenharGeo(c, fs, F, cor, preencher) {
+    var sx = F.wpx / F.gw, sy = F.hpx / F.gh;
+    function q(p) { return [(p[0] - F.caixa[0]) * sx, (F.caixa[3] - p[1]) * sy]; }
+    fs.forEach(function (f) {
+      f.pol.forEach(function (pg) {
+        c.beginPath(); pg.forEach(function (r) { r.forEach(function (p, i) { var z = q(p); if (i) c.lineTo(z[0], z[1]); else c.moveTo(z[0], z[1]); }); c.closePath(); });
+        if (preencher) { c.fillStyle = preencher; c.fill("evenodd"); }
+        if (cor) { c.strokeStyle = cor; c.lineWidth = 1.6; c.stroke(); }
+      });
+      f.lin.forEach(function (l) { c.beginPath(); l.forEach(function (p, i) { var z = q(p); if (i) c.lineTo(z[0], z[1]); else c.moveTo(z[0], z[1]); }); c.strokeStyle = cor || preencher; c.lineWidth = 3; c.stroke(); });
+    });
+  }
+  function pmRgba(h, a) { var c = pmHex(h); return "rgba(" + c[0] + "," + c[1] + "," + c[2] + "," + a + ")"; }
+  // Uma camada vectorial (OGC API): imagem da folha, legenda e medição dentro do limite.
+  function pmCamadaMvt(e, F, L, linear) {
+    return pmItems(e.col, F).then(function (fs) {
+      var leg = e.leg || null, base = typeof e.cor === "string" ? e.cor : "#888888";
+      var grupos = {};
+      fs.forEach(function (f) { var k = pmClasse(f.p, leg); (grupos[k] || (grupos[k] = [])).push(f); });
+      var cv = document.createElement("canvas"); cv.width = F.wpx; cv.height = F.hpx; var c = cv.getContext("2d");
+      var classes = [], tot = 0, px = F.gw / F.wpx;
+      var mk = document.createElement("canvas"); mk.width = L.w; mk.height = L.h; var mc = mk.getContext("2d");
+      var todos = document.createElement("canvas"); todos.width = L.w; todos.height = L.h; var tc = todos.getContext("2d"); tc.translate(-L.x0, -L.y0);
+      Object.keys(grupos).forEach(function (k) {
+        var cor = +k >= 0 ? leg[+k][0] : base, nome = +k >= 0 ? leg[+k][1] : (leg ? "Outras categorias" : e.n);
+        pmDesenharGeo(c, grupos[k], F, cor, linear ? null : pmRgba(cor, 0.5));
+        pmDesenharGeo(tc, grupos[k], F, linear ? "#000" : null, linear ? null : "#000");
+        mc.setTransform(1, 0, 0, 1, 0, 0); mc.clearRect(0, 0, L.w, L.h); mc.translate(-L.x0, -L.y0);
+        pmDesenharGeo(mc, grupos[k], F, linear ? "#000" : null, linear ? null : "#000");
+        var d = mc.getImageData(0, 0, L.w, L.h).data, n = 0;
+        for (var i = 0; i < L.m.length; i++) if (L.m[i] && d[i * 4 + 3] > 127) n++;
+        classes.push({ n: nome, cor: cor, cnt: n });
+      });
+      var dt = tc.getImageData(0, 0, L.w, L.h).data;
+      for (var i = 0; i < L.m.length; i++) if (L.m[i] && dt[i * 4 + 3] > 127) tot++;
+      var M0 = pmMedida(tot, L, F);
+      classes = classes.filter(function (k) { return k.cnt > 0; }).sort(function (a, b) { return b.cnt - a.cnt; }).map(function (k) { var m = pmMedida(k.cnt, L, F); return { n: k.n, cor: k.cor, ha: m.ha, pct: m.pct }; });
+      // Legenda: só as categorias presentes na folha (a legenda completa está no Atlas).
+      var itens = leg ? leg.map(function (l, i) { return grupos[i] ? { t: linear ? "linha" : "area", cor: pmHex(l[0]), txt: l[1] } : null; }).filter(Boolean) : [{ t: linear ? "linha" : "area", cor: pmHex(base), txt: e.n }];
+      if (leg && grupos[-1]) itens.push({ t: "area", cor: pmHex(base), txt: "Outras categorias" });
+      if (!fs.length) itens = [{ t: linear ? "linha" : "area", cor: pmHex(base), txt: e.n + ": nenhum elemento nesta folha" }];
+      return { canvas: cv, op: 1, legenda: itens, medida: { ha: M0.ha, pct: M0.pct, presente: tot > 0, classes: leg ? classes : [], n: fs.length, metodo: "polígonos vectoriais do serviço (OGC API DGT), medidos em grelha de " + pmNum(px, px < 1 ? 2 : 1) + " m" } };
+    });
+  }
+  // Legenda de um serviço ArcGIS (legend?f=json) ou WMS (GetLegendGraphic), com a cor de cada amostra para classificar.
+  function pmLegendaServico(e) {
+    if (e.t === "wms") {
+      var u = e.url + (e.url.indexOf("?") < 0 ? "?" : "&") + "SERVICE=WMS&VERSION=1.1.1&REQUEST=GetLegendGraphic&FORMAT=image/png&LAYER=" + encodeURIComponent(e.layer) + "&SRS=EPSG:3763";
+      return pmImgPx(u, 12000).then(function (src) { return pmImagem(src).then(function (im) { return { img: { src: src, w: im.naturalWidth, h: im.naturalHeight }, itens: [] }; }); });
+    }
+    if (e.t !== "ags") return Promise.resolve(null);
+    var ids = /^show:([\d,]+)$/.exec(e.layers || ""); ids = ids ? ids[1].split(",").map(Number) : null;
+    return pmJson(e.url + "/legend?f=json", 12000).then(function (j) {
+      var its = [];
+      (j.layers || []).forEach(function (l) {
+        if (ids && ids.indexOf(+l.layerId) < 0) return;
+        (l.legend || []).forEach(function (g) { if (g.imageData) its.push({ t: "img", src: "data:" + (g.contentType || "image/png") + ";base64," + g.imageData, txt: g.label || l.layerName || e.n }); });
+      });
+      if (!its.length) return null;
+      return Promise.all(its.map(function (it) {
+        return pmImagem(it.src).then(function (im) {
+          it.iw = im.naturalWidth; it.ih = im.naturalHeight;
+          var cv = document.createElement("canvas"); cv.width = im.naturalWidth; cv.height = im.naturalHeight; var c = cv.getContext("2d"); c.drawImage(im, 0, 0);
+          var d = c.getImageData(0, 0, cv.width, cv.height).data, conta = {}, melhor = null, mx = 0;
+          for (var i = 0; i < d.length; i += 4) { if (d[i + 3] < 200) continue; var k = (d[i] >> 3) + "," + (d[i + 1] >> 3) + "," + (d[i + 2] >> 3); conta[k] = (conta[k] || 0) + 1; if (conta[k] > mx) { mx = conta[k]; melhor = [d[i], d[i + 1], d[i + 2]]; } }
+          it.cor = melhor || pmHex(e.cor); return it;
+        }, function () { it.cor = pmHex(e.cor); return it; });
+      })).then(function (its) { return { itens: its }; });
+    }).catch(function () { return null; });
+  }
+  // Uma camada de imagem (ArcGIS export ou WMS GetMap), em EPSG:3763 com a caixa exacta; medição por amostragem de píxeis.
+  function pmCamadaImg(e, F, L, linear) {
+    var bb = F.caixa.map(function (v) { return v.toFixed(2); }).join(","), u;
+    if (e.t === "ags") u = e.url + "/export?bbox=" + bb + "&bboxSR=3763&imageSR=3763&size=" + F.wpx + "," + F.hpx + "&format=png32&transparent=true&dpi=96&f=image" + (e.dyn ? "&dynamicLayers=" + encodeURIComponent(e.dyn) : e.layers ? "&layers=" + encodeURIComponent(e.layers) : "");
+    else u = e.url + (e.url.indexOf("?") < 0 ? "?" : "&") + "SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&LAYERS=" + encodeURIComponent(e.layer) + "&STYLES=&SRS=EPSG:3763&BBOX=" + bb + "&WIDTH=" + F.wpx + "&HEIGHT=" + F.hpx + "&FORMAT=image/png&TRANSPARENT=TRUE";
+    return Promise.all([pmImgPx(u, 35000).then(pmImagem), pmLegendaServico(e)]).then(function (R) {
+      var im = R[0], lg = R[1], cv = document.createElement("canvas"); cv.width = F.wpx; cv.height = F.hpx; var c = cv.getContext("2d"); c.drawImage(im, 0, 0, F.wpx, F.hpx);
+      var d = c.getImageData(L.x0, L.y0, L.w, L.h).data, sw = lg && lg.itens && lg.itens.length > 1 ? lg.itens : null, cont = sw ? sw.map(function () { return 0; }) : null, outras = 0, tot = 0;
+      for (var i = 0; i < L.m.length; i++) {
+        if (!L.m[i] || d[i * 4 + 3] < 40) continue; tot++;
+        if (sw) { var bi = -1, bd = 1e9; for (var k = 0; k < sw.length; k++) { var a = d[i * 4] - sw[k].cor[0], b = d[i * 4 + 1] - sw[k].cor[1], g = d[i * 4 + 2] - sw[k].cor[2], dd = a * a + b * b + g * g; if (dd < bd) { bd = dd; bi = k; } } if (bd < 3600) cont[bi]++; else outras++; }
+      }
+      var px = F.gw / F.wpx, M0 = pmMedida(tot, L, F), classes = [];
+      if (sw) { sw.forEach(function (s, k) { if (cont[k]) { var m = pmMedida(cont[k], L, F); classes.push({ n: s.txt, cor: s.cor, ha: m.ha, pct: m.pct }); } }); if (outras) { var m2 = pmMedida(outras, L, F); classes.push({ n: "Cor sem correspondência na legenda", ha: m2.ha, pct: m2.pct }); } classes.sort(function (a, b) { return b.pct - a.pct; }); }
+      var itens = lg && lg.itens && lg.itens.length ? lg.itens : [{ t: linear ? "linha" : "area", cor: pmHex(e.cor), txt: e.n }];
+      return { canvas: cv, op: 0.8, legenda: itens, legendaImg: lg && lg.img, medida: { ha: M0.ha, pct: M0.pct, presente: tot > 0, classes: classes, imagem: 1, metodo: "estimativa a partir da imagem do serviço (píxel de " + pmNum(px, px < 1 ? 2 : 1) + " m)" } };
+    });
+  }
+  // Data ou versão do serviço, quando o próprio serviço a declara; senão fica só a data da consulta.
+  function pmMeta(e) {
+    var u = e.t === "mvt" ? PM_OGC + "/collections/" + e.col + "?f=json" : e.url + (e.t === "ags" ? "?f=json" : "");
+    if (e.t !== "mvt" && e.t !== "ags") return Promise.resolve("");
+    return pmJson(u, 8000).then(function (j) {
+      var t = [];
+      if (e.t === "mvt") { var iv = j && j.extent && j.extent.temporal && j.extent.temporal.interval && j.extent.temporal.interval[0]; if (iv && iv[0]) t.push("dados de " + String(iv[0]).slice(0, 10) + (iv[1] ? " a " + String(iv[1]).slice(0, 10) : "")); if (j && j.updated) t.push("actualizado em " + String(j.updated).slice(0, 10)); }
+      else { if (j && j.copyrightText) t.push(String(j.copyrightText).replace(/\s+/g, " ").slice(0, 90)); if (j && j.currentVersion) t.push("ArcGIS Server " + j.currentVersion); }
+      return t.join(", ");
+    }).catch(function () { return ""; });
+  }
+  function pmTema(tema, F, L, fundo) {
+    var cams = tema.c.map(pmCat).filter(Boolean);
+    return Promise.all(cams.map(function (e) {
+      var lin = !!(tema.linear && tema.linear[e.id]);
+      var p = e.t === "mvt" ? pmCamadaMvt(e, F, L, lin) : (e.t === "ags" || e.t === "wms") ? pmCamadaImg(e, F, L, lin) : Promise.reject(new Error("tipo de serviço sem extracto"));
+      return Promise.all([p, pmMeta(e)]).then(function (R) { R[0].ent = e; R[0].linear = lin; R[0].meta = R[1]; return R[0]; }, function (x) { return { ent: e, linear: lin, erro: (x && x.message) || String(x) }; });
+    })).then(function (rs) {
+      return pmImagem(fundo).then(function (im0) {
+        var cv = document.createElement("canvas"); cv.width = F.wpx; cv.height = F.hpx; var c = cv.getContext("2d");
+        c.fillStyle = "#fff"; c.fillRect(0, 0, F.wpx, F.hpx); c.globalAlpha = 0.45; c.drawImage(im0, 0, 0, F.wpx, F.hpx); c.globalAlpha = 1;
+        rs.forEach(function (r) { if (r.canvas) { c.globalAlpha = r.op; c.drawImage(r.canvas, 0, 0); c.globalAlpha = 1; r.canvas = null; } });
+        return { tema: tema, rs: rs, img: cv.toDataURL("image/jpeg", 0.86), indisponivel: !rs.some(function (r) { return !r.erro; }) };
+      });
+    });
+  }
+  // Textos da folha de um tema: o que está a ver, fonte e licença, legenda.
+  function pmFolhaTema(T, F, fundoTxt) {
+    var ok = T.rs.filter(function (r) { return !r.erro; }), leg = [{ t: "linha", cor: [230, 30, 30], txt: "Limite do terreno" }];
+    var legImg = null;
+    T.rs.forEach(function (r) {
+      if (r.erro) { leg.push({ t: "area", cor: [235, 235, 235], txt: r.ent.n + ": serviço indisponível no momento" }); return; }
+      if (r.legendaImg && !legImg) legImg = r.legendaImg;
+      (r.legenda || []).forEach(function (it) { leg.push(it); });
+    });
+    var o = T.rs.map(function (r) { var f = pmFicha(r.ent.id); return (f && f.o && f.o.indexOf("a confirmar") < 0) ? f.o : r.ent.n + "."; });
+    var notas = T.rs.map(function (r) { return r.ent.nota || ""; }).filter(function (x, i, a) { return x && a.indexOf(x) === i; });
+    var oQue = o.join(" ") + " Sobre o ortofotomapa atenuado, à mesma escala e com a mesma caixa da folha de localização; o limite do terreno está a vermelho." + (notas.length ? " " + notas.join(". ") + "." : "");
+    if (T.indisponivel) oQue = "Serviço indisponível no momento: não foi possível obter " + T.rs.map(function (r) { return r.ent.n; }).join(", ") + ". Gere o PDF de novo mais tarde. " + o.join(" ");
+    var fonte = "Fonte: " + T.rs.map(function (r) {
+      var f = pmFicha(r.ent.id), fo = r.ent.fonte || (f && f.f && f.f.indexOf("a confirmar") < 0 ? f.f : "") || pmHost(r.ent);
+      return r.ent.n + " · " + fo + " (" + pmHost(r.ent) + ")" + (r.meta ? ", " + r.meta : "") + (r.erro ? ", sem resposta" : "");
+    }).join("; ") + ". Licença: termos de utilização do serviço de origem" + (T.rs.some(function (r) { return r.ent.lic === "r"; }) ? "; só consulta, sem redistribuição dos dados" : "") + ". Consultado em " + pmHora(F.agora) + ". Fundo: " + fundoTxt + ", atenuado.";
+    return { titulo: "Extracto · " + T.tema.t, mapa: true, legenda: leg, legendaImg: legImg, oQue: oQue, fonte: fonte };
+  }
+  // Quadro de síntese: área abrangida (ha) e % do terreno por condicionante; nunca números que o serviço não deu.
+  function pmSintese(doc, F, temas) {
+    var W = doc.internal.pageSize.getWidth(), H = doc.internal.pageSize.getHeight(), M = F.M, ymax = H - M - pmBanda(W, H) - 6;
+    var x = M + 2, w = W - 2 * M - 4, cols = [0, 0.25, 0.53, 0.63, 0.71].map(function (f) { return x + w * f; });
+    doc.setTextColor(0); doc.setFont("helvetica", "bold"); doc.setFontSize(12); doc.text("Quadro de síntese das condicionantes", x, M + 7);
+    var y = pmTexto(doc, "Área do terreno: " + pmNum(F.area / 10000, 2) + " ha (calculada em PT-TM06 a partir do limite indicado no IPR Atlas). Para cada condicionante, área do terreno que abrange e percentagem. As áreas de temas diferentes sobrepõem-se e não se somam.", x, M + 12.5, w, 7.5, 3.3, ymax);
+    y += 2;
+    function cab() {
+      doc.setFillColor(63, 70, 48); doc.rect(x - 1, y - 3.6, w + 2, 5.2, "F"); doc.setTextColor(250, 247, 238); doc.setFont("helvetica", "bold"); doc.setFontSize(7);
+      ["Tema", "Camada", "Área (ha)", "% do terreno", "Método e observações"].forEach(function (t, i) { doc.text(t, cols[i] + (i === 2 || i === 3 ? (cols[i + 1] - cols[i]) - 3 : 0), y, i === 2 || i === 3 ? { align: "right" } : undefined); });
+      doc.setTextColor(0); y += 4.6;
+    }
+    cab();
+    var fundo = 0;
+    function linha(c, op) {
+      op = op || {}; var ws = [cols[1] - cols[0] - 3, cols[2] - cols[1] - 3 - (op.peq ? 3 : 0), x + w - cols[4]], ls = [];
+      doc.setFont("helvetica", "bold"); doc.setFontSize(7); ls[0] = doc.splitTextToSize(String(c[0] || ""), ws[0]);
+      doc.setFont("helvetica", "normal"); doc.setFontSize(op.peq ? 6.4 : 7); ls[1] = doc.splitTextToSize(String(c[1] || ""), ws[1]);
+      doc.setFontSize(6.2); ls[2] = doc.splitTextToSize(String(c[4] || ""), ws[2]);
+      var n = Math.max(ls[0].length, ls[1].length, ls[2].length, 1), h = n * 2.9 + 1.6;
+      if (y + h > ymax) return false;
+      if (fundo++ % 2 === 0 && !op.peq) { doc.setFillColor(244, 242, 234); doc.rect(x - 1, y - 3, w + 2, h, "F"); }
+      doc.setFont("helvetica", "bold"); doc.setFontSize(7); ls[0].forEach(function (l, i) { doc.text(l, cols[0], y + i * 2.9); });
+      doc.setFont("helvetica", "normal"); doc.setFontSize(op.peq ? 6.4 : 7); ls[1].forEach(function (l, i) { doc.text(l, cols[1] + (op.peq ? 3 : 0), y + i * 2.9); });
+      if (op.cor) { doc.setFillColor(op.cor[0], op.cor[1], op.cor[2]); doc.rect(cols[1], y - 2, 2, 2, "F"); }
+      doc.setFont("helvetica", op.peq ? "normal" : "bold"); doc.setFontSize(op.peq ? 6.6 : 7.4);
+      if (c[2] !== "") doc.text(String(c[2]), cols[3] - 3, y, { align: "right" }); if (c[3] !== "") doc.text(String(c[3]), cols[4] - 3, y, { align: "right" });
+      doc.setFont("helvetica", "normal"); doc.setFontSize(6.2); doc.setTextColor(70); ls[2].forEach(function (l, i) { doc.text(l, cols[4], y + i * 2.9); }); doc.setTextColor(0);
+      y += h; return true;
+    }
+    var cortado = false;
+    temas.forEach(function (T) {
+      T.rs.forEach(function (r, i) {
+        if (cortado) return;
+        var tt = i === 0 ? T.tema.t : "", m = r.medida;
+        if (r.erro) { cortado = !linha([tt, r.ent.n, "—", "—", "Serviço indisponível no momento; sem valores."]); return; }
+        if (r.linear) { cortado = !linha([tt, r.ent.n, "—", "—", (m.presente ? "Há linhas deste tema dentro do limite" : "Nenhuma linha deste tema dentro do limite") + " (elemento linear: a área não se aplica; a margem legal não está desenhada no serviço). " + m.metodo + "."]); return; }
+        var obs = (m.n === 0 ? "Nenhum elemento devolvido pelo serviço na área da folha. " : "") + m.metodo.charAt(0).toUpperCase() + m.metodo.slice(1) + ".";
+        cortado = !linha([tt, r.ent.n, pmNum(m.ha, 2), pmNum(m.pct, 1) + " %", obs]);
+        (m.classes || []).forEach(function (k) { if (!cortado && (m.classes.length > 1 || k.n !== r.ent.n)) cortado = !linha(["", k.n, pmNum(k.ha, 2), pmNum(k.pct, 1) + " %", ""], { peq: 1, cor: k.cor ? (typeof k.cor === "string" ? pmHex(k.cor) : k.cor) : null }); });
+      });
+    });
+    if (cortado) pmTexto(doc, "… o quadro não cabe numa folha; as linhas em falta estão nas folhas de cada tema.", x, y + 1, w, 6.4, 2.8, ymax + 4, "italic");
+    pmTexto(doc, "Valores calculados no momento da emissão com os serviços indicados. «Estimativa a partir da imagem do serviço»: contagem dos píxeis coloridos da imagem devolvida pelo serviço dentro do limite; depende da simbologia e da resolução. Polígonos vectoriais: medição dos polígonos devolvidos pela OGC API da DGT numa grelha fina. Nenhum destes valores substitui a planta de condicionantes do PDM nem certidões da câmara municipal.", x, Math.min(y + 5, ymax - 8), w, 6, 2.6, ymax + 5, "italic", [70, 70, 70]);
+  }
   function plGerar(id, op, msg) {
     msg("A preparar…");
     return plLibs().then(function () { return plGeo(id); }).then(function (T) {
@@ -3142,7 +3579,7 @@
       var bw = bx[2] - bx[0], bh = bx[3] - bx[1];
       var A3 = op.papel === "A3", vert = op.orient === "v" || (op.orient === "auto" && bh > bw * 1.1);
       var W = A3 ? (vert ? 297 : 420) : (vert ? 210 : 297), H = A3 ? (vert ? 420 : 297) : (vert ? 297 : 210);
-      var M = 10, BAND = 46, fw = W - 2 * M, fh = H - 2 * M - BAND - 4;
+      var M = 10, BAND = pmBanda(W, H), fw = W - 2 * M, fh = H - 2 * M - BAND - 4;
       var escalas = [1000, 2000, 5000, 10000, 25000], esc = +op.escala;
       function cabe(e) { return bw * 1.12 <= fw / 1000 * e && bh * 1.12 <= fh / 1000 * e; }
       if (!esc) { esc = escalas.filter(cabe)[0]; if (!esc) throw new Error("O terreno não cabe numa folha " + (A3 ? "A3" : "A4") + " a 1:25 000. Escolha A3 ou peça folhas de detalhe."); }
@@ -3151,62 +3588,82 @@
       var caixa = [cx - gw / 2, cy - gh / 2, cx + gw / 2, cy + gh / 2];
       var dpi = 150, wpx = Math.min(4000, Math.round(fw / 25.4 * dpi)), hpx = Math.min(4000, Math.round(fh / 25.4 * dpi));
       var ll = window.proj4("EPSG:3763", "EPSG:4326", [cx, cy]);
+      var temas = PM_TEMAS.filter(function (t) { return op["f_" + t.k] !== false; }), sintese = op.f_sintese !== false && temas.length > 0;
+      var agora = new Date(), carimbo = agora.getFullYear() + ("0" + (agora.getMonth() + 1)).slice(-2) + ("0" + agora.getDate()).slice(-2) + ("0" + agora.getHours()).slice(-2) + ("0" + agora.getMinutes()).slice(-2);
+      var ident = "IPR-PL-" + id + "-" + carimbo;
+      var F = { M: M, W: W, H: H, fw: fw, fh: fh, A3: A3, esc: esc, caixa: caixa, gw: gw, gh: gh, wpx: wpx, hpx: hpx, an: an, area: area, id: id, nome: String(T.nome).slice(0, 80), ident: ident, agora: agora };
       msg("A pedir o ortofotomapa à DGT…");
       var gi = 30000, gj2 = gi * (fh / fw);
       var ixw = 52, ixh = 38;
       return Promise.all([plWms(caixa, wpx, hpx, op.fundo), plWms([cx - 15000, cy - 15000 * ixh / ixw, cx + 15000, cy + 15000 * ixh / ixw], 420, Math.round(420 * ixh / ixw), "sat").catch(function () { return null; }), plSitio(ll[0], ll[1])]).then(function (R) {
-        msg("A compor a planta…");
-        var J = window.jspdf.jsPDF, doc = new J({ orientation: W > H ? "landscape" : "portrait", unit: "mm", format: A3 ? "a3" : "a4", compress: true });
-        var agora = new Date(), carimbo = agora.getFullYear() + ("0" + (agora.getMonth() + 1)).slice(-2) + ("0" + agora.getDate()).slice(-2) + ("0" + agora.getHours()).slice(-2) + ("0" + agora.getMinutes()).slice(-2);
-        var ident = "IPR-PL-" + id + "-" + carimbo;
+        if (!temas.length) return R;
+        msg("A pedir as condicionantes (" + temas.map(function (t) { return t.t; }).join(", ") + ")…");
+        var L = pmMascara(F);
+        return Promise.all(temas.map(function (t) { return pmTema(t, F, L, R[0].dados).catch(function (x) { return { tema: t, rs: t.c.map(function (k) { return { ent: pmCat(k) || { id: k, n: k }, erro: (x && x.message) || String(x) }; }), indisponivel: true, img: null }; }); })).then(function (TT) { R.temas = TT; return R; });
+      }).then(function (R) {
+        msg("A compor o dossier…");
+        var J = window.jspdf.jsPDF, orient = W > H ? "landscape" : "portrait", fmt = A3 ? "a3" : "a4", doc = new J({ orientation: orient, unit: "mm", format: fmt, compress: true });
+        var folhas = [];
         function mm(p) { return [M + (p[0] - caixa[0]) / gw * fw, M + (caixa[3] - p[1]) / gh * fh]; }
+        // 1 · localização
         doc.addImage(R[0].dados, "JPEG", M, M, fw, fh, undefined, "FAST");
-        // limite
-        doc.setDrawColor(230, 30, 30); doc.setLineWidth(0.6);
-        an.forEach(function (r) { for (var i = 0; i < r.length - 1; i++) { var a = mm(r[i]), b = mm(r[i + 1]); doc.line(a[0], a[1], b[0], b[1]); } });
-        // moldura e quadrícula nas margens
-        doc.setDrawColor(0); doc.setLineWidth(0.3); doc.rect(M, M, fw, fh);
-        var passo = plNice(gw / 5); doc.setFontSize(6); doc.setTextColor(0);
-        for (var x = Math.ceil(caixa[0] / passo) * passo; x < caixa[2]; x += passo) { var px = M + (x - caixa[0]) / gw * fw; doc.line(px, M, px, M + 2.5); doc.line(px, M + fh, px, M + fh - 2.5); doc.text("M " + Math.round(x), px + 0.6, M + 4.5); }
-        for (var y = Math.ceil(caixa[1] / passo) * passo; y < caixa[3]; y += passo) { var py = M + (caixa[3] - y) / gh * fh; doc.line(M, py, M + 2.5, py); doc.line(M + fw, py, M + fw - 2.5, py); doc.text("P " + Math.round(y), M + 3.2, py - 0.6); }
-        // norte
-        var nx = M + fw - 12, ny = M + 8; doc.setFillColor(255, 255, 255); doc.circle(nx, ny + 3, 5.5, "F"); doc.setFillColor(0, 0, 0);
-        doc.triangle(nx, ny - 1.5, nx - 2.3, ny + 5.5, nx + 2.3, ny + 5.5, "F"); doc.setFontSize(7); doc.text("N", nx - 1.1, ny + 9.2);
-        // faixa de informação
-        var by = M + fh + 4; doc.setLineWidth(0.3); doc.rect(M, by, fw, BAND);
-        var col2 = M + fw * 0.42, col3 = M + fw * 0.72;
-        doc.line(col2 - 3, by, col2 - 3, by + BAND); doc.line(col3 - 3, by, col3 - 3, by + BAND);
-        doc.setFontSize(11); doc.setFont("helvetica", "bold"); doc.text("PLANTA DE LOCALIZAÇÃO", M + 3, by + 6);
-        doc.setFont("helvetica", "normal"); doc.setFontSize(8);
-        var linhas1 = [String(T.nome).slice(0, 70), "Projecto #" + id + (R[2].municipio || R[2].freguesia ? " · " + [R[2].freguesia ? "Freguesia de " + R[2].freguesia : "", R[2].municipio ? "Concelho de " + R[2].municipio : ""].filter(Boolean).join(", ") : ""), "Finalidade: " + op.finalidade + (op.municipio ? " · " + op.municipio : "") + (op.proc ? " · " + op.proc : ""), op.requerente ? "Requerente: " + op.requerente : "", "Área do limite: " + (area / 10000).toLocaleString("pt-PT", { maximumFractionDigits: 2 }) + " ha (calculada em PT-TM06)"].filter(Boolean);
-        linhas1.forEach(function (t, i) { doc.text(doc.splitTextToSize(t, col2 - M - 8)[0], M + 3, by + 12 + i * 4.6); });
-        // escala gráfica
-        var L = plNice(gw / 6), Lmm = L / esc * 1000, sx = M + 3, sy = by + BAND - 7;
-        doc.setFontSize(9); doc.setFont("helvetica", "bold"); doc.text("Escala 1:" + esc.toLocaleString("pt-PT"), sx, sy - 4.5); doc.setFont("helvetica", "normal");
-        for (var k = 0; k < 4; k++) { doc.setFillColor(k % 2 ? 255 : 0, k % 2 ? 255 : 0, k % 2 ? 255 : 0); doc.rect(sx + k * Lmm / 4, sy - 1.6, Lmm / 4, 1.6, "FD"); }
-        doc.setFontSize(6.5); doc.text("0", sx - 0.6, sy + 3); doc.text(L >= 1000 ? (L / 1000) + " km" : L + " m", sx + Lmm - 2, sy + 3);
-        doc.text("Imprimir a 100 % (sem ajustar à página) em " + (A3 ? "A3" : "A4") + ".", sx + Lmm + 4, sy);
-        doc.setFontSize(7.2);
-        var linhas2 = ["Sistema de referência: PT-TM06/ETRS89 (EPSG:3763)", "Norte da quadrícula PT-TM06", "Centro: M " + Math.round(cx) + " · P " + Math.round(cy), "WGS84: " + ll[1].toFixed(6) + ", " + ll[0].toFixed(6), "Quadrícula de " + (passo >= 1000 ? passo / 1000 + " km" : passo + " m"), "Fundo: " + R[0].fonte];
-        linhas2.forEach(function (t, i) { doc.text(doc.splitTextToSize(t, col3 - col2 - 4)[0], col2, by + 6 + i * 4.3); });
-        if (R[1]) { var ix = col3, iy = by + 3; doc.addImage(R[1].dados, "JPEG", ix, iy, ixw * 0.5, ixh * 0.5, undefined, "FAST"); doc.setDrawColor(230, 30, 30); doc.setLineWidth(0.5); doc.rect(ix + ixw * 0.25 - 1.2, iy + ixh * 0.25 - 1.2, 2.4, 2.4); doc.setDrawColor(0); doc.setLineWidth(0.2); doc.rect(ix, iy, ixw * 0.5, ixh * 0.5); doc.setFontSize(5.5); doc.text("Enquadramento, cerca de 30 km", ix, iy + ixh * 0.5 + 2.6); }
-        doc.setFontSize(5.4); doc.setTextColor(60);
-        var notas = ["Fontes: " + R[0].fonte + "; limites administrativos CAOP (DGT); limite do terreno indicado no IPR Atlas, sem verificação no terreno.", "Documento informativo: não é prova de propriedade, não substitui levantamento topográfico nem é emitido pela câmara municipal.", "Emitido por IPR Atlas · Terracrua Design, " + agora.toLocaleString("pt-PT") + " · " + ident + " · versão 1"];
-        var nyy = by + 3 + ixh * 0.5 + 6; notas.forEach(function (t) { doc.splitTextToSize(t, W - col3 - M - 3).forEach(function (l) { doc.text(l, col3, nyy); nyy += 2.25; }); });
-        doc.setTextColor(0);
+        pmLimite(doc, F);
+        if (R[1]) {
+          doc.setFont("helvetica", "normal"); doc.setFontSize(5.5);
+          var iw = ixw * 0.5, ih = ixh * 0.5, tw = Math.max(iw, doc.getTextWidth("Enquadramento, cerca de 30 km")), ix = M + fw - tw - 3, iy = M + fh - ih - 6;
+          doc.setFillColor(255, 255, 255); doc.rect(ix - 1.2, iy - 1.2, tw + 2.4, ih + 5.4, "F");
+          doc.addImage(R[1].dados, "JPEG", ix, iy, iw, ih, undefined, "FAST"); doc.setDrawColor(230, 30, 30); doc.setLineWidth(0.5); doc.rect(ix + iw / 2 - 1.2, iy + ih / 2 - 1.2, 2.4, 2.4);
+          doc.setDrawColor(0); doc.setLineWidth(0.2); doc.rect(ix, iy, iw, ih); doc.setFont("helvetica", "normal"); doc.setFontSize(5.5); doc.setTextColor(0); doc.text("Enquadramento, cerca de 30 km", ix, iy + ih + 2.8);
+        }
+        var passo = plNice(gw / 5);
+        var sitio = R[2].municipio || R[2].freguesia ? [R[2].freguesia ? "Freguesia de " + R[2].freguesia : "", R[2].municipio ? "Concelho de " + R[2].municipio : ""].filter(Boolean).join(", ") : "";
+        folhas.push({ pag: 1, S: {
+          titulo: "Planta de localização", mapa: true,
+          legenda: [{ t: "linha", cor: [230, 30, 30], txt: "Limite do terreno" }].concat(R[1] ? [{ t: "quadro", cor: [230, 30, 30], txt: "Posição do terreno no enquadramento" }] : []),
+          dados: ["Projecto #" + id + (sitio ? " · " + sitio : ""), "Finalidade: " + op.finalidade + (op.municipio ? " · " + op.municipio : "") + (op.proc ? " · " + op.proc : ""), op.requerente ? "Requerente: " + op.requerente : "", "Área do limite: " + (area / 10000).toLocaleString("pt-PT", { maximumFractionDigits: 2 }) + " ha (calculada em PT-TM06)", "Centro: M " + Math.round(cx) + " · P " + Math.round(cy) + " · WGS84: " + ll[1].toFixed(6) + ", " + ll[0].toFixed(6), "Quadrícula de " + (passo >= 1000 ? passo / 1000 + " km" : passo + " m") + " · norte da quadrícula PT-TM06", "Fundo: " + R[0].fonte].filter(Boolean),
+          oQue: "Ortofotomapa da DGT (" + R[0].fonte + ") à escala " + pmEsc(esc) + ", com o limite do terreno a vermelho e a quadrícula PT-TM06 nas margens." + (R[1] ? " No canto, enquadramento de cerca de 30 km sobre imagem de satélite, com a posição do terreno." : "") + (temas.length ? " As folhas seguintes repetem esta caixa com as condicionantes." : ""),
+          fonte: "Fontes: " + R[0].fonte + "; limites administrativos CAOP (DGT); limite do terreno indicado no IPR Atlas, sem verificação no terreno. Licença: termos de utilização dos serviços de origem. Consultado em " + pmHora(agora) + ". Emitido por IPR Atlas · Terracrua Design, " + agora.toLocaleString("pt-PT") + " · " + ident + " · versão 1.",
+          aviso: "Documento informativo: não é prova de propriedade, não substitui levantamento topográfico nem é emitido pela câmara municipal."
+        } });
+        // 2 · extractos das condicionantes, à mesma escala e caixa
+        (R.temas || []).forEach(function (TT) {
+          doc.addPage(fmt, orient);
+          doc.addImage(TT.img || R[0].dados, "JPEG", M, M, fw, fh, undefined, "FAST");
+          pmLimite(doc, F);
+          if (TT.indisponivel) {
+            var bw2 = Math.min(120, fw - 40), bx2 = M + (fw - bw2) / 2, by2 = M + fh / 2 - 9;
+            doc.setFillColor(255, 255, 255); doc.setDrawColor(180, 40, 30); doc.setLineWidth(0.4); doc.roundedRect(bx2, by2, bw2, 18, 2, 2, "FD");
+            doc.setTextColor(180, 40, 30); doc.setFont("helvetica", "bold"); doc.setFontSize(11); doc.text("Serviço indisponível no momento", M + fw / 2, by2 + 7.5, { align: "center" });
+            doc.setFont("helvetica", "normal"); doc.setFontSize(7.5); doc.setTextColor(60); doc.text(doc.splitTextToSize("Não foi possível obter " + TT.tema.t + ". Gere o PDF de novo mais tarde.", bw2 - 8), M + fw / 2, by2 + 12.5, { align: "center" }); doc.setTextColor(0);
+          }
+          folhas.push({ pag: doc.getNumberOfPages(), S: pmFolhaTema(TT, F, R[0].fonte) });
+        });
+        // 3 · quadro de síntese
+        if (sintese && R.temas) {
+          doc.addPage(fmt, orient); pmSintese(doc, F, R.temas);
+          folhas.push({ pag: doc.getNumberOfPages(), S: { titulo: "Quadro de síntese das condicionantes", legenda: [{ t: "linha", cor: [230, 30, 30], txt: "Limite do terreno (base da medição)" }], oQue: "Para cada condicionante pedida, a área do terreno que abrange, em hectares e em percentagem da área do limite, e o método usado em cada linha.", fonte: "Fonte: os serviços indicados em cada folha de extracto, consultados em " + pmHora(agora) + ". Licença: termos de utilização dos serviços de origem." } });
+        }
+        // 4 · quadro de vértices (como antes, agora com a moldura)
         if (op.vertices) {
-          doc.addPage(A3 ? "a3" : "a4", "portrait"); doc.setFontSize(11); doc.setFont("helvetica", "bold"); doc.text("Quadro de vértices · PT-TM06/ETRS89 (EPSG:3763)", 12, 16); doc.setFont("helvetica", "normal"); doc.setFontSize(8);
+          doc.addPage(fmt, "portrait");
+          var Hv = doc.internal.pageSize.getHeight(), Wv = doc.internal.pageSize.getWidth(), ylim = Hv - M - pmBanda(Wv, Hv) - 6, pv0 = doc.getNumberOfPages();
+          doc.setFontSize(11); doc.setFont("helvetica", "bold"); doc.text("Quadro de vértices · PT-TM06/ETRS89 (EPSG:3763)", 12, 16); doc.setFont("helvetica", "normal"); doc.setFontSize(8);
           doc.text(String(T.nome).slice(0, 90) + " · " + ident, 12, 22);
           var vs = []; an.forEach(function (r, ri) { r.slice(0, -1).forEach(function (p) { vs.push([ri + 1, p[0], p[1]]); }); });
           var yy = 30, colx = 12; doc.setFontSize(7.5);
           vs.slice(0, 400).forEach(function (v, i) {
-            if (yy > (A3 ? 405 : 282)) { yy = 30; colx += 64; if (colx > (A3 ? 240 : 150)) { doc.addPage(A3 ? "a3" : "a4", "portrait"); colx = 12; } }
+            if (yy > ylim) { yy = 30; colx += 64; if (colx > (A3 ? 240 : 150)) { doc.addPage(fmt, "portrait"); colx = 12; } }
             doc.text((i + 1) + (an.length > 1 ? " (" + v[0] + ")" : ""), colx, yy); doc.text("M " + v[1].toFixed(2), colx + 12, yy); doc.text("P " + v[2].toFixed(2), colx + 36, yy); yy += 4.2;
           });
-          if (vs.length > 400) doc.text("… e mais " + (vs.length - 400) + " vértices (ver ficheiro do limite).", 12, yy + 6);
+          if (vs.length > 400) doc.text("… e mais " + (vs.length - 400) + " vértices (ver ficheiro do limite).", 12, Math.min(yy + 6, ylim + 4));
+          for (var pv = pv0; pv <= doc.getNumberOfPages(); pv++) folhas.push({ pag: pv, S: { titulo: "Quadro de vértices", legenda: [{ t: "linha", cor: [230, 30, 30], txt: "Limite do terreno: vértices numerados pela ordem do desenho" }], oQue: "Coordenadas dos " + vs.length + " vértices do limite em " + PM_SRC + ", em metros, pela ordem em que foram desenhados" + (an.length > 1 ? "; entre parênteses, o número do anel ou parcela" : "") + ".", fonte: "Fonte: limite do terreno indicado no IPR Atlas, sem verificação no terreno; conversão para PT-TM06 com proj4. Consultado em " + pmHora(agora) + "." } });
         }
+        // Moldura em todas as folhas, no fim, para saber o N de «folha n/N».
+        var N = doc.getNumberOfPages();
+        folhas.forEach(function (f) { doc.setPage(f.pag); pmMoldura(doc, F, f.S, f.pag, N); });
         doc.save("Planta-de-localizacao-" + id + "-1-" + esc + ".pdf");
-        msg("Planta gerada: " + ident + " · 1:" + esc.toLocaleString("pt-PT") + " · " + (A3 ? "A3" : "A4") + ".");
+        var falhas = (R.temas || []).filter(function (t) { return t.indisponivel; }).map(function (t) { return t.tema.t; });
+        msg("Planta gerada: " + ident + " · 1:" + esc.toLocaleString("pt-PT") + " · " + (A3 ? "A3" : "A4") + " · " + N + (N === 1 ? " folha" : " folhas") + "." + (falhas.length ? " Serviço indisponível no momento: " + falhas.join(", ") + "." : ""));
       });
     });
   }
@@ -3219,8 +3676,11 @@
       '<div class="g"><label>Papel<select data-k="papel"><option>A4</option><option>A3</option></select></label><label>Orientação<select data-k="orient"><option value="auto">Automática</option><option value="h">Horizontal</option><option value="v">Vertical</option></select></label>' +
       '<label>Escala<select data-k="escala"><option value="0">A maior que cabe</option><option value="1000">1:1 000</option><option value="2000">1:2 000</option><option value="5000">1:5 000</option><option value="10000">1:10 000</option><option value="25000">1:25 000</option></select></label>' +
       '<label>Fundo<select data-k="fundo"><option value="orto">Ortofotomapa 2025</option><option value="sat">Satélite 2023</option></select></label></div>' +
-      '<label>Requerente (opcional)<input data-k="requerente" type="text"></label><label class="ck"><input data-k="vertices" type="checkbox"> Quadro de vértices (2.ª página)</label>' +
-      '<p class="m">PDF em PT-TM06 à escala exacta, com ortofotomapa da DGT, limite, quadrícula, escala, norte, fontes e identificador. Não é prova de propriedade nem documento municipal.</p>' +
+      '<label>Requerente (opcional)<input data-k="requerente" type="text"></label>' +
+      '<fieldset class="fl"><legend>Folhas a incluir</legend><label class="ck"><input type="checkbox" checked disabled> Localização</label>' +
+      PM_TEMAS.map(function (t) { return '<label class="ck"><input data-k="f_' + t.k + '" type="checkbox" checked> ' + t.t + '</label>'; }).join("") +
+      '<label class="ck"><input data-k="f_sintese" type="checkbox" checked> Quadro de síntese (ha e %)</label><label class="ck"><input data-k="vertices" type="checkbox"> Quadro de vértices</label></fieldset>' +
+      '<p class="m">PDF em PT-TM06 à escala exacta: folha de localização com ortofotomapa da DGT e extractos das condicionantes na mesma caixa, cada folha com cartucho, rosa dos ventos, régua, legenda, fontes e identificador. Os extractos são informativos: algumas câmaras exigem plantas emitidas por elas ou certidões.</p>' +
       '<div class="a"><button type="button" data-a="ok">Gerar PDF</button><button type="button" data-a="x">Fechar</button></div><div class="s"></div></div>';
     document.body.appendChild(o);
     var fin = o.querySelector('[data-k="finalidade"]'); fin.addEventListener("change", function () { o.querySelector(".mun").hidden = fin.value !== "Processo municipal"; if (fin.value === "Processo municipal") { o.querySelector('[data-k="escala"]').value = "1000"; o.querySelector('[data-k="vertices"]').checked = true; } });
@@ -3240,7 +3700,8 @@
     st.textContent = "#ipr-pl{position:fixed;inset:0;z-index:100001;background:rgba(10,12,10,.55);display:flex;align-items:center;justify-content:center;padding:16px}#ipr-pl .c{width:min(460px,100%);max-height:calc(100vh - 32px);overflow:auto;background:var(--p1,#141814);color:var(--tx,#e9eadf);border:1px solid var(--ln,#333);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px;font:13px Inter,sans-serif}" +
       "#ipr-pl label{display:flex;flex-direction:column;gap:4px;font:600 11px Inter,sans-serif;color:var(--mu,#9aa08f);text-transform:uppercase;letter-spacing:.04em}#ipr-pl label.ck{flex-direction:row;align-items:center;text-transform:none;font-size:13px;color:var(--tx)}" +
       "#ipr-pl select,#ipr-pl input[type=text]{font:13px Inter,sans-serif;padding:7px;border:1px solid var(--ln,#333);border-radius:7px;background:var(--p2,#1d221c);color:var(--tx,#e9eadf);text-transform:none}#ipr-pl .g{display:grid;grid-template-columns:1fr 1fr;gap:8px}#ipr-pl .mun{display:grid;grid-template-columns:1fr 1fr;gap:8px}#ipr-pl .mun[hidden]{display:none}" +
-      "#ipr-pl .m{margin:0;color:var(--mu,#9aa08f);font-size:12px}#ipr-pl .a{display:flex;gap:8px;justify-content:flex-end}#ipr-pl .a button{font:600 13px Inter,sans-serif;padding:8px 14px;border-radius:8px;border:1px solid var(--ln,#333);background:transparent;color:var(--tx,#e9eadf);cursor:pointer}#ipr-pl .a button[data-a=ok]{background:var(--ac,#b5c46a);border-color:var(--ac,#b5c46a);color:#141814}#ipr-pl .s{font-size:12px;color:var(--ac2,#c9d36a);min-height:16px}";
+      "#ipr-pl .m{margin:0;color:var(--mu,#9aa08f);font-size:12px}#ipr-pl .a{display:flex;gap:8px;justify-content:flex-end}#ipr-pl .a button{font:600 13px Inter,sans-serif;padding:8px 14px;border-radius:8px;border:1px solid var(--ln,#333);background:transparent;color:var(--tx,#e9eadf);cursor:pointer}#ipr-pl .a button[data-a=ok]{background:var(--ac,#b5c46a);border-color:var(--ac,#b5c46a);color:#141814}#ipr-pl .s{font-size:12px;color:var(--ac2,#c9d36a);min-height:16px}" +
+      "#ipr-pl fieldset.fl{margin:0;border:1px solid var(--ln,#333);border-radius:8px;padding:6px 10px 8px;display:grid;grid-template-columns:1fr 1fr;gap:4px 10px}#ipr-pl fieldset.fl legend{font:600 11px Inter,sans-serif;color:var(--mu,#9aa08f);text-transform:uppercase;letter-spacing:.04em;padding:0 4px}#ipr-pl fieldset.fl label.ck{font-size:12.5px;font-weight:500;gap:6px;align-items:flex-start}#ipr-pl fieldset.fl input{margin:2px 0 0}@media (max-width:480px){#ipr-pl fieldset.fl{grid-template-columns:1fr}}";
     (document.head || document.documentElement).appendChild(st);
   })();
   // 26/10, 00h05 (Nuno: «na lista de projectos continuo sem ver os botões editar, eliminar»). A lista que se vê é a do
