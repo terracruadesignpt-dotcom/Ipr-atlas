@@ -2345,7 +2345,22 @@
       if (v === "conv" && !so) { projectos(); if (logado) lista(); }
     }
     sel.addEventListener("click", function (e) { var b = e.target.closest("button"); if (b) ver(b.dataset.v); });
-    var MEUS = [];
+    var MEUS = [], ORGP = [];
+    // 26/10, 00h28 (Nuno: «não me deixa ligar isto à organização que eu quero»): o «Ligar os escolhidos a» passa a ter os
+    // projectos (todos, mesmo antes de o separador Projectos estar desenhado) e as pastas da organização (ex.: 268 Quinta Linda).
+    function opcoesLigar() {
+      var h = MEUS.length ? '<optgroup label="Projectos">' + opcoes() + "</optgroup>" : "";
+      if (ORGP.length) h += '<optgroup label="Pastas da organização">' + ORGP.map(function (o) { return '<option value="' + esc48(o[0]) + '">' + esc48(o[1]) + "</option>"; }).join("") + "</optgroup>";
+      return h;
+    }
+    function colherProj() {
+      var lst = [];
+      document.querySelectorAll("#ipe-proj .ipe-card").forEach(function (c) {
+        var m = /#(\d+)/.exec((c.querySelector(".mono") || {}).textContent || ""); if (!m) return;
+        lst.push([m[1], ((c.querySelector(".ipe-ct strong") || {}).textContent || "Terreno").trim()]);
+      });
+      if (lst.length) juntarMeus(lst);
+    }
     // 25/10, 22h55 (Nuno): «devia dar todos os projectos que eu tenho acesso, por ordem alfabética», incluindo os da organização.
     function ordenar() { MEUS.sort(function (a, b) { return a[1].localeCompare(b[1], "pt", { sensitivity: "base" }) || (+a[0] - +b[0]); }); }
     function opcoes() { return MEUS.map(function (p) { return '<option value="' + esc48(p[0]) + '">' + esc48(p[1]) + " · #" + esc48(p[0]) + (p[2] ? " · " + esc48(p[2]) : "") + "</option>"; }).join(""); }
@@ -2354,7 +2369,7 @@
       ordenar();
       var s = document.getElementById("ipr-conv-p"), g1 = s && s.querySelector("optgroup[data-meus]");
       if (s) { var v = s.value; if (!g1) { g1 = document.createElement("optgroup"); g1.label = "Os meus projectos"; g1.dataset.meus = "1"; s.insertBefore(g1, s.options[0] ? s.options[0].nextSibling : null); } g1.innerHTML = opcoes(); s.value = v; if (s.selectedIndex < 0) s.selectedIndex = 0; }
-      var bs = document.querySelector("#ipr-conv-ligar select"); if (bs) { var bv = bs.value; bs.innerHTML = opcoes(); if (bv) bs.value = bv; if (bs.selectedIndex < 0) bs.selectedIndex = 0; }
+      var bs = document.querySelector("#ipr-conv-ligar select"); if (bs) { var bv = bs.value; bs.innerHTML = opcoesLigar(); if (bv) bs.value = bv; if (bs.selectedIndex < 0) bs.selectedIndex = 0; }
     }
     var projFeito = false;
     function projectos() {
@@ -2377,6 +2392,8 @@
         (j.grupos || []).forEach(function (g) { var m = /^(\d+\s[^·]{2,40}?)(?:\s·|$)/.exec((g.nome || "").trim()); if (m && !vistos[m[1]]) { vistos[m[1]] = 1; ps.push(m[1]); } });
         if (!ps.length) return;
         ps.sort(function (a, b) { return a.localeCompare(b, "pt", { sensitivity: "base" }); });
+        ORGP = ps.map(function (p) { return ["o:" + j.org + ":" + p, p]; });
+        var bl = document.querySelector("#ipr-conv-ligar select"); if (bl) { var blv = bl.value; bl.innerHTML = opcoesLigar(); if (blv) bl.value = blv; if (bl.selectedIndex < 0) bl.selectedIndex = 0; }
         var g2 = document.createElement("optgroup"); g2.label = "Organização · " + (j.nome || "") + " · pastas";
         ps.forEach(function (p) { var o = document.createElement("option"); o.value = "o:" + j.org + ":" + p; o.textContent = p; g2.appendChild(o); });
         s.appendChild(g2);
@@ -2415,32 +2432,40 @@
         L.innerHTML = fs.slice(0, 60).map(function (x) {
           var ac = FORM_S.filter(function (f) { return x[f[0]]; }).map(function (f) { return '<a href="' + esc48(x[f[0]]) + (f[0] === "geojson" ? "&dl=1" : "") + '" download>' + f[1] + "</a>"; }).join("");
           if (x.geojson) ac = '<button type="button" data-mapa="' + x.id + '">Ver no mapa</button>' + ac + '<button type="button" data-org="' + x.id + '">Juntar à organização</button>';
-          if (x.estado === "erro" || x.estado === "georref") ac = '<button type="button" data-rep="' + x.id + '">Tentar outra vez</button>' + ac;
+          // 26/10, 00h40 (Nuno): só se convertem plantas; o worker 1.0.34 recusa cortes, alçados e pormenores («Recusado: …»).
+          var rec = x.estado === "erro" && /^Recusado/.test(x.msg || "");
+          if ((x.estado === "erro" || x.estado === "georref") && !rec) ac = '<button type="button" data-rep="' + x.id + '">Tentar outra vez</button>' + ac;
           ac += '<button type="button" data-lixo="' + x.id + '">Apagar</button>';
           var cls = x.estado === "pronto" ? "ok" : (x.estado === "erro" || x.estado === "georref") ? "mau" : "";
           // 26/10, 00h05 (Nuno): uma barra de progresso em cada processo (worker 1.0.31 envia info.passo / info.passos).
           var inf = x.info || {}, pc = x.estado === "pronto" ? 100 : x.estado === "converter" ? Math.max(8, Math.round(100 * (+inf.passo || 1) / (+inf.passos || 6))) : x.estado === "fila" ? 3 : 100;
           var barra = '<div class="ipr-pb ' + (x.estado === "converter" ? "vivo" : x.estado === "fila" ? "fila" : cls) + '"><i style="width:' + pc + '%"></i></div>' +
             (x.estado === "converter" ? '<div class="e">' + esc48(inf.fase || x.msg || "A converter") + " · passo " + (+inf.passo || 1) + " de " + (+inf.passos || 6) + (inf.seg ? " · " + inf.seg + " s" : "") + "</div>" : x.estado === "fila" ? '<div class="e">À espera de vez (' + (fs.filter(function (y) { return y.estado === "fila" && y.id < x.id; }).length + 1) + ".º da sua fila)</div>" : "");
-          return '<li>' + barra.replace(/^/, "") + (x.estado === "pronto" ? '<label class="esc"><input type="checkbox" data-esc="' + x.id + '"> </label>' : "") + '<b>' + esc48(x.nome) + '</b><span class="e ' + cls + '">' + esc48(EST[x.estado] || x.estado) + (x.enc ? " · #" + x.enc : "") + "</span>" + (x.msg && x.estado !== "fila" ? '<div class="e">' + esc48(x.msg) + "</div>" : "") + '<div class="ac">' + ac + "</div></li>";
+          return '<li>' + barra.replace(/^/, "") + (x.estado === "pronto" ? '<label class="esc"><input type="checkbox" data-esc="' + x.id + '"> </label>' : "") + '<b>' + esc48(x.nome) + '</b><span class="e ' + cls + '">' + esc48(rec ? "Recusado: não é planta" : (EST[x.estado] || x.estado)) + (x.enc ? " · #" + x.enc : "") + "</span>" + (x.msg && x.estado !== "fila" ? '<div class="e">' + esc48(x.msg) + "</div>" : "") + '<div class="ac">' + ac + "</div></li>";
         }).join("") || '<li class="e">Ainda não converteu nenhum ficheiro.</li>';
         // 25/10, 19h44 (Nuno): escolher ficheiros convertidos e ligá-los a um projecto.
-        var nF = fs.filter(function (x) { return x.estado === "fila"; }).length, nC = fs.filter(function (x) { return x.estado === "converter"; }).length, nP = fs.filter(function (x) { return x.estado === "pronto"; }).length, nE = fs.filter(function (x) { return x.estado === "erro" || x.estado === "georref"; }).length;
+        var nF = fs.filter(function (x) { return x.estado === "fila"; }).length, nC = fs.filter(function (x) { return x.estado === "converter"; }).length, nP = fs.filter(function (x) { return x.estado === "pronto"; }).length, nE = fs.filter(function (x) { return (x.estado === "erro" && !/^Recusado/.test(x.msg || "")) || x.estado === "georref"; }).length, nR = fs.filter(function (x) { return x.estado === "erro" && /^Recusado/.test(x.msg || ""); }).length;
         var res = document.getElementById("ipr-conv-res");
         if (!res) { res = document.createElement("div"); res.id = "ipr-conv-res"; L.parentNode.insertBefore(res, L); }
-        res.innerHTML = '<span class="' + (nC ? "vivo" : "") + '">' + (nC ? "● A converter agora: " + nC : "○ Nada a converter neste momento") + "</span><span>Na fila: " + nF + "</span><span>Prontos: " + nP + "</span>" + (nE ? '<span class="mau">Com erro: ' + nE + "</span>" : "") + '<button type="button" id="ipr-conv-act">Actualizar</button>';
+        res.innerHTML = '<span class="' + (nC ? "vivo" : "") + '">' + (nC ? "● A converter agora: " + nC : "○ Nada a converter neste momento") + "</span><span>Na fila: " + nF + "</span><span>Prontos: " + nP + "</span>" + (nE ? '<span class="mau">Com erro: ' + nE + "</span>" : "") + (nR ? '<span class="mau" title="Não são plantas: vão para o lixo em 24 horas">Recusados: ' + nR + "</span>" : "") + '<button type="button" id="ipr-conv-act">Actualizar</button>';
         res.querySelector("#ipr-conv-act").onclick = function () { lista(); };
         var bar = document.getElementById("ipr-conv-ligar");
         if (fs.some(function (x) { return x.estado === "pronto"; })) {
           if (!bar) { bar = document.createElement("div"); bar.id = "ipr-conv-ligar"; L.parentNode.insertBefore(bar, L); }
           var bvAnt = bar.querySelector("select") ? bar.querySelector("select").value : "";
-          bar.innerHTML = '<span>Ligar os escolhidos a</span><select>' + opcoes() + '</select><button type="button">Ligar</button>';
+          colherProj();
+          bar.innerHTML = '<span>Ligar os escolhidos a</span><select>' + opcoesLigar() + '</select><button type="button">Ligar</button>';
           if (bvAnt) { bar.querySelector("select").value = bvAnt; if (bar.querySelector("select").selectedIndex < 0) bar.querySelector("select").selectedIndex = 0; }
           bar.querySelector("button").onclick = function () {
-            var ids = [].map.call(L.querySelectorAll("[data-esc]:checked"), function (c) { return +c.dataset.esc; }), pj = +bar.querySelector("select").value;
+            var ids = [].map.call(L.querySelectorAll("[data-esc]:checked"), function (c) { return +c.dataset.esc; }), sv = bar.querySelector("select").value, og = /^o:(\d+):(.+)$/.exec(sv), pj = og ? 0 : +sv;
             if (!ids.length) { msg.textContent = "Escolha primeiro os ficheiros (caixa à esquerda do nome)."; return; }
-            if (!pj) { msg.textContent = "Não tem projectos para ligar."; return; }
-            api("carregar/ligar", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ids: ids, projecto: pj }) }).then(function (j) { msg.textContent = (j.n || 0) + " ficheiro(s) ligado(s) ao projecto #" + pj + "."; lista(); }, function (x) { msg.textContent = x.message; });
+            if (!pj && !og) { msg.textContent = "Não tem projectos para ligar."; return; }
+            var corpo = og ? { ids: ids, org: +og[1], orgproj: og[2] } : { ids: ids, projecto: pj };
+            msg.textContent = "A ligar…";
+            api("carregar/ligar", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(corpo) }).then(function (j) {
+              msg.textContent = og ? (j.n || 0) + " ficheiro(s) copiado(s) para «" + og[2] + " › AutoCADs» na organização." + (j.erros && j.erros.length ? " Falhou: " + j.erros.join("; ") : "") : (j.n || 0) + " ficheiro(s) ligado(s) ao projecto #" + pj + ".";
+              lista();
+            }, function (x) { msg.textContent = x.message; });
           };
         } else if (bar) bar.remove();
         clearTimeout(rel); if (fs.some(function (x) { return x.estado === "fila" || x.estado === "converter"; })) rel = setTimeout(lista, 8000);
