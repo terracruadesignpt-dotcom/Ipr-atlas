@@ -1,0 +1,17 @@
+--- base.php	2026-10-21 00:49:08.519279031 +0000
++++ m90154.php	2026-10-21 00:49:20.768428137 +0000
+@@ -4,6 +4,8 @@
+ // com 20 avisos numa hora bloqueava o próprio Telegram. Só para as redes publicadas pelo Telegram e só nesse caminho,
+ // o pedido passa a identificar-se como «TelegramBot (webhook)». O webhook continua validado pelo secret_token.
+ // Desligar: wp option update tcd_sntg_off 1
++// 21/10/2026: prioridade -100 em vez de 1. A Sentinela também corre em init com prioridade 1 e, por ser registada antes
++// (m14553 carrega primeiro), corria antes deste módulo: os pedidos do Telegram continuavam a somar 5 pontos.
+ if ( ! defined( 'ABSPATH' ) ) { exit; }
+ 
+ add_action( 'init', function () {
+@@ -19,4 +21,4 @@
+ 		$mask = -1 << ( 32 - (int) $bits );
+ 		if ( ( $n & $mask ) === ( ip2long( $sub ) & $mask ) ) { $_SERVER['HTTP_USER_AGENT'] = 'TelegramBot (webhook)'; return; }
+ 	}
+-}, 1 );
++}, -100 );

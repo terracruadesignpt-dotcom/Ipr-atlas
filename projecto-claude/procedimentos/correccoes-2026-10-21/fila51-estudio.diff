@@ -1,0 +1,10 @@
+diff --git a/atlas/estudio.css b/atlas/estudio.css
+index c74b133..d0e67d6 100644
+--- a/atlas/estudio.css
++++ b/atlas/estudio.css
+@@ -558,3 +558,5 @@ span.ipe-loc-pt{cursor:default}
+ .ipe-t--lbl svg{flex:none}
+ @media (max-width:760px){.ipe-ib--txt span,.ipe-t--lbl span,.ipe-t--mais span{display:none}.ipe-ib--txt,.ipe-t--lbl{width:34px;padding:0}.ipe-t--mais{padding:0 8px}}
+ .ipe-mais-m .ipe-ib--sh{border-color:transparent}
++/* Fila 51 (21/10/2026): abaixo de 900 px, com a gaveta aberta, as ferramentas não ficam por cima nem por baixo dela (reporte do Miguel, fila 12). */
++@media (max-width:900px){.ipe.esq-aberto .ipe-tools{opacity:0;pointer-events:none;transition:opacity .15s}}

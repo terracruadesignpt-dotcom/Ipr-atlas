@@ -1,0 +1,1180 @@
+{
+  "_nota": "Fontes de relevo LiDAR europeias para a Base Cartográfica, declaradas por fonte (não por país). 21/10/2026. Estado de cada fonte em LEIA-ME.md: 'verificado' quer dizer que o padrão foi lido numa página oficial; 'não testado' quer dizer que vem do estudo de 17/10 ou de conhecimento geral e tem de passar o diagnostico_eu.sh no servidor antes de aceitar encomendas.",
+  "res_max_base_m": 2.0,
+  "buffer_frac": 0.2,
+  "buffer_min_m": 100.0,
+  "buffer_max_m": 2000.0,
+  "nodata_max_frac": 0.01,
+  "timeout_s": 90,
+  "tentativas": 3,
+  "cache": "/srv/lidar/eu/cache",
+  "fontes": [
+    {
+      "id": "pt_dgt",
+      "tipo": "externo",
+      "pais": "PT",
+      "modulo": "worker_pt",
+      "rotulo": "DGT LiDAR (worker português em produção)",
+      "resolucao_m": 0.5,
+      "cobertura_bbox": [
+        -9.6,
+        36.9,
+        -6.1,
+        42.2
+      ],
+      "prioridade": 10
+    },
+    {
+      "id": "es_ign",
+      "tipo": "externo",
+      "pais": "ES",
+      "modulo": "fonte_es",
+      "rotulo": "IGN/CNIG MDT50cm (adaptador espanhol, espanha/worker)",
+      "resolucao_m": 0.5,
+      "cobertura_bbox": [
+        -9.4,
+        35.9,
+        4.4,
+        43.9
+      ],
+      "prioridade": 20
+    },
+    {
+      "id": "at_bev",
+      "tipo": "cog_grid",
+      "pais": "AT",
+      "prioridade": 10,
+      "rotulo": "BEV ALS DTM 1 m",
+      "resolucao_m": 1.0,
+      "cobertura_bbox": [
+        9.53,
+        46.37,
+        17.16,
+        49.02
+      ],
+      "epsg": "3035",
+      "crs_tiles": "3035",
+      "crs_processamento": "31287",
+      "datum_vertical": "altura ortométrica austríaca (GHA), a confirmar no metadado",
+      "grelha": {
+        "tamanho": 50000,
+        "origem_x": 0,
+        "origem_y": 0
+      },
+      "url_modelo": "https://data.bev.gv.at/download/ALS/DTM/{versao}/ALS_DTM_CRS3035RES50000mN{y}E{x}.tif",
+      "versao": "20250915",
+      "licenca": "CC BY 4.0",
+      "atribuicao": "Datenquelle: BEV – Bundesamt für Eich- und Vermessungswesen, ALS DTM ({anos}), CC BY 4.0. Bearbeitet: Terracrua Design.",
+      "atribuicao_confirmada": false,
+      "regras": {
+        "vazios": "recusar"
+      },
+      "ponto_teste": [
+        14.5,
+        47.3
+      ],
+      "estado": "verificado_padrao_url",
+      "cobertura_poligono": [
+        [
+          9.53,
+          47.27
+        ],
+        [
+          9.6,
+          47.05
+        ],
+        [
+          9.85,
+          46.9
+        ],
+        [
+          10.45,
+          46.85
+        ],
+        [
+          11.0,
+          46.75
+        ],
+        [
+          12.1,
+          47.0
+        ],
+        [
+          12.4,
+          46.7
+        ],
+        [
+          13.7,
+          46.52
+        ],
+        [
+          14.6,
+          46.4
+        ],
+        [
+          15.6,
+          46.65
+        ],
+        [
+          16.1,
+          46.85
+        ],
+        [
+          16.5,
+          47.45
+        ],
+        [
+          16.45,
+          47.7
+        ],
+        [
+          17.1,
+          48.0
+        ],
+        [
+          16.9,
+          48.6
+        ],
+        [
+          16.0,
+          48.78
+        ],
+        [
+          15.0,
+          49.0
+        ],
+        [
+          14.7,
+          48.6
+        ],
+        [
+          13.8,
+          48.75
+        ],
+        [
+          13.45,
+          48.55
+        ],
+        [
+          13.0,
+          48.3
+        ],
+        [
+          12.8,
+          47.9
+        ],
+        [
+          13.05,
+          47.5
+        ],
+        [
+          12.2,
+          47.6
+        ],
+        [
+          11.0,
+          47.4
+        ],
+        [
+          10.45,
+          47.55
+        ],
+        [
+          9.95,
+          47.55
+        ],
+        [
+          9.55,
+          47.53
+        ],
+        [
+          9.53,
+          47.27
+        ]
+      ]
+    },
+    {
+      "id": "ch_swissalti3d",
+      "tipo": "stac",
+      "pais": "CH",
+      "prioridade": 10,
+      "rotulo": "swisstopo swissALTI3D 0,5 m",
+      "resolucao_m": 0.5,
+      "cobertura_bbox": [
+        5.95,
+        45.82,
+        10.49,
+        47.81
+      ],
+      "epsg": "2056",
+      "crs_processamento": "2056",
+      "datum_vertical": "LN02 (EPSG:5728)",
+      "stac": {
+        "url": "https://data.geo.admin.ch/api/stac/v0.9",
+        "coleccao": "ch.swisstopo.swissalti3d",
+        "asset_regex": "_0\\.5_2056_5728\\.tif$",
+        "limite": 100
+      },
+      "licenca": "OGD swisstopo (uso comercial com indicação da fonte)",
+      "atribuicao": "© swisstopo, swissALTI3D ({anos}). Bearbeitet: Terracrua Design.",
+      "atribuicao_confirmada": true,
+      "regras": {
+        "vazios": "recusar"
+      },
+      "ponto_teste": [
+        7.44,
+        46.95
+      ],
+      "estado": "nao_testado",
+      "cobertura_poligono": [
+        [
+          5.95,
+          46.13
+        ],
+        [
+          6.15,
+          46.15
+        ],
+        [
+          6.8,
+          46.4
+        ],
+        [
+          7.05,
+          45.95
+        ],
+        [
+          7.6,
+          45.95
+        ],
+        [
+          8.4,
+          46.45
+        ],
+        [
+          9.0,
+          45.82
+        ],
+        [
+          9.3,
+          46.4
+        ],
+        [
+          10.1,
+          46.2
+        ],
+        [
+          10.49,
+          46.55
+        ],
+        [
+          10.45,
+          46.9
+        ],
+        [
+          9.55,
+          47.05
+        ],
+        [
+          9.53,
+          47.27
+        ],
+        [
+          9.6,
+          47.55
+        ],
+        [
+          8.6,
+          47.8
+        ],
+        [
+          7.6,
+          47.6
+        ],
+        [
+          6.9,
+          47.35
+        ],
+        [
+          6.15,
+          46.65
+        ],
+        [
+          5.95,
+          46.13
+        ]
+      ]
+    },
+    {
+      "id": "li_swissalti3d",
+      "tipo": "alias",
+      "pais": "LI",
+      "alias_de": "ch_swissalti3d",
+      "rotulo": "Liechtenstein no swissALTI3D",
+      "resolucao_m": 0.5,
+      "cobertura_bbox": [
+        9.47,
+        47.04,
+        9.64,
+        47.28
+      ],
+      "prioridade": 10
+    },
+    {
+      "id": "nl_ahn_05m",
+      "tipo": "tile_index",
+      "pais": "NL",
+      "prioridade": 10,
+      "rotulo": "AHN DTM 0,5 m",
+      "resolucao_m": 0.5,
+      "cobertura_bbox": [
+        3.3,
+        50.7,
+        7.3,
+        53.6
+      ],
+      "epsg": "28992",
+      "crs_tiles": "28992",
+      "crs_processamento": "28992",
+      "datum_vertical": "NAP (EPSG:5709)",
+      "indice": {
+        "formato": "atom",
+        "url": "https://service.pdok.nl/rws/ahn/atom/dtm_05m.xml"
+      },
+      "licenca": "CC0 1.0",
+      "atribuicao": "Actueel Hoogtebestand Nederland (AHN), DTM 0,5 m ({anos}), CC0. Bewerkt: Terracrua Design.",
+      "atribuicao_confirmada": true,
+      "regras": {
+        "vazios": "preencher",
+        "max_preencher_px": 400
+      },
+      "ponto_teste": [
+        5.3,
+        52.1
+      ],
+      "estado": "nao_testado",
+      "cobertura_poligono": [
+        [
+          3.36,
+          51.37
+        ],
+        [
+          3.9,
+          51.2
+        ],
+        [
+          4.25,
+          51.38
+        ],
+        [
+          5.0,
+          51.47
+        ],
+        [
+          5.85,
+          51.15
+        ],
+        [
+          5.65,
+          50.75
+        ],
+        [
+          6.1,
+          50.75
+        ],
+        [
+          6.02,
+          51.1
+        ],
+        [
+          6.2,
+          51.4
+        ],
+        [
+          5.95,
+          51.75
+        ],
+        [
+          6.75,
+          51.9
+        ],
+        [
+          7.06,
+          52.23
+        ],
+        [
+          6.7,
+          52.5
+        ],
+        [
+          7.07,
+          52.65
+        ],
+        [
+          7.2,
+          53.25
+        ],
+        [
+          6.9,
+          53.45
+        ],
+        [
+          5.6,
+          53.5
+        ],
+        [
+          4.7,
+          53.2
+        ],
+        [
+          4.5,
+          52.5
+        ],
+        [
+          3.9,
+          51.85
+        ],
+        [
+          3.36,
+          51.37
+        ]
+      ]
+    },
+    {
+      "id": "nl_hoogte_dtm",
+      "tipo": "cog_grid",
+      "pais": "NL",
+      "prioridade": 20,
+      "rotulo": "Hoogte Nederland – land – DTM (INSPIRE, RWS/PDOK)",
+      "resolucao_m": 1.0,
+      "cobertura_bbox": [
+        3.3,
+        50.7,
+        7.3,
+        53.6
+      ],
+      "epsg": "4258",
+      "crs_tiles": "4258",
+      "crs_processamento": "28992",
+      "datum_vertical": "EVRF2019 (segundo o feed ATOM)",
+      "grelha": {
+        "tamanho": 0.1,
+        "origem_x": 0,
+        "origem_y": 0,
+        "formato": "{y:.1f}_{x:.1f}"
+      },
+      "url_modelo": "https://service.pdok.nl/rws/hoogte-nederland-land-dtm/atom/downloads/{chave}.tif",
+      "licenca": "CC0 1.0",
+      "atribuicao": "Hoogte Nederland – land – DTM, Rijkswaterstaat / PDOK, CC0. Bewerkt: Terracrua Design.",
+      "atribuicao_confirmada": true,
+      "regras": {
+        "vazios": "preencher",
+        "max_preencher_px": 400
+      },
+      "ponto_teste": [
+        5.3,
+        52.1
+      ],
+      "estado": "verificado_padrao_url",
+      "nota": "Folhas COG de 0,1° (cerca de 335 MB cada): ler sempre por janela, nunca descarregar inteiras.",
+      "cobertura_poligono": [
+        [
+          3.36,
+          51.37
+        ],
+        [
+          3.9,
+          51.2
+        ],
+        [
+          4.25,
+          51.38
+        ],
+        [
+          5.0,
+          51.47
+        ],
+        [
+          5.85,
+          51.15
+        ],
+        [
+          5.65,
+          50.75
+        ],
+        [
+          6.1,
+          50.75
+        ],
+        [
+          6.02,
+          51.1
+        ],
+        [
+          6.2,
+          51.4
+        ],
+        [
+          5.95,
+          51.75
+        ],
+        [
+          6.75,
+          51.9
+        ],
+        [
+          7.06,
+          52.23
+        ],
+        [
+          6.7,
+          52.5
+        ],
+        [
+          7.07,
+          52.65
+        ],
+        [
+          7.2,
+          53.25
+        ],
+        [
+          6.9,
+          53.45
+        ],
+        [
+          5.6,
+          53.5
+        ],
+        [
+          4.7,
+          53.2
+        ],
+        [
+          4.5,
+          52.5
+        ],
+        [
+          3.9,
+          51.85
+        ],
+        [
+          3.36,
+          51.37
+        ]
+      ]
+    },
+    {
+      "id": "lu_lidar2019",
+      "tipo": "tile_index",
+      "pais": "LU",
+      "prioridade": 10,
+      "rotulo": "LiDAR 2019 MNT 0,5 m (data.public.lu)",
+      "resolucao_m": 0.5,
+      "cobertura_bbox": [
+        5.73,
+        49.44,
+        6.53,
+        50.19
+      ],
+      "epsg": "2169",
+      "crs_tiles": "2169",
+      "crs_processamento": "2169",
+      "datum_vertical": "NG95 (altitude luxemburguesa), a confirmar",
+      "indice": {
+        "formato": "udata",
+        "url": "https://data.public.lu/api/1/datasets/lidar-2019-modele-numerique-de-terrain-mnt/",
+        "regex_bbox": "(\\d{5,6})[_-](\\d{5,6})"
+      },
+      "licenca": "CC0",
+      "atribuicao": "Administration du cadastre et de la topographie (ACT), LiDAR 2019 MNT, CC0. Traitement : Terracrua Design.",
+      "atribuicao_confirmada": false,
+      "regras": {
+        "vazios": "recusar"
+      },
+      "ponto_teste": [
+        6.13,
+        49.61
+      ],
+      "estado": "nao_testado"
+    },
+    {
+      "id": "gb_eng_ea",
+      "tipo": "wcs",
+      "pais": "GB-ENG",
+      "prioridade": 10,
+      "rotulo": "Environment Agency LIDAR Composite DTM 1 m (Inglaterra)",
+      "resolucao_m": 1.0,
+      "cobertura_bbox": [
+        -5.75,
+        49.95,
+        1.77,
+        55.81
+      ],
+      "epsg": "27700",
+      "crs_processamento": "27700",
+      "datum_vertical": "ODN Newlyn (OSTN15)",
+      "wcs": {
+        "url": "https://environment.data.gov.uk/spatialdata/lidar-composite-digital-terrain-model-dtm-1m/wcs",
+        "versao": "2.0.1",
+        "coverage": "LIDAR_Composite_1m_DTM_Elevation",
+        "eixos": [
+          "E",
+          "N"
+        ],
+        "max_px": 4000
+      },
+      "licenca": "Open Government Licence v3.0",
+      "atribuicao": "© Environment Agency copyright and/or database right {ano_publicacao}. All rights reserved. Contains public sector information licensed under the Open Government Licence v3.0. Processed by Terracrua Design.",
+      "atribuicao_confirmada": true,
+      "regras": {
+        "vazios": "recusar"
+      },
+      "ponto_teste": [
+        -2.0,
+        52.5
+      ],
+      "estado": "nao_testado",
+      "nota": "Só Inglaterra. País de Gales, Escócia e Irlanda do Norte têm fontes próprias (por integrar)."
+    },
+    {
+      "id": "no_dtm1",
+      "tipo": "wcs",
+      "pais": "NO",
+      "prioridade": 10,
+      "rotulo": "Kartverket NDH DTM 1 m",
+      "resolucao_m": 1.0,
+      "cobertura_bbox": [
+        4.5,
+        57.9,
+        31.2,
+        71.2
+      ],
+      "epsg": "25833",
+      "crs_processamento": "25833",
+      "datum_vertical": "NN2000 (EPSG:5941)",
+      "wcs": {
+        "url": "https://wcs.geonorge.no/skwms1/wcs.hoyde-dtm-nhm-25833",
+        "versao": "2.0.1",
+        "coverage": "nhm_dtm_topo_25833",
+        "eixos": [
+          "x",
+          "y"
+        ],
+        "max_px": 4000
+      },
+      "licenca": "CC BY 4.0",
+      "atribuicao": "© Kartverket, NDH DTM 1 ({anos}), CC BY 4.0. Bearbeidet: Terracrua Design.",
+      "atribuicao_confirmada": false,
+      "regras": {
+        "vazios": "recusar"
+      },
+      "ponto_teste": [
+        10.75,
+        59.91
+      ],
+      "estado": "nao_testado"
+    },
+    {
+      "id": "fi_mml_2m",
+      "tipo": "wcs",
+      "pais": "FI",
+      "prioridade": 10,
+      "rotulo": "Maanmittauslaitos Korkeusmalli 2 m",
+      "resolucao_m": 2.0,
+      "cobertura_bbox": [
+        20.5,
+        59.7,
+        31.6,
+        70.1
+      ],
+      "epsg": "3067",
+      "crs_processamento": "3067",
+      "datum_vertical": "N2000 (EPSG:3900)",
+      "wcs": {
+        "url": "https://avoin-karttakuva.maanmittauslaitos.fi/ortokuvat-ja-korkeusmallit/wcs/v2",
+        "versao": "2.0.1",
+        "coverage": "korkeusmalli_2m",
+        "eixos": [
+          "E",
+          "N"
+        ],
+        "max_px": 4000,
+        "chave_env": "TCD_MML_API_KEY",
+        "chave_param": "api-key"
+      },
+      "licenca": "CC BY 4.0",
+      "atribuicao": "Sisältää Maanmittauslaitoksen Korkeusmalli 2 m -aineistoa ({anos}), CC BY 4.0. Käsittely: Terracrua Design.",
+      "atribuicao_confirmada": false,
+      "regras": {
+        "vazios": "recusar"
+      },
+      "ponto_teste": [
+        24.94,
+        60.17
+      ],
+      "estado": "nao_testado",
+      "nota": "Precisa de chave gratuita do MML na variável TCD_MML_API_KEY do servidor."
+    },
+    {
+      "id": "pl_nmt_evrf2007",
+      "tipo": "tile_index",
+      "pais": "PL",
+      "prioridade": 10,
+      "rotulo": "GUGiK NMT 1 m (EVRF2007, 2018 em diante)",
+      "resolucao_m": 1.0,
+      "cobertura_bbox": [
+        14.12,
+        49.0,
+        24.15,
+        54.84
+      ],
+      "epsg": "2180",
+      "crs_tiles": "2180",
+      "crs_processamento": "2180",
+      "datum_vertical": "PL-EVRF2007-NH (EPSG:9651)",
+      "indice": {
+        "formato": "wfs",
+        "url": "https://mapy.geoportal.gov.pl/wss/service/PZGIK/NumerycznyModelTerenuEVRF2007/WFS/Skorowidze",
+        "typename": "gugik:SkorowidzNMT2018",
+        "campo_url": "url_do_pobrania",
+        "campo_ano": "rok_wykonania",
+        "campo_id": "godlo"
+      },
+      "licenca": "gratuito, para qualquer fim (GUGiK)",
+      "atribuicao": "Źródło: Główny Urząd Geodezji i Kartografii (GUGiK), Numeryczny Model Terenu ({anos}). Opracowanie: Terracrua Design.",
+      "atribuicao_confirmada": false,
+      "regras": {
+        "vazios": "recusar"
+      },
+      "ponto_teste": [
+        21.01,
+        52.23
+      ],
+      "estado": "verificado_endpoint_indice",
+      "nota": "Endpoint WFS do índice EVRF2007 confirmado em geoportal.gov.pl; nomes do typename e dos campos por confirmar com GetCapabilities. Folhas em Arc/Info ASCII."
+    },
+    {
+      "id": "pl_nmt_kron86",
+      "tipo": "tile_index",
+      "pais": "PL",
+      "prioridade": 20,
+      "rotulo": "GUGiK NMT 1 m (KRON86, 2000–2019)",
+      "resolucao_m": 1.0,
+      "cobertura_bbox": [
+        14.12,
+        49.0,
+        24.15,
+        54.84
+      ],
+      "epsg": "2180",
+      "crs_tiles": "2180",
+      "crs_processamento": "2180",
+      "datum_vertical": "PL-KRON86-NH (EPSG:9650)",
+      "indice": {
+        "formato": "wfs",
+        "url": "https://mapy.geoportal.gov.pl/wss/service/PZGIK/NumerycznyModelTerenuKRON86/WFS/Skorowidze",
+        "typename": "gugik:SkorowidzNMT",
+        "campo_url": "url_do_pobrania",
+        "campo_ano": "rok_wykonania",
+        "campo_id": "godlo"
+      },
+      "licenca": "gratuito, para qualquer fim (GUGiK)",
+      "atribuicao": "Źródło: Główny Urząd Geodezji i Kartografii (GUGiK), Numeryczny Model Terenu ({anos}). Opracowanie: Terracrua Design.",
+      "atribuicao_confirmada": false,
+      "regras": {
+        "vazios": "recusar"
+      },
+      "ponto_teste": [
+        21.01,
+        52.23
+      ],
+      "estado": "verificado_endpoint_indice"
+    },
+    {
+      "id": "cz_dmr5g",
+      "tipo": "laz_tiles",
+      "pais": "CZ",
+      "prioridade": 10,
+      "rotulo": "ČÚZK DMR 5G (pontos de terreno, rasterizar)",
+      "resolucao_m": 1.0,
+      "cobertura_bbox": [
+        12.09,
+        48.55,
+        18.86,
+        51.06
+      ],
+      "epsg": "3045",
+      "crs_tiles": "3045",
+      "crs_processamento": "3045",
+      "datum_vertical": "Bpv (EPSG:5705)",
+      "indice": {
+        "formato": "atom",
+        "url": "https://atom.cuzk.cz/DMR5G-ETRS89/DMR5G-ETRS89.xml"
+      },
+      "licenca": "CC BY 4.0",
+      "atribuicao": "© ČÚZK, DMR 5G ({anos}), CC BY 4.0. Zpracování: Terracrua Design.",
+      "atribuicao_confirmada": false,
+      "regras": {
+        "vazios": "recusar"
+      },
+      "ponto_teste": [
+        14.42,
+        50.09
+      ],
+      "estado": "esboco",
+      "nota": "Precisa de PDAL ou WhiteboxTools no servidor para rasterizar; sem rasterizador a fonte fica desligada e não há Base."
+    },
+    {
+      "id": "de_by_dgm1",
+      "tipo": "cog_grid",
+      "pais": "DE-BY",
+      "prioridade": 10,
+      "rotulo": "Bayerische Vermessungsverwaltung DGM1",
+      "resolucao_m": 1.0,
+      "cobertura_bbox": [
+        8.97,
+        47.27,
+        13.84,
+        50.56
+      ],
+      "epsg": "25832",
+      "crs_tiles": "25832",
+      "crs_processamento": "25832",
+      "datum_vertical": "DHHN2016 (EPSG:7837)",
+      "grelha": {
+        "tamanho": 1000,
+        "origem_x": 0,
+        "origem_y": 0,
+        "formato": "{xk}_{yk}"
+      },
+      "url_modelo": "https://download1.bayernwolke.de/a/dgm/dgm1/{chave}.tif",
+      "licenca": "CC BY 4.0",
+      "atribuicao": "Datenquelle: Bayerische Vermessungsverwaltung – www.geodaten.bayern.de, DGM1, CC BY 4.0. Bearbeitet: Terracrua Design.",
+      "atribuicao_confirmada": false,
+      "regras": {
+        "vazios": "recusar"
+      },
+      "ponto_teste": [
+        11.58,
+        48.14
+      ],
+      "estado": "nao_testado",
+      "nota": "Página oficial: geodaten.bayern.de/opengeodata/OpenDataDetail.html?pn=dgm1. Padrão do URL por confirmar.",
+      "cobertura_poligono": [
+        [
+          9.0,
+          49.6
+        ],
+        [
+          9.5,
+          49.75
+        ],
+        [
+          9.9,
+          50.15
+        ],
+        [
+          9.7,
+          50.45
+        ],
+        [
+          10.6,
+          50.35
+        ],
+        [
+          11.3,
+          50.45
+        ],
+        [
+          11.9,
+          50.45
+        ],
+        [
+          12.25,
+          50.2
+        ],
+        [
+          12.55,
+          49.9
+        ],
+        [
+          13.0,
+          49.4
+        ],
+        [
+          13.85,
+          48.75
+        ],
+        [
+          13.45,
+          48.55
+        ],
+        [
+          13.0,
+          48.3
+        ],
+        [
+          12.8,
+          47.9
+        ],
+        [
+          13.05,
+          47.5
+        ],
+        [
+          12.2,
+          47.6
+        ],
+        [
+          11.0,
+          47.4
+        ],
+        [
+          10.45,
+          47.55
+        ],
+        [
+          9.95,
+          47.55
+        ],
+        [
+          10.1,
+          47.85
+        ],
+        [
+          10.0,
+          48.45
+        ],
+        [
+          10.25,
+          48.7
+        ],
+        [
+          10.45,
+          49.0
+        ],
+        [
+          9.9,
+          49.4
+        ],
+        [
+          9.0,
+          49.6
+        ]
+      ]
+    },
+    {
+      "id": "de_nw_dgm1",
+      "tipo": "tile_index",
+      "pais": "DE-NW",
+      "prioridade": 10,
+      "rotulo": "Geobasis NRW DGM1",
+      "resolucao_m": 1.0,
+      "cobertura_bbox": [
+        5.86,
+        50.32,
+        9.46,
+        52.53
+      ],
+      "epsg": "25832",
+      "crs_tiles": "25832",
+      "crs_processamento": "25832",
+      "datum_vertical": "DHHN2016 (EPSG:7837)",
+      "indice": {
+        "formato": "lista_nomes",
+        "url": "https://www.opengeodata.nrw.de/produkte/geobasis/hm/dgm1_tiff/dgm1_tiff/index.json",
+        "base": "https://www.opengeodata.nrw.de/produkte/geobasis/hm/dgm1_tiff/dgm1_tiff/",
+        "regex": "dgm1_32_(?P<xk>\\d{3})_(?P<yk>\\d{4})_1_nw_(?P<ano>\\d{4})\\.tif",
+        "tamanho": 1000
+      },
+      "licenca": "Datenlizenz Deutschland – Zero – Version 2.0 (conflito com dl-de/by-2-0 nalgumas páginas)",
+      "atribuicao": "Geobasis NRW, DGM1 ({anos}), dl-de/zero-2-0. Bearbeitet: Terracrua Design.",
+      "atribuicao_confirmada": false,
+      "regras": {
+        "vazios": "recusar"
+      },
+      "ponto_teste": [
+        6.96,
+        50.94
+      ],
+      "estado": "nao_testado",
+      "cobertura_poligono": [
+        [
+          5.87,
+          51.05
+        ],
+        [
+          6.1,
+          50.75
+        ],
+        [
+          6.4,
+          50.32
+        ],
+        [
+          7.2,
+          50.55
+        ],
+        [
+          7.8,
+          50.75
+        ],
+        [
+          8.15,
+          50.75
+        ],
+        [
+          8.5,
+          51.0
+        ],
+        [
+          8.95,
+          51.4
+        ],
+        [
+          9.45,
+          51.65
+        ],
+        [
+          9.2,
+          52.1
+        ],
+        [
+          8.7,
+          52.5
+        ],
+        [
+          8.0,
+          52.4
+        ],
+        [
+          7.5,
+          52.35
+        ],
+        [
+          7.0,
+          52.25
+        ],
+        [
+          6.7,
+          51.9
+        ],
+        [
+          6.15,
+          51.85
+        ],
+        [
+          5.95,
+          51.75
+        ],
+        [
+          6.2,
+          51.4
+        ],
+        [
+          5.87,
+          51.05
+        ]
+      ]
+    },
+    {
+      "id": "be_vl_dhmv2",
+      "tipo": "wcs",
+      "pais": "BE-VLG",
+      "prioridade": 10,
+      "rotulo": "Digitaal Hoogtemodel Vlaanderen II, DTM 1 m",
+      "resolucao_m": 1.0,
+      "cobertura_bbox": [
+        2.54,
+        50.68,
+        5.92,
+        51.51
+      ],
+      "epsg": "31370",
+      "crs_processamento": "31370",
+      "datum_vertical": "TAW (EPSG:5710)",
+      "wcs": {
+        "url": "https://geo.api.vlaanderen.be/el-dtm/wcs",
+        "versao": "2.0.1",
+        "coverage": "EL.GridCoverage.DTM",
+        "eixos": [
+          "x",
+          "y"
+        ],
+        "max_px": 4000
+      },
+      "licenca": "Modellicentie gratis hergebruik (Vlaanderen)",
+      "atribuicao": "Digitaal Hoogtemodel Vlaanderen II, DTM, 1 m – bron: Digitaal Vlaanderen. Bewerkt: Terracrua Design.",
+      "atribuicao_confirmada": false,
+      "regras": {
+        "vazios": "recusar"
+      },
+      "ponto_teste": [
+        4.4,
+        51.2
+      ],
+      "estado": "nao_testado",
+      "nota": "Dados de 2013–2015: o relatório tem de dizer a data.",
+      "cobertura_poligono": [
+        [
+          2.54,
+          51.09
+        ],
+        [
+          2.9,
+          50.7
+        ],
+        [
+          3.6,
+          50.75
+        ],
+        [
+          4.1,
+          50.69
+        ],
+        [
+          4.6,
+          50.74
+        ],
+        [
+          5.1,
+          50.7
+        ],
+        [
+          5.68,
+          50.75
+        ],
+        [
+          5.85,
+          51.1
+        ],
+        [
+          5.2,
+          51.3
+        ],
+        [
+          4.8,
+          51.5
+        ],
+        [
+          4.4,
+          51.43
+        ],
+        [
+          3.9,
+          51.21
+        ],
+        [
+          3.37,
+          51.37
+        ],
+        [
+          2.54,
+          51.09
+        ]
+      ]
+    }
+  ],
+  "_nota_cobertura": "cobertura_bbox serve de filtro rápido; cobertura_poligono (contorno grosseiro, erro de alguns km) desempata onde as caixas se sobrepõem. No site, o país vem do registo europeu (parâmetro pais de obter_mdt)."
+}

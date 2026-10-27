@@ -1,0 +1,2399 @@
+[
+ {
+  "n": 1,
+  "nome": "AeC.2023/003 Jacinto",
+  "pasta_id": "19Y1TRZUITc8-w2sg1PmQNfy00KIWytXT",
+  "concelho": "Odemira",
+  "freguesia": "Santa Clara-a-Velha",
+  "tipo": "misto (U + R)",
+  "nivel": "A",
+  "artigos": [
+   {
+    "tipo": "U",
+    "artigo": "140",
+    "seccao": null,
+    "freguesia": "Santa Clara-a-Velha (021119)",
+    "area_total": "100 m²",
+    "area_coberta": "100 m² (implantação)",
+    "area_descoberta": null,
+    "descricao_predial": null,
+    "doc_id": "1kYmGP0PGGcWoPCioUTLa5rsQQGaTUkgx",
+    "doc_data": "2016-06-01",
+    "ponto_at": [
+     -8.4032,
+     37.5482
+    ],
+    "nota": "origem U-175 da freguesia extinta 021104; cópia na pasta do cliente 1Eqi_i7tGQVc6MA9WQeu5kWXZn3RLaInI"
+   },
+   {
+    "tipo": "R",
+    "artigo": "27",
+    "seccao": "C",
+    "freguesia": "Santa Clara-a-Velha (021119)",
+    "area_total": "41,900000 ha",
+    "area_coberta": null,
+    "area_descoberta": null,
+    "descricao_predial": null,
+    "doc_id": "1pCikPuzTx1ayAMKncuX3-WsOdajzi7Nq",
+    "doc_data": "2015-09-18",
+    "ponto_at": null,
+    "nota": "nome \"Encalhe\"; cópia 1wvSG7wEs27k7CFZWXINmlVmKrxC7L-dp"
+   }
+  ],
+  "geometria": [
+   {
+    "file_id": "17fnKDjTWo9fD_LqLQ5Su7H_zo7EFyFlM",
+    "nome": "predios.geojson",
+    "origem": "analise_tcd",
+    "centroide": [
+     -8.4061,
+     37.5438
+    ],
+    "n_poligonos": 1,
+    "nota": "R C-27, 420055 m²"
+   },
+   {
+    "file_id": "1KrSRi1cijvM_RQ0ikr3n20Gd9zpVklKk",
+    "nome": "predios.gpkg",
+    "origem": "analise_tcd",
+    "centroide": null
+   },
+   {
+    "file_id": "1_kHWlj1nAUW59CwuXrxRgqdH0012Ui9i",
+    "nome": "predios.dxf",
+    "origem": "analise_tcd",
+    "centroide": null
+   },
+   {
+    "file_id": "1BKZahkldzJz07XIaZiiEtokjhDS9oksf",
+    "nome": "predios.shp (conjunto shapefile)",
+    "origem": "analise_tcd",
+    "centroide": null
+   }
+  ],
+  "gps": [
+   -8.4031,
+   37.5483
+  ],
+  "notas": "Análise 0.3 Jacinto SS2023/003 (140vp4hQ4iQBqFFNtu3AfBF2MLFhufjjJ), relatório 3_Jacinto.pdf 1eJAQfSYpIYU3dSGxyPWHsDtciGEoAwOH. Polígono só cobre o rústico C-27; o urbano U-140 tem ponto AT coincidente com o GPS da folha. Sem certidão permanente."
+ },
+ {
+  "n": 2,
+  "nome": "AeC.2023/004 Otília / Cabeça Gorda",
+  "pasta_id": "1ZOx2jfGAC_zBTUiaBmbTW1AmcqQNM5LP",
+  "concelho": "Loulé",
+  "freguesia": "Loulé (São Clemente) e Loulé (São Sebastião)",
+  "tipo": "misto (U + R)",
+  "nivel": "A",
+  "artigos": [
+   {
+    "tipo": "U",
+    "artigo": "12057",
+    "seccao": null,
+    "freguesia": "Loulé (São Clemente) (080808)",
+    "area_total": "75 m²",
+    "area_coberta": "75 m² (implantação)",
+    "area_descoberta": null,
+    "descricao_predial": null,
+    "doc_id": "1Te2ROyaUP6psL7LIyBNnzqo-oCBuOLKO",
+    "doc_data": "2017-11-09",
+    "ponto_at": [
+     -7.9914,
+     37.1601
+    ],
+    "nota": "Cabeça Gorda; avaliado como ruína; cópia 1qH97T2d4egRc5uVnrOVondOJAby4cLKJ"
+   },
+   {
+    "tipo": "R",
+    "artigo": "9880",
+    "seccao": null,
+    "freguesia": "Loulé (São Sebastião) (080809)",
+    "area_total": "0,360000 ha",
+    "area_coberta": null,
+    "area_descoberta": "3600 m² (CP)",
+    "descricao_predial": "1206/19870626 (CRP Loulé)",
+    "doc_id": "1FgLIXcTLFkbFTyxx6B8eIvRQ0wdjoW6i",
+    "doc_data": "2014-11-17",
+    "ponto_at": null,
+    "nota": "\"Pedra d'Água\", modelo A sem secção; CP 1QAxQtPzVJQJNOBsCVONUcs0sKc4J07mr (2014-10-07)"
+   },
+   {
+    "tipo": "U",
+    "artigo": "655",
+    "seccao": null,
+    "freguesia": "Loulé (São Sebastião) (080809)",
+    "area_total": "76 m²",
+    "area_coberta": "76 m² (implantação)",
+    "area_descoberta": null,
+    "descricao_predial": "6965 (CRP Loulé, apresentação 2002)",
+    "doc_id": "1a7wG7_54wkojym98RJyZDJTEFOLgr2ER",
+    "doc_data": "sem data visível",
+    "ponto_at": [
+     -8.0929,
+     37.1246
+    ],
+    "nota": "Sítio da Pedra de Água; CP 1-rZRAlFAbDM7HyDGlBDlw9jQffyiuIm1 (2014-10-03)"
+   },
+   {
+    "tipo": "R",
+    "artigo": "7109 (leitura incerta)",
+    "seccao": null,
+    "freguesia": "Loulé (São Clemente) (080808)",
+    "area_total": "4256 m² (CP)",
+    "area_coberta": null,
+    "area_descoberta": null,
+    "descricao_predial": "880/19861107 (CRP Loulé)",
+    "doc_id": "19yUc0J19hTeMUVjkIoqnEX1Sztd28wh7",
+    "doc_data": "2013-11-04",
+    "ponto_at": null,
+    "nota": "CP diz \"omisso na matriz\"; artigo lido na declaração de titularidade do cadastro (1lNdDpfdn___De2xss9OulNwYgQ4sJCcI, 2014)"
+   },
+   {
+    "tipo": "R",
+    "artigo": "7108 (leitura incerta)",
+    "seccao": null,
+    "freguesia": "Loulé (São Clemente) (080808)",
+    "area_total": "13500 m² (CP)",
+    "area_coberta": null,
+    "area_descoberta": null,
+    "descricao_predial": "879/19861107 (CRP Loulé)",
+    "doc_id": "1_8S2oYP7nr8UwsVkHBdACPg0jf-YEZpH",
+    "doc_data": "2013-11-04",
+    "ponto_at": null,
+    "nota": "idem, Cabeça Gorda"
+   }
+  ],
+  "geometria": [
+   {
+    "file_id": "13yhZ6uYPg7uXgm1JBlqswFNLR4Q7UwfO",
+    "nome": "Terreno Pedragosa poli.kmz",
+    "origem": "analise_tcd",
+    "centroide": [
+     -7.9912,
+     37.1598
+    ],
+    "n_poligonos": 1,
+    "nota": "desenho manual (2016, projecto 126), em «Sem dados DGT, 0.4 Otília / 0.1 Polígonos»; cópia 1IFeDwYy1TRhIZkFimEHKh8fNuJR7ep0P em «Localização e mapas»"
+   }
+  ],
+  "gps": null,
+  "notas": "Duas zonas: Cabeça Gorda (São Clemente: U-12057, descrições 879 e 880) e Pedra d'Água (São Sebastião: U-655, R-9880). O polígono «Pedragosa» não está confirmado contra o cadastro. Liga a #38 (AeC.109 Cabeça Gorda). Cadastro Predial SiNErGIC de 2014 (declarações de titularidade). Plantas de localização e PDM no cliente."
+ },
+ {
+  "n": 3,
+  "nome": "AeC.2024/008 Ana M. (Terreno Monchique)",
+  "pasta_id": "1boGb1WVdJn6XqSYDXewmjAeGqK4sg_tT",
+  "concelho": "Monchique",
+  "freguesia": "Monchique",
+  "tipo": "misto",
+  "nivel": "A",
+  "artigos": [
+   {
+    "tipo": "R",
+    "artigo": "54",
+    "seccao": "BD",
+    "freguesia": "Monchique (080903)",
+    "area_total": "3,728000 ha",
+    "area_coberta": null,
+    "area_descoberta": null,
+    "descricao_predial": "5825/20130923 (CRP Monchique; livro 6508)",
+    "doc_id": "1g_wgst-GdiGR5-lzNM0XSBfhdnlDW5m-",
+    "doc_data": "2024-06-03",
+    "ponto_at": null,
+    "nota": "\"Brejo\""
+   },
+   {
+    "tipo": "U",
+    "artigo": "7195",
+    "seccao": null,
+    "freguesia": "Monchique (080903)",
+    "area_total": "360 m²",
+    "area_coberta": "144 m² (implantação)",
+    "area_descoberta": "216 m² (CP)",
+    "descricao_predial": "5825/20130923 (CRP Monchique)",
+    "doc_id": "1GKcWg6c3nNYuFelvUBNFighaRYcIrenm",
+    "doc_data": "2024-06-03",
+    "ponto_at": [
+     -8.5403,
+     37.3397
+    ],
+    "nota": "CP misto 3,728 ha: 1JdZpcWkd7lB3x--uzmey99qK2wmVbDBS (2024-07-03)"
+   }
+  ],
+  "geometria": [
+   {
+    "file_id": "1ObQ7hdSmbhNtA4PptKHyw5s8A73kn_fp",
+    "nome": "predios.geojson",
+    "origem": "analise_tcd",
+    "centroide": [
+     -8.5431,
+     37.3402
+    ],
+    "n_poligonos": 1,
+    "nota": "R BD-54, 37258 m²"
+   },
+   {
+    "file_id": "1WkoNuqJw5o39NRoH-E4p8KLYRee9yWsv",
+    "nome": "predios.gpkg",
+    "origem": "analise_tcd",
+    "centroide": null
+   },
+   {
+    "file_id": "1MdjFC3G4_WEBu95m1KLuNmpnZfqwAt7E",
+    "nome": "predios.dxf",
+    "origem": "analise_tcd",
+    "centroide": null
+   },
+   {
+    "file_id": "1znEh5rJc814b5r16_BqqfSlLzKCak8Zb",
+    "nome": "predios.shp (conjunto shapefile)",
+    "origem": "analise_tcd",
+    "centroide": null
+   }
+  ],
+  "gps": null,
+  "notas": "Análise 0.6 Marreiros 2024/008 (1Op9k4ypplT-l2kXk9AbXEDL4wqZGluRk). Cadernetas do cliente são cópias das da análise."
+ },
+ {
+  "n": 4,
+  "nome": "AeC.2024/10 José H.",
+  "pasta_id": "1U7s2ZEwWC-RMgxh4M30s3Swl0k6MiAYR",
+  "concelho": "Odemira",
+  "freguesia": "Relíquias",
+  "tipo": "rústico",
+  "nivel": "A",
+  "artigos": [
+   {
+    "tipo": "R",
+    "artigo": "113",
+    "seccao": "L",
+    "freguesia": "Relíquias (021102)",
+    "area_total": "8,725000 ha",
+    "area_coberta": null,
+    "area_descoberta": null,
+    "descricao_predial": null,
+    "doc_id": "1OYkjGj3EXpjKhhaBJX0h_n987vez0UfK",
+    "doc_data": "2024-07-19",
+    "ponto_at": null,
+    "nota": "\"Água da Rainha\"; cópia no cliente 1cNTMqzDKmrSX8buKW_49Qm96aZiXP5l1"
+   }
+  ],
+  "geometria": [
+   {
+    "file_id": "1PRuCSKyKw8Ffs2yic5tEDJWhJ98BPUVC",
+    "nome": "predios.geojson",
+    "origem": "analise_tcd",
+    "centroide": [
+     -8.4943,
+     37.6968
+    ],
+    "n_poligonos": 1,
+    "nota": "R L-113, 87115 m²"
+   },
+   {
+    "file_id": "1ocPYLNXVQso6AyHcOTyUY0wHXVxes139",
+    "nome": "predios.gpkg",
+    "origem": "analise_tcd",
+    "centroide": null
+   },
+   {
+    "file_id": "1DxHX6aYAtgaX8XZqOg31JLJQzHWmYEPL",
+    "nome": "predios.dxf",
+    "origem": "analise_tcd",
+    "centroide": null
+   },
+   {
+    "file_id": "1DrBFLavqTwV1Kw11_tkQfFbA3dnGqjxb",
+    "nome": "predios.shp (conjunto shapefile)",
+    "origem": "analise_tcd",
+    "centroide": null
+   }
+  ],
+  "gps": null,
+  "notas": "Análise 0.8 José 2024/10 (1dbrmOeLxqjhfLhy-YtqWP2G5m3lY7wSi). Sem certidão permanente."
+ },
+ {
+  "n": 5,
+  "nome": "AeC.2024/14 Guerreão (São Teotónio)",
+  "pasta_id": "1e247cV8ShFWvLZkNDl5gYnnC0Wlx2OO7",
+  "concelho": "Odemira",
+  "freguesia": "São Teotónio",
+  "tipo": "misto",
+  "nivel": "A",
+  "artigos": [
+   {
+    "tipo": "R",
+    "artigo": "276",
+    "seccao": "JJ",
+    "freguesia": "São Teotónio (021121)",
+    "area_total": "1,000000 ha",
+    "area_coberta": null,
+    "area_descoberta": "9919 m² (CP)",
+    "descricao_predial": "3311/20000718 (CRP Odemira; livro 19085)",
+    "doc_id": "15Fe0K38RZiiau89DHywVc9v1zQlyx3UU",
+    "doc_data": "2024-03-18",
+    "ponto_at": null,
+    "nota": "\"Guerreão\"; resultou da divisão do prédio 180"
+   },
+   {
+    "tipo": "U",
+    "artigo": "2785",
+    "seccao": null,
+    "freguesia": "São Teotónio (021121)",
+    "area_total": "81 m²",
+    "area_coberta": "81 m²",
+    "area_descoberta": null,
+    "descricao_predial": "3311/20000718 (na CP como U-3447)",
+    "doc_id": "1iBv8U5D9zoue0ZpvyX96NGjAa1zb-8i-",
+    "doc_data": "2024-03-18",
+    "ponto_at": [
+     -8.7121,
+     37.5268
+    ],
+    "nota": "origem U-3447 de S. Teotónio (extinta); CP misto 10000 m²: 10bE5dUvoRw8313h71f48WaPaL321pefH (2024-01-16)"
+   }
+  ],
+  "geometria": [
+   {
+    "file_id": "1hz0aYueU-beJE0TXMGgEfiTty-F4fXCb",
+    "nome": "predios.geojson",
+    "origem": "analise_tcd",
+    "centroide": [
+     -8.7087,
+     37.5189
+    ],
+    "n_poligonos": 1,
+    "nota": "R JJ-276, 11063 m²"
+   },
+   {
+    "file_id": "1IFueANfP_bXTWUmy_A1-T3hLpIN4BWhP",
+    "nome": "predios.gpkg",
+    "origem": "analise_tcd",
+    "centroide": null
+   },
+   {
+    "file_id": "1v6dcFTBqWiDThyL5xcpCcMMEesM7TPQN",
+    "nome": "predios.dxf",
+    "origem": "analise_tcd",
+    "centroide": null
+   },
+   {
+    "file_id": "1se3W3JcYNRkJSFExCoOrrzfSAuwsyaIE",
+    "nome": "predios.shp (conjunto shapefile)",
+    "origem": "analise_tcd",
+    "centroide": null
+   }
+  ],
+  "gps": [
+   -8.7097,
+   37.52
+  ],
+  "notas": "Análise 0.11 São Teotónio 2024/14 (1q9NGN3GvWUl1NJVOqxaI_iJfbk-bS5mB). Cadernetas do cliente são cópias."
+ },
+ {
+  "n": 6,
+  "nome": "AeC.2025/1 José G.",
+  "pasta_id": "1mkth07tYtHPACAb4099WjrVabwwY47xP",
+  "concelho": "Almodôvar",
+  "freguesia": "Santa Cruz",
+  "tipo": "rústico",
+  "nivel": "B",
+  "artigos": [
+   {
+    "tipo": "R",
+    "artigo": "38",
+    "seccao": "K",
+    "freguesia": "Santa Cruz (020205)",
+    "area_total": "7,800000 ha",
+    "area_coberta": null,
+    "area_descoberta": null,
+    "descricao_predial": null,
+    "doc_id": "1EmRAuMIh0OrMPdr6KBC_C2vTY2Rwi9OI",
+    "doc_data": "2022-08-24",
+    "ponto_at": null,
+    "nota": "\"Zambujeiro\""
+   },
+   {
+    "tipo": "R",
+    "artigo": "39",
+    "seccao": "K",
+    "freguesia": "Santa Cruz (020205)",
+    "area_total": "23,325000 ha",
+    "area_coberta": null,
+    "area_descoberta": "23,325 ha (CP)",
+    "descricao_predial": "1461/19980921 (CRP Almodôvar; livro 10879)",
+    "doc_id": "13Lgskx2twq4BgVWqh3sQAb96C_YASspt",
+    "doc_data": "2022-08-24",
+    "ponto_at": null,
+    "nota": "\"Courela da Altura\", Monte Branco do Vascão; CP 1Uq5SfP5IGaR_zbX4HpbN9zG2gUrtXzVi (2023-10-18)"
+   }
+  ],
+  "geometria": [
+   {
+    "file_id": "19u5ORtkGZwfqDyPI1q_xVbqQ1L-mjjwk",
+    "nome": "areasedificaveis.kml",
+    "origem": "analise_tcd",
+    "centroide": [
+     -7.9063,
+     37.4206
+    ],
+    "n_poligonos": 6,
+    "nota": "áreas edificáveis da análise/PIP (Out 2025), não é o limite do prédio; centro aproximado"
+   }
+  ],
+  "gps": null,
+  "notas": "Pasta «0.8 PIP &/OU Análises de Terreno TcD»: TcD Análise.pdf 1yoMknmtOrmn7Jp4NGiZruAnNMemzqDDz, PIP 1aMgwBDNeyuXa7ddZGP1puQHW5bMITUkM. Nível B porque o KML não delimita o prédio."
+ },
+ {
+  "n": 7,
+  "nome": "AeC.2025/2 Richard A. (Coito Grande II)",
+  "pasta_id": "1PYbcOu3k5DIXXuZB5JQwzkClXFhGV8D5",
+  "concelho": "Odemira",
+  "freguesia": "Colos",
+  "tipo": "misto",
+  "nivel": "B",
+  "artigos": [
+   {
+    "tipo": "U",
+    "artigo": "949",
+    "seccao": null,
+    "freguesia": "Colos (021118)",
+    "area_total": "26 m²",
+    "area_coberta": "26 m²",
+    "area_descoberta": null,
+    "descricao_predial": "741/20021104 (na CP como U-1283)",
+    "doc_id": "14wha-mMW1oPty_DSBroy8VabSa1CaE7v",
+    "doc_data": "2025-06-05",
+    "ponto_at": [
+     -8.47,
+     37.7406
+    ],
+    "nota": "origem U-1283 de Colos (extinta); versão antiga 1UKFJb3PD4KZfGXNTbm1M6sRTeVGAJbD1"
+   },
+   {
+    "tipo": "R",
+    "artigo": "27",
+    "seccao": "J",
+    "freguesia": "Colos (021118)",
+    "area_total": "1,475000 ha",
+    "area_coberta": null,
+    "area_descoberta": "14750 m² (CP)",
+    "descricao_predial": "128/19870423 (CRP Odemira)",
+    "doc_id": "1lkwmy1lkvW92jlCjcylQrx0VelfdmaCA",
+    "doc_data": "2025-06-05",
+    "ponto_at": null,
+    "nota": "\"Coito Grande\""
+   },
+   {
+    "tipo": "R",
+    "artigo": "28",
+    "seccao": "J",
+    "freguesia": "Colos (021118)",
+    "area_total": "0,850000 ha",
+    "area_coberta": null,
+    "area_descoberta": "8474 m² (CP, misto 8500 m²)",
+    "descricao_predial": "741/20021104 (CRP Odemira; livro 6049)",
+    "doc_id": "1Xvc8DC9yFL2rzRVqqeSwAiFVKCHJEmXI",
+    "doc_data": "2025-06-05",
+    "ponto_at": null,
+    "nota": "misto com U-1283/949; CP conjunta 1igJR-8y3CNSnsguOhW2CqVMhNTjV685b (2025-06-05)"
+   }
+  ],
+  "geometria": [],
+  "gps": [
+   -8.4692,
+   37.7393
+  ],
+  "notas": "Relatório 7_CoitoGrandeII.pdf (1bXmy2MId9xsrGI5TDcE4UGVbwhB5SLXe) sem pasta de polígonos encontrada. Vizinho do Coito Grande I (#42)."
+ },
+ {
+  "n": 8,
+  "nome": "AeC.2025/3 São (Cercal)",
+  "pasta_id": "1Q-kcIchEW5NlXZ8_jV2OGG3fI0QDyuGy",
+  "concelho": "Santiago do Cacém",
+  "freguesia": "Cercal",
+  "tipo": "urbano",
+  "nivel": "B",
+  "artigos": [
+   {
+    "tipo": "U",
+    "artigo": "161",
+    "seccao": null,
+    "freguesia": "Cercal (150903)",
+    "area_total": "272 m²",
+    "area_coberta": "156,84 m²",
+    "area_descoberta": "115,16 m² (CP)",
+    "descricao_predial": "485/19880426 (CRP Santiago do Cacém)",
+    "doc_id": "10owOcQCUpMC-TR5gznlgMAX0FuDl2Fy-",
+    "doc_data": "2024-06-27",
+    "ponto_at": [
+     -8.6739,
+     37.8022
+    ],
+    "nota": "Rua Teófilo Braga; 3 divisões independentes; CP 1EMxp9NBO5QUWjlb5aPLaNSyfQvjJ74dN (2025-02-26)"
+   }
+  ],
+  "geometria": [],
+  "gps": [
+   -8.6738,
+   37.8021
+  ],
+  "notas": "Ponto AT coincide com o GPS da folha."
+ },
+ {
+  "n": 9,
+  "nome": "AeC.2025/05 Jaime S. (27 ha)",
+  "pasta_id": "1As2E2jnkUwfSFkrZQ3EFOuTkerhVrKcD",
+  "concelho": "Odemira",
+  "freguesia": "São Martinho das Amoreiras",
+  "tipo": "misto",
+  "nivel": "B",
+  "artigos": [
+   {
+    "tipo": "R",
+    "artigo": "17",
+    "seccao": "A",
+    "freguesia": "São Martinho das Amoreiras (021107)",
+    "area_total": "27,350000 ha",
+    "area_coberta": null,
+    "area_descoberta": "273220,1 m² (CP)",
+    "descricao_predial": "1848/20121218 (CRP Odemira; livro 7490)",
+    "doc_id": "1EPt_kAgQUvZpTzUqXwiom592TT1FE6ZP",
+    "doc_data": "2025-03-05",
+    "ponto_at": null,
+    "nota": "\"Ferraria\"; CP 19J1I0vNFvNEskqxmhCxHBRCo6sUqkPAQ (2025-01-31) com área total 273500 m²"
+   },
+   {
+    "tipo": "U",
+    "artigo": "464",
+    "seccao": null,
+    "freguesia": "São Martinho das Amoreiras (021107)",
+    "area_total": "279,9 m²",
+    "area_coberta": "279,9 m²",
+    "area_descoberta": null,
+    "descricao_predial": "1848/20121218 (CP indica U-461)",
+    "doc_id": "1ApV5OPLblw5D6F3_GeYHOPuSEa71aViu",
+    "doc_data": "2025-03-05",
+    "ponto_at": [
+     -8.4411,
+     37.6971
+    ],
+    "nota": "divergência 461/464 entre CP e caderneta, a confirmar"
+   }
+  ],
+  "geometria": [],
+  "gps": null,
+  "notas": "Relatório da Terracrua Design 5_Jaime.pdf (1tdS_diSEITvysjpeIQm6tNYuNM9DvpOy) sem pasta de polígonos encontrada. Localidade da folha: Amoreiras-Gare."
+ },
+ {
+  "n": 10,
+  "nome": "AeC.2025/7 Vale de Santiago",
+  "pasta_id": "1unVan8S0QLBYwy_i6SUCESfH3nuTMxZu",
+  "concelho": "Odemira",
+  "freguesia": "Vale de Santiago",
+  "tipo": "urbano",
+  "nivel": "B",
+  "artigos": [
+   {
+    "tipo": "U",
+    "artigo": "58",
+    "seccao": null,
+    "freguesia": "Vale de Santiago (021122; CP 021110)",
+    "area_total": "127 m²",
+    "area_coberta": "97 m²",
+    "area_descoberta": "30 m² (CP)",
+    "descricao_predial": "692/20080115 (CRP Odemira)",
+    "doc_id": "1VQEtIdfJtKFuGYFyVO-Mq8-rC49cRRqz",
+    "doc_data": "2018-11-21",
+    "ponto_at": [
+     -8.4132,
+     37.7511
+    ],
+    "nota": "origem U-75; CP 1oAPkefFriX-HegXUt5UhBYuh6MMQj9v6 (2024-09-13)"
+   },
+   {
+    "tipo": "U",
+    "artigo": "59",
+    "seccao": null,
+    "freguesia": "Vale de Santiago (021122; CP 021110)",
+    "area_total": "75 m²",
+    "area_coberta": "75 m²",
+    "area_descoberta": null,
+    "descricao_predial": "693/20080115 (CRP Odemira)",
+    "doc_id": "1VQEtIdfJtKFuGYFyVO-Mq8-rC49cRRqz",
+    "doc_data": "2018-11-21",
+    "ponto_at": [
+     -8.4133,
+     37.7511
+    ],
+    "nota": "origem U-76; 2 fracções (r/c comércio, 1.º habitação); CP 1bpYCyOTp8yFibyPT6P6ib11_MgSOPjUJ"
+   },
+   {
+    "tipo": "U",
+    "artigo": "60",
+    "seccao": null,
+    "freguesia": "Vale de Santiago (021122; CP 021110)",
+    "area_total": "118 m²",
+    "area_coberta": "94 m²",
+    "area_descoberta": "24 m² (CP)",
+    "descricao_predial": "694/20080115 (CRP Odemira)",
+    "doc_id": "1VQEtIdfJtKFuGYFyVO-Mq8-rC49cRRqz",
+    "doc_data": "2018-11-21",
+    "ponto_at": [
+     -8.4134,
+     37.7511
+    ],
+    "nota": "origem U-77; CP 1vnHOO0EcrKvEx56rCDYeyMyxA5-A3Wb1"
+   }
+  ],
+  "geometria": [],
+  "gps": null,
+  "notas": "Três urbanos contíguos na Rua da Igreja. Cadernetas num único PDF de 2018."
+ },
+ {
+  "n": 11,
+  "nome": "AeC.2025/8 Caldeira de Cima",
+  "pasta_id": "1OjPJBtI4KTNDTzodLKnc2jyv4_BisB2k",
+  "concelho": "Santiago do Cacém",
+  "freguesia": "Cercal",
+  "tipo": "misto",
+  "nivel": "B",
+  "artigos": [
+   {
+    "tipo": "R",
+    "artigo": "7",
+    "seccao": "AA",
+    "freguesia": "Cercal (150903)",
+    "area_total": "8,487500 ha",
+    "area_coberta": null,
+    "area_descoberta": "84646 m² (CP)",
+    "descricao_predial": "1574/20041006 (CRP Santiago do Cacém; livro 13334)",
+    "doc_id": "1GZLWiV1Hq8oG67Vkw2da20Fp1lPAAqNg",
+    "doc_data": "2025-08-18",
+    "ponto_at": null,
+    "nota": "\"Caldeira de Cima\"; CP 1o--ZsRYzEwiX54IjeqzyDdL3y75uUU3u (2017-11-23), misto 84875 m², coberta 229 m², pendente de reclamação cadastral desde 17/07/2017"
+   },
+   {
+    "tipo": "U",
+    "artigo": "956",
+    "seccao": null,
+    "freguesia": "Cercal (150903)",
+    "area_total": "168 m²",
+    "area_coberta": "168 m²",
+    "area_descoberta": null,
+    "descricao_predial": "1574/20041006",
+    "doc_id": "1rhmXJwd129X2zXVpMZWvWu6KBS7XTDfS",
+    "doc_data": "2025-08-18",
+    "ponto_at": [
+     -8.6257,
+     37.7626
+    ]
+   },
+   {
+    "tipo": "U",
+    "artigo": "957",
+    "seccao": null,
+    "freguesia": "Cercal (150903)",
+    "area_total": "61 m²",
+    "area_coberta": "61 m²",
+    "area_descoberta": null,
+    "descricao_predial": "1574/20041006",
+    "doc_id": "1lp60sqSqZV1pSDVbjl0gNO45jP0sWDhY",
+    "doc_data": "2025-08-18",
+    "ponto_at": [
+     -8.6238,
+     37.7622
+    ]
+   }
+  ],
+  "geometria": [
+   {
+    "file_id": "15aNAIsV287pONiyRHItpdkulxaFLR7kR",
+    "nome": "CALDEIRA_CIMA.zip",
+    "origem": "terceiros",
+    "centroide": null,
+    "nota": "4,5 MB em «0.9 Outros», conteúdo não aberto (possível topografia)"
+   }
+  ],
+  "gps": null,
+  "notas": "Folha: local «Aldeia do Cano». Topografia de terceiros: CALDEIRA TOPOGRAPHY.pdf 1Ay0J21biruHg7uNPOQMCadWKK__WuNB3. Prédio vizinho da Caldeirinha (#41). Subpastas de cadernetas vazias; documentos estão na raiz."
+ },
+ {
+  "n": 12,
+  "nome": "AeC.2025/9 Silves",
+  "pasta_id": "1IryE_vV9MJ2xIRx2aCFZRWnXzBLTwNoY",
+  "concelho": "Silves",
+  "freguesia": "Silves",
+  "tipo": "misto",
+  "nivel": "A",
+  "artigos": [
+   {
+    "tipo": "R",
+    "artigo": "1",
+    "seccao": "L",
+    "freguesia": "Silves (081307)",
+    "area_total": "82,684000 ha (DGT 831681 m²)",
+    "area_coberta": null,
+    "area_descoberta": null,
+    "descricao_predial": "11625/20140715 (CRP Silves; livro 4966; CP cita matrizes antigas R-1349 e R-1369)",
+    "doc_id": "10UI14_We7dr09JtMy2x2WpzNkoLTxgq4",
+    "doc_data": "2025-06-23",
+    "ponto_at": null,
+    "nota": "\"Barreiro\"; ficha DGT 25591/2026 NIC AAA001759579 (1I1CJQS_vj6H2S8m0VJgo9lk5sBsK-Pl6)"
+   },
+   {
+    "tipo": "U",
+    "artigo": "3359",
+    "seccao": null,
+    "freguesia": "Silves (081307)",
+    "area_total": "60 m²",
+    "area_coberta": "60 m²",
+    "area_descoberta": null,
+    "descricao_predial": "11625/20140715 (CRP Silves)",
+    "doc_id": "1bbYn_1LFOpnuEicnbLh6-4kKet2d1dNL",
+    "doc_data": "2025-06-23",
+    "ponto_at": [
+     -8.4647,
+     37.259
+    ],
+    "nota": "Vale do Zebro; CP 1f1-Od-fLPZi3oM3lJ_ITkAYUQivIGJwC (2025-10-28)"
+   }
+  ],
+  "geometria": [
+   {
+    "file_id": "1EcUjIuQ62U0lof55yIawvo38H3qHTsoq",
+    "nome": "predios.zip",
+    "origem": "analise_tcd",
+    "centroide": [
+     -8.4566,
+     37.2671
+    ],
+    "n_poligonos": 1,
+    "nota": "extracção cadastral DGT (gpkg, geojson, shp, dxf); 081307_L_1, 831681 m²"
+   }
+  ],
+  "gps": null,
+  "notas": "autoridade.pdf (1x4I6cbHDnfBhQl3up2V_Ypz-l85j7JXD, 23 MB) não lido."
+ },
+ {
+  "n": 13,
+  "nome": "AeC.2025/10 Ana P.",
+  "pasta_id": "1CUOp_3Rob66xxhYhN9VJ9ubl6Wj6feqf",
+  "concelho": "Beja",
+  "freguesia": "União das Freguesias de Trigaches e São Brissos",
+  "tipo": "urbano",
+  "nivel": "B",
+  "artigos": [
+   {
+    "tipo": "U",
+    "artigo": "252",
+    "seccao": null,
+    "freguesia": "UF Trigaches e São Brissos (020524)",
+    "area_total": "298 m²",
+    "area_coberta": "114 m²",
+    "area_descoberta": "184 m² (CP)",
+    "descricao_predial": "146/20020102 (CRP Beja)",
+    "doc_id": "1rFtlL7Be8ot7CbgT6sD7057NRAg3oq52",
+    "doc_data": "2026-01-22",
+    "ponto_at": [
+     -7.9754,
+     38.0908
+    ],
+    "nota": "Rua dos Pisões 10; origem U-955 Trigaches; CP 10jO-jp8mBMC5Z39XVEVHEbM9kKEqtWNg (2024-11-22)"
+   },
+   {
+    "tipo": "U",
+    "artigo": "407",
+    "seccao": null,
+    "freguesia": "UF Trigaches e São Brissos (020524)",
+    "area_total": "131 m² (CP)",
+    "area_coberta": "78 m² (CP)",
+    "area_descoberta": "53 m² (CP)",
+    "descricao_predial": "132/20001227 (CRP Beja)",
+    "doc_id": "18rwwil_3McZMkrwdCtDghCwaJaO-M7EY",
+    "doc_data": "2024-11-25",
+    "ponto_at": null,
+    "nota": "\"Quintal\", Rua do Pisão 12-A; só CP, sem caderneta"
+   }
+  ],
+  "geometria": [],
+  "gps": null,
+  "notas": "Planta de localização referida no inventário não foi aberta."
+ },
+ {
+  "n": 14,
+  "nome": "AeC.2026/1 Pedro R.",
+  "pasta_id": "1bIqKSsI0vXMO6nCkKC2zQ0pM-OtHMF4t",
+  "concelho": "Odemira",
+  "freguesia": "Relíquias",
+  "tipo": "urbano",
+  "nivel": "B",
+  "artigos": [
+   {
+    "tipo": "U",
+    "artigo": "49",
+    "seccao": null,
+    "freguesia": "Relíquias (021102)",
+    "area_total": "210 m²",
+    "area_coberta": "90 m²",
+    "area_descoberta": "120 m² (CP)",
+    "descricao_predial": "512/19980820 (CRP Odemira)",
+    "doc_id": "1Kkp52y8kMrJSyG10o61-20U97kwelQEh",
+    "doc_data": "2025-12-30",
+    "ponto_at": [
+     -8.4863,
+     37.6993
+    ],
+    "nota": "CP 1TvejRVqNjg7WBZm0j3XkIuRhH-wvGqTR (2026-01-02)"
+   },
+   {
+    "tipo": "U",
+    "artigo": "1335",
+    "seccao": null,
+    "freguesia": "Relíquias (021102)",
+    "area_total": "17,34 m²",
+    "area_coberta": "9,34 m²",
+    "area_descoberta": null,
+    "descricao_predial": "446/19961205 (CRP Odemira; livro 7485)",
+    "doc_id": "1ly1ItcmRCjzPeR8Em5NAnxx5eugHs1hJ",
+    "doc_data": "2025-12-30",
+    "ponto_at": [
+     -8.4854,
+     37.7008
+    ],
+    "nota": "origem U-50; Rua do Jogo da Bola 3"
+   },
+   {
+    "tipo": "U",
+    "artigo": "1323",
+    "seccao": null,
+    "freguesia": "Relíquias (021102)",
+    "area_total": "40,8 m²",
+    "area_coberta": "30,8 m²",
+    "area_descoberta": null,
+    "descricao_predial": "446/19961205 (CRP Odemira)",
+    "doc_id": "1ltOO4CdfbGfPc89UcgbkMfuk-yrX7gLZ",
+    "doc_data": "2025-12-30",
+    "ponto_at": [
+     -8.4855,
+     37.7017
+    ],
+    "nota": "origem U-51; Rua do Jogo da Bola 2; CP conjunta 1Yp6lcn8RjxuH-k9NQZcDf5201GR6PbQw (2026-06-17), 58,14 m²"
+   }
+  ],
+  "geometria": [],
+  "gps": [
+   -8.4853,
+   37.701
+  ],
+  "notas": null
+ },
+ {
+  "n": 15,
+  "nome": "AeC.2026/2 Lucas (Zambujeirinha)",
+  "pasta_id": "1nyLNC-d-0bPN3Hs1607NN1Erx8JkV0to",
+  "concelho": "Odemira",
+  "freguesia": "São Martinho das Amoreiras",
+  "tipo": "misto",
+  "nivel": "B",
+  "artigos": [
+   {
+    "tipo": "R",
+    "artigo": "45",
+    "seccao": "C",
+    "freguesia": "São Martinho das Amoreiras (021107)",
+    "area_total": "1,600000 ha",
+    "area_coberta": null,
+    "area_descoberta": "15875,44 m² (CP, misto 16000 m²)",
+    "descricao_predial": "391/19931130 (CRP Odemira; livro 9635)",
+    "doc_id": "13IVn602t3we2HuaQy32EUKOhjzeqwSvD",
+    "doc_data": "2017-07-10",
+    "ponto_at": null,
+    "nota": "certidão de teor (imagem)"
+   },
+   {
+    "tipo": "U",
+    "artigo": "1490",
+    "seccao": null,
+    "freguesia": "São Martinho das Amoreiras (021107)",
+    "area_total": "124,56 m²",
+    "area_coberta": "124,56 m²",
+    "area_descoberta": null,
+    "descricao_predial": "391/19931130",
+    "doc_id": "1HVhPNUr_A4eYshz_rraIeTFLvcS5A1S_",
+    "doc_data": "sem data visível",
+    "ponto_at": [
+     -8.4582,
+     37.6444
+    ],
+    "nota": "certidão de teor (imagem)"
+   },
+   {
+    "tipo": "R",
+    "artigo": "46",
+    "seccao": "C",
+    "freguesia": "São Martinho das Amoreiras (021107)",
+    "area_total": "2,125000 ha",
+    "area_coberta": null,
+    "area_descoberta": "21125,44 m² (CP, misto 21250 m²)",
+    "descricao_predial": "1036/20030107 (CRP Odemira; livro 9629)",
+    "doc_id": "18sBQMQuvAeIFSywJwak6geb26qeCCapQ",
+    "doc_data": "2018-04-06",
+    "ponto_at": null,
+    "nota": "imagem"
+   },
+   {
+    "tipo": "U",
+    "artigo": "1491",
+    "seccao": null,
+    "freguesia": "São Martinho das Amoreiras (021107)",
+    "area_total": "124,56 m²",
+    "area_coberta": "124,56 m²",
+    "area_descoberta": null,
+    "descricao_predial": "1036/20030107",
+    "doc_id": "1QSWqRNs0HBJlr1E5sTqgI_GKgvGCDcmn",
+    "doc_data": "sem data visível",
+    "ponto_at": [
+     -8.4582,
+     37.6443
+    ],
+    "nota": "origem U-518; imagem"
+   },
+   {
+    "tipo": "R",
+    "artigo": "47",
+    "seccao": "C",
+    "freguesia": "São Martinho das Amoreiras (021107)",
+    "area_total": "2,175000 ha",
+    "area_coberta": null,
+    "area_descoberta": "21750 m² (CP)",
+    "descricao_predial": "972/20011023 (CRP Odemira)",
+    "doc_id": "1NxxjmqzQgewY_NcPJhQwVSyYVIECZVXi",
+    "doc_data": "2018-05-09",
+    "ponto_at": null,
+    "nota": "imagem"
+   },
+   {
+    "tipo": "R",
+    "artigo": "48",
+    "seccao": "C",
+    "freguesia": "São Martinho das Amoreiras (021107)",
+    "area_total": "2,050000 ha",
+    "area_coberta": null,
+    "area_descoberta": "20500 m² (CP)",
+    "descricao_predial": "1114/20040903 (CRP Odemira)",
+    "doc_id": "1Wn6koYH7to9SWWvEvdPgBrwmbJpOac4U",
+    "doc_data": "2015-07",
+    "ponto_at": null,
+    "nota": "imagem; CP 1oWB_8UEHRJZG7960RMV9XkJUTgwfnFTq (2017-07-10)"
+   },
+   {
+    "tipo": "R",
+    "artigo": "52",
+    "seccao": "C",
+    "freguesia": "São Martinho das Amoreiras (021107)",
+    "area_total": "4,950000 ha",
+    "area_coberta": null,
+    "area_descoberta": "49500 m² (CP)",
+    "descricao_predial": "971/20011023 (CRP Odemira)",
+    "doc_id": "1uSiKFnutnaTkRRpkh0tHSHyTg_GEmS3A",
+    "doc_data": "2019-04-17",
+    "ponto_at": null,
+    "nota": "inclui extracto de carta 1:5000"
+   }
+  ],
+  "geometria": [],
+  "gps": null,
+  "notas": "Todos «Zambujeirinha». CP de 45/46/47/52 num só PDF: 14CPmSEaZU-0Bzh8vKCCWl7ymmOnBgVLn (2017/2019). Há também «Registo artigo 45» e «Registo artigo 48» de 2026 (1UmC2Z75pZ--dxQvwvWJIZdxa3ucfXP2q, 1okJfqAAHadBiRgKtWQQ5MD7IxI-Ao30r) não lidos por duplicarem."
+ },
+ {
+  "n": 16,
+  "nome": "AeC.2026/3 Paulo M.",
+  "pasta_id": "1AeCyzdK8HHD1lcNPIGj3ox8ZI8ar7ywZ",
+  "concelho": "Odemira",
+  "freguesia": "Colos",
+  "tipo": "urbano",
+  "nivel": "B",
+  "artigos": [
+   {
+    "tipo": "U",
+    "artigo": "1034",
+    "seccao": null,
+    "freguesia": "Colos (021118)",
+    "area_total": "96,58 m²",
+    "area_coberta": "85,11 m²",
+    "area_descoberta": "11,47 m² (CP)",
+    "descricao_predial": "606/19990723 (CRP Odemira; livro 10447)",
+    "doc_id": "1Y4R-zLKwSaxQp3Yv4bcC7t2P3F8fQtya",
+    "doc_data": "2024-01-04",
+    "ponto_at": [
+     -8.4576,
+     37.7347
+    ],
+    "nota": "Rua Carlos Maia 48; origem U-1377 (Colos extinta), antes U-8; CP 1HR3O0qoBqwzUv55J5V6DdjzQRy8ktGQV (2024-01-31)"
+   }
+  ],
+  "geometria": [],
+  "gps": null,
+  "notas": "Arquitectura Arq_PM.dwfx (1mK8Q-0p6eboAJv397teampUxHBD4l94C) não é geometria georreferenciada."
+ },
+ {
+  "n": 17,
+  "nome": "AeC.2026/4 Petra",
+  "pasta_id": "1o7LVuIcqIVX_LO34Kb3FWoLCZs7Fl9nU",
+  "concelho": "Odemira",
+  "freguesia": "São Martinho das Amoreiras",
+  "tipo": "urbano",
+  "nivel": "B",
+  "artigos": [
+   {
+    "tipo": "U",
+    "artigo": "247",
+    "seccao": null,
+    "freguesia": "São Martinho das Amoreiras (021107)",
+    "area_total": "200 m²",
+    "area_coberta": "140 m²",
+    "area_descoberta": "60 m² (CP)",
+    "descricao_predial": "62/19850917 (CRP Odemira; livro 10449)",
+    "doc_id": "1NbTlNbV9aNpRBb0B-mt_Zh4wcmMsBYGX",
+    "doc_data": "2023-07-31",
+    "ponto_at": [
+     -8.3751,
+     37.669
+    ],
+    "nota": "Aldeia das Amoreiras; CP 1Eygc-IVC9seYqZkEUSMVCoDRHx4BGIk6 (2026-02-09)"
+   }
+  ],
+  "geometria": [],
+  "gps": null,
+  "notas": "Inventário indicava «São Martinho»: é Aldeia das Amoreiras."
+ },
+ {
+  "n": 18,
+  "nome": "AeC.2026/5 Ivo (Relíquias 2)",
+  "pasta_id": "1uE_KOdamuzvVieLJXSazINXpgV-q1Eux",
+  "concelho": "Odemira",
+  "freguesia": "Relíquias",
+  "tipo": "misto",
+  "nivel": "B",
+  "artigos": [
+   {
+    "tipo": "U",
+    "artigo": "1376",
+    "seccao": null,
+    "freguesia": "Relíquias (021102)",
+    "area_total": "200 m²",
+    "area_coberta": "75 m²",
+    "area_descoberta": "125 m² (CP)",
+    "descricao_predial": "781/20040816 (CRP Odemira)",
+    "doc_id": "1e4kJYfONtibzh0BdI9rZJzwR535iOWi6",
+    "doc_data": "2026-02-23",
+    "ponto_at": [
+     -8.4835,
+     37.701
+    ],
+    "nota": "\"Cerca de Cima\"; CP 14C0O-Asrfz5u-ExK7uny59XWgfDkT4W9 (2026-03-17)"
+   },
+   {
+    "tipo": "R",
+    "artigo": "62",
+    "seccao": "L",
+    "freguesia": "Relíquias (021102)",
+    "area_total": "1,275000 ha",
+    "area_coberta": null,
+    "area_descoberta": null,
+    "descricao_predial": null,
+    "doc_id": "1z0orIsegK-tW-wYb7HyyeCcsDijRWCFn",
+    "doc_data": "2026-02-23",
+    "ponto_at": null,
+    "nota": "\"Cerca de Cima\"; processos de cadastro 69/2000 e 48/2004"
+   }
+  ],
+  "geometria": [],
+  "gps": null,
+  "notas": "Planta de localização 1eKMCezLPVRqQJLh5jsyy6wx98fCqYBxQ não lida. U e R com descrições distintas (só a do U encontrada)."
+ },
+ {
+  "n": 19,
+  "nome": "0.8 Sue H. (Vale da Nora)",
+  "pasta_id": "1MbuCGJgsMBzMw_FkDkNGydwoh0qCbQ2u",
+  "concelho": "Ourique",
+  "freguesia": "Ourique",
+  "tipo": "misto",
+  "nivel": "B",
+  "artigos": [
+   {
+    "tipo": "R",
+    "artigo": "24",
+    "seccao": "BB",
+    "freguesia": "Ourique (021203)",
+    "area_total": "2,300000 ha",
+    "area_coberta": null,
+    "area_descoberta": "22856,57 m² (cultura, CP)",
+    "descricao_predial": "981/19920804 (CRP Ourique; livro 12207)",
+    "doc_id": "1OkIpyNRClp0sMfG5WnqOEMGwrp3pz7lZ",
+    "doc_data": "2026-06-30",
+    "ponto_at": null,
+    "nota": "\"Vale da Nora\"; divisão do prédio 7; misto 23000 m² com U-2500"
+   },
+   {
+    "tipo": "U",
+    "artigo": "2500",
+    "seccao": null,
+    "freguesia": "Ourique (021203)",
+    "area_total": "143,43 m²",
+    "area_coberta": "143,43 m²",
+    "area_descoberta": null,
+    "descricao_predial": "981 (CRP Ourique)",
+    "doc_id": "1SrSq3tUNaccMfHiuCACjmbWnDnZyxG7g",
+    "doc_data": "2025-03-05",
+    "ponto_at": [
+     -8.2835,
+     37.6344
+    ],
+    "nota": "Monte do Vale da Nora, Encalho; autorização de utilização 8/2017; IPS 1u9a8ANWmCSCr6Qyhqlw24Flu_Y69kGZB (2026-04-27)"
+   },
+   {
+    "tipo": "R",
+    "artigo": "22",
+    "seccao": "BB",
+    "freguesia": "Ourique (021203)",
+    "area_total": "2,125000 ha",
+    "area_coberta": null,
+    "area_descoberta": "21030,64 m² (cultura, CP)",
+    "descricao_predial": "2192/20040218 (CRP Ourique)",
+    "doc_id": "1tDr-aeZtqRlfNGYoARaMHHzT82NrDZNi",
+    "doc_data": "2026-06-30",
+    "ponto_at": null,
+    "nota": "divisão do prédio 8; misto 21250 m² com U-2501 e piscina 45 m²"
+   },
+   {
+    "tipo": "U",
+    "artigo": "2501",
+    "seccao": null,
+    "freguesia": "Ourique (021203)",
+    "area_total": "174,36 m²",
+    "area_coberta": "174,36 m²",
+    "area_descoberta": null,
+    "descricao_predial": "2192 (CRP Ourique)",
+    "doc_id": "17S4PRCjpee7no3DbFr0VoGxEAf6WhWjb",
+    "doc_data": "2025-03-05",
+    "ponto_at": [
+     -8.2834,
+     37.6345
+    ],
+    "nota": "origem U-845; autorização 9/2017; IPS 1bk3drUXsIdChwCLf0aJ17P6xvLG-X5ey"
+   }
+  ],
+  "geometria": [],
+  "gps": null,
+  "notas": "Inventário: localização não indicada. Os documentos situam-na em Ourique (Encalho / Vale da Nora). Duas descrições mistas («Small House» e «Big Villa»)."
+ },
+ {
+  "n": 20,
+  "nome": "AeC.2026/09 Maria D.",
+  "pasta_id": "1IDbxRVvCRVsFrc0QDOI0aEhlS3OsASRE",
+  "concelho": "Almodôvar",
+  "freguesia": "Santa Cruz",
+  "tipo": "misto (U + R)",
+  "nivel": "B",
+  "artigos": [
+   {
+    "tipo": "U",
+    "artigo": "74",
+    "seccao": null,
+    "freguesia": "Santa Cruz (020205)",
+    "area_total": "444 m²",
+    "area_coberta": "324 m²",
+    "area_descoberta": "120 m² (CP)",
+    "descricao_predial": "2944/20220520 (CRP Almodôvar; livro 914)",
+    "doc_id": "1wWtzVJOXLyA9_442A6OFrkzON-8vWmu9",
+    "doc_data": "2021-11-22",
+    "ponto_at": [
+     -7.9187,
+     37.4413
+    ],
+    "nota": "cópias 17P5pJQifvmBuNTbWEKlAX7uy8M1pkzTU e 1IZ5qNaSOWXb1UyQZclGSWCIqPckW7IWG; CP 1YsyFw2O5wqP1Ygt-X2fpHWbWM61ZBAlL (2022-05-23)"
+   },
+   {
+    "tipo": "R",
+    "artigo": "90",
+    "seccao": "J",
+    "freguesia": "Santa Cruz (020205)",
+    "area_total": "0,115000 ha",
+    "area_coberta": null,
+    "area_descoberta": null,
+    "descricao_predial": null,
+    "doc_id": "1F40ormD1DKUsY8iBYgDjjsPfVG0gstc4",
+    "doc_data": "2021-11-24",
+    "ponto_at": null,
+    "nota": "junção do prédio 53 e parte do 54"
+   }
+  ],
+  "geometria": [],
+  "gps": [
+   -7.9177,
+   37.4406
+  ],
+  "notas": "Ponto AT do U-74 e GPS da folha coincidem na aldeia de Santa Cruz. Pasta «Links propriedade com Geosig» só tem ligação de anúncio."
+ },
+ {
+  "n": 21,
+  "nome": "Tamar",
+  "pasta_id": "1GGP6f_7vp70Xbpsh3Hub6EQF_l-AxFxW",
+  "concelho": "Odemira",
+  "freguesia": "São Martinho das Amoreiras",
+  "tipo": "misto",
+  "nivel": "A",
+  "artigos": [
+   {
+    "tipo": "R",
+    "artigo": "35",
+    "seccao": "L",
+    "freguesia": "São Martinho das Amoreiras (021107)",
+    "area_total": "1,575000 ha (DGT 15778 m²)",
+    "area_coberta": null,
+    "area_descoberta": "15629 m² (CP)",
+    "descricao_predial": "643/19960226 (CRP Odemira)",
+    "doc_id": "1I4CKBIxIyoYcFtsSO8DA20WyChE1Rtbh",
+    "doc_data": "2018-05-02",
+    "ponto_at": null,
+    "nota": "\"Silvadinho\"; imagem; CP misto 15750 m² com U-665 (1u5CnrCjzc6NT3JpXBzHGCv8b8Bv2cBGc, 2018-03-05)"
+   },
+   {
+    "tipo": "U",
+    "artigo": "665",
+    "seccao": null,
+    "freguesia": "São Martinho das Amoreiras (021107)",
+    "area_total": null,
+    "area_coberta": "121 m² (CP)",
+    "area_descoberta": null,
+    "descricao_predial": "643/19960226",
+    "doc_id": "1u5CnrCjzc6NT3JpXBzHGCv8b8Bv2cBGc",
+    "doc_data": "2018-03-05",
+    "ponto_at": null,
+    "nota": "só na CP; sem caderneta"
+   },
+   {
+    "tipo": "R",
+    "artigo": "34",
+    "seccao": "L",
+    "freguesia": "São Martinho das Amoreiras (021107)",
+    "area_total": "1,900000 ha (DGT 19009 m²)",
+    "area_coberta": null,
+    "area_descoberta": null,
+    "descricao_predial": null,
+    "doc_id": "1VvnWxiCG0zJrSVesYaltLrSorAMbOewu",
+    "doc_data": "2018-04-24",
+    "ponto_at": null,
+    "nota": "\"Rosmenal\"; imagem"
+   },
+   {
+    "tipo": "R",
+    "artigo": "36",
+    "seccao": "L",
+    "freguesia": "São Martinho das Amoreiras (021107)",
+    "area_total": "9,750000 ha (DGT 99493 m²)",
+    "area_coberta": null,
+    "area_descoberta": null,
+    "descricao_predial": "880 (possível, guia CRP Ourique)",
+    "doc_id": "1a7ZRTQVmPKbWvrvJS8IEy2Q00ESejvqd",
+    "doc_data": "2018-05-02",
+    "ponto_at": null,
+    "nota": "\"Rosmenal\"; imagem"
+   },
+   {
+    "tipo": "R",
+    "artigo": "40",
+    "seccao": "R",
+    "freguesia": "São Martinho das Amoreiras (021107)",
+    "area_total": "2016 m² (DGT)",
+    "area_coberta": null,
+    "area_descoberta": null,
+    "descricao_predial": null,
+    "doc_id": "1ZvIskvyBqO5zMfzH-6iUgKgKSJQxJbS1",
+    "doc_data": "2026-05-18",
+    "ponto_at": null,
+    "nota": "só ficha DGT; caderneta em falta (nome da pasta)"
+   }
+  ],
+  "geometria": [
+   {
+    "file_id": "19HuXQK7cONdRTpL4fA3P03nw6cFed3L_",
+    "nome": "predios (1).zip",
+    "origem": "analise_tcd",
+    "centroide": [
+     -8.3486,
+     37.612
+    ],
+    "n_poligonos": 4,
+    "nota": "extracção cadastral DGT: R-40, L-34, L-35, L-36; 136296 m²"
+   }
+  ],
+  "gps": null,
+  "notas": "Cadernetas e CP só em imagem (WhatsApp). Fichas DGT (2026-05-18): L-34 1uvKeMPrhNunUY-ecBKAQ5xq53zayqkbL, L-35 1Zru-KFq2i-DOdsbpWybgHAt6hW4JBrl6, L-36 1nolhhQq1vMdxRkQqam3Jp-E-uJ7NYnmQ, R-40 1ZvIskvyBqO5zMfzH-6iUgKgKSJQxJbS1. Pasta «Cadernetas antigas» (12 imagens) não lida."
+ },
+ {
+  "n": 22,
+  "nome": "Vasco M.",
+  "pasta_id": "1BeEm7d7HOIRXkVmgCN-mK7k2xcewEsor",
+  "concelho": "Odemira",
+  "freguesia": "Vila Nova de Milfontes",
+  "tipo": "urbano (fracção)",
+  "nivel": "B",
+  "artigos": [
+   {
+    "tipo": "U",
+    "artigo": "4982 fracção B",
+    "seccao": null,
+    "freguesia": "Vila Nova de Milfontes (021111)",
+    "area_total": "272 m² (prédio); 197,9 m² terreno integrante",
+    "area_coberta": "74,1 m² (implantação do prédio)",
+    "area_descoberta": null,
+    "descricao_predial": "1404 (CRP Odemira)",
+    "doc_id": "15pdCANi6C1shrLPZAWE60dG2GN6QHllG",
+    "doc_data": "2025-06-02",
+    "ponto_at": [
+     -8.7703,
+     37.7404
+    ],
+    "nota": "Alagoachos lote 95B, Rua do Alecrim; propriedade horizontal com 2 fracções; cópia 1a7SwwXetDqO2uZQaDTWIV1Ls8inAU-Hp"
+   }
+  ],
+  "geometria": [],
+  "gps": null,
+  "notas": "Certidão matricial (1quNRYC-pDd3CHfrWD1KJA-lJIy5jYT9-, 2026-04-22) lista também U-3087 fracção F (021111), por confirmar se integra o negócio. Sem CP lida."
+ },
+ {
+  "n": 23,
+  "nome": "URP101 Custódio",
+  "pasta_id": "17zyGJU7FBEX-LnhsA-wXIada5carpuIV",
+  "concelho": "Odemira",
+  "freguesia": "São Teotónio",
+  "tipo": "misto",
+  "nivel": "A",
+  "artigos": [
+   {
+    "tipo": "R",
+    "artigo": "10",
+    "seccao": "NN",
+    "freguesia": "São Teotónio (021121)",
+    "area_total": "55,100000 ha",
+    "area_coberta": null,
+    "area_descoberta": "550837,83 m² (CP)",
+    "descricao_predial": "2344/19960624 (CRP Odemira; livro 9239)",
+    "doc_id": "1-2lqXZ3sq4k-nkdhMgd_BOmZXd91mWlX",
+    "doc_data": "sem data visível",
+    "ponto_at": null,
+    "nota": "\"Casa Branca da Feiteira\"; CP 1HEuTEYRZ2uRoR-1QMtpNRtyg7Neb74w- + 17L5V5kHsAzAQryKSDLfV0-ab7iwYVaDl (2020-03-13); caderneta antiga 1DEFf8a1lz0yJudF30P5dvCJRrcxhK_Ry"
+   },
+   {
+    "tipo": "U",
+    "artigo": "1121",
+    "seccao": null,
+    "freguesia": "São Teotónio (021121)",
+    "area_total": "162,17 m²",
+    "area_coberta": "162,17 m²",
+    "area_descoberta": null,
+    "descricao_predial": "2344/19960624 (na CP como U-1098)",
+    "doc_id": "17E9258xtJWfAyK6r0d30q6RW2AQHcOuR",
+    "doc_data": "2020-10-30",
+    "ponto_at": [
+     -8.6839,
+     37.4728
+    ],
+    "nota": "Adelfeira - Casa Branca; origem U-1098"
+   }
+  ],
+  "geometria": [
+   {
+    "file_id": "1tHLcWmtfCy-prNnoyre-9mK7dGPQj0Re",
+    "nome": "Custódio Polygon.kmz",
+    "origem": "analise_tcd",
+    "centroide": [
+     -8.6868,
+     37.4761
+    ],
+    "n_poligonos": 1,
+    "nota": "«Sem dados DGT, 0.2 Custódio / 0.1 Polígonos», desenho manual (2023)"
+   },
+   {
+    "file_id": "1E4kD-THrv_BvE-rH91YQX7kt-zG-PmfJ",
+    "nome": "URP101.kmz",
+    "origem": "analise_tcd",
+    "centroide": [
+     -8.6853,
+     37.4721
+    ],
+    "n_poligonos": 0,
+    "nota": "um ponto (2021)"
+   }
+  ],
+  "gps": null,
+  "notas": "Mesmo prédio da análise «Sem dados DGT, 0.2 Custódio» (19OSTMfonDPJcoiSXw5mYuYNn4NPbLBw_). Relatório técnico e PDM na pasta 0.9 não lidos."
+ },
+ {
+  "n": 24,
+  "nome": "Marco & Marta (acompanhamento de compra)",
+  "pasta_id": "1LK1785voZo7NaHSSNP3Q5kOdsoH61jz2",
+  "concelho": null,
+  "freguesia": null,
+  "tipo": "por confirmar",
+  "nivel": "E",
+  "artigos": [],
+  "geometria": [],
+  "gps": null,
+  "notas": "Só CPCV bilingue e checklist (não lidos, fora do âmbito de cadernetas/certidões)."
+ },
+ {
+  "n": 25,
+  "nome": "Barranco do Bebedouro",
+  "pasta_id": "1RvDEG0G1ZroCmB_p5L2ISYv3ET6mOW5p",
+  "concelho": null,
+  "freguesia": "Barranco do Bebedouro (topónimo; concelho desconhecido)",
+  "tipo": "por confirmar",
+  "nivel": "D",
+  "artigos": [],
+  "geometria": [],
+  "gps": null,
+  "notas": "Só minuta bilingue (Google Doc). Nome de lugar sem concelho."
+ },
+ {
+  "n": 26,
+  "nome": "Odemira, Terreno Urbano",
+  "pasta_id": "1ai98xOWKX1QHbGMKcyM7om60cKKO_29k",
+  "concelho": "Odemira",
+  "freguesia": "União das Freguesias de São Salvador e Santa Maria",
+  "tipo": "urbano (terreno para construção)",
+  "nivel": "B",
+  "artigos": [
+   {
+    "tipo": "U",
+    "artigo": "2599",
+    "seccao": null,
+    "freguesia": "UF São Salvador e Santa Maria (021120)",
+    "area_total": "864 m²",
+    "area_coberta": "146 m² (implantação prevista)",
+    "area_descoberta": null,
+    "descricao_predial": "1763 (CRP Odemira)",
+    "doc_id": "19VR2YJaehvGyhbuPnw3j8I7q52Z89Nhh",
+    "doc_data": "2026-01-09",
+    "ponto_at": [
+     -8.6919,
+     37.6018
+    ],
+    "nota": "Loteamento da Algoceira, lote 99; origem U-3759 Odemira (S. Salvador) extinta"
+   }
+  ],
+  "geometria": [],
+  "gps": null,
+  "notas": "Projecto REH em DWFX/PDF (não georreferenciado)."
+ },
+ {
+  "n": 27,
+  "nome": "Ivo, Vale Ferro",
+  "pasta_id": "1PHmi1fSOwB1f3AktyGeRJmfTDNaSRMd0",
+  "concelho": "Odemira",
+  "freguesia": "Relíquias",
+  "tipo": "misto",
+  "nivel": "B",
+  "artigos": [
+   {
+    "tipo": "R",
+    "artigo": "50",
+    "seccao": "H",
+    "freguesia": "Relíquias (021102)",
+    "area_total": "0,125000 ha",
+    "area_coberta": null,
+    "area_descoberta": "1211 m² (CP)",
+    "descricao_predial": "810/20050923 (CRP Odemira; livro 19965)",
+    "doc_id": "1NK5CbK1IZv_RgYEhBONPSIvGXdnpLVtr",
+    "doc_data": "2026-01-21",
+    "ponto_at": null,
+    "nota": "\"Vale Ferro\"; CP misto 1250 m² 1xkWUSBRBlYJkuVYsgzk3CpHVtQhck1af (2025-09-19)"
+   },
+   {
+    "tipo": "U",
+    "artigo": "1426",
+    "seccao": null,
+    "freguesia": "Relíquias (021102)",
+    "area_total": "39 m²",
+    "area_coberta": "39 m²",
+    "area_descoberta": null,
+    "descricao_predial": "810/20050923",
+    "doc_id": "1CftWZcISJHaATJ_MzTrn_FsCGdSQb58Q",
+    "doc_data": "2026-01-21",
+    "ponto_at": [
+     -8.5482,
+     37.6885
+    ]
+   }
+  ],
+  "geometria": [],
+  "gps": null,
+  "notas": "localização.pdf (1TzPjzAEb1rqyAQyPgykFa24b3fOfgw_1) não lido."
+ },
+ {
+  "n": 28,
+  "nome": "Keith (Vila Nova de Milfontes)",
+  "pasta_id": "11rVTwGNMMI78MyjsRQOb5QsCk5ojrOqV",
+  "concelho": "Odemira",
+  "freguesia": "Vila Nova de Milfontes",
+  "tipo": "urbano (fracção)",
+  "nivel": "B",
+  "artigos": [
+   {
+    "tipo": "U",
+    "artigo": "5053 fracção A",
+    "seccao": null,
+    "freguesia": "Vila Nova de Milfontes (021111)",
+    "area_total": "202 m² (prédio); 39,75 m² terreno integrante da fracção",
+    "area_coberta": "129,95 m² (implantação)",
+    "area_descoberta": "72,05 m² (CP)",
+    "descricao_predial": "1935/20000627 (CRP Odemira)",
+    "doc_id": "1PvXMIaTzNOSEeIiaw0wuOzfug9bdJaVx",
+    "doc_data": "2026-08-27",
+    "ponto_at": [
+     -8.778,
+     37.7266
+    ],
+    "nota": "Bairro do Montinho lote 4; origem U-4632; pág. 2 1stsUWmjMwZeXpfC4XIacpF2sOyBT-NoJ; CP 1ABG9STwawIa9MosoHi6c0X0o-4vpQHBF (2009-09-10)"
+   }
+  ],
+  "geometria": [],
+  "gps": null,
+  "notas": "Inventário indicava CAD U (2): são as duas páginas da mesma caderneta."
+ },
+ {
+  "n": 29,
+  "nome": "Ivo Colos",
+  "pasta_id": "1c-xcNKgFI_Z8zmoQOCl1ggdxAAMa6Uay",
+  "concelho": "Odemira",
+  "freguesia": "Colos",
+  "tipo": "por confirmar",
+  "nivel": "D",
+  "artigos": [],
+  "geometria": [],
+  "gps": null,
+  "notas": "Pasta vazia; só o nome de lugar."
+ },
+ {
+  "n": 30,
+  "nome": "Luuk, Jan, Annemiek, Marije",
+  "pasta_id": "1OEdO_b-n4Lte2xID43KWhplNFSQGYSf8",
+  "concelho": "Odemira",
+  "freguesia": "São Luís",
+  "tipo": "misto",
+  "nivel": "B",
+  "artigos": [
+   {
+    "tipo": "R",
+    "artigo": "36",
+    "seccao": "O",
+    "freguesia": "São Luís (021106)",
+    "area_total": "0,775000 ha (DGT 8033 m²)",
+    "area_coberta": null,
+    "area_descoberta": "7648 m² (IPS)",
+    "descricao_predial": "1999/20150909 (CRP Odemira; livro 10502)",
+    "doc_id": "18KVeViGQfkcuFhIyv392RwzjWLo_QjcA",
+    "doc_data": "2026-03-10",
+    "ponto_at": null,
+    "nota": "\"Cotifos\"; processo de cadastro 63/2016; ficha DGT 91128/2026 NIC AAA001473235 (1GD4k_ocmRgLoCrGvi8ee3bjiWAgHWmk7)"
+   },
+   {
+    "tipo": "U",
+    "artigo": "1170",
+    "seccao": null,
+    "freguesia": "São Luís (021106)",
+    "area_total": "102 m²",
+    "area_coberta": "102 m²",
+    "area_descoberta": null,
+    "descricao_predial": "1999/20150909",
+    "doc_id": "1albQi-IXDZJvrEjo3bP4G-28Jg5bMIRu",
+    "doc_data": "2026-03-10",
+    "ponto_at": [
+     -8.6562,
+     37.7022
+    ],
+    "nota": "\"Cotifo\"; informação predial simplificada 1rca48809KJrVv7YkAoKGF91Tn2eZqEJu (2026-04-25)"
+   }
+  ],
+  "geometria": [],
+  "gps": null,
+  "notas": "Inventário: localização não indicada; os documentos situam-na em São Luís (Odemira). A ficha DGT é um PDF com mapa, não um ficheiro de geometria."
+ },
+ {
+  "n": 31,
+  "nome": "Villa Tavira (Arquivo)",
+  "pasta_id": "1icBMcFY3SMqfh22R6ZDfR1NuGRRn0i9x",
+  "concelho": "Tavira (pelo nome)",
+  "freguesia": null,
+  "tipo": "por confirmar",
+  "nivel": "D",
+  "artigos": [],
+  "geometria": [],
+  "gps": null,
+  "notas": "Sem documentos legais."
+ },
+ {
+  "n": 32,
+  "nome": "Martim, Pinhal Novo (Arquivo)",
+  "pasta_id": "1dxvHV_sMZNm6DUzVXOFlYrx6n2TAMSRH",
+  "concelho": "Palmela",
+  "freguesia": "Pinhal Novo",
+  "tipo": "misto (U + R)",
+  "nivel": "B",
+  "artigos": [
+   {
+    "tipo": "R",
+    "artigo": "122",
+    "seccao": "L",
+    "freguesia": "Pinhal Novo (150803)",
+    "area_total": "0,505000 ha",
+    "area_coberta": null,
+    "area_descoberta": null,
+    "descricao_predial": null,
+    "doc_id": "1eBdSuadZ9n3wj1fvOCLrxn13G28Vgy6x",
+    "doc_data": "2021-03-03",
+    "ponto_at": null,
+    "nota": "\"Terrim\""
+   },
+   {
+    "tipo": "U",
+    "artigo": "6461",
+    "seccao": null,
+    "freguesia": "Pinhal Novo (150803)",
+    "area_total": "400 m²",
+    "area_coberta": "127,83 m² (implantação)",
+    "area_descoberta": null,
+    "descricao_predial": null,
+    "doc_id": "1zIgGHqQswZRWwpjak7_h1yb1A2X2QBp4",
+    "doc_data": "2021-03-03",
+    "ponto_at": [
+     -8.9343,
+     38.6188
+    ],
+    "nota": "Rua Sobral 16, Terrim; origem U-5970"
+   }
+  ],
+  "geometria": [],
+  "gps": null,
+  "notas": "Sem CP."
+ },
+ {
+  "n": 33,
+  "nome": "António G., Garvão (Arquivo)",
+  "pasta_id": "1fC2n0gQzaImUlB4qM9ETfPdA6M3yBHGB",
+  "concelho": "Ourique",
+  "freguesia": "União das Freguesias de Garvão e Santa Luzia",
+  "tipo": "rústico",
+  "nivel": "B",
+  "artigos": [
+   {
+    "tipo": "R",
+    "artigo": "79",
+    "seccao": "F",
+    "freguesia": "UF Garvão e Santa Luzia (021207)",
+    "area_total": "0,500000 ha",
+    "area_coberta": null,
+    "area_descoberta": null,
+    "descricao_predial": "5731 (CRP Ourique, livro B-17, manuscrita)",
+    "doc_id": "1lc5mqBGhDf-nRnhrIrY7xo7B4rY8gAv6",
+    "doc_data": "2024-01-03",
+    "ponto_at": null,
+    "nota": "\"Cerca da Sardoa\""
+   },
+   {
+    "tipo": "R",
+    "artigo": "59",
+    "seccao": "F",
+    "freguesia": "UF Garvão e Santa Luzia (021207)",
+    "area_total": "0,775000 ha",
+    "area_coberta": null,
+    "area_descoberta": null,
+    "descricao_predial": "6014 (CRP Ourique, livro B-18, manuscrita)",
+    "doc_id": "15na0SAFaVT5qfhkTiPQheKDZB2jZwZdM",
+    "doc_data": "2024-01-03",
+    "ponto_at": null,
+    "nota": "\"Cerca da Vinha\""
+   }
+  ],
+  "geometria": [],
+  "gps": null,
+  "notas": "Descrições em livro manuscritas, leitura parcial."
+ },
+ {
+  "n": 34,
+  "nome": "AeC.100 Fontainhas",
+  "pasta_id": "1j5Oqk7migYi47x4naKaoLrK2ZYhwihcw",
+  "concelho": null,
+  "freguesia": "Fontainhas (topónimo; concelho desconhecido)",
+  "tipo": "por confirmar",
+  "nivel": "D",
+  "artigos": [],
+  "geometria": [],
+  "gps": null,
+  "notas": "Só fotografias; topónimo «Fontainhas» sem concelho."
+ },
+ {
+  "n": 35,
+  "nome": "AeC.101 Manuel José",
+  "pasta_id": "1PPmaI1MMM5G3DRDLzluUr1bTAsv03U7c",
+  "concelho": null,
+  "freguesia": null,
+  "tipo": "por confirmar",
+  "nivel": "E",
+  "artigos": [],
+  "geometria": [],
+  "gps": null,
+  "notas": "Só fotografias e vídeo."
+ },
+ {
+  "n": 36,
+  "nome": "AeC.102 Panoias",
+  "pasta_id": "1QmuzrYVoPKkZD9mXcbKHXrwOZxBGzyXT",
+  "concelho": "Ourique",
+  "freguesia": "Panoias (pelo nome)",
+  "tipo": "por confirmar",
+  "nivel": "D",
+  "artigos": [],
+  "geometria": [],
+  "gps": null,
+  "notas": "Só fotografias."
+ },
+ {
+  "n": 37,
+  "nome": "AeC.103 Ute",
+  "pasta_id": "1giACeXpuRnyBHJkQ_z1SH2kxQYqrnipX",
+  "concelho": "Odemira",
+  "freguesia": "Colos",
+  "tipo": "urbano",
+  "nivel": "B",
+  "artigos": [
+   {
+    "tipo": "U",
+    "artigo": "1100-P",
+    "seccao": null,
+    "freguesia": "Colos (021118)",
+    "area_total": "137 m² (CP)",
+    "area_coberta": "117 m² (CP)",
+    "area_descoberta": "20 m² (CP)",
+    "descricao_predial": "433/19960314 (CRP Odemira; livro 4977)",
+    "doc_id": "1SPeSnEzLGsvZnKVLce8COSwmIRO2N1f2",
+    "doc_data": "2021-03-02",
+    "ponto_at": null,
+    "nota": "Rua da Praça, Colos; artigo provisório (P); só CP, sem caderneta"
+   }
+  ],
+  "geometria": [],
+  "gps": null,
+  "notas": "Subpasta 001-Caderneta vazia. Duplicado no arquivo URP (URP119 Ute), não percorrido."
+ },
+ {
+  "n": 38,
+  "nome": "AeC.109 Cabeça Gorda, Loulé",
+  "pasta_id": "1VFi6RyxIKtiPpvuz6czB83C2bigjZ-em",
+  "concelho": "Loulé",
+  "freguesia": "Cabeça Gorda (São Clemente?)",
+  "tipo": "por confirmar",
+  "nivel": "D",
+  "artigos": [],
+  "geometria": [],
+  "gps": null,
+  "notas": "Só fotografias e 1 doc; provavelmente o mesmo prédio de #2 (Otília)."
+ },
+ {
+  "n": 39,
+  "nome": "URP102 António",
+  "pasta_id": "16Q4usak_s2IYfa9G201H50E8ao8Y6AD9",
+  "concelho": "Odemira (deduzido da geometria)",
+  "freguesia": "São Teotónio (deduzido da geometria, por confirmar)",
+  "tipo": "por confirmar",
+  "nivel": "A",
+  "artigos": [],
+  "geometria": [
+   {
+    "file_id": "1JZ7aZhgEqE5Lge5ADDh8zNqpWefqpajV",
+    "nome": "URP102 - EXTREMAS.kmz",
+    "origem": "analise_tcd",
+    "centroide": [
+     -8.6733,
+     37.5114
+    ],
+    "n_poligonos": 1,
+    "nota": "polígono de extremas (2021, projecto URP da Terracrua Design)"
+   },
+   {
+    "file_id": "1ouVkJFuvNreYuys5RLrUizCjCvwMzMWD",
+    "nome": "URP102.kmz",
+    "origem": "analise_tcd",
+    "centroide": [
+     -8.6677,
+     37.5093
+    ],
+    "n_poligonos": 0,
+    "nota": "um ponto"
+   },
+   {
+    "file_id": "1LfeACc4CveVz-wf0cUNfEFiHBSEnRHr_",
+    "nome": "URP102.kmz (010 - Design)",
+    "origem": "analise_tcd",
+    "centroide": null,
+    "nota": "não processado"
+   }
+  ],
+  "gps": null,
+  "notas": "Subpastas 001-Caderneta e 002-Registo vazias. Freguesia deduzida pela posição, a confirmar no cadastro."
+ },
+ {
+  "n": 40,
+  "nome": "Análise 0.1 Estrafego 2024/009 (vendido)",
+  "pasta_id": "1WyfNopND7p-J4LS-oipahCukzUPPT_r8",
+  "concelho": "Odemira",
+  "freguesia": "São Martinho das Amoreiras",
+  "tipo": "rústico",
+  "nivel": "A",
+  "artigos": [
+   {
+    "tipo": "R",
+    "artigo": "44",
+    "seccao": "B",
+    "freguesia": "São Martinho das Amoreiras (021107)",
+    "area_total": "1,0875 ha (DGT 10367 m²)",
+    "area_coberta": null,
+    "area_descoberta": null,
+    "descricao_predial": null,
+    "doc_id": "1YpvqAFGLDJdx2bH8L6IK3oZLGIyurtIg",
+    "doc_data": "modelo antigo, sem data",
+    "ponto_at": null,
+    "nota": "\"Estrafego\"; digitalizado com texto parcial"
+   },
+   {
+    "tipo": "R",
+    "artigo": "45",
+    "seccao": "B",
+    "freguesia": "São Martinho das Amoreiras (021107)",
+    "area_total": "1,2750 ha (DGT 12582 m²)",
+    "area_coberta": null,
+    "area_descoberta": null,
+    "descricao_predial": "registos CRP Odemira anotados, número ilegível",
+    "doc_id": "1cVucTOusVYM4gETta6o6icji035onxoL",
+    "doc_data": "modelo antigo, sem data",
+    "ponto_at": null
+   },
+   {
+    "tipo": "R",
+    "artigo": "46",
+    "seccao": "B",
+    "freguesia": "São Martinho das Amoreiras (021107)",
+    "area_total": "1,8250 ha (DGT 18630 m²)",
+    "area_coberta": null,
+    "area_descoberta": null,
+    "descricao_predial": null,
+    "doc_id": "1406mnxNSkoZ1gz0nR9a2bWNDZ1rwUY7B",
+    "doc_data": "modelo antigo, sem data",
+    "ponto_at": null
+   }
+  ],
+  "geometria": [
+   {
+    "file_id": "194oBbDIMdJ707VEGKuPENuyuacpQH_GZ",
+    "nome": "predios.geojson",
+    "origem": "analise_tcd",
+    "centroide": [
+     -8.444,
+     37.6743
+    ],
+    "n_poligonos": 3,
+    "nota": "B-44, B-45, B-46"
+   },
+   {
+    "file_id": "1fD4QRJfMxjl85SqZpPNPvnWVEdh5wkok",
+    "nome": "predios.gpkg",
+    "origem": "analise_tcd",
+    "centroide": null
+   },
+   {
+    "file_id": "1j2JT3cE-RnV8tCVjKxwEQNmRG1yk6ZkQ",
+    "nome": "predios.dxf",
+    "origem": "analise_tcd",
+    "centroide": null
+   },
+   {
+    "file_id": "1TK2XjRGWvcObiwF8MzpD6HNye5cj7bNL",
+    "nome": "predios.shp (conjunto shapefile)",
+    "origem": "analise_tcd",
+    "centroide": null
+   }
+  ],
+  "gps": [
+   -8.4444,
+   37.6749
+  ],
+  "notas": "Relatório 1_Estrafego.pdf 1xBxi_r0HNC2DQJHCPyw1HurnMQKWGhoa. Folha: ref. 2024/9 «Monte Estrafego», Amoreiras-Gare."
+ },
+ {
+  "n": 41,
+  "nome": "Análise 0.9 «Aldeia do Cano» 2024/10 = Caldeirinha (vendido)",
+  "pasta_id": "1xB_OTxWa2JP5bYnXeBpGirsWQzmbIpuf",
+  "concelho": "Santiago do Cacém",
+  "freguesia": "Cercal",
+  "tipo": "misto (U + R)",
+  "nivel": "A",
+  "artigos": [
+   {
+    "tipo": "R",
+    "artigo": "9",
+    "seccao": "AA",
+    "freguesia": "Cercal (150903)",
+    "area_total": "1,000000 ha (DGT 9812 m²)",
+    "area_coberta": null,
+    "area_descoberta": null,
+    "descricao_predial": null,
+    "doc_id": "1GTEYET5s1VH55fRpQ_T2lxUSFh2zYLo8",
+    "doc_data": "2025-02-27",
+    "ponto_at": null,
+    "nota": "\"Caldeirinha\""
+   },
+   {
+    "tipo": "U",
+    "artigo": "955",
+    "seccao": null,
+    "freguesia": "Cercal (150903)",
+    "area_total": "196 m²",
+    "area_coberta": "196 m²",
+    "area_descoberta": null,
+    "descricao_predial": null,
+    "doc_id": "1uPiLy8zlGsqd8H46lG9HmFVulvCLYpYE",
+    "doc_data": "2025-02-27",
+    "ponto_at": [
+     -8.6207,
+     37.7579
+    ],
+    "nota": "Caldeirinha"
+   }
+  ],
+  "geometria": [
+   {
+    "file_id": "1Boxil1GZVZgq7F8SU8JC_MBiVFZsbI_d",
+    "nome": "predios.geojson",
+    "origem": "analise_tcd",
+    "centroide": [
+     -8.6206,
+     37.7578
+    ],
+    "n_poligonos": 1,
+    "nota": "R AA-9, 9812 m²"
+   },
+   {
+    "file_id": "17uTZMlztH2UgGDErmJuGD_Dmk04t-cPb",
+    "nome": "predios.gpkg",
+    "origem": "analise_tcd",
+    "centroide": null
+   },
+   {
+    "file_id": "1cg_c5NzrpgRP3ksvbLavGNb6q1kHprno",
+    "nome": "predios.dxf",
+    "origem": "analise_tcd",
+    "centroide": null
+   },
+   {
+    "file_id": "1I2reXYzo7Ffld4t2qUy6k3Z7K514nhDS",
+    "nome": "predios.shp (conjunto shapefile)",
+    "origem": "analise_tcd",
+    "centroide": null
+   }
+  ],
+  "gps": null,
+  "notas": "Relatório 9_AldeiadoCano.pdf 1J2QD4cZIz8GXDjYHleJzjU4-VHcHdkJu. Não é a Caldeira de Cima (#11), é o prédio vizinho na mesma secção AA."
+ },
+ {
+  "n": 42,
+  "nome": "Análise 0.10 Coito Grande I 2024/11 (vendido)",
+  "pasta_id": "13Voy4iK-znQYRvcPMSjew9ZkXlfLL2x2",
+  "concelho": "Odemira",
+  "freguesia": "Colos",
+  "tipo": "misto (U + R)",
+  "nivel": "A",
+  "artigos": [
+   {
+    "tipo": "R",
+    "artigo": "32",
+    "seccao": "J",
+    "freguesia": "Colos (021118)",
+    "area_total": "0,900000 ha (DGT 8919 m²)",
+    "area_coberta": null,
+    "area_descoberta": null,
+    "descricao_predial": null,
+    "doc_id": "1DMKxnFQkmhQomrQ7wQ3Tp-F9PkDkYKXx",
+    "doc_data": "2022-09-09",
+    "ponto_at": null,
+    "nota": "\"Coito Grande\"; reclamação cadastro geométrico 196/2019"
+   },
+   {
+    "tipo": "U",
+    "artigo": "1055",
+    "seccao": null,
+    "freguesia": "Colos (021118)",
+    "area_total": "100 m²",
+    "area_coberta": "100 m²",
+    "area_descoberta": null,
+    "descricao_predial": "00719 (CRP Odemira)",
+    "doc_id": "1H4GN4Vjpx7uTZt0Cuk-yIkVe1aDHZI_y",
+    "doc_data": "2022-05-09",
+    "ponto_at": [
+     -8.4686,
+     37.7411
+    ],
+    "nota": "origem U-1403 Colos (extinta)"
+   }
+  ],
+  "geometria": [
+   {
+    "file_id": "1EHnlkhewaW4upYAbMakn13x_4EsB6u5G",
+    "nome": "predios.geojson",
+    "origem": "analise_tcd",
+    "centroide": [
+     -8.4687,
+     37.7407
+    ],
+    "n_poligonos": 1,
+    "nota": "R J-32, 8919 m²"
+   },
+   {
+    "file_id": "1fCshPridBP5UgaP6KSFgNSm3FaqO3jw1",
+    "nome": "predios.gpkg",
+    "origem": "analise_tcd",
+    "centroide": null
+   },
+   {
+    "file_id": "1vaML5NKAX-bJp9Q7d9AiGwHqrLlEI2Zc",
+    "nome": "predios.dxf",
+    "origem": "analise_tcd",
+    "centroide": null
+   },
+   {
+    "file_id": "1C8ATzl79uOQVR3JGuButfLB995UxGPyG",
+    "nome": "predios.shp (conjunto shapefile)",
+    "origem": "analise_tcd",
+    "centroide": null
+   }
+  ],
+  "gps": [
+   -8.4684,
+   37.7412
+  ],
+  "notas": "Relatório 10_CoitoGrandeI.pdf 1BLr4m46nRwAVi3J8cVuvm9j_dHqKVM8l."
+ },
+ {
+  "n": 43,
+  "nome": "Quinta da Rocha, Alvor (IPR02.4)",
+  "pasta_id": "16-jTMtIK6nD_unsyfX0_W_mE6I-JHgJW",
+  "concelho": "Portimão",
+  "freguesia": "Alvor (pelo nome, por confirmar)",
+  "tipo": "misto (segundo a checklist; por confirmar)",
+  "nivel": "A",
+  "artigos": [],
+  "geometria": [
+   {
+    "file_id": "1s9ggSRdDgrh9CrCQIhaSWpodb3JRu-8D",
+    "nome": "PropertyBoundary_QUINTADAROCHA.kml",
+    "origem": "analise_tcd",
+    "centroide": [
+     -8.6084,
+     37.1382
+    ],
+    "n_poligonos": 8,
+    "nota": "em «TcD Basemap & Kml»; 8 anéis/polígonos"
+   },
+   {
+    "file_id": "1UYqQ7NHt4CCsqM9uiGTjmWB0glI526Vv",
+    "nome": "TCD_QUINTADAROCHA-20260603T085253Z-3-001.zip",
+    "origem": "analise_tcd",
+    "centroide": null,
+    "nota": "131 MB, não aberto"
+   },
+   {
+    "file_id": "1EnmPChiEmwsTVW3LcWlw5SORB7Dx0I2g",
+    "nome": "Ria de Alvor - Quinta da Rocha.zip",
+    "origem": "terceiros",
+    "centroide": null,
+    "nota": "10,7 GB, dossiê do vendedor, não aberto"
+   }
+  ],
+  "gps": null,
+  "notas": "Projecto de consultoria territorial, não de mediação. Não foram encontradas cadernetas nem CP por nome."
+ },
+ {
+  "n": 44,
+  "nome": "P01 Mata Mayor (Propriedades Eline)",
+  "pasta_id": "1NUw6zyfTAD_koL0GSyv5JdMAqnEeaUBM",
+  "concelho": "Alandroal",
+  "freguesia": "Terena (São Pedro)",
+  "tipo": "por confirmar",
+  "nivel": "D",
+  "artigos": [],
+  "geometria": [],
+  "gps": null,
+  "notas": "Pasta vazia. Localização só pelo nome/folha e pelo «Relatório provisório de localização» (1ZWjKifvaSu49n_pNkj41qDT6EAJpWrcHApOXhFU7Qco): coordenada de arranque (centro de Terena) do relatório provisório; ponto de trabalho 38.617, -7.4 (não é GPS do prédio)"
+ },
+ {
+  "n": 45,
+  "nome": "P02 Arrais / Arraiais do Tejo (Propriedades Eline)",
+  "pasta_id": "1yFqRrt2LCSP0IyRCrSP3EiZTxBz35cAS",
+  "concelho": "Vila Velha de Ródão",
+  "freguesia": "Perais",
+  "tipo": "por confirmar",
+  "nivel": "D",
+  "artigos": [],
+  "geometria": [],
+  "gps": null,
+  "notas": "Pasta vazia. Localização só pelo nome/folha e pelo «Relatório provisório de localização» (1ZWjKifvaSu49n_pNkj41qDT6EAJpWrcHApOXhFU7Qco): zona Perais / Barreira da Barca; ponto de trabalho 39.666, -7.575 (não é GPS do prédio)"
+ },
+ {
+  "n": 46,
+  "nome": "P03 Carapetal (Propriedades Eline)",
+  "pasta_id": "1XxdXoIz9HjSwkpA5afIDIi6oDWxaSFgE",
+  "concelho": "Idanha-a-Nova",
+  "freguesia": "Rosmaninhal",
+  "tipo": "por confirmar",
+  "nivel": "D",
+  "artigos": [],
+  "geometria": [],
+  "gps": null,
+  "notas": "Pasta vazia. Localização só pelo nome/folha e pelo «Relatório provisório de localização» (1ZWjKifvaSu49n_pNkj41qDT6EAJpWrcHApOXhFU7Qco): aldeia de Soalheiras; 39 artigos rústicos segundo anúncio; ponto de trabalho 39.702, -7.1761 (não é GPS do prédio)"
+ },
+ {
+  "n": 47,
+  "nome": "P04 Ordem dos Hospitalários (Propriedades Eline)",
+  "pasta_id": "18DLnCvXbxSXUG4u8IGhfKhZZtLJaYROC",
+  "concelho": "Crato",
+  "freguesia": "Monte da Pedra",
+  "tipo": "por confirmar",
+  "nivel": "D",
+  "artigos": [],
+  "geometria": [],
+  "gps": null,
+  "notas": "Pasta vazia. Localização só pelo nome/folha e pelo «Relatório provisório de localização» (1ZWjKifvaSu49n_pNkj41qDT6EAJpWrcHApOXhFU7Qco): aldeia de Monte da Pedra; ponto de trabalho 39.281, -7.893 (não é GPS do prédio)"
+ },
+ {
+  "n": 48,
+  "nome": "P05 Pés de São Pedro (Propriedades Eline)",
+  "pasta_id": "1yTcbthn-JGnXMtBFk9Q81EMjgkx1CtUP",
+  "concelho": "Almodôvar",
+  "freguesia": "São Barnabé e Santa Clara-a-Nova e Gomes Aires",
+  "tipo": "rústico (cadastro geométrico)",
+  "nivel": "A",
+  "artigos": [
+   {
+    "tipo": "R",
+    "artigo": "99",
+    "seccao": "G",
+    "freguesia": "São Barnabé (020206)",
+    "area_total": "740916 m² (DGT)",
+    "area_coberta": null,
+    "area_descoberta": null,
+    "descricao_predial": null,
+    "doc_id": "1KeWvPqleoiAy8yONPA94LaGIvsXef9Yo",
+    "doc_data": null,
+    "ponto_at": null,
+    "nota": "da geometria DGT, NIC AAA000748041; sem caderneta"
+   },
+   {
+    "tipo": "R",
+    "artigo": "2",
+    "seccao": "G",
+    "freguesia": "São Barnabé (020206)",
+    "area_total": "237984 m² (DGT)",
+    "area_coberta": null,
+    "area_descoberta": null,
+    "descricao_predial": null,
+    "doc_id": "1KeWvPqleoiAy8yONPA94LaGIvsXef9Yo",
+    "doc_data": null,
+    "ponto_at": null,
+    "nota": "da geometria DGT, NIC AAA000747948"
+   },
+   {
+    "tipo": "R",
+    "artigo": "81",
+    "seccao": "L",
+    "freguesia": "UF Santa Clara-a-Nova e Gomes Aires (020210)",
+    "area_total": "151841 m² (DGT)",
+    "area_coberta": null,
+    "area_descoberta": null,
+    "descricao_predial": null,
+    "doc_id": "1KeWvPqleoiAy8yONPA94LaGIvsXef9Yo",
+    "doc_data": null,
+    "ponto_at": null,
+    "nota": "da geometria DGT, NIC AAA000743560"
+   }
+  ],
+  "geometria": [
+   {
+    "file_id": "1KeWvPqleoiAy8yONPA94LaGIvsXef9Yo",
+    "nome": "predios.zip",
+    "origem": "analise_tcd",
+    "centroide": [
+     -8.19,
+     37.4233
+    ],
+    "n_poligonos": 3,
+    "nota": "extracção DGT; 1130741 m² (113 ha; anúncio 110,18 ha)"
+   },
+   {
+    "file_id": "1zeJuLbWOnyoR7UhJjJAzAFDsBjlj9fFb",
+    "nome": "predios.geojson",
+    "origem": "analise_tcd",
+    "centroide": null
+   },
+   {
+    "file_id": "1_1gCUGvMJCPHUUTfeu0SE3adobYCCppS",
+    "nome": "P05.gpkg",
+    "origem": "analise_tcd",
+    "centroide": null
+   },
+   {
+    "file_id": "1RNT38gL3zOIr0dhQzTXZHyH4lKzCHwgC",
+    "nome": "P05.kml",
+    "origem": "analise_tcd",
+    "centroide": null
+   },
+   {
+    "file_id": "1dJ97ukq4v8m5KHsE39DnVrk3zlKq3l2w",
+    "nome": "predios.dxf",
+    "origem": "analise_tcd",
+    "centroide": null
+   },
+   {
+    "file_id": "1_jOEYtWXpxkPf5G-YpXaZcMU5GAJVms6",
+    "nome": "predios.shp (conjunto shapefile)",
+    "origem": "analise_tcd",
+    "centroide": null
+   }
+  ],
+  "gps": null,
+  "notas": "Folha «Propriedades Eline»: Pés de São Pedro, São Barnabé, Almodôvar, 110 ha, agência Geosig. «Ficheiros Cadastrais» vazia."
+ },
+ {
+  "n": 49,
+  "nome": "P06 Espragosa / Espargosa (Propriedades Eline)",
+  "pasta_id": "1jiPKUd8aFBOEOlI9zn9XCBBpH6TRQSwS",
+  "concelho": "Mértola",
+  "freguesia": "UF São Miguel do Pinheiro, São Pedro de Sólis e São Sebastião dos Carros",
+  "tipo": "por confirmar",
+  "nivel": "D",
+  "artigos": [],
+  "geometria": [],
+  "gps": null,
+  "notas": "Pasta vazia. Localização só pelo nome/folha e pelo «Relatório provisório de localização» (1ZWjKifvaSu49n_pNkj41qDT6EAJpWrcHApOXhFU7Qco): CP 7750-607 indicado no relatório"
+ },
+ {
+  "n": 50,
+  "nome": "P07 Moura (Herdade do Gaio) (Propriedades Eline)",
+  "pasta_id": "1HSdnm8AV0L-QWOaJzfeK9go9hfoPD4X_",
+  "concelho": "Moura",
+  "freguesia": "Safara e Santo Aleixo da Restauração",
+  "tipo": "por confirmar",
+  "nivel": "D",
+  "artigos": [],
+  "geometria": [],
+  "gps": null,
+  "notas": "Pasta vazia. Localização só pelo nome/folha e pelo «Relatório provisório de localização» (1ZWjKifvaSu49n_pNkj41qDT6EAJpWrcHApOXhFU7Qco): georreferência de anúncio (Mitula) citada no relatório; ponto de trabalho 38.0747, -7.1114 (não é GPS do prédio)"
+ },
+ {
+  "n": 51,
+  "nome": "P08 Beja 253 ha (Propriedades Eline)",
+  "pasta_id": "1Mz3lSm9jq6b1HrjUYJrX0HGNHlhSHcud",
+  "concelho": "Beja (folha)",
+  "freguesia": null,
+  "tipo": "por confirmar",
+  "nivel": "D",
+  "artigos": [],
+  "geometria": [],
+  "gps": null,
+  "notas": "Pasta vazia. Localização só pelo nome/folha e pelo «Relatório provisório de localização» (1ZWjKifvaSu49n_pNkj41qDT6EAJpWrcHApOXhFU7Qco): não localizado no relatório"
+ },
+ {
+  "n": 52,
+  "nome": "P09 Guadiana (527 ha) (Propriedades Eline)",
+  "pasta_id": "1B2jmkwP5DohBwgGqkp6mdTwbeNMtuB1y",
+  "concelho": "Vidigueira",
+  "freguesia": "Pedrógão",
+  "tipo": "por confirmar",
+  "nivel": "D",
+  "artigos": [],
+  "geometria": [],
+  "gps": null,
+  "notas": "Pasta vazia. Localização só pelo nome/folha e pelo «Relatório provisório de localização» (1ZWjKifvaSu49n_pNkj41qDT6EAJpWrcHApOXhFU7Qco): Pedrógão / barragem; ponto de trabalho 38.12, -7.65 (não é GPS do prédio)"
+ },
+ {
+  "n": 53,
+  "nome": "P10 Santa Clara-a-Nova 491 ha (Propriedades Eline)",
+  "pasta_id": "11afK1YUUjFcrcDi9BlevkndBYCxHkf48",
+  "concelho": "Almodôvar",
+  "freguesia": "União das Freguesias de Santa Clara-a-Nova e Gomes Aires",
+  "tipo": "rústico (cadastro geométrico)",
+  "nivel": "A",
+  "artigos": [
+   {
+    "tipo": "R",
+    "artigo": "1",
+    "seccao": "S",
+    "freguesia": "UF Santa Clara-a-Nova e Gomes Aires (020210)",
+    "area_total": "4905166 m² (DGT)",
+    "area_coberta": null,
+    "area_descoberta": null,
+    "descricao_predial": null,
+    "doc_id": "1VOsUBQ4Otq0xbtTJ5bPtLw_zEn6VN1Bz",
+    "doc_data": null,
+    "ponto_at": null,
+    "nota": "da geometria DGT, NIC AAA000743906; sem caderneta"
+   }
+  ],
+  "geometria": [
+   {
+    "file_id": "1VOsUBQ4Otq0xbtTJ5bPtLw_zEn6VN1Bz",
+    "nome": "predios.zip",
+    "origem": "analise_tcd",
+    "centroide": [
+     -8.1167,
+     37.432
+    ],
+    "n_poligonos": 1,
+    "nota": "extracção DGT; 490,5 ha (anúncio 491 ha)"
+   },
+   {
+    "file_id": "1o6ookrYgFp4l3UaPP970rLT384lNH39g",
+    "nome": "predios.geojson",
+    "origem": "analise_tcd",
+    "centroide": null
+   },
+   {
+    "file_id": "1hnsb3rH3X9YW_mVMn4vtMwbpBc1hx0EU",
+    "nome": "predios.gpkg",
+    "origem": "analise_tcd",
+    "centroide": null
+   },
+   {
+    "file_id": "1QhzRtq6k8vnR04HnjPOXqTWj_bjpmwy9",
+    "nome": "P10.kml",
+    "origem": "analise_tcd",
+    "centroide": null
+   },
+   {
+    "file_id": "1mS4VQuiTxYn8pDXyT1TKJpzFol7iP2W2",
+    "nome": "predios.dxf",
+    "origem": "analise_tcd",
+    "centroide": null
+   },
+   {
+    "file_id": "1AWWHztLHIyBep4irP6leM0eCN_lkupq-",
+    "nome": "predios.shp (conjunto shapefile)",
+    "origem": "analise_tcd",
+    "centroide": null
+   }
+  ],
+  "gps": null,
+  "notas": "Folha: Santa Clara-a-Nova, Almodôvar, 491 ha, Encanto Real Estate. «Ficheiros Cadastrais» vazia."
+ }
+]

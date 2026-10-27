@@ -1,0 +1,140 @@
+--- worker/lidar.py	2026-10-17 15:17:45.086255448 +0100
++++ worker-1.0.18/lidar.py	2026-10-20 16:32:21.388394151 +0100
+@@ -156,28 +156,87 @@
+ _COOKIES = {}
+ 
+ 
+-def _directo(api, href, destino, renovar=False):
++def _directo(api, href, destino, renovar=False, timeout=(30, 1800)):
+     """Descarrega a folha directamente do CDD da DGT com a sessão do site (sem passar pelo site/Cloudflare).
+-    O site só entrega os cookies da sessão; a senha do CDD nunca sai do site."""
++    O site só entrega os cookies da sessão; a senha do CDD nunca sai do site.
++    Erros: SessaoCDD (401/403 ou página HTML de entrada), rede.ErroPassageiro (429, 5xx, rede) ou
++    rede.ErroDefinitivo (404, 410 e restantes 4xx)."""
+     import requests
++    import rede
+     if renovar or 'c' not in _COOKIES:
+         _COOKIES['c'] = api.post('cdd', {'renovar': 1 if renovar else 0}, timeout=120).get('cookies', [])
+     sess = requests.Session()
+     sess.headers['User-Agent'] = 'Mozilla/5.0 (X11; Linux x86_64) TerracruaDesign/1.0'
+     for c in _COOKIES['c']:
+         sess.cookies.set(c['name'], c['value'], domain=c.get('domain', '').lstrip('.') or None, path=c.get('path', '/'))
+-    with sess.get(href, stream=True, timeout=(30, 1800), allow_redirects=True) as r:
++    with sess.get(href, stream=True, timeout=timeout, allow_redirects=True) as r:
+         ct = r.headers.get('content-type', '')
+-        if r.status_code in (401, 403) or 'html' in ct:
++        if r.status_code in (401, 403) or (r.status_code < 400 and 'html' in ct):
+             _COOKIES.pop('c', None)
+             raise SessaoCDD('sessão do CDD recusada (HTTP %d, %s)' % (r.status_code, ct))
+-        r.raise_for_status()
++        rede.verificar_resposta(r, 'folha')
++        esperado = int(r.headers.get('content-length') or 0)
++        n = 0
+         with open(destino, 'wb') as f:
+             for b in r.iter_content(1 << 20):
+                 f.write(b)
++                n += len(b)
++        if esperado and n != esperado:
++            raise rede.ErroPassageiro('folha cortada a meio (%d de %d bytes)' % (n, esperado))
+     return destino
+ 
+ 
++def _descarregar_folha(api, href, base, dst, registo, cfg=None, dormir=time.sleep):
++    """Uma folha, com novas tentativas espaçadas (rede.tentar). A sessão do CDD é renovada no máximo 2 vezes."""
++    import rede
++    sessoes = {'n': 0}
++    tmp = dst + '.parte'
++
++    def fazer(k):
++        try:
++            _directo(api, href, tmp, renovar=sessoes['n'] > 0 and k > 0)
++            if not _valida(tmp):
++                raise rede.ErroPassageiro('folha inválida (o GDAL não a abre)')
++            os.replace(tmp, dst)
++            return dst
++        except SessaoCDD as e:
++            sessoes['n'] += 1
++            if sessoes['n'] > 2:
++                raise rede.ErroDefinitivo('O CDD da DGT recusou a sessão da conta da Terracrua Design %d vezes seguidas (%s). '
++                                          'Verificar a conta CDD no site (Ferramentas) antes de voltar a pôr a encomenda na fila.' % (sessoes['n'], e))
++            raise rede.ErroPassageiro(str(e))
++        except rede.ErroDefinitivo as e:
++            if e.codigo in (404, 410):
++                raise rede.ErroDefinitivo('A folha %s já não existe no CDD da DGT (HTTP %d). O catálogo pode ter mudado; '
++                                          'rever a encomenda à mão.' % (base, e.codigo), e.codigo)
++            raise
++        finally:
++            if os.path.exists(tmp):
++                try:
++                    os.remove(tmp)
++                except OSError:
++                    pass
++
++    return rede.tentar(fazer, 'folha %s' % base[:60], cfg, registo, dormir)
++
++
++def _pesquisar(api, bloco, col):
++    """Pesquisa STAC pelo site. O site já repete quando está ocupado; aqui só se traduz o erro final."""
++    import rede
++    try:
++        return api.post('lidar', {'bbox': bloco, 'colecoes': [col]}, timeout=200).get('itens', [])
++    except Exception as e:
++        cod = getattr(e, 'codigo', None)
++        if cod == 400:
++            raise SemCobertura('A área está fora da cobertura LiDAR do Centro de Dados da DGT (continente e Açores).')
++        if cod == 401:
++            raise rede.ErroDefinitivo('O site não conseguiu entrar no CDD da DGT com a conta da Terracrua Design (%s). '
++                                      'Verificar a conta CDD antes de voltar a pôr a encomenda na fila.' % e, 401)
++        if (cod is not None and rede.classificar_codigo(cod) == 'passageiro') or (cod is None and rede.classificar_excepcao(e) == 'passageiro'):
++            raise rede.DGTIndisponivel('A pesquisa no Centro de Dados da DGT falhou depois de várias tentativas (%s). '
++                                       'A DGT costuma voltar ao fim de algumas horas: volte a pôr a encomenda na fila mais tarde.' % e)
++        raise
++
+ 
+ def obter_mdt(api, g3763, pasta_trabalho, cache, registo=print, fator=1.0):
+     """Descarrega e prepara o MDT do buffer. Devolve dict com caminhos, resolução e notas."""
+@@ -195,15 +254,15 @@
+     for col in colecoes:
+         itens = []
+         for bl in _blocos(bb):
+-            r = api.post('lidar', {'bbox': bl, 'colecoes': [col]}, timeout=200)
+-            itens += r.get('itens', [])
++            itens += _pesquisar(api, bl, col)
+         escolhidas = _escolher(itens, b4326)
+         if escolhidas:
+             usada = col
+             break
+         registo('  sem folhas em %s' % col)
+     if not escolhidas:
+-        raise SemCobertura('Sem cobertura LiDAR do CDD para esta área.')
++        raise SemCobertura('Não há LiDAR no Centro de Dados da DGT para esta área (procurei em %s, %.0f ha com o buffer). '
++                           'A encomenda passa a erro; a equipa confirma à mão se há outra fonte.' % (', '.join(colecoes), area_buf_ha))
+     registo('  %s: %d folhas (buffer de %d m, %.0f ha, resolução %.1f m)' % (usada, len(escolhidas), d, area_buf_ha, res))
+     locais = []
+     for ni, (href, base) in enumerate(escolhidas, 1):
+@@ -213,24 +272,7 @@
+             os.utime(dst)
+             locais.append(dst)
+             continue
+-        for k in range(3):
+-            tmp = dst + '.parte'
+-            try:
+-                # Só directo da DGT. O caminho antigo pelo site prendia processos PHP do alojamento
+-                # (a Cloudflare corta aos 100 s, mas o PHP continuava) e chegou a deitar o site abaixo.
+-                _directo(api, href, tmp, renovar=k > 0)
+-                if not _valida(tmp):
+-                    raise IOError('folha inválida')
+-                os.replace(tmp, dst)
+-                locais.append(dst)
+-                break
+-            except Exception as e:
+-                registo('  folha %s: tentativa %d falhou (%s)' % (base, k + 1, e))
+-                if os.path.exists(tmp):
+-                    os.remove(tmp)
+-                time.sleep(10 * (k + 1))
+-        else:
+-            raise IOError('Não consegui descarregar a folha %s.' % base)
++        locais.append(_descarregar_folha(api, href, base, dst, registo, getattr(api, 'cfg', None)))
+     srs_folha = osr.SpatialReference(wkt=gdal.Open(locais[0]).GetProjection())
+     vrt = os.path.join(pasta_trabalho, '_mosaico.vrt')
+     gdal.BuildVRT(vrt, locais, resampleAlg='bilinear')

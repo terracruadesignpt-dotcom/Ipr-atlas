@@ -1,0 +1,63 @@
+{
+  "_nota": "Fontes de relevo para Espanha por ordem de preferência. Pastas no servidor de processamento. Verificado a 21/10/2026 (navegador): MDT50cm 3.ª cobertura em COG por folha 1:5000 (série MDT01 do CNIG, descarga só com reCAPTCHA: precisa de acordo do CNIG); WCS do IGN só tem Elevacion25830_5 e Elevacion4083_5 a 5 m.",
+  "buffer_frac": 0.2,
+  "buffer_min_m": 100.0,
+  "buffer_max_m": 2000.0,
+  "nodata_max_frac": 0.01,
+  "timeout_s": 90,
+  "tentativas": 3,
+  "licenca": "CC BY 4.0 (IGN/CNIG); fontes regionais segundo a sua licença",
+  "fontes": [
+    {
+      "id": "regional",
+      "tipo": "pasta",
+      "rotulo": "MDT LiDAR regional (ICGC, REDIAM, Gobierno Vasco, IDENA, GRAFCAN)",
+      "resolucao_m": 1.0,
+      "pasta": "/srv/lidar/es/regional",
+      "cobertura": "LiDAR regional",
+      "atribuicao": "Obra derivada do MDT LiDAR regional indicado no ficheiro de origem. Processamento: Terracrua Design.",
+      "nota": "Só entra com licença confirmada para venda de derivados."
+    },
+    {
+      "id": "pnoa3",
+      "tipo": "pasta",
+      "rotulo": "MDT50cm PNOA-LiDAR 3.ª cobertura (v1 provisório)",
+      "resolucao_m": 0.5,
+      "pasta": "/srv/lidar/es/mdt50cm",
+      "cobertura": "PNOA-LiDAR 3.ª cobertura (2022–2025), MDT50cm v1 a partir da classificação NPC01",
+      "densidade": "5 pts/m²",
+      "atribuicao": "Obra derivada de MDT50cm-cob3 2022-2025 CC-BY 4.0 scne.es. Processamento: Terracrua Design.",
+      "nota": "Folhas COG 1:5000 (MTN50 em 8×8), nome MDT50CM-ETRS89-H<fuso>-<hoja>-<f>-<c>-COB3-V1.tif. Versão provisória: dizê-lo no relatório.",
+      "regex_fuso": "-H(\\d{2})-"
+    },
+    {
+      "id": "mdt02",
+      "tipo": "pasta",
+      "rotulo": "MDT02 PNOA-LiDAR 2.ª cobertura (2 m)",
+      "resolucao_m": 2.0,
+      "pasta": "/srv/lidar/es/mdt02",
+      "regex_fuso": "HU(\\d{2})",
+      "cobertura": "PNOA-LiDAR 2.ª cobertura (2015–2021)",
+      "densidade": "0,5 a 2 pts/m² conforme a região",
+      "atribuicao": "Obra derivada de MDT02 PNOA-LiDAR 2.ª cobertura CC-BY 4.0 scne.es. Processamento: Terracrua Design.",
+      "nota": "Folhas de 2×2 km do Centro de Descargas do CNIG (ASC, fuso no nome)."
+    },
+    {
+      "id": "mdt05_wcs",
+      "tipo": "wcs",
+      "rotulo": "MDT05 IGN (5 m), só envolvente",
+      "resolucao_m": 5.0,
+      "base_permitida": false,
+      "url": "https://servicios.idee.es/wcs-inspire/mdt",
+      "coverage": {
+        "25830": "Elevacion25830_5",
+        "4083": "Elevacion4083_5"
+      },
+      "max_px": 4000,
+      "cobertura": "MDT05 PNOA-LiDAR",
+      "atribuicao": "Obra derivada de MDT05 CC-BY 4.0 scne.es.",
+      "nota": "Bacias e ficha do terreno. Nunca Base.",
+      "coverage_omissao": "25830"
+    }
+  ]
+}

@@ -1,0 +1,109 @@
+--- worker/tcd_worker.py	2026-10-17 16:39:53.396353555 +0100
++++ worker-1.0.18/tcd_worker.py	2026-10-20 16:32:21.389552168 +0100
+@@ -69,6 +69,7 @@
+     def __init__(self, cfg):
+         import requests
+         self.r = requests.Session()
++        self.cfg = cfg
+         self.base = cfg.get('site', 'https://terracruadesign.pt').rstrip('/') + '/wp-json/tcd/v1/worker/'
+         self.r.headers.update({'User-Agent': 'IPR-Atlas-worker/%s' % VERSAO, 'X-TCD-Versao': VERSAO})
+         if cfg.get('token'):
+@@ -80,7 +81,9 @@
+                 msg = resp.json().get('message')
+             except Exception:
+                 msg = resp.text[:200]
+-            raise ErroSite(resp.status_code, 'HTTP %d em %s: %s' % (resp.status_code, resp.url.split('?')[0], msg))
++            e = ErroSite(resp.status_code, 'HTTP %d em %s: %s' % (resp.status_code, resp.url.split('?')[0], msg))
++            e.retry_after = resp.headers.get('Retry-After')
++            raise e
+         return resp.json()
+ 
+     # Esperas entre tentativas quando o site está em baixo ou sobrecarregado (5xx, 429, rede): cerca de 6 minutos no total.
+@@ -99,8 +102,15 @@
+                 ult = e
+             if espera is None:
+                 break
+-            log.warning('Site indisponível (%s); nova tentativa em %d s.', ult, espera)
+-            time.sleep(espera)
++            # 1.0.18: variação aleatória (para vários workers não baterem ao mesmo tempo) e Retry-After do site.
++            import random
++            import rede
++            s = espera * (0.75 + 0.5 * random.random())
++            ra = rede.retry_after(getattr(ult, 'retry_after', None))
++            if ra is not None:
++                s = max(s, min(300.0, ra))
++            log.warning('Site indisponível (tentativa %d de %d: %s); nova tentativa em %.0f s.', k + 1, len(self.ESPERAS) + 1, ult, s)
++            time.sleep(s)
+         raise ult
+ 
+     def post(self, rota, dados, timeout=60):
+@@ -190,10 +200,19 @@
+ 
+ # ---------------------------------------------------------------- actualização
+ 
++def _versao_tuplo(v):
++    import re
++    return tuple(int(x) for x in re.findall(r'\d+', str(v))[:4]) or (0,)
++
++
+ def actualizar(s, versao_site):
+     """Descarrega o pacote do site e instala-o em /opt/tcd-worker/versoes/<v>; o systemd reinicia."""
+     if not versao_site or versao_site == VERSAO:
+         return False
++    if _versao_tuplo(versao_site) < _versao_tuplo(VERSAO):
++        # 1.0.18: nunca descer de versão (uma instalação manual mais nova não é desfeita pelo pacote antigo do site).
++        log.info('O site tem a versão %s, mais antiga do que esta (%s): ignorar.', versao_site, VERSAO)
++        return False
+     raiz = os.path.dirname(os.path.dirname(AQUI)) if os.path.basename(os.path.dirname(AQUI)) == 'versoes' else None
+     if not raiz:
+         log.info('Versão %s no site (aqui %s), mas esta instalação não é gerida: ignorar.', versao_site, VERSAO)
+@@ -515,6 +534,7 @@
+ # trabalha com resolução 1,5 vezes mais grosseira (e 2,25 na terceira).
+ MARCADOR = os.path.join(DADOS, 'em_curso.json')
+ FALHAS = os.path.join(DADOS, 'falhas.json')
++MAX_QUEDAS = int(os.environ.get('TCD_MAX_QUEDAS', '3'))
+ 
+ 
+ def _marcador_gravar(enc_id, passo):
+@@ -565,6 +585,18 @@
+     n = int(falhas.get(str(m['id']), 0)) + 1
+     falhas[str(m['id'])] = n
+     _falhas_gravar(falhas)
++    if n > MAX_QUEDAS:
++        # 1.0.18: sem ciclo infinito. Ao fim de MAX_QUEDAS paragens seguidas, a encomenda passa a erro.
++        nota = ('O processamento parou de repente %d vezes seguidas (último passo: "%s"). A encomenda passa a erro para '
++                'não ficar em ciclo; a equipa revê à mão (terreno grande demais para a memória do servidor?).') % (n, m.get('passo', '?'))
++        log.warning('[#%s] %s', m['id'], nota)
++        try:
++            Site(cfg).post('estado', {'id': int(m['id']), 'estado': 'erro', 'nota': nota}, timeout=60)
++            falhas.pop(str(m['id']), None)
++            _falhas_gravar(falhas)
++        except Exception as e:
++            log.warning('não consegui avisar o site: %s', e)
++        return
+     livre = ''
+     try:
+         with open('/proc/meminfo') as f:
+@@ -580,6 +612,13 @@
+         log.warning('não consegui avisar o site: %s', e)
+ 
+ 
++def _nota_erro(e):
++    """Nota curta e legível para a encomenda que passou a erro."""
++    nomes = {'SemCobertura': 'Sem dados LiDAR', 'DGTIndisponivel': 'DGT indisponível', 'ErroDefinitivo': 'Erro definitivo',
++             'ErroPassageiro': 'Falha de rede', 'ErroSite': 'Erro do site'}
++    return '%s: %s' % (nomes.get(type(e).__name__, type(e).__name__), str(e)[:400])
++
++
+ def uma(cfg):
+     s = Site(cfg)
+     j = s.post('proxima', {'worker': cfg.get('worker'), 'versao': VERSAO}, timeout=60)
+@@ -624,7 +663,7 @@
+         _marcador_apagar()
+         log.error('encomenda #%s falhou:\n%s', j['id'], traceback.format_exc())
+         try:
+-            Site(cfg).post('estado', {'id': j['id'], 'estado': 'erro', 'nota': '%s: %s' % (type(e).__name__, str(e)[:400])}, timeout=60)
++            Site(cfg).post('estado', {'id': j['id'], 'estado': 'erro', 'nota': _nota_erro(e)}, timeout=60)
+         except Exception:
+             pass
+         if est is not None and hasattr(est, 'parar'):

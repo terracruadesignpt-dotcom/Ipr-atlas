@@ -1,0 +1,50 @@
+--- base.php	2026-10-21 00:51:05.137928184 +0000
++++ m90177.php	2026-10-21 00:52:53.895820223 +0000
+@@ -2,7 +2,7 @@
+ // Módulo 90177: acertos de texto, SEO e apresentação da auditoria completa de 20/10/2026 (COM-02, COM-05, COM-06, COM-12,
+ // SEO-02, SEO-03, COM-11, VIS-01, VIS-03, VIS-08, VIS-12). Pedido do Nuno: «corrige tudo».
+ // Os textos das páginas [tcd_pg] e [tcd_inicio] vivem no código (m90012, m14620) e na cache do m90013: este módulo não os
+-// edita; corrige a saída do shortcode (do_shortcode_tag), que corre em cada página servida, com ou sem cache.
++// edita; corrige a saída do shortcode (do_shortcode_tag) e, desde a v2, também a que vem da cache (pre_do_shortcode_tag).
+ // 1. Frases trocadas (lista $tcd_aud_trocas): escala de experiência na Equipa, frases de efeito, «+ transportes».
+ // 2. «infraestrutura» passa a «infra-estrutura» só no texto visível (nunca em endereços, nomes de ficheiro ou atributos).
+ // 3. Páginas em inglês com lang="en"; /loja/ fora do mapa do site; descrição da página Apoio a associações.
+@@ -34,21 +34,34 @@
+ function tcd_aud_ortografia( $html ) {
+ 	if ( false === stripos( $html, 'nfraestrutura' ) ) { return $html; }
+ 	$partes = preg_split( '#(<(?:style|script)\b.*?</(?:style|script)>)#is', $html, -1, PREG_SPLIT_DELIM_CAPTURE );
++	if ( ! is_array( $partes ) ) { return $html; } // v2: preg_split falhado não pode dar erro fatal
+ 	foreach ( $partes as $i => $p ) {
+ 		if ( 1 === $i % 2 ) { continue; }
+-		$partes[ $i ] = preg_replace_callback( '/>([^<]+)</', function ( $m ) {
+-			return '>' . preg_replace( '/([Ii])nfraestrutura/u', '$1nfra-estrutura', $m[1] ) . '<';
++		$q = preg_replace_callback( '/>([^<]+)</', function ( $m ) {
++			$s = preg_replace( '/([Ii])nfraestrutura/', '$1nfra-estrutura', $m[1] ); // v2: sem /u (padrão só ASCII); UTF-8 inválido fica intacto
++			return '>' . ( null === $s ? $m[1] : $s ) . '<';
+ 		}, $p );
++		$partes[ $i ] = null === $q ? $p : $q;
+ 	}
+ 	return implode( '', $partes );
+ }
+ 
+-add_filter( 'do_shortcode_tag', function ( $out, $tag ) {
+-	if ( ! tcd_aud_on() || ! in_array( $tag, array( 'tcd_pg', 'tcd_inicio' ), true ) || ! is_string( $out ) ) { return $out; }
++function tcd_aud_corrigir( $out ) {
+ 	$t = tcd_aud_trocas();
+ 	$out = str_replace( array_keys( $t ), array_values( $t ), $out );
+ 	return tcd_aud_ortografia( $out );
++}
++add_filter( 'do_shortcode_tag', function ( $out, $tag ) {
++	if ( ! tcd_aud_on() || ! in_array( $tag, array( 'tcd_pg', 'tcd_inicio' ), true ) || ! is_string( $out ) ) { return $out; }
++	return tcd_aud_corrigir( $out );
+ }, 20, 2 );
++// v2 (21/10/2026): o m90013 serve [tcd_pg] a visitantes sem sessão a partir da cache, em pre_do_shortcode_tag (10). Quando
++// esse filtro devolve texto, o WordPress salta o do_shortcode_tag e as trocas acima não chegavam aos visitantes (a cache
++// é gravada na prioridade 10, antes delas). Aqui corrige-se o texto vindo da cache. As trocas são idempotentes.
++add_filter( 'pre_do_shortcode_tag', function ( $r, $tag ) {
++	if ( ! tcd_aud_on() || ! is_string( $r ) || '' === $r || ! in_array( $tag, array( 'tcd_pg', 'tcd_inicio' ), true ) ) { return $r; }
++	return tcd_aud_corrigir( $r );
++}, 99, 2 );
+ 
+ add_filter( 'the_content', function ( $c ) {
+ 	if ( ! tcd_aud_on() || is_admin() || ! is_string( $c ) ) { return $c; }
