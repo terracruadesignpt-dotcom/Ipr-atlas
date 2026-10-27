@@ -1,5 +1,5 @@
-/* IPR Atlas · Simulador de Fogo (painel «Simular fogo»). Terracrua Design. Preparado a 27/10/2026, NÃO PUBLICADO:
-   não entra no atlas.json nem no site sem o «sim» do Nuno, e só depois de o motor responder.
+/* IPR Atlas · Simulador de Fogo (painel «Simular fogo»). Terracrua Design. «Sim» do Nuno a 27/10/2026.
+   O botão só aparece com sessão iniciada e quando tcd/v1/fogo/aviso responde (motor ligado e chave no site).
    Decisões do Nuno, 27/10/2026: quatro funções (Cenário no tempo, Antes e depois, Muitas ignições, Fogo e primeira chuva),
    clientes com Base entregue, painel no tema «Fogo» do T62 (ajustes.js). Não mexe em nenhum ficheiro: liga-se pelo DOM
    (#ipr-t62, tema data-t62="fogo") e pelo que está em window (__ipe.mapa, __ipe.estado, tcdNonce, IPR_LINGUA).
@@ -458,8 +458,18 @@
   document.addEventListener("keydown", function (e) { if (e.key === "Escape" && S.des) pararDesenho(false); });
 
   // ───────────── botão nas ferramentas do tema «Fogo» do T62 (ajustes.js) ─────────────
+  // O botão só aparece a quem tem sessão e quando o site confirma que o simulador está ligado (motor e chave).
+  var DISP = null;
+  function disponivel() {
+    if (DISP !== null || !W.tcdNonce) return;
+    DISP = "a ver";
+    api("fogo/aviso").then(function (a) { S.avisoTx = a; S.aviso = !!a.aceite; DISP = true; botao(); })
+      .catch(function (e) { DISP = e.estado === 503 ? false : null; if (DISP === null) setTimeout(function () { DISP = null; }, 60000); });
+  }
   function botao() {
     var w = document.getElementById("ipr-t62"); if (!w) return;
+    disponivel();
+    if (DISP !== true) return;
     var ligado = w.querySelector('[data-t62="fogo"][aria-pressed="true"]');
     var sec = ligado && w.querySelector(".ipr-t62-c:not(.ipr-ag-c) .ipr-t62-f");
     if (!sec) return;
