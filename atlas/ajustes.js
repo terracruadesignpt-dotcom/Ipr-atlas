@@ -4756,12 +4756,13 @@
   // §76 PDM do país todo (Nuno, 27/10/2026, 10h20). O servidor (m90387) lê o catálogo do SNIG e as camadas de cada PDM e
   //     publica em /wp-json/tcd/v1/pdm/lista os municípios com planta de condicionantes pronta; o proxy (m90379) serve
   //     pdm_<DICO>. Quando o centro do mapa cai num município ainda não registado, a camada entra no catálogo nessa altura.
-  var PDM76 = null, PDM76_P = null;
+  var PDM76 = null, PDM76_P = null, PDM76_T = 0;
   function pdm76(k, nome, feito) {
     if (!k || PDM_IDS[k]) return feito();
-    if (!PDM76_P) PDM76_P = fetch("/wp-json/tcd/v1/pdm/lista").then(function (r) { return r.ok ? r.json() : {}; }).then(function (j) { PDM76 = {}; (j.pdm || []).forEach(function (p) { PDM76[norm64(p.n)] = p; }); }).catch(function () { PDM76 = {}; });
+    if (!PDM76_P) PDM76_T = Date.now(), PDM76_P = fetch("/wp-json/tcd/v1/pdm/lista").then(function (r) { return r.ok ? r.json() : {}; }).then(function (j) { PDM76 = {}; (j.pdm || []).forEach(function (p) { PDM76[norm64(p.n)] = p; }); }).catch(function () { PDM76 = {}; });
     PDM76_P.then(function () {
       var p = PDM76 && PDM76[k], V = window.IPRViz;
+      if (!p && Date.now() - (PDM76_T || 0) > 6e5) PDM76_P = null; // 27/10: a lista enche ao longo do dia; volta a pedir passados 10 min
       if (p && V && typeof V.juntar === "function") {
         var id = "pdm_" + p.d;
         V.juntar({ id: id, g: "cond", sub: "PDM · planta de condicionantes (imagem)", n: "Planta de condicionantes · " + (nome || p.n), t: "wmsp", src: id, lic: "v", op: .7, cor: "#b07aa1", minz: 10,
@@ -5752,4 +5753,19 @@
   }
   window.addEventListener("resize", function () { try { posicoes(); } catch (e) {} try { formigaSitio(); } catch (e) {} });
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", correr); else correr();
+})();
+
+/* §81 Painel da Oficina (m90384, 27/10/2026). O perfil escolhido em «Personalizar» passa a ser o perfil de trabalho do Atlas
+   (ipr_perfil, lido pelo agua.js e pelo arrumar.js). Só se grava quando a escolha do painel muda, para não desfazer o que a
+   pessoa escolher depois dentro do Atlas. O ecrã inteiro do painel liga o modo mapa no arrumar.js. Falha em silêncio. */
+(function () {
+  try {
+    var P = window.IPR_PERFIL && window.IPR_PERFIL.painel; if (!P || !P.perfil || !/^[a-z0-9_-]{1,30}$/.test(P.perfil)) return;
+    if (/[?&]perfil_atlas=/.test(location.search)) return; // o endereço manda
+    var sig = P.perfil + "|" + (P.tema || "") + "|" + (P.ecra ? 1 : 0);
+    if (localStorage.getItem("ipr_painel_sig") === sig) return;
+    localStorage.setItem("ipr_painel_sig", sig); localStorage.setItem("ipr_perfil", P.perfil);
+    if (!localStorage.getItem("ipr_triagem_v1")) localStorage.setItem("ipr_triagem_v1", JSON.stringify({ q: null, p: 0, t: Date.now(), m79: 1 })); // com perfil, a triagem não abre sozinha
+    try { sessionStorage.removeItem("ipr_perfil_s_" + P.perfil); sessionStorage.removeItem("ipr_perfil_sess"); } catch (e) {}
+  } catch (e) {}
 })();

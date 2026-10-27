@@ -66,6 +66,7 @@
     if (!e || (e.leg && e.leg.length) || e.srup || e.pdm) return false;
     var g = e.g || e.grupo; if (g === "fundo" || g === "ref" || g === "base") return false;
     if (!/^https:\/\//i.test(e.url || "")) return false;
+    if (/sniambgeoogc\.apambiente\.pt/.test(e.url)) return false; // 27/10: as legendas da APA são do §A3 (agua.js); não pedir duas vezes
     if (e.t === "wms") return !!e.layer && e.layer !== "*";
     return e.t === "ags" || e.t === "img";
   }
@@ -245,7 +246,7 @@
   });
   document.addEventListener("ipr:lingua", function () { estado78(); if (MM) modoMapa(true); });
   cada(1500, botao78); setTimeout(function () { try { botao78(); } catch (e) {} }, 600);
-  if (/[?&]ecra=1\b/.test(location.search)) (function esperar(n) { if (raiz() && mapa()) modoMapa(true); else if (n < 40) setTimeout(function () { esperar(n + 1); }, 300); })(0);
+  if (/[?&]ecra=1\b/.test(location.search) || (W.IPR_PERFIL && W.IPR_PERFIL.painel && W.IPR_PERFIL.painel.ecra)) (function esperar(n) { if (raiz() && mapa()) modoMapa(true); else if (n < 40) setTimeout(function () { esperar(n + 1); }, 300); })(0);
 
   // ───────────────────────── §80 Perfis iniciais por função ─────────────────────────
   var IPR_PERFIS = W.IPR_PERFIS = W.IPR_PERFIS || {};
