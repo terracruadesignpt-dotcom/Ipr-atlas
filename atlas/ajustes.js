@@ -58,6 +58,26 @@
         return f.apply(this, arguments);
       };
     });
+    // «Cannot read properties of undefined (reading 'bind')» em cada fotograma (reporte 16262 e registo de 26/10): quando uma
+    // fonte raster é recarregada (setTiles no fundo 3D, refreshTiles, mudança de dados), o MapLibre 5.24 passa os mosaicos que
+    // tinham falhado a «expired»; nesse estado conta como tendo dados e o pintor tenta desenhar um mosaico sem textura.
+    // Correcção: um mosaico raster sem textura que volta a ser pedido fica «loading» (não se desenha) até chegar a imagem.
+    function corrigirRaster(src) {
+      var Q = src && src.type === "raster" && Object.getPrototypeOf(src);
+      if (!Q || Q.__iprTex || typeof Q.loadTile !== "function") return; Q.__iprTex = 1;
+      var lt = Q.loadTile;
+      Q.loadTile = function (tile) {
+        if (tile && !tile.texture && (tile.state === "expired" || tile.state === "reloading")) tile.state = "loading";
+        return lt.apply(this, arguments);
+      };
+    }
+    var addS = P.addSource;
+    if (typeof addS === "function") P.addSource = function (id) { var r = addS.apply(this, arguments); try { corrigirRaster(this.getSource(id)); } catch (e) {} return r; };
+    (function existentes(n) { // fontes que já existiam antes deste ficheiro carregar
+      var M = window.__ipe && window.__ipe.mapa;
+      if (M && M.style && M.style.tileManagers) { try { Object.keys(M.style.tileManagers).forEach(function (k) { corrigirRaster(M.getSource(k)); }); } catch (e) {} }
+      if (n < 20) setTimeout(function () { existentes(n + 1); }, 1500);
+    })(0);
     // Movimentos e redimensionamentos num mapa removido também saem sem fazer nada (o pintor já não existe).
     ["resize", "easeTo", "flyTo", "jumpTo", "fitBounds", "setBearing", "setPitch", "setZoom", "setCenter", "triggerRepaint"].forEach(function (k) {
       var f = P[k]; if (typeof f !== "function") return;
