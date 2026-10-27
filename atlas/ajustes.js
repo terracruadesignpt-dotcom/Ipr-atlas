@@ -5799,6 +5799,13 @@
       "#ipe:not(.claro) .ipe-b--ac,#ipe:not(.claro) .ipe-b.on{color:#151a10!important}";
     (document.head || document.documentElement).appendChild(st);
   })();
+  // g) Nuno, 27/10, 18h55: no telemóvel o Atlas abre com o mapa à vista (a gaveta das camadas só abre no botão Camadas).
+  (function () {
+    if (window.innerWidth > 900) return;
+    var mexeu = false; document.addEventListener("pointerdown", function (e) { var t = e.target && e.target.closest ? e.target.closest('#ipe-esq,[data-tool="lado"],#ipe-bq,button,a') : null; if (t && (t.id === "ipe-esq" || t.closest("#ipe-esq") || t.getAttribute("data-tool") === "lado" || t.id === "ipe-bq" || /camadas|layers/i.test(t.textContent || "") || /camadas|layers/i.test(t.getAttribute("aria-label") || ""))) mexeu = true; }, true);
+    function fechar() { if (mexeu) return; var M = document.getElementById("ipe"); if (M && M.classList.contains("esq-aberto")) { M.classList.remove("esq-aberto"); var t = M.querySelector('[data-tool="lado"]'); if (t) t.setAttribute("aria-pressed", "false"); try { var m = mapa(); if (m) setTimeout(function () { m.resize(); }, 60); } catch (e) {} } }
+    [600, 1500, 3000, 5000, 8000].forEach(function (ms) { setTimeout(fechar, ms); });
+  })();
   function cap73() { var W = window.innerWidth; return W < 1100 ? 1.1 : W < 1400 ? 1.2 : W < 1900 ? 1.4 : W < 2400 ? 1.65 : 2; }
   function limitar73() {
     var c = cap73(), todos = [0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.2, 1.3, 1.4, 1.5, 1.65, 1.8, 2];
