@@ -237,6 +237,7 @@
   // ───────────── resultados ─────────────
   function resultados() {
     var r = S.res, s = r.resumo || {}, h = '<span class="as-h">' + esc(t("resultados")) + "</span>";
+    if (s.aviso_rio) h += '<p class="faixa">' + esc(s.aviso_rio) + "</p>";
     if (s.aviso_montante) h += '<p class="faixa">' + esc(t("montSem")) + "</p>";
     else if (s.montante) {
       var vm = 0, tot = 0;
