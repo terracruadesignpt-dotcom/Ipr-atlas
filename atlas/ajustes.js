@@ -5003,6 +5003,99 @@
   }
   setInterval(function () { if (!document.hidden) try { nav73(); } catch (e) {} }, 2000);
   setTimeout(function () { try { nav73(); } catch (e) {} }, 800);
+  // §74 Ficheiros do projecto e da organização (Nuno, 27/10/2026, 08h11). Em cada cartão de projecto e no separador
+  //     Organização: «Ficheiros» com a lista, carregar (escolher ou arrastar, por partes de 8 MB, até 300 MB), pasta 0.0 a 0.5,
+  //     abrir, descarregar e retirar. Servidor: m90381. Desenhos (DWG, DXF, GPKG, KML, KMZ, GeoJSON, GPX) carregados num projecto
+  //     seguem também para a conversão (m90353), que os põe no mapa.
+  var PF73 = { conv: ["dwg", "dxf", "gpkg", "kml", "kmz", "geojson", "gpx"], pastas: [["", "Sem pasta"], ["0.0", "0.0 Info de Arranque"], ["0.1", "0.1 Proposta Comercial"], ["0.2", "0.2 FT´s & RC´s"], ["0.3", "0.3 Trabalho"], ["0.4", "0.4 Entregáveis"], ["0.5", "0.5 Fotos"]] };
+  (function () {
+    if (document.getElementById("ipr-74-css")) return;
+    var st = document.createElement("style"); st.id = "ipr-74-css";
+    st.textContent = ".ipr-pf73{margin-top:8px;border:1px solid var(--ln,#2c312a);border-radius:9px;font:12.5px Inter,sans-serif;color:var(--tx,#e9eadf)}.ipr-pf73>summary{cursor:pointer;list-style:none;padding:7px 10px;font-weight:600;display:flex;justify-content:space-between;gap:8px}.ipr-pf73>summary::-webkit-details-marker{display:none}" +
+      ".ipr-pf73 .c{padding:0 10px 10px;display:flex;flex-direction:column;gap:8px}.ipr-pf73 .dz{border:1.5px dashed var(--ln2,#4a5045);border-radius:8px;padding:12px;text-align:center;color:var(--mu,#9aa08f);cursor:pointer}.ipr-pf73 .dz.on{border-color:var(--ac,#b5c46a);color:var(--tx)}" +
+      ".ipr-pf73 .tp{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.ipr-pf73 select{font:12px Inter,sans-serif;background:var(--p2,#1d221c);color:var(--tx);border:1px solid var(--ln,#2c312a);border-radius:6px;padding:4px 6px}" +
+      ".ipr-pf73 ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}.ipr-pf73 li{display:flex;align-items:center;gap:8px;padding:5px 6px;border-radius:6px;background:var(--p2,#1d221c)}.ipr-pf73 li .n{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}" +
+      ".ipr-pf73 li small{color:var(--mu,#9aa08f);white-space:nowrap}.ipr-pf73 li a,.ipr-pf73 li button{all:unset;cursor:pointer;font:600 11.5px Inter,sans-serif;color:var(--ac,#b5c46a)}.ipr-pf73 li button.r{color:#d9725b}.ipr-pf73 .m{color:var(--mu,#9aa08f);font-size:12px;min-height:1em}.ipr-pf73 .g{font:600 10.5px Inter,sans-serif;letter-spacing:.05em;text-transform:uppercase;color:var(--mu,#9aa08f);margin-top:4px}";
+    (document.head || document.documentElement).appendChild(st);
+  })();
+  function api73(rota, op) {
+    op = op || {}; op.credentials = "same-origin"; op.headers = Object.assign({ "X-WP-Nonce": window.tcdNonce || "" }, op.headers || {});
+    return fetch("/wp-json/tcd/v1/" + rota, op).then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) throw new Error((j && j.message) || ("Erro " + r.status)); return j; }); });
+  }
+  function tam73(b) { return b > 1048576 ? (b / 1048576).toFixed(1).replace(".", ",") + " MB" : Math.max(1, Math.round(b / 1024)) + " KB"; }
+  function caixa73(alvo, titulo) {
+    var d = document.createElement("details"); d.className = "ipr-pf73"; d.dataset.alvo = alvo;
+    d.innerHTML = "<summary><span>" + titulo + '</span><i class="q"></i></summary><div class="c"><div class="tp"><label>Pasta <select class="ps">' +
+      PF73.pastas.map(function (x) { return '<option value="' + x[0] + '">' + x[1] + "</option>"; }).join("") + '</select></label></div>' +
+      '<div class="dz" role="button" tabindex="0">Carregar ficheiros: toque para escolher ou arraste para aqui<br><small>PDF, imagens, Word, Excel, AutoCAD, SIG, QGIS, LiDAR, vídeo · até 300 MB cada</small></div>' +
+      '<input type="file" multiple hidden><div class="m" role="status"></div><div class="l"></div></div>';
+    ["click", "mousedown", "pointerdown", "touchstart"].forEach(function (t) { d.addEventListener(t, function (e) { e.stopPropagation(); }); });
+    var dz = d.querySelector(".dz"), inp = d.querySelector("input"), msg = d.querySelector(".m"), L = d.querySelector(".l"), carregado = false;
+    function lista() {
+      return api73("pfich?alvo=" + encodeURIComponent(alvo)).then(function (j) {
+        carregado = true; var fs = j.ficheiros || [];
+        d.querySelector(".q").textContent = fs.length ? String(fs.length) : "";
+        if (!j.pode) { dz.hidden = true; d.querySelector(".tp").hidden = true; }
+        if (!fs.length) { L.innerHTML = '<div class="m">Ainda sem ficheiros.</div>'; return; }
+        var grupos = {}; fs.forEach(function (f) { (grupos[f.pasta || ""] = grupos[f.pasta || ""] || []).push(f); });
+        L.innerHTML = PF73.pastas.filter(function (p) { return grupos[p[0]]; }).map(function (p) {
+          return '<div class="g">' + esc71(p[1]) + "</div><ul>" + grupos[p[0]].map(function (f) {
+            return '<li><span class="n" title="' + esc71(f.nome) + '">' + esc71(f.nome) + "</span><small>" + tam73(f.tamanho) + " · " + esc71((f.quando || "").slice(0, 10).split("-").reverse().join("/")) + (f.por ? " · " + esc71(f.por) : "") +
+              '</small><a href="' + esc71(f.url + "&_wpnonce=" + (window.tcdNonce || "")) + '" target="_blank" rel="noopener">Abrir</a><a href="' + esc71(f.url + "&dl=1&_wpnonce=" + (window.tcdNonce || "")) + '">Descarregar</a>' + ((f.meu || j.pode) ? '<button type="button" class="r" data-r="' + f.id + '">Retirar</button>' : "") + "</li>";
+          }).join("") + "</ul>";
+        }).join("");
+      }).catch(function (e) { L.innerHTML = '<div class="m">' + esc71(e.message) + "</div>"; });
+    }
+    d.addEventListener("toggle", function () { if (d.open && !carregado) lista(); });
+    L.addEventListener("click", function (e) {
+      var b = e.target.closest("[data-r]"); if (!b) return;
+      if (b.dataset.c !== "1") { b.dataset.c = "1"; b.textContent = "Confirmar retirar"; setTimeout(function () { b.dataset.c = ""; b.textContent = "Retirar"; }, 4000); return; }
+      api73("pfich/retirar?id=" + b.dataset.r, { method: "POST" }).then(lista).catch(function (x) { msg.textContent = x.message; });
+    });
+    function sha(buf) { return crypto.subtle.digest("SHA-256", buf).then(function (h) { return [].map.call(new Uint8Array(h), function (b) { return ("0" + b.toString(16)).slice(-2); }).join(""); }); }
+    function enviar(f) {
+      var P = 8 * 1048576, n = Math.max(1, Math.ceil(f.size / P)), pasta = d.querySelector(".ps").value, ext = (f.name.split(".").pop() || "").toLowerCase();
+      if (f.size > 300 * 1048576) { msg.textContent = f.name + ": acima de 300 MB."; return Promise.resolve(); }
+      msg.textContent = "A preparar " + f.name + "…";
+      return f.arrayBuffer().then(sha).then(function (h) {
+        var i = 0;
+        function parte(rota, extra) {
+          msg.textContent = "A enviar " + f.name + (n > 1 ? " (" + (i + 1) + " de " + n + ")" : "") + "…";
+          return api73(rota + "&nome=" + encodeURIComponent(f.name) + "&parte=" + i + "&partes=" + n + "&tamanho=" + f.size + extra + (i === n - 1 ? "&sha256=" + h : ""), { method: "POST", body: f.slice(i * P, (i + 1) * P), headers: { "Content-Type": "application/octet-stream" } })
+            .then(function (j) { i++; return i < n ? parte(rota, extra) : j; });
+        }
+        return parte("pfich/parte?alvo=" + encodeURIComponent(alvo), "&pasta=" + encodeURIComponent(pasta)).then(function () {
+          msg.textContent = f.name + ": carregado."; lista();
+          var m = /^e:(\d+)$/.exec(alvo);
+          if (m && PF73.conv.indexOf(ext) >= 0) { i = 0; return parte("carregar/parte?projecto=" + m[1] + "&alinhar=" + m[1], "&saida=gpkg,geojson").then(function () { msg.textContent = f.name + ": carregado e na fila para aparecer no mapa (Processar › Ficheiros e AutoCAD)."; }).catch(function () {}); }
+        });
+      }).catch(function (e) { msg.textContent = f.name + ": " + e.message; });
+    }
+    function varios(fs) { var a = [].slice.call(fs || []); (function um() { var f = a.shift(); if (f) enviar(f).then(um, um); })(); }
+    dz.addEventListener("click", function () { inp.click(); });
+    dz.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); inp.click(); } });
+    ["dragenter", "dragover"].forEach(function (t) { dz.addEventListener(t, function (e) { e.preventDefault(); dz.classList.add("on"); }); });
+    ["dragleave", "drop"].forEach(function (t) { dz.addEventListener(t, function (e) { e.preventDefault(); dz.classList.remove("on"); }); });
+    dz.addEventListener("drop", function (e) { varios(e.dataTransfer.files); });
+    inp.addEventListener("change", function () { varios(inp.files); inp.value = ""; });
+    return d;
+  }
+  function ficheiros73() {
+    if (!window.tcdNonce) return true;
+    document.querySelectorAll("#ipe-proj .ipe-card").forEach(function (c) {
+      if (c.querySelector(".ipr-pf73")) return;
+      var m = /#(\d{3,7})\b/.exec((c.querySelector(".mono") || c).textContent || ""); if (!m) return;
+      var ct = c.querySelector(".ipe-ct") || c; ct.appendChild(caixa73("e:" + m[1], "Ficheiros do projecto"));
+    });
+    var P = document.querySelector('.ipe-pane[data-pane="org"]');
+    if (P && window.tcdOrg && !P.querySelector(".ipr-pf73")) {
+      var d = null; try { d = window.tcdOrg.dados(); } catch (e) {}
+      var oid = d && d.org && (d.org.id || d.org.ID);
+      if (oid) P.appendChild(caixa73("o:" + oid, "Ficheiros da organização"));
+    }
+    return false;
+  }
+  setInterval(function () { if (!document.hidden) try { ficheiros73(); } catch (e) {} }, 1500);
 
   function correr() {
     voltas++;
