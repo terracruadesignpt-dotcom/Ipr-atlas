@@ -4452,6 +4452,7 @@
     return true;
   }
   window.__iprTemas = { aplicar: function (id) { var t = temasLista().filter(function (x) { return x.id === id; })[0]; if (t) aplicarTema62(t); return !!t; }, lista: function () { return temasLista().map(function (t) { return t.id; }); } };
+  window.__iprTemas.defs = function () { return T62.concat([T62_ORG]); }; // arrumar.js: definições dos temas (troca de camadas em tempo de execução)
 
   // §63 Triagem de entrada (Nuno 26/10/2026). Só no Atlas: na primeira visita aparece um ecrã com quatro perguntas; depois
   // abre-se pelo botão «Por onde começar?» no topo. Cada pergunta lança um assistente curto que ensina enquanto faz: primeiro a
