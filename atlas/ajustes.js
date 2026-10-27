@@ -2872,6 +2872,7 @@
       var tx = Math.floor(xt), ty = Math.floor(yt);
       return tile(z, tx, ty).then(function (t) {
         if (!t) return NaN;
+        alt.w = t.w; // largura do mosaico em píxeis, para a resolução no CSV
         var fx = (xt - tx) * t.w - 0.5, fy = (yt - ty) * t.w - 0.5, x0 = Math.max(0, Math.min(t.w - 2, Math.floor(fx))), y0 = Math.max(0, Math.min(t.w - 2, Math.floor(fy))), ax = Math.max(0, Math.min(1, fx - x0)), ay = Math.max(0, Math.min(1, fy - y0));
         function h(x, y) { var i = (y * t.w + x) * 4; if (t.d[i + 3] === 0) return NaN; return t.d[i] * 256 + t.d[i + 1] + t.d[i + 2] / 256 - 32768; }
         var a = h(x0, y0), b2 = h(x0 + 1, y0), c = h(x0, y0 + 1), d = h(x0 + 1, y0 + 1);
@@ -2922,7 +2923,12 @@
     }
     function csv() {
       if (!dados) return;
-      var t = "distancia_m;longitude;latitude;altitude_m\n" + dados.pts.map(function (p) { return Math.round(p.d * 10) / 10 + ";" + p.lon.toFixed(7) + ";" + p.lat.toFixed(7) + ";" + (isFinite(p.h) ? p.h : ""); }).join("\n");
+      // 27/10 (reporte 16261, Bernardo): colunas fonte_dados e resolucao_m. O Mapterhorn junta LiDAR DGT 0,5 m (onde existe) e
+      // Copernicus GLO-30 (no resto) e não diz, ponto a ponto, qual usou; a coluna diz isso mesmo. resolucao_m é o tamanho do píxel
+      // do mosaico lido (zoom 15) nessa latitude, ou seja, o passo da grelha de onde vem a altitude, não a precisão.
+      var FD = "Mapterhorn z15 (LiDAR DGT 0,5 m onde existe, Copernicus GLO-30 no resto)", W = alt.w || 512;
+      function res(lat) { return (40075016.686 * Math.cos(lat * Math.PI / 180) / (Math.pow(2, 15) * W)).toFixed(2); }
+      var t = "distancia_m;longitude;latitude;altitude_m;fonte_dados;resolucao_m\n" + dados.pts.map(function (p) { var ok = isFinite(p.h); return Math.round(p.d * 10) / 10 + ";" + p.lon.toFixed(7) + ";" + p.lat.toFixed(7) + ";" + (ok ? p.h : "") + ";" + (ok ? '"' + FD + '"' : "sem dados") + ";" + (ok ? res(p.lat) : ""); }).join("\n");
       var a = document.createElement("a"); a.href = URL.createObjectURL(new Blob(["﻿" + t], { type: "text/csv" })); a.download = "perfil-de-elevacao.csv"; document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 500);
     }
     function clique(e) { if (!ativo) return; vs.push([+e.lngLat.lng.toFixed(7), +e.lngLat.lat.toFixed(7)]); pintar(); P.querySelector(".n").textContent = vs.length + " ponto(s). Duplo clique ou «Terminar» acaba a linha."; }
