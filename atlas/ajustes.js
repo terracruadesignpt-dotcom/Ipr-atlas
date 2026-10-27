@@ -5495,6 +5495,15 @@
     }
     var C = catIdx(), ids = [];
     try { ids = V.activas().filter(function (id) { var e = C[id], g = e && (e.g || e.grupo); return e && g !== "fundo" && g !== "ref" && g !== "base"; }); } catch (e) { ids = []; }
+    // §84 b) Camadas do projecto exemplo (desenhadas pelo app.js como «ipe-am-<id>», fora do catálogo activo): entram na legenda
+    //     com a entrada LiDAR do catálogo (l_<id>), para o MDT, as linhas de água e as curvas terem legenda (reporte 16415).
+    try {
+      Object.keys(C).forEach(function (id) {
+        var e = C[id]; if (!e || !e.lid || id.indexOf("l_") !== 0 || ids.indexOf(id) >= 0) return;
+        var l = M.getLayer("ipe-am-" + e.lid + "-l") ? "ipe-am-" + e.lid + "-l" : M.getLayer("ipe-am-" + e.lid + "-r") ? "ipe-am-" + e.lid + "-r" : "";
+        if (l && M.getLayoutProperty(l, "visibility") !== "none") ids.push(id);
+      });
+    } catch (e) {}
     var en = (window.IPR_LINGUA || document.documentElement.lang || "pt").indexOf("en") === 0;
     var sig = ids.join("|") + (en ? "#en" : "");
     if (sig === L71.sig) return true; L71.sig = sig;
@@ -5511,6 +5520,25 @@
   }
   setInterval(function () { if (!document.hidden) try { legenda71(); } catch (e) {} }, 1200);
   document.addEventListener("ipr:lingua", function () { L71.sig = ""; });
+
+  // §84 Legenda (§71) por baixo da Formiga (reporte 16414 do Bernardo, 27/10/2026): as duas ficavam no canto de baixo, à
+  //     esquerda. Quando se cruzam, a legenda sobe até ficar acima da Formiga; quando deixam de se cruzar (Formiga arrastada,
+  //     legenda encolhida), volta ao sítio. A Formiga não muda de lugar e continua a poder ser arrastada.
+  (function lgdFormiga() {
+    function ajustar() {
+      var g = document.getElementById("ipr-lgd"), f = document.getElementById("tcdfmb"); if (!g) return;
+      if (g.__ipr84) { g.style.removeProperty("bottom"); g.__ipr84 = 0; }
+      if (!f || g.hidden || getComputedStyle(f).display === "none" || getComputedStyle(f).visibility === "hidden") return;
+      var a = g.getBoundingClientRect(), b = f.getBoundingClientRect();
+      if (!(b.width > 0 && a.right > b.left && a.left < b.right && a.bottom > b.top && a.top < b.bottom)) return;
+      var pai = (g.offsetParent || g.parentNode).getBoundingClientRect();
+      var baixo = Math.round(pai.bottom - b.top + 8);
+      if (baixo > pai.height - 60) return; // sem espaço acima da Formiga: fica como está
+      g.style.setProperty("bottom", baixo + "px", "important"); g.__ipr84 = 1;
+    }
+    setInterval(function () { if (!document.hidden) try { ajustar(); } catch (e) {} }, 1000);
+    window.addEventListener("resize", function () { try { ajustar(); } catch (e) {} });
+  })();
 
   // §72 Projectos (Nuno, 27/10/2026, 08h06): a lista aparecia duas vezes no separador Projectos (a do entrada.js, li.tme-t, e os
   //     cartões do app.js). Fica só uma: as linhas do entrada.js que repetem um cartão (#encomenda) escondem-se; ficam as que só
