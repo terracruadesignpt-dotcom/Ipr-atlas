@@ -5751,6 +5751,39 @@
   }
   setInterval(function () { if (!document.hidden) try { pastas75(); } catch (e) {} }, 1500);
 
+  // §73b Nuno, 27/10/2026, 18h14 («corrige o que for óbvio»), a partir da auditoria de ecrãs de 27/10:
+  //  a) telemóvel e iPad mini: o grupo zoom/rosa do §73 deixa de ficar por cima da gaveta das camadas quando ela está aberta;
+  //  b) zoom da interface limitado ao que cabe em cada largura (a 150 % saíam do ecrã Painel, Conta, Mais e ferramentas);
+  //  c) barra de estado: o bloco das coordenadas já não ocupa a largura toda (Escala, Zoom, Rot., Incl., Elev. ficavam fora);
+  //  d) iPad em vertical (toque, 901 a 1100 px): abre com o painel direito recolhido, para o mapa não ficar com metade do ecrã;
+  //  e) alvos de toque: −/Auto/+, PT/EN e separadores com pelo menos 36 px em ecrãs de toque;
+  //  f) Painel, Entrar e Conta como pílulas iguais às outras; texto escuro nos botões de fundo verde no tema escuro.
+  (function () {
+    if (document.getElementById("ipr-73b-css")) return;
+    var st = document.createElement("style"); st.id = "ipr-73b-css";
+    st.textContent = "#ipe.esq-aberto .maplibregl-control-container>.maplibregl-ctrl-top-left.ipr-nav.ipr-73,#ipe.esq-aberto .maplibregl-ctrl-top-left.ipr-nav{visibility:hidden!important}" +
+      "#ipe-st>:first-child,#ipe-st>.ipr-crs{flex:0 0 auto!important;width:auto!important;min-width:0!important;max-width:none!important}#ipe-st{overflow-x:auto;scrollbar-width:none}#ipe-st::-webkit-scrollbar{display:none}" +
+      "@media (pointer:coarse){#ipr-z67,#ipr-z67 button{height:36px!important}#ipr-z67 button{min-width:36px}#ipr-lg-topo .ipr-lg button{min-height:36px}#ipe .ipe-tab{min-height:36px}}" +
+      "#ipe .ipe-top .ipe-lk,#ipe .ipe-top .ipr-painel{display:inline-flex;align-items:center;height:26px;padding:0 11px;border:1px solid var(--ln2,#4a5044);border-radius:999px;background:transparent!important;color:var(--tx,inherit)!important;text-decoration:none;font-weight:600;font-size:12px}" +
+      "#ipe:not(.claro) .ipe-b--ac,#ipe:not(.claro) .ipe-b.on{color:#151a10!important}";
+    (document.head || document.documentElement).appendChild(st);
+  })();
+  function cap73() { var W = window.innerWidth; return W < 1100 ? 1.1 : W < 1400 ? 1.2 : W < 1900 ? 1.4 : W < 2400 ? 1.65 : 2; }
+  function limitar73() {
+    var c = cap73(), todos = [0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.2, 1.3, 1.4, 1.5, 1.65, 1.8, 2];
+    Z67.length = 0; todos.forEach(function (v) { if (v <= c + 1e-9) Z67.push(v); });
+    var g = parseFloat(ler("ipr_zoom67") || ""); if (g && g > c) { gravar("ipr_zoom67", String(Z67[Z67.length - 1])); try { zoomAplicar67(Z67[Z67.length - 1]); } catch (e) {} }
+  }
+  try { limitar73(); } catch (e) {}
+  window.addEventListener("resize", function () { clearTimeout(limitar73.t); limitar73.t = setTimeout(function () { try { limitar73(); } catch (e) {} }, 250); });
+  (function () {
+    try {
+      var vert = window.matchMedia("(pointer:coarse) and (orientation:portrait)").matches && window.innerWidth > 900 && window.innerWidth <= 1100;
+      if (!vert) return;
+      var n = 0, t = setInterval(function () { var M = document.getElementById("ipe"); n++; if (M && M.classList.contains("ipe")) { M.classList.add("sem-dir"); setTimeout(function () { try { var m = mapa(); if (m) m.resize(); } catch (e) {} }, 80); clearInterval(t); } else if (n > 40) clearInterval(t); }, 250);
+    } catch (e) {}
+  })();
+
   function correr() {
     voltas++;
     [["marca", marca], ["puxadores", puxadores], ["creditos", creditos], ["estado", estado], ["formiga", formiga], ["projectos", projectos], ["editavel", editavel], ["semBug", semBug], ["rosa", rosa], ["arrumar", arrumar], ["projDir", projDir], ["testarEsq", testarEsq], ["contaTopo", contaTopo], ["camadasTopo", camadasTopo], ["sintetizar", sintetizar], ["opcoesCamadas", opcoesCamadas], ["projFechados", projFechados], ["todasMais", todasMais], ["painelTopo", painelTopo], ["qfieldQR", qfieldQR], ["temas", temas], ["natural", natural], ["aprenderDesenho", aprenderDesenho], ["fichas", fichasCamada], ["natureza", fichasNatureza], ["parcelas", parcelasPonto], ["partilhaQR", partilhaQR], ["teclado", tecladoVirtual], ["prefs", prefsConta], ["cronologia", cronologia], ["alcanena", pilotoAlcanena], ["estilosOrg", estilosOrg], ["fimDoVoo", fimDoVoo], ["orgNomes", orgNomes], ["projRecolhidos", projRecolhidos], ["instalarApp", instalarApp], ["temaEscuro", temaEscuro], ["orgPastas", orgVista], ["discricao", discricao], ["estradas", estradas], ["cloudLimpo", cloudLimpo], ["navEsquerda", navEsquerda], ["encomendaCompacta", encomendaCompacta], ["testarLigacao", testarLigacao], ["linguetaEsq", linguetaEsq], ["longe", longe], ["arrumarCamadas", arrumarCamadas], ["separadores", separadores], ["processar", processar], ["cartoes", cartoes], ["diagMundo", diagMundo], ["foraDoPais", foraDoPais], ["subPastas", subPastas], ["projOrg", projOrg], ["linhasProj", linhasProj], ["locaisUnico", locaisUnico], ["perfil", perfil], ["rosaSegura", rosaSegura], ["vista3dFicha", vista3dFicha], ["temas62", temas62], ["triagem63", triagem63], ["grande65", grande65], ["nav65", nav65], ["guarda65", guarda65], ["refresh65", refresh65], ["esquerda66", esquerda66], ["zoom67", zoom67], ["municipal68", municipal68]].forEach(function (f) { if (!feito[f[0]]) { try { feito[f[0]] = f[1](); } catch (e) {} } });
