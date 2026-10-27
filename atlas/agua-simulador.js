@@ -238,6 +238,7 @@
   function resultados() {
     var r = S.res, s = r.resumo || {}, h = '<span class="as-h">' + esc(t("resultados")) + "</span>";
     if (s.aviso_rio) h += '<p class="faixa">' + esc(s.aviso_rio) + "</p>";
+    (s.rio || []).forEach(function (x) { h += '<p class="nota"><b>' + esc(L() === "en" ? "River" : "Rio") + "</b> · " + esc(x.cenario_titulo) + " · " + n(x.pico_m3s, 1) + " m³/s · " + esc(x.hipotese) + "</p>"; });
     if (s.aviso_montante) h += '<p class="faixa">' + esc(t("montSem")) + "</p>";
     else if (s.montante) {
       var vm = 0, tot = 0;
