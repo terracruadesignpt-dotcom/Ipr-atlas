@@ -502,4 +502,36 @@
     new MutationObserver(function () { try { avisoBio(); } catch (e) {} }).observe(w, { childList: true });
     avisoBio();
   })();
+
+  // ───────────────────────── §83 Barra de cima no telemóvel (Nuno, 27/10/2026, 14h07) ─────────────────────────
+  // Abaixo de 760 px a barra de cima não cabia: Conta, Painel, «Mais», App, Actualizar e Tema ficavam fora do ecrã (sem
+  // forma de entrar). Agora: sem o «beta», nível mais pequeno, «Camadas» só com o ícone, e Tema, Actualizar e App passam para
+  // dentro do menu «Mais» (com nome). Voltam ao sítio quando o ecrã alarga. Conta, Painel e «Mais» ficam sempre à vista.
+  css("ipr-83-css",
+    "@media (max-width:760px){#ipe .ipe-top .ipe-beta{display:none!important}#ipe .ipe-top #ipe-nivel{padding:2px 7px!important;font-size:10px!important;letter-spacing:.04em!important}" +
+    "#ipe .ipe-top #ipe-camadas>span{display:none!important}#ipe .ipe-top #ipe-camadas{padding:0 8px!important;min-width:32px}" +
+    "#ipe .ipe-top #ipe-user{display:inline-flex!important;align-items:center;white-space:nowrap;font-weight:600}" +
+    "#ipe .ipe-top>*{min-width:0}}" +
+    "#ipe .ipe-mais-m .ipr-83 .ipr-83-l{display:inline;margin-left:8px;font:500 13px Inter,sans-serif;white-space:nowrap}" +
+    "#ipe .ipe-mais-m .ipr-83::after,#ipe .ipe-mais-m .ipr-83::before{display:none!important}#ipe .ipe-mais-m .ipr-83>span:not(.ipr-83-l){display:none!important}");
+  var M83 = [["ipe-tema", { pt: "Tema claro ou escuro", en: "Light or dark theme" }], ["ipr-ref", { pt: "Actualizar o Atlas", en: "Refresh the Atlas" }], ["ipr-app-b", { pt: "App", en: "App" }]];
+  function barra83() {
+    var menu = document.querySelector("#ipe .ipe-mais-m"); if (!menu) return;
+    var estreito = W.matchMedia ? W.matchMedia("(max-width:760px)").matches : W.innerWidth <= 760;
+    M83.forEach(function (x, i) {
+      var b = document.getElementById(x[0]); if (!b) return;
+      if (!b.__ar83) { var m = document.createComment("ipr-83-" + x[0]); b.parentNode.insertBefore(m, b); b.__ar83 = m; }
+      var l = b.querySelector(".ipr-83-l");
+      if (estreito) {
+        if (b.parentNode !== menu) { menu.insertBefore(b, menu.children[i] || null); b.classList.add("ipr-83"); }
+        if (!l) { l = document.createElement("span"); l.className = "ipr-83-l"; b.appendChild(l); }
+        l.textContent = x[1][en() ? "en" : "pt"];
+      } else if (b.parentNode === menu && b.__ar83.parentNode) {
+        b.__ar83.parentNode.insertBefore(b, b.__ar83.nextSibling); b.classList.remove("ipr-83"); if (l) l.remove();
+      }
+    });
+  }
+  W.addEventListener("resize", function () { try { barra83(); } catch (e) {} });
+  document.addEventListener("ipr:lingua", function () { try { barra83(); } catch (e) {} });
+  cada(1500, barra83); setTimeout(function () { try { barra83(); } catch (e) {} }, 500);
 })();
