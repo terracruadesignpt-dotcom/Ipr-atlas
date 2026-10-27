@@ -4863,6 +4863,16 @@
   }
   window.__iprTemas = { aplicar: function (id) { var t = temasLista().filter(function (x) { return x.id === id; })[0]; if (t) aplicarTema62(t); return !!t; }, lista: function () { return temasLista().map(function (t) { return t.id; }); } };
   window.__iprTemas.defs = function () { return T62.concat([T62_ORG]); }; // arrumar.js: definições dos temas (troca de camadas em tempo de execução)
+  // arrumar.js §82: um tema novo entra na grelha a seguir aos sete, com os seus textos (pt, en). Só acrescenta: não muda os
+  // temas que existem. O §25 continua a ligar apenas as camadas que conhece (TEMA_CAT); as outras ficam nas caixas do tema.
+  window.__iprTemas.juntar = function (t, tx) {
+    if (!t || !t.id || T62.some(function (x) { return x.id === t.id; })) return false;
+    Object.keys(tx || {}).forEach(function (l) { if (!L62[l]) return; Object.keys(tx[l]).forEach(function (k) { if (L62[l][k] == null) L62[l][k] = tx[l][k]; }); });
+    T62.push(t);
+    if (!TEMAS_IPR.some(function (x) { return x.id === t.id; })) TEMAS_IPR.push({ id: t.id, nome: L62.pt["t_" + t.id] || t.id, fundo: t.fundo, c: t.c });
+    if (document.getElementById("ipr-t62")) { if (!EST62.tema && ler("ipr_t62_tema") === t.id) EST62.tema = t.id; pintar62(); }
+    return true;
+  };
 
   // §63 Triagem de entrada (Nuno 26/10/2026). Só no Atlas: na primeira visita aparece um ecrã com quatro perguntas; depois
   // abre-se pelo botão «Por onde começar?» no topo. Cada pergunta lança um assistente curto que ensina enquanto faz: primeiro a

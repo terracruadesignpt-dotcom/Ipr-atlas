@@ -18,6 +18,9 @@
          { id, nome: {pt, en}, desc: {pt, en}, tema, camadas: [ids ligados], mais: [ids à mão, desligados],
            ferr: [marcador|gps|desenhar|area|regua|perfil|3d|historico|crono|planta|analise|qfield], centro?, zoom?, bbox?,
            aplicar?: function (P) {} (substitui a aplicação genérica), ordem? }
+   §82 Tema «Biológico» (Nuno, 27/10/2026: pode abrir já, antes da Rede IPR). Só junta camadas que já estão no catálogo, para
+       preparar a conversão para o modo de produção biológico. Entra pela window.__iprTemas.juntar (ajustes.js). Proposta em
+       preparado/2026-10-27/04-agricultura-biologica-estrutura.md, secção 2; lista de camadas por validar pelo José Godinho.
    A Cronologia (§31) já tem 2010, 2021 e 2025 (commit a4c998b): nada a fazer aqui. */
 (function () {
   "use strict";
@@ -449,4 +452,54 @@
     var on = []; try { on = viz().activas(); } catch (e) {}
     w.querySelectorAll("[data-c79]").forEach(function (c) { var v = on.indexOf(c.getAttribute("data-c79")) > -1; if (c.checked !== v) c.checked = v; });
   });
+
+  // ───────────────────────── §82 Tema «Biológico» ─────────────────────────
+  // Camadas ligadas: ocupação, aptidão e carbono do solo, nitratos, RAN e linhas de água (todas conhecidas do §25, por isso o tema
+  // as liga). O resto fica em «Mais camadas», pela ordem solo, água, parcelas e vizinhança, clima, biodiversidade. Nada de novo
+  // fora do catálogo: SoilGrids, IPMA, INE e a zona tampão calculada ficam para a fase 2.
+  var BIO = {
+    id: "bio", ic: "M12 21v-9M12 12c0-4.4 3.2-7.5 8-7.5 0 4.4-3.2 7.5-8 7.5zM12 15c0-3.3-2.6-5.8-7-5.8 0 3.3 2.6 5.8 7 5.8z", fundo: "f_ortosat",
+    c: ["cos23", "sroa", "carbono", "nitratos", "ran", "hidro"], d3: false,
+    extra: ["solos", "aridez", "desert", "geo", "contam",
+      "scs", "cn", "esc_med", "erosiv", "precip", "capt_sup", "capt_p", "aquif_s", "la350",
+      "ifap_p", "ifap_o", "cosc25", "cos18", "copa18", "swf21",
+      "n_gibs_humsolo", "n_gibs_evap", "etr", "temp_med", "geada_ano", "geada_dias", "press_agr",
+      "habitats", "n2k", "rnap", "n_gbif_plantas", "invasoras"],
+    leg: [["l_cos", "#a6c46a", "area"], ["l_sroa", "#9e9d24", "area"], ["l_carbono", "#5d4037", "area"], ["l_nitratos", "#c0ca33", "area"], ["l_ran", "#c9a227", "area"], ["l_agua", "#2b7bb9", "linha"]],
+    ferr: ["parcelas", "area", "historico", "perfil"], prod: "planta"
+  };
+  var BIO_TX = {
+    pt: {
+      t_bio: "Biológico",
+      v_bio: "Ocupação do solo (COS 2023), capacidade de uso do solo, carbono orgânico, zonas vulneráveis a nitratos, Reserva Agrícola Nacional e linhas de água. Serve para preparar a conversão para o modo de produção biológico: aptidão das parcelas, regras de fertilização, vizinhos com culturas convencionais e faixas junto à água. Em «Mais camadas deste tema» estão os solos, a erosão, as captações, as parcelas do IFAP, o clima e a biodiversidade.",
+      l_sroa: "Capacidade de uso do solo", l_carbono: "Carbono orgânico no solo", l_nitratos: "Zonas vulneráveis a nitratos",
+      avisoBio: "Leitura indicativa. A certificação é decidida pelo organismo de controlo; confirme com ele e com a DGADR."
+    },
+    en: {
+      t_bio: "Organic farming",
+      v_bio: "Land cover (COS 2023), land capability, soil organic carbon, nitrate vulnerable zones, the National Agricultural Reserve (RAN) and watercourses. Use it to prepare a conversion to organic production: how suited each plot is, which fertilisation rules apply, neighbouring conventional crops and buffer strips along the water. Under “More layers in this theme” you will find soils, erosion, water abstractions, IFAP parcels, climate and biodiversity.",
+      l_sroa: "Land capability", l_carbono: "Soil organic carbon", l_nitratos: "Nitrate vulnerable zones",
+      avisoBio: "Indicative only. Certification is decided by the control body; check with them and with DGADR."
+    }
+  };
+  (function tentar82(n) {
+    var T = W.__iprTemas;
+    if (T && typeof T.juntar === "function") { try { T.juntar(BIO, BIO_TX); } catch (e) {} return; }
+    if (n < 40) setTimeout(function () { tentar82(n + 1); }, 500);
+  })(0);
+  function avisoBio() {
+    var w = document.getElementById("ipr-t62"); if (!w) return;
+    var on = w.querySelector('[data-t62="bio"][aria-pressed="true"]'), ver = w.querySelector(".ipr-t62-c:not(.ipr-ag-c) .ipr-t62-ver"), p = w.querySelector(".ipr-82");
+    if (!on || !ver) { if (p) p.remove(); return; }
+    var txt = BIO_TX[en() ? "en" : "pt"].avisoBio;
+    if (p && p.textContent === txt && p.previousElementSibling === ver) return;
+    if (p) p.remove();
+    p = document.createElement("p"); p.className = "ipr-t62-dr ipr-82"; p.textContent = txt; ver.parentNode.insertBefore(p, ver.nextSibling);
+  }
+  (function vigiar82() {
+    var w = document.getElementById("ipr-t62");
+    if (!w || !W.MutationObserver) { setTimeout(vigiar82, 1500); return; }
+    new MutationObserver(function () { try { avisoBio(); } catch (e) {} }).observe(w, { childList: true });
+    avisoBio();
+  })();
 })();
