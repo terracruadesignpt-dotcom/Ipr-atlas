@@ -45,6 +45,14 @@
   (function guardaMapa() {
     var ML = window.maplibregl, P = ML && ML.Map && ML.Map.prototype; if (!P || P.__iprGuarda) return; P.__iprGuarda = 1;
     function morto(m) { return !m || m._removed || !m.style; }
+    // Revisão de 27/10: a guarda não pode esconder as referências antigas ao mapa. Um aviso por método e por sessão na consola
+    // e no registo de erros da equipa (tcd_acp_erros, pelo window.onerror existente), para continuarem visíveis.
+    var avisados = {};
+    function avisar(k) {
+      if (avisados[k]) return; avisados[k] = 1;
+      try { console.warn("IPR Atlas: chamada a um mapa já removido (" + k + "); a referência ao mapa ficou antiga."); } catch (e) {}
+      try { setTimeout(function () { throw new Error("IPR Atlas §70: mapa removido, " + k); }, 0); } catch (e) {}
+    }
     var neutro = { queryRenderedFeatures: function () { return []; }, querySourceFeatures: function () { return []; },
       getStyle: function () { return { version: 8, sources: {}, layers: [] }; }, isStyleLoaded: function () { return false; },
       hasImage: function () { return false; }, getLayersOrder: function () { return []; } };
@@ -54,7 +62,7 @@
       "getLayersOrder", "setSky", "setLight"].forEach(function (k) {
       var f = P[k]; if (typeof f !== "function") return;
       P[k] = function () {
-        if (morto(this)) return neutro[k] ? neutro[k]() : (/^(add|remove|set|move)/.test(k) ? this : undefined);
+        if (morto(this)) { avisar(k); return neutro[k] ? neutro[k]() : (/^(add|remove|set|move)/.test(k) ? this : undefined); }
         return f.apply(this, arguments);
       };
     });
@@ -68,7 +76,10 @@
       var lt = Q.loadTile;
       Q.loadTile = function (tile) {
         if (tile && !tile.texture && (tile.state === "expired" || tile.state === "reloading")) tile.state = "loading";
-        return lt.apply(this, arguments);
+        var r = lt.apply(this, arguments);
+        // Revisão de 27/10: se o pedido terminar sem imagem nem erro, o mosaico não pode ficar «loading» para sempre.
+        Promise.resolve(r).then(function () { if (tile && tile.state === "loading" && !tile.texture) tile.state = "errored"; }, function () {});
+        return r;
       };
     }
     var addS = P.addSource;
@@ -2953,7 +2964,7 @@
     }
     function clique(e) { if (!ativo) return; vs.push([+e.lngLat.lng.toFixed(7), +e.lngLat.lat.toFixed(7)]); pintar(); P.querySelector(".n").textContent = vs.length + " ponto(s). Duplo clique ou «Terminar» acaba a linha."; }
     function duplo(e) { if (!ativo) return; e.preventDefault(); calcular(); }
-    function parar() { ativo = false; M.getCanvas().style.cursor = ""; try { M.doubleClickZoom.enable(); } catch (e) {} }
+    function parar() { ativo = false; window.__iprSemIdentificar = 0; M.getCanvas().style.cursor = ""; try { M.doubleClickZoom.enable(); } catch (e) {} }
     function fechar() { parar(); vs = []; dados = null; pintar(); if (marca) marca.remove(); if (P) P.remove(); P = null; M.off("click", clique); M.off("dblclick", duplo); b.classList.remove("on"); b.setAttribute("aria-pressed", "false"); }
     function abrir() {
       if (P) { fechar(); return; }
@@ -2961,13 +2972,13 @@
       P = document.createElement("div"); P.id = "ipr-pf";
       P.innerHTML = '<div class="c"><b>Perfil de elevação</b><div class="a"><button type="button" data-a="fim" class="ok">Terminar</button><button type="button" data-a="inv">Inverter</button><button type="button" data-a="novo">Nova linha</button><button type="button" data-a="csv">CSV</button><button type="button" data-a="x">Fechar</button></div></div><div class="g"><p class="n">Clique no mapa para marcar o percurso (um ou vários segmentos).</p></div><div class="k"></div><div class="n"></div>';
       document.body.appendChild(P); b.classList.add("on"); b.setAttribute("aria-pressed", "true");
-      ativo = true; vs = []; M.getCanvas().style.cursor = "crosshair"; try { M.doubleClickZoom.disable(); } catch (e) {}
+      ativo = true; window.__iprSemIdentificar = 1; vs = []; M.getCanvas().style.cursor = "crosshair"; try { M.doubleClickZoom.disable(); } catch (e) {}
       M.on("click", clique); M.on("dblclick", duplo);
       P.addEventListener("click", function (ev) {
         var a = ev.target.dataset && ev.target.dataset.a; if (!a) return;
         if (a === "x") fechar(); else if (a === "fim") calcular(); else if (a === "csv") csv();
         else if (a === "inv") { vs.reverse(); pintar(); if (dados) calcular(); }
-        else if (a === "novo") { vs = []; dados = null; pintar(); ativo = true; M.getCanvas().style.cursor = "crosshair"; try { M.doubleClickZoom.disable(); } catch (e) {} P.querySelector(".g").innerHTML = '<p class="n">Clique no mapa para marcar o percurso.</p>'; P.querySelector(".k").innerHTML = ""; }
+        else if (a === "novo") { vs = []; dados = null; pintar(); ativo = true; window.__iprSemIdentificar = 1; M.getCanvas().style.cursor = "crosshair"; try { M.doubleClickZoom.disable(); } catch (e) {} P.querySelector(".g").innerHTML = '<p class="n">Clique no mapa para marcar o percurso.</p>'; P.querySelector(".k").innerHTML = ""; }
       });
     }
     b.addEventListener("click", abrir);
