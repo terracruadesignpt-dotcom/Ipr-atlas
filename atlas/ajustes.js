@@ -5027,7 +5027,7 @@
     var d = document.createElement("details"); d.className = "ipr-pf73"; d.dataset.alvo = alvo;
     d.innerHTML = "<summary><span>" + titulo + '</span><i class="q"></i></summary><div class="c"><div class="tp"><label>Pasta <select class="ps">' +
       PF73.pastas.map(function (x) { return '<option value="' + x[0] + '">' + x[1] + "</option>"; }).join("") + '</select></label></div>' +
-      '<div class="dz" role="button" tabindex="0">Carregar ficheiros: toque para escolher ou arraste para aqui<br><small>PDF, imagens, Word, Excel, AutoCAD, SIG, QGIS, LiDAR, vídeo · até 300 MB cada</small></div>' +
+      '<div class="dz" role="button" tabindex="0">Carregar ficheiros: toque para escolher ou arraste para aqui<br><small>PDF, imagens, Word, Excel, AutoCAD, GeoPackage, QGIS, vídeo · até 300 MB cada<br>Dos GeoPackages só fica o projecto: rasters e base cartográfica saem</small></div>' +
       '<input type="file" multiple hidden><div class="m" role="status"></div><div class="l"></div></div>';
     ["click", "mousedown", "pointerdown", "touchstart"].forEach(function (t) { d.addEventListener(t, function (e) { e.stopPropagation(); }); });
     var dz = d.querySelector(".dz"), inp = d.querySelector("input"), msg = d.querySelector(".m"), L = d.querySelector(".l"), carregado = false;
@@ -5053,7 +5053,8 @@
       api73("pfich/retirar?id=" + b.dataset.r, { method: "POST" }).then(lista).catch(function (x) { msg.textContent = x.message; });
     });
     function sha(buf) { return crypto.subtle.digest("SHA-256", buf).then(function (h) { return [].map.call(new Uint8Array(h), function (b) { return ("0" + b.toString(16)).slice(-2); }).join(""); }); }
-    function enviar(f) {
+    function enviar(f0) { return prepara75(f0, msg).then(enviarJa, function (e) { msg.textContent = f0.name + ": " + e.message; }); }
+    function enviarJa(f) {
       var P = 8 * 1048576, n = Math.max(1, Math.ceil(f.size / P)), pasta = d.querySelector(".ps").value, ext = (f.name.split(".").pop() || "").toLowerCase();
       if (f.size > 300 * 1048576) { msg.textContent = f.name + ": acima de 300 MB."; return Promise.resolve(); }
       msg.textContent = "A preparar " + f.name + "…";
@@ -5065,9 +5066,9 @@
             .then(function (j) { i++; return i < n ? parte(rota, extra) : j; });
         }
         return parte("pfich/parte?alvo=" + encodeURIComponent(alvo), "&pasta=" + encodeURIComponent(pasta)).then(function () {
-          msg.textContent = f.name + ": carregado."; lista();
+          msg.textContent = f.name + ": carregado." + (f._nota75 || ""); lista();
           var m = /^e:(\d+)$/.exec(alvo);
-          if (m && PF73.conv.indexOf(ext) >= 0) { i = 0; return parte("carregar/parte?projecto=" + m[1] + "&alinhar=" + m[1], "&saida=gpkg,geojson").then(function () { msg.textContent = f.name + ": carregado e na fila para aparecer no mapa (Processar › Ficheiros e AutoCAD)."; }).catch(function () {}); }
+          if (m && PF73.conv.indexOf(ext) >= 0) { i = 0; return parte("carregar/parte?projecto=" + m[1] + "&alinhar=" + m[1], "&saida=gpkg,geojson").then(function () { msg.textContent = f.name + ": carregado e na fila para aparecer no mapa (Processar › Ficheiros e AutoCAD)." + (f._nota75 || ""); }).catch(function () {}); }
         });
       }).catch(function (e) { msg.textContent = f.name + ": " + e.message; });
     }
@@ -5096,6 +5097,97 @@
     return false;
   }
   setInterval(function () { if (!document.hidden) try { ficheiros73(); } catch (e) {} }, 1500);
+  // §75 Pastas dos projectos da Terracrua Design e GeoPackages só com o projecto (Nuno, 27/10/2026, 08h36).
+  //     1. Cada GeoPackage, antes de ser carregado (Ficheiros de projectos, da organização e das pastas), é aberto no navegador
+  //        (sql.js) e perde os rasters (tiles, coverage) e as camadas de base cartográfica (MDT, curvas de nível, ortofotos,
+  //        LiDAR, cadastro, CAOP, COS, declives, exposições). «A base cartográfica é fornecida por nós.» Só ficam os vectores
+  //        e as tabelas do projecto. O original não é tocado.
+  //     2. As pastas dos projectos do Drive (m90382, GET /tcd/v1/tproj) entram na lista de projectos do separador Organização,
+  //        por número, cada uma com «Ficheiros» (alvo t:<id>). Se o projecto já lá estiver (camadas, Base, Cloud), a caixa
+  //        entra dentro dele; senão, aparece uma pasta própria no lugar do número.
+  var SQL75 = null;
+  function sql75() {
+    if (SQL75) return SQL75;
+    SQL75 = new Promise(function (res, rej) {
+      var U = "https://cdn.jsdelivr.net/npm/sql.js@1.13.0/dist/";
+      function ok() { window.initSqlJs({ locateFile: function (x) { return U + x; } }).then(res, rej); }
+      if (window.initSqlJs) return ok();
+      var sc = document.createElement("script"); sc.src = U + "sql-wasm.js"; sc.crossOrigin = "anonymous"; sc.onload = ok;
+      sc.onerror = function () { SQL75 = null; rej(new Error("não consegui abrir a ferramenta de GeoPackage; tente outra vez.")); };
+      document.head.appendChild(sc);
+    });
+    return SQL75;
+  }
+  // Tira de um GeoPackage tudo o que não é o projecto: rasters (tiles, coverage) e camadas de base cartográfica pelo nome.
+  var BASE75 = /(base[ _.-]*cartogr|lidar|ortofoto|ortoimag|(^|[ _.-])orto([ _.-]|$)|(^|[ _.-])(mdt|mds|dem|dtm|dsm)([ _.-]|\d|$)|hillshade|sombreamento|relevo[ _-]?sombr|curvas?[ _-]*(de[ _-]*)?n[ií]vel|contour|declive|slope|exposi[cç]|(^|[ _.-])aspect|(^|[ _.-])caop([ _.-]|$)|cadastr|(^|[ _.-])cos[ _-]?(19|20)|carta[ _-]?militar|(^|[ _.-])cmp?[ _-]?25|srtm|copernicus|hipsometr|acumula[cç]|bacias?[ _-]?hidro|linhas?[ _-]?de[ _-]?(agua|água|escorr))/i;
+  function limpa75(SQL, bytes) {
+    var db = new SQL.Database(new Uint8Array(bytes)), tirar = [], ficam = [];
+    function q(s, p) { var r = [], st = db.prepare(s); if (p) st.bind(p); while (st.step()) r.push(st.getAsObject()); st.free(); return r; }
+    function x(s) { try { db.exec(s); } catch (e) {} }
+    var cts; try { cts = q("SELECT table_name t, data_type d, identifier i FROM gpkg_contents"); } catch (e) { db.close(); throw new Error("Não é um GeoPackage válido."); }
+    cts.forEach(function (c) { var nome = c.t + " " + (c.i || ""); if (c.d !== "features" && c.d !== "attributes") tirar.push({ t: c.t, porque: "raster" }); else if (BASE75.test(nome)) tirar.push({ t: c.t, porque: "base" }); else ficam.push(c.t); });
+    if (!tirar.length) { db.close(); return { bytes: null, tirados: [], ficam: ficam }; }
+    x("PRAGMA foreign_keys=OFF");
+    tirar.forEach(function (o) {
+      var t = o.t, qt = '"' + String(t).replace(/"/g, '""') + '"', lit = "'" + String(t).replace(/'/g, "''") + "'";
+      q("SELECT name, type FROM sqlite_master WHERE type='trigger' AND tbl_name=" + lit).forEach(function (r) { x('DROP TRIGGER "' + r.name.replace(/"/g, '""') + '"'); });
+      // índice espacial (R*Tree): as tabelas-sombra apagam-se directamente, o registo virtual com writable_schema
+      var rts = q("SELECT name, sql FROM sqlite_master WHERE type='table' AND name LIKE 'rtree^_' || ? || '^_%' ESCAPE '^'", [t.replace(/[\^%_]/g, "^$&")]);
+      rts.forEach(function (r) { if (!/VIRTUAL/i.test(r.sql || "")) x('DROP TABLE "' + r.name.replace(/"/g, '""') + '"'); });
+      var vs = rts.filter(function (r) { return /VIRTUAL/i.test(r.sql || ""); });
+      vs.forEach(function (r) { var ok = true; try { db.exec('DROP TABLE "' + r.name.replace(/"/g, '""') + '"'); } catch (e) { ok = false; } if (!ok) { x("PRAGMA writable_schema=ON"); x("DELETE FROM sqlite_master WHERE name=" + "'" + r.name.replace(/'/g, "''") + "'"); x("PRAGMA writable_schema=OFF"); } });
+      x("DROP TABLE IF EXISTS " + qt);
+      ["gpkg_contents", "gpkg_geometry_columns", "gpkg_tile_matrix", "gpkg_tile_matrix_set", "gpkg_data_columns", "gpkg_2d_gridded_coverage_ancillary"].forEach(function (m) { x("DELETE FROM " + m + " WHERE table_name=" + lit); });
+      x("DELETE FROM gpkg_2d_gridded_tile_ancillary WHERE tpudt_name=" + lit);
+      x("DELETE FROM gpkg_extensions WHERE table_name=" + lit + " OR table_name LIKE 'rtree^_' || " + lit + " || '^_%' ESCAPE '^'");
+      x("DELETE FROM gpkg_metadata_reference WHERE table_name=" + lit); x("DELETE FROM gpkg_ogr_contents WHERE table_name=" + lit);
+      x("DELETE FROM layer_styles WHERE f_table_name=" + lit);
+    });
+    x("VACUUM");
+    var out = db.export(); db.close();
+    return { bytes: out, tirados: tirar, ficam: ficam };
+  }
+
+  function prepara75(f, msg) {
+    var ext = (f.name.split(".").pop() || "").toLowerCase();
+    if (ext !== "gpkg") return Promise.resolve(f);
+    if (f.size > 250 * 1048576) return Promise.reject(new Error("GeoPackage acima de 250 MB. Guarde no QGIS um GeoPackage só com as camadas do projecto (sem rasters nem base cartográfica) e carregue esse."));
+    msg.textContent = "A separar o projecto da base cartográfica em " + f.name + "…";
+    return Promise.all([sql75(), f.arrayBuffer()]).then(function (r) {
+      var x = limpa75(r[0], r[1]);
+      if (!x.ficam.length) throw new Error("só tem rasters ou base cartográfica; não há camadas de projecto para guardar.");
+      if (!x.bytes) return f;
+      var g = new File([x.bytes], f.name, { type: "application/geopackage+sqlite3" });
+      var nr = x.tirados.filter(function (t) { return t.porque === "raster"; }).length, nb = x.tirados.length - nr;
+      g._nota75 = " Ficaram " + x.ficam.length + (x.ficam.length === 1 ? " camada" : " camadas") + " do projecto; saíram " + (nr ? nr + " raster" + (nr > 1 ? "s" : "") : "") + (nr && nb ? " e " : "") + (nb ? nb + " de base cartográfica (" + x.tirados.filter(function (t) { return t.porque === "base"; }).map(function (t) { return t.t; }).slice(0, 4).join(", ") + (nb > 4 ? "…" : "") + ")" : "") + ". " + tam73(f.size) + " → " + tam73(g.size) + ".";
+      return g;
+    });
+  }
+  var TP75 = { lista: null, pedido: false, caixas: {}, pastas: {} };
+  function pastas75() {
+    if (!window.tcdNonce) return;
+    var V = document.getElementById("ipr-orgv"); if (!V) return;
+    if (!TP75.pedido) { TP75.pedido = true; api73("tproj").then(function (j) { TP75.lista = j.projectos || []; pastas75(); }).catch(function () { TP75.lista = []; }); return; }
+    if (!TP75.lista || !TP75.lista.length) return;
+    function numDe(el) { var k = el.getAttribute("data-k") || "", m = /^p:(\d{2,6})$/.exec(k); return m ? +m[1] : (el.dataset.n75 ? +el.dataset.n75 : null); }
+    TP75.lista.forEach(function (p) {
+      var n = +p.num;
+      var dentro = [].filter.call(V.querySelectorAll(":scope > details.ov-p"), function (el) { return numDe(el) === n && !el.dataset.n75; })[0];
+      var cx = TP75.caixas[p.id] || (TP75.caixas[p.id] = caixa73("t:" + p.id, "Ficheiros do projecto"));
+      if (dentro) { if (cx.parentNode !== dentro) dentro.appendChild(cx); if (TP75.pastas[p.id] && TP75.pastas[p.id].parentNode) TP75.pastas[p.id].remove(); return; }
+      var meu = TP75.pastas[p.id];
+      if (!meu) {
+        meu = TP75.pastas[p.id] = document.createElement("details"); meu.className = "ov-p"; meu.dataset.n75 = String(n);
+        meu.innerHTML = "<summary><b>" + esc71(p.num) + "</b><em>" + esc71(p.nome) + "</em><small>Pasta do projecto" + (p.membros ? " · " + esc71(p.membros.join(", ")) : "") + "</small></summary>";
+      }
+      if (cx.parentNode !== meu) meu.appendChild(cx);
+      if (meu.parentNode !== V) {
+        var depois = [].filter.call(V.querySelectorAll(":scope > details.ov-p"), function (el) { var x = numDe(el); return x === null || x > n; })[0];
+        if (depois) V.insertBefore(meu, depois); else V.appendChild(meu);
+      }
+    });
+  }
+  setInterval(function () { if (!document.hidden) try { pastas75(); } catch (e) {} }, 1500);
 
   function correr() {
     voltas++;
