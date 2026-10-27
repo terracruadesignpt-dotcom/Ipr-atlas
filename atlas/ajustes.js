@@ -4825,6 +4825,53 @@
     (document.head || document.documentElement).appendChild(st);
   })();
 
+  // §69 Reportes do Miguel Clemente (26/10/2026, 18h55 e 21h54).
+  //  a) O quadro do perfil de elevação não saía do sítio: passa a arrastar-se pelo cabeçalho (rato, dedo ou caneta) e tem
+  //     botão para encolher a uma barra fina e voltar a abrir.
+  //  b) A Formiga ficava à frente do quadro do perfil: some enquanto o perfil ou a planta estão abertos e volta ao fechar.
+  //  c) Planta de localização no iPhone: as caixas de escolha apareciam em branco (o Safari pinta-as de branco e o texto claro
+  //     desaparecia). Passam a ter fundo, cor e seta próprios, iguais em todos os navegadores.
+  (function () {
+    if (document.getElementById("ipr-69-css")) return;
+    var st = document.createElement("style"); st.id = "ipr-69-css";
+    var seta = "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%239aa08f'/%3E%3C/svg%3E\")";
+    st.textContent = "#ipr-pf .c{cursor:move;touch-action:none;user-select:none;-webkit-user-select:none}#ipr-pf .c button{cursor:pointer}#ipr-pf.ipr-69-min .g,#ipr-pf.ipr-69-min .k,#ipr-pf.ipr-69-min>.n{display:none}" +
+      "#ipr-pf button.ipr-69-m{min-width:30px;padding:6px 8px}" +
+      "body:has(#ipr-pf) #tcdfmb,body:has(#ipr-pl) #tcdfmb,body.ipr-69-sem-fm #tcdfmb{display:none!important}" +
+      "#ipr-pl select{-webkit-appearance:none;appearance:none;background-color:var(--p2,#1d221c)!important;background-image:" + seta + ";background-repeat:no-repeat;background-position:right 10px center;padding-right:28px!important;color:var(--tx,#e9eadf)!important;-webkit-text-fill-color:var(--tx,#e9eadf);opacity:1}" +
+      "#ipr-pl input[type=text]{-webkit-appearance:none;appearance:none;background-color:var(--p2,#1d221c)!important;color:var(--tx,#e9eadf)!important;-webkit-text-fill-color:var(--tx,#e9eadf)}" +
+      "#ipr-pl select option{background:var(--p2,#1d221c);color:var(--tx,#e9eadf)}#ipr-pl input[type=checkbox]{accent-color:var(--ac,#b5c46a)}";
+    (document.head || document.documentElement).appendChild(st);
+    // Sem :has (navegadores antigos): a mesma regra por classe no body.
+    function marcar() { var b = document.body; if (!b) return; var on = !!(document.getElementById("ipr-pf") || document.getElementById("ipr-pl")); if (b.classList.contains("ipr-69-sem-fm") !== on) b.classList.toggle("ipr-69-sem-fm", on); }
+    function botao() {
+      var P = document.getElementById("ipr-pf"); if (!P || P.querySelector(".ipr-69-m")) return;
+      var a = P.querySelector(".c .a"); if (!a) return;
+      var m = document.createElement("button"); m.type = "button"; m.className = "ipr-69-m"; m.textContent = "–"; m.title = "Encolher"; m.setAttribute("aria-label", "Encolher o perfil"); m.setAttribute("aria-expanded", "true");
+      a.insertBefore(m, a.lastElementChild);
+      m.addEventListener("click", function (ev) {
+        ev.stopPropagation(); var min = P.classList.toggle("ipr-69-min");
+        m.textContent = min ? "+" : "–"; m.title = min ? "Abrir" : "Encolher"; m.setAttribute("aria-label", min ? "Abrir o perfil" : "Encolher o perfil"); m.setAttribute("aria-expanded", String(!min));
+      });
+    }
+    try { new MutationObserver(function () { marcar(); botao(); }).observe(document.documentElement, { childList: true, subtree: false }); } catch (e) {}
+    function obsBody() { if (!document.body) return setTimeout(obsBody, 200); try { new MutationObserver(function () { marcar(); botao(); }).observe(document.body, { childList: true }); } catch (e) {} marcar(); botao(); }
+    obsBody();
+    document.addEventListener("pointerdown", function (ev) {
+      var t = ev.target; if (!t.closest || t.closest("button,a,input,select,textarea")) return;
+      var h = t.closest("#ipr-pf .c"); if (!h) return;
+      var p = h.parentNode, r = p.getBoundingClientRect(), dx = ev.clientX - r.left, dy = ev.clientY - r.top;
+      ev.preventDefault(); try { h.setPointerCapture(ev.pointerId); } catch (e) {}
+      function mv(e) {
+        var x = Math.max(0, Math.min(window.innerWidth - Math.min(r.width, window.innerWidth), e.clientX - dx)), y = Math.max(0, Math.min(window.innerHeight - 48, e.clientY - dy));
+        p.style.setProperty("left", x + "px", "important"); p.style.setProperty("top", y + "px", "important");
+        p.style.setProperty("bottom", "auto", "important"); p.style.setProperty("transform", "none", "important"); p.style.setProperty("width", r.width + "px", "important");
+      }
+      function up() { h.removeEventListener("pointermove", mv); h.removeEventListener("pointerup", up); h.removeEventListener("pointercancel", up); }
+      h.addEventListener("pointermove", mv); h.addEventListener("pointerup", up); h.addEventListener("pointercancel", up);
+    }, true);
+  })();
+
   function correr() {
     voltas++;
     [["marca", marca], ["puxadores", puxadores], ["creditos", creditos], ["estado", estado], ["formiga", formiga], ["projectos", projectos], ["editavel", editavel], ["semBug", semBug], ["rosa", rosa], ["arrumar", arrumar], ["projDir", projDir], ["testarEsq", testarEsq], ["contaTopo", contaTopo], ["camadasTopo", camadasTopo], ["sintetizar", sintetizar], ["opcoesCamadas", opcoesCamadas], ["projFechados", projFechados], ["todasMais", todasMais], ["painelTopo", painelTopo], ["qfieldQR", qfieldQR], ["temas", temas], ["natural", natural], ["aprenderDesenho", aprenderDesenho], ["fichas", fichasCamada], ["natureza", fichasNatureza], ["parcelas", parcelasPonto], ["partilhaQR", partilhaQR], ["teclado", tecladoVirtual], ["prefs", prefsConta], ["cronologia", cronologia], ["alcanena", pilotoAlcanena], ["estilosOrg", estilosOrg], ["fimDoVoo", fimDoVoo], ["orgNomes", orgNomes], ["projRecolhidos", projRecolhidos], ["instalarApp", instalarApp], ["temaEscuro", temaEscuro], ["orgPastas", orgVista], ["discricao", discricao], ["estradas", estradas], ["cloudLimpo", cloudLimpo], ["navEsquerda", navEsquerda], ["encomendaCompacta", encomendaCompacta], ["testarLigacao", testarLigacao], ["linguetaEsq", linguetaEsq], ["longe", longe], ["arrumarCamadas", arrumarCamadas], ["separadores", separadores], ["processar", processar], ["cartoes", cartoes], ["diagMundo", diagMundo], ["foraDoPais", foraDoPais], ["subPastas", subPastas], ["projOrg", projOrg], ["linhasProj", linhasProj], ["locaisUnico", locaisUnico], ["perfil", perfil], ["rosaSegura", rosaSegura], ["vista3dFicha", vista3dFicha], ["temas62", temas62], ["triagem63", triagem63], ["grande65", grande65], ["nav65", nav65], ["guarda65", guarda65], ["refresh65", refresh65], ["esquerda66", esquerda66], ["zoom67", zoom67], ["municipal68", municipal68]].forEach(function (f) { if (!feito[f[0]]) { try { feito[f[0]] = f[1](); } catch (e) {} } });
