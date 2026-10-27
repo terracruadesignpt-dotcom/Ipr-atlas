@@ -4898,6 +4898,55 @@
   }
   setInterval(function () { if (!document.hidden) try { comecar70(); } catch (e) {} }, 1500);
 
+  // §71 Legenda no mapa (Nuno, 27/10/2026, 08h00: «qualquer camada que tenha várias cores tem que ter uma legenda»). Caixa no
+  //     canto de baixo do mapa com as camadas ligadas: as que têm classes (leg) mostram cada cor e o que é; as servidões da DGT e
+  //     as plantas do PDM mostram a legenda oficial do serviço (GetLegendGraphic, pelo proxy do m90379); as restantes mostram a
+  //     cor e o nome. Encolhe-se pelo cabeçalho (lembrado no navegador); no telemóvel começa encolhida.
+  var L71 = { sig: "", min: null };
+  try { var m71 = localStorage.getItem("ipr_lgd71"); if (m71 !== null) L71.min = m71 === "1"; } catch (e) {}
+  if (L71.min === null) L71.min = window.innerWidth < 700;
+  (function () {
+    if (document.getElementById("ipr-71-css")) return;
+    var st = document.createElement("style"); st.id = "ipr-71-css";
+    st.textContent = "#ipr-lgd{position:absolute;left:40px;bottom:34px;z-index:4;max-width:min(300px,calc(100% - 90px));max-height:min(46vh,420px);display:flex;flex-direction:column;background:var(--p1,#141814);color:var(--tx,#e9eadf);border:1px solid var(--ln,#2c312a);border-radius:10px;box-shadow:0 6px 22px rgba(0,0,0,.35);font:12px/1.35 Inter,sans-serif}" +
+      "#ipr-lgd[hidden]{display:none}#ipr-lgd .h{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 10px;cursor:pointer;user-select:none;-webkit-user-select:none;border:0;background:none;color:inherit;font:600 11px Inter,sans-serif;letter-spacing:.06em;text-transform:uppercase;width:100%;text-align:left}" +
+      "#ipr-lgd .h i{font-style:normal;color:var(--mu,#9aa08f);font-weight:500}#ipr-lgd .c{overflow:auto;padding:0 10px 8px;display:flex;flex-direction:column;gap:8px}#ipr-lgd.min .c{display:none}" +
+      "#ipr-lgd .l b{display:block;font-weight:600;font-size:12px;margin-bottom:3px}#ipr-lgd .r{display:flex;align-items:center;gap:7px;margin:2px 0;color:var(--tx2,#cfd2c4)}#ipr-lgd .r s{flex:0 0 14px;height:10px;border-radius:2px;border:1px solid rgba(255,255,255,.15)}" +
+      "#ipr-lgd img{max-width:100%;height:auto;background:#fff;border-radius:4px;padding:3px;display:block}#ipr-lgd .one{display:flex;align-items:center;gap:7px}#ipr-lgd .one s{flex:0 0 14px;height:10px;border-radius:2px}" +
+      "@media (max-width:700px){#ipr-lgd{left:8px;bottom:30px;max-height:38vh}}";
+    (document.head || document.documentElement).appendChild(st);
+  })();
+  function esc71(x) { return String(x == null ? "" : x).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+  function legenda71() {
+    var M = mapa(), V = viz(); if (!M || !V || typeof V.activas !== "function") return false;
+    var cv = M.getContainer(); var box = document.getElementById("ipr-lgd");
+    if (!box) {
+      box = document.createElement("div"); box.id = "ipr-lgd"; box.hidden = true; cv.appendChild(box);
+      box.addEventListener("click", function (e) {
+        if (!e.target.closest(".h")) return; L71.min = !L71.min; box.classList.toggle("min", L71.min);
+        try { localStorage.setItem("ipr_lgd71", L71.min ? "1" : "0"); } catch (x) {}
+      });
+      ["mousedown", "touchstart", "wheel", "dblclick"].forEach(function (ev) { box.addEventListener(ev, function (e) { e.stopPropagation(); }, { passive: true }); });
+    }
+    var C = catIdx(), ids = [];
+    try { ids = V.activas().filter(function (id) { var e = C[id], g = e && (e.g || e.grupo); return e && g !== "fundo" && g !== "ref" && g !== "base"; }); } catch (e) { ids = []; }
+    var en = (window.IPR_LINGUA || document.documentElement.lang || "pt").indexOf("en") === 0;
+    var sig = ids.join("|") + (en ? "#en" : "");
+    if (sig === L71.sig) return true; L71.sig = sig;
+    if (!ids.length) { box.hidden = true; return true; }
+    var h = '<button type="button" class="h" aria-expanded="' + !L71.min + '">' + (en ? "Legend" : "Legenda") + " <i>" + ids.length + " ▾</i></button><div class=\"c\">";
+    ids.forEach(function (id) {
+      var e = C[id], nome = esc71((en && e.en) || e.n || e.nome || id);
+      if (/^(srup_|pdm_)/.test(id)) h += '<div class="l"><b>' + nome + '</b><img loading="lazy" alt="" src="/wp-json/tcd/v1/wms/' + id + '?leg=1"></div>';
+      else if (e.leg && e.leg.length > 1) h += '<div class="l"><b>' + nome + "</b>" + e.leg.map(function (x) { return '<div class="r"><s style="background:' + esc71(x[0]) + '"></s><span>' + esc71(x[1]) + "</span></div>"; }).join("") + "</div>";
+      else h += '<div class="one"><s style="background:' + esc71((e.leg && e.leg[0] && e.leg[0][0]) || e.cor || "#888") + '"></s><span>' + nome + "</span></div>";
+    });
+    box.innerHTML = h + "</div>"; box.classList.toggle("min", L71.min); box.hidden = false;
+    return true;
+  }
+  setInterval(function () { if (!document.hidden) try { legenda71(); } catch (e) {} }, 1200);
+  document.addEventListener("ipr:lingua", function () { L71.sig = ""; });
+
   function correr() {
     voltas++;
     [["marca", marca], ["puxadores", puxadores], ["creditos", creditos], ["estado", estado], ["formiga", formiga], ["projectos", projectos], ["editavel", editavel], ["semBug", semBug], ["rosa", rosa], ["arrumar", arrumar], ["projDir", projDir], ["testarEsq", testarEsq], ["contaTopo", contaTopo], ["camadasTopo", camadasTopo], ["sintetizar", sintetizar], ["opcoesCamadas", opcoesCamadas], ["projFechados", projFechados], ["todasMais", todasMais], ["painelTopo", painelTopo], ["qfieldQR", qfieldQR], ["temas", temas], ["natural", natural], ["aprenderDesenho", aprenderDesenho], ["fichas", fichasCamada], ["natureza", fichasNatureza], ["parcelas", parcelasPonto], ["partilhaQR", partilhaQR], ["teclado", tecladoVirtual], ["prefs", prefsConta], ["cronologia", cronologia], ["alcanena", pilotoAlcanena], ["estilosOrg", estilosOrg], ["fimDoVoo", fimDoVoo], ["orgNomes", orgNomes], ["projRecolhidos", projRecolhidos], ["instalarApp", instalarApp], ["temaEscuro", temaEscuro], ["orgPastas", orgVista], ["discricao", discricao], ["estradas", estradas], ["cloudLimpo", cloudLimpo], ["navEsquerda", navEsquerda], ["encomendaCompacta", encomendaCompacta], ["testarLigacao", testarLigacao], ["linguetaEsq", linguetaEsq], ["longe", longe], ["arrumarCamadas", arrumarCamadas], ["separadores", separadores], ["processar", processar], ["cartoes", cartoes], ["diagMundo", diagMundo], ["foraDoPais", foraDoPais], ["subPastas", subPastas], ["projOrg", projOrg], ["linhasProj", linhasProj], ["locaisUnico", locaisUnico], ["perfil", perfil], ["rosaSegura", rosaSegura], ["vista3dFicha", vista3dFicha], ["temas62", temas62], ["triagem63", triagem63], ["grande65", grande65], ["nav65", nav65], ["guarda65", guarda65], ["refresh65", refresh65], ["esquerda66", esquerda66], ["zoom67", zoom67], ["municipal68", municipal68]].forEach(function (f) { if (!feito[f[0]]) { try { feito[f[0]] = f[1](); } catch (e) {} } });
