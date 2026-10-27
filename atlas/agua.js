@@ -411,7 +411,7 @@
   }
 
   // §A5 Perfis iniciais «Água» e «Protecção Civil» (modelo do §68: tema, camadas ligadas, ferramentas, centro). Escolhem-se por
-  // ?perfil=agua ou ?perfil=pc, ou no selector discreto do painel dos temas; ficam em ipr_perfil (neste navegador). Aplicam-se
+  // ?perfil_atlas=agua ou ?perfil_atlas=pc, ou no selector discreto do painel dos temas; ficam em ipr_perfil (neste navegador). Aplicam-se
   // uma vez por sessão, e não quando o endereço pede outro sítio (?mapa=, ?org_camada=, ?ll=) nem quando há perfil municipal
   // do §68 (window.IPR_PERFIL_ORG). Por agora não estão ligados a nenhuma conta.
   var PERFIS = {
@@ -421,8 +421,11 @@
       ferr: ["3d", "marcador", "gps", "qfield", "historico"], d3: false }
   };
   function perfilGuardado() {
-    var m = /[?&]perfil=(agua|pc)\b/.exec(location.search);
-    if (m) { gravar("ipr_perfil", m[1]); return m[1]; }
+    // ?perfil_atlas= (o ?perfil= é do perfil da Comunidade no app.js). O endereço só se grava uma vez por sessão, para a
+    // escolha feita depois no selector não ser desfeita a cada redesenho do painel.
+    var m = /[?&]perfil_atlas=(agua|pc)\b/.exec(location.search), lido = null;
+    try { lido = sessionStorage.getItem("ipr_perfil_url"); } catch (e) {}
+    if (m && lido !== m[1]) { gravar("ipr_perfil", m[1]); try { sessionStorage.setItem("ipr_perfil_url", m[1]); } catch (e) {} return m[1]; }
     var g = ler("ipr_perfil"); return PERFIS[g] ? g : "";
   }
   function aviso(txt) {
@@ -447,7 +450,7 @@
     if (window.IPR_PERFIL_ORG || (window.IPR_PERFIL && window.IPR_PERFIL.municipal)) return true;
     if (/[?&](mapa|org_camada|ll)=/.test(location.search)) return true;
     var sess = null; try { sess = sessionStorage.getItem("ipr_perfil_sess"); } catch (e) {}
-    if (sess === k && !/[?&]perfil=/.test(location.search)) return true;
+    if (sess === k) return true;
     if (!viz() || !mapa() || !document.getElementById("ipr-t62")) return false;
     try { sessionStorage.setItem("ipr_perfil_sess", k); } catch (e) {}
     return aplicarPerfil(k, false);

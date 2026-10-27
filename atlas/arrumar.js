@@ -1,17 +1,17 @@
 /* IPR Atlas · arrumação (Nuno, 27/10/2026, 10h06: «avançar hoje com tudo o que está pendente»). Terracrua Design.
    Carrega-se depois de todos os outros ficheiros do Atlas (camadas.js, viz.js, app.js, arranque.js, ajustes.js,
    mundo-camadas.js, intervencao.js, agua.js) e só estende em tempo de execução. Cada parte falha em silêncio.
-   §76 Legendas oficiais: as camadas WMS e ArcGIS do catálogo sem `leg` passam a mostrar, na caixa de legenda do §71, a
+   §77 Legendas oficiais: as camadas WMS e ArcGIS do catálogo sem `leg` passam a mostrar, na caixa de legenda do §71, a
        legenda do próprio serviço: WMS por GetLegendGraphic (imagem), ArcGIS MapServer e ImageServer por /legend?f=json
        (uma imagem por classe). O §71 não muda: a caixa é completada depois de desenhada. Cache em sessionStorage; quando o
        serviço falha (ou não deixa ler por CORS), fica a legenda simples do §71.
-   §77 Carta de solos: a camada `solos` (DGADR) não responde desde 16/10 e só existe no modo Cloud. Nos temas «Solo e
+   §78 Carta de solos: a camada `solos` (DGADR) não responde desde 16/10 e só existe no modo Cloud. Nos temas «Solo e
        vegetação» e «Design · organização» passa a «mais camadas», com a nota «serviço do DGADR sem resposta»; no lugar
        entram `scs` (grupo hidrológico do solo) e `sroa` (capacidade de uso do solo). Usa window.__iprTemas.defs (ajustes.js).
-   §78 Ecrã inteiro à vista: botão junto ao zoom e à rosa dos ventos (acompanha o grupo onde o §65 e o §73 o põem), tecla F.
+   §79 Ecrã inteiro à vista: botão junto ao zoom e à rosa dos ventos (acompanha o grupo onde o §65 e o §73 o põem), tecla F.
        Usa o #ipe-fs do app.js. Onde não há ecrã inteiro (iPhone) ou o navegador o recusa, liga o «modo mapa»: esconde a
        barra de cima, os painéis e as barras e mostra um botão para sair (também Esc). ?ecra=1 abre já em modo mapa.
-   §79 Perfis iniciais por função (formato do §68: tema, camadas, ferramentas): Autarquia, Investigação e candidaturas,
+   §80 Perfis iniciais por função (formato do §68: tema, camadas, ferramentas): Autarquia, Investigação e candidaturas,
        Engenharia. Registo comum window.IPR_PERFIS (agua.js junta «agua» e «pc» ao mesmo registo). Um só selector
        (#ipr-perfis) por cima dos temas, que lista o que estiver no registo; activa-se também por ?perfil=<id> e fica em
        localStorage ipr_perfil. Formato de cada entrada:
@@ -56,7 +56,7 @@
   };
   function tx(k) { var l = en() ? "en" : "pt"; return TX[l][k] != null ? TX[l][k] : (TX.pt[k] != null ? TX.pt[k] : k); }
 
-  // ───────────────────────── §76 Legendas oficiais (WMS GetLegendGraphic, ArcGIS /legend) ─────────────────────────
+  // ───────────────────────── §77 Legendas oficiais (WMS GetLegendGraphic, ArcGIS /legend) ─────────────────────────
   var LG = { mem: {}, pend: {}, chave: "ipr_leg76_v1:" };
   css("ipr-76-css",
     "#ipr-lgd .ipr-76 .r{align-items:flex-start}#ipr-lgd .ipr-76 .r img{flex:0 0 18px;width:18px;height:18px;max-width:18px;padding:0;margin:0;background:none;border-radius:0;object-fit:contain;display:block}" +
@@ -148,7 +148,7 @@
     decorar();
   })();
 
-  // ───────────────────────── §77 Carta de solos fora dos temas principais ─────────────────────────
+  // ───────────────────────── §78 Carta de solos fora dos temas principais ─────────────────────────
   function solos77() {
     var T = W.__iprTemas; if (!T || typeof T.defs !== "function") return false;
     T.defs().forEach(function (t) {
@@ -177,7 +177,7 @@
     notaSolos();
   })();
 
-  // ───────────────────────── §78 Ecrã inteiro à vista e modo mapa ─────────────────────────
+  // ───────────────────────── §79 Ecrã inteiro à vista e modo mapa ─────────────────────────
   var IC_FS = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>';
   var IC_SAI = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg>';
   css("ipr-78-css",
@@ -247,7 +247,7 @@
   cada(1500, botao78); setTimeout(function () { try { botao78(); } catch (e) {} }, 600);
   if (/[?&]ecra=1\b/.test(location.search)) (function esperar(n) { if (raiz() && mapa()) modoMapa(true); else if (n < 40) setTimeout(function () { esperar(n + 1); }, 300); })(0);
 
-  // ───────────────────────── §79 Perfis iniciais por função ─────────────────────────
+  // ───────────────────────── §80 Perfis iniciais por função ─────────────────────────
   var IPR_PERFIS = W.IPR_PERFIS = W.IPR_PERFIS || {};
   var MEUS = {
     autarquia: {
@@ -421,7 +421,7 @@
   // ?perfil=<id> no endereço: fica guardado; com perfil, a triagem genérica do §63 não abre sozinha (como no §68)
   // Nota: o app.js também lê ?perfil=<alcunha> (perfil da Comunidade). Quando o valor é um perfil de trabalho registado, o
   // separador Comunidade que o app.js abriu volta a Processos. ?perfil_atlas=<id> faz o mesmo sem tocar na Comunidade.
-  var URLP = (/[?&]perfil_atlas=([a-z0-9_-]+)/i.exec(location.search) || /[?&]perfil=([a-z0-9_-]+)/i.exec(location.search) || [])[1] || "";
+  var URLP = (/[?&]perfil_atlas=([a-z0-9_-]+)/i.exec(location.search) || [])[1] || ""; // ?perfil= fica para a Comunidade (app.js)
   URLP = URLP.toLowerCase();
   if (URLP === "nenhum" || URLP === "none") gravar("ipr_perfil", null);
   else if (URLP && IPR_PERFIS[URLP]) { gravar("ipr_perfil", URLP); if (!ler("ipr_triagem_v1")) gravar("ipr_triagem_v1", JSON.stringify({ q: null, p: 0, t: Date.now(), m79: 1 })); }
@@ -436,7 +436,7 @@
     var k = "ipr_perfil_s_" + id, proprio = /[?&](mapa|org_camada|ll)=/.test(location.search);
     if (proprio || (sLer(k) && URLP !== id)) return;
     sGravar(k, "1"); aplicarP(P, true);
-    if (URLP === id && /[?&]perfil=/.test(location.search)) setTimeout(function () {
+    if (URLP === id && /[?&]perfil_atlas=/.test(location.search)) setTimeout(function () {
       var com = document.querySelector('#ipe .ipe-tab[data-tab="com"][aria-selected="true"]'), enc = document.querySelector('#ipe .ipe-tab[data-tab="enc"]');
       if (com && enc) enc.click();
     }, 900);
