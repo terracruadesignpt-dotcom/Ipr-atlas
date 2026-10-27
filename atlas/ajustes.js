@@ -4947,6 +4947,37 @@
   setInterval(function () { if (!document.hidden) try { legenda71(); } catch (e) {} }, 1200);
   document.addEventListener("ipr:lingua", function () { L71.sig = ""; });
 
+  // §72 Projectos (Nuno, 27/10/2026, 08h06): a lista aparecia duas vezes no separador Projectos (a do entrada.js, li.tme-t, e os
+  //     cartões do app.js). Fica só uma: as linhas do entrada.js que repetem um cartão (#encomenda) escondem-se; ficam as que só
+  //     existem nessa lista (projectos da IPR Cloud, partilhados). E tocar num projecto abre-o logo no mapa: o cabeçalho do
+  //     cartão faz «Ver no mapa»; a linha faz «Abrir».
+  (function () {
+    if (document.getElementById("ipr-72-css")) return;
+    var st = document.createElement("style"); st.id = "ipr-72-css";
+    st.textContent = "li.tme-t.ipr-72-dup{display:none!important}#ipe-proj .ipe-card .ipe-ct{cursor:pointer}#ipe-proj .ipe-card .ipe-ct:hover strong{color:var(--ac,#b5c46a)}li.tme-t{cursor:pointer}";
+    (document.head || document.documentElement).appendChild(st);
+  })();
+  function encDe72(el) { var a = el.querySelector('a[href*="mapa="]'), m = a && /mapa=(\d+)/.exec(a.getAttribute("href") || ""); if (m) return m[1]; m = /#(\d{3,7})\b/.exec(el.textContent || ""); return m ? m[1] : ""; }
+  function projectos72() {
+    var P = document.getElementById("ipe-proj"); if (!P) return false;
+    var ids = {};
+    P.querySelectorAll(".ipe-card").forEach(function (c) { var m = /#(\d{3,7})\b/.exec((c.querySelector(".mono") || c).textContent || ""); if (m) ids[m[1]] = 1; });
+    document.querySelectorAll("li.tme-t").forEach(function (li) { var id = encDe72(li), dup = !!(id && ids[id]); if (li.classList.contains("ipr-72-dup") !== dup) li.classList.toggle("ipr-72-dup", dup); });
+    return false;
+  }
+  setInterval(function () { if (!document.hidden) try { projectos72(); } catch (e) {} }, 1500);
+  document.addEventListener("click", function (e) {
+    var t = e.target; if (!t.closest || t.closest("button,a,input,select,textarea,label,details,summary,.ipr-tma,.ipr-ca,.ipr-pf")) return;
+    var ct = t.closest("#ipe-proj .ipe-card .ipe-ct");
+    if (ct) {
+      var card = ct.closest(".ipe-card");
+      var b = card.querySelector(".ipr-ver-mapa") || [].filter.call(card.querySelectorAll("button"), function (x) { return /^Ver no mapa$/i.test((x.textContent || "").trim()); })[0];
+      if (b) { b.click(); return; }
+    }
+    var li = t.closest("li.tme-t");
+    if (li) { var a = li.querySelector('a[href*="mapa="]') || [].filter.call(li.querySelectorAll("a,button"), function (x) { return /^Abrir$/i.test((x.textContent || "").trim()); })[0]; if (a) a.click(); }
+  });
+
   function correr() {
     voltas++;
     [["marca", marca], ["puxadores", puxadores], ["creditos", creditos], ["estado", estado], ["formiga", formiga], ["projectos", projectos], ["editavel", editavel], ["semBug", semBug], ["rosa", rosa], ["arrumar", arrumar], ["projDir", projDir], ["testarEsq", testarEsq], ["contaTopo", contaTopo], ["camadasTopo", camadasTopo], ["sintetizar", sintetizar], ["opcoesCamadas", opcoesCamadas], ["projFechados", projFechados], ["todasMais", todasMais], ["painelTopo", painelTopo], ["qfieldQR", qfieldQR], ["temas", temas], ["natural", natural], ["aprenderDesenho", aprenderDesenho], ["fichas", fichasCamada], ["natureza", fichasNatureza], ["parcelas", parcelasPonto], ["partilhaQR", partilhaQR], ["teclado", tecladoVirtual], ["prefs", prefsConta], ["cronologia", cronologia], ["alcanena", pilotoAlcanena], ["estilosOrg", estilosOrg], ["fimDoVoo", fimDoVoo], ["orgNomes", orgNomes], ["projRecolhidos", projRecolhidos], ["instalarApp", instalarApp], ["temaEscuro", temaEscuro], ["orgPastas", orgVista], ["discricao", discricao], ["estradas", estradas], ["cloudLimpo", cloudLimpo], ["navEsquerda", navEsquerda], ["encomendaCompacta", encomendaCompacta], ["testarLigacao", testarLigacao], ["linguetaEsq", linguetaEsq], ["longe", longe], ["arrumarCamadas", arrumarCamadas], ["separadores", separadores], ["processar", processar], ["cartoes", cartoes], ["diagMundo", diagMundo], ["foraDoPais", foraDoPais], ["subPastas", subPastas], ["projOrg", projOrg], ["linhasProj", linhasProj], ["locaisUnico", locaisUnico], ["perfil", perfil], ["rosaSegura", rosaSegura], ["vista3dFicha", vista3dFicha], ["temas62", temas62], ["triagem63", triagem63], ["grande65", grande65], ["nav65", nav65], ["guarda65", guarda65], ["refresh65", refresh65], ["esquerda66", esquerda66], ["zoom67", zoom67], ["municipal68", municipal68]].forEach(function (f) { if (!feito[f[0]]) { try { feito[f[0]] = f[1](); } catch (e) {} } });
