@@ -1,4 +1,4 @@
-/* IPR Atlas · Simulador de Fogo (painel «Simular fogo»). Terracrua Design. «Sim» do Nuno a 27/10/2026.
+/* IPR Atlas · Simulador de Fogo (painel «Simular fogo»). IPR – Instituto de Planeamento Regenerativo. «Sim» do Nuno a 27/10/2026.
    O botão só aparece com sessão iniciada e quando tcd/v1/fogo/aviso responde (motor ligado e chave no site).
    Decisões do Nuno, 27/10/2026: quatro funções (Cenário no tempo, Antes e depois, Muitas ignições, Fogo e primeira chuva),
    clientes com Base entregue, painel no tema «Fogo» do T62 (ajustes.js). Não mexe em nenhum ficheiro: liga-se pelo DOM
