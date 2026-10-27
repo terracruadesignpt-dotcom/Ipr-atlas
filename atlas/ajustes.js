@@ -36,6 +36,34 @@
       });
     };
   })();
+  // §70 Erros de JavaScript registados (tcd_acp_erros, 21/10 a 26/10/2026: «this.style is undefined», «reading 'getSource'»,
+  // «h.getStyle().layers», «reading 'shaderPreludeCode'»). O mapa principal é destruído e criado de novo quando se muda de modo
+  // (encomenda, projecto de cliente); várias funções ficam com a referência ao mapa antigo e chamam-no em respostas que chegam
+  // depois (fetch, setTimeout, observadores). Num mapa já removido o MapLibre apaga o estilo e o pintor, e qualquer chamada
+  // rebenta. Guarda única, no protótipo: num mapa removido (ou sem estilo) estas leituras e escritas não fazem nada e devolvem
+  // um valor neutro. Num mapa vivo nada muda.
+  (function guardaMapa() {
+    var ML = window.maplibregl, P = ML && ML.Map && ML.Map.prototype; if (!P || P.__iprGuarda) return; P.__iprGuarda = 1;
+    function morto(m) { return !m || m._removed || !m.style; }
+    var neutro = { queryRenderedFeatures: function () { return []; }, querySourceFeatures: function () { return []; },
+      getStyle: function () { return { version: 8, sources: {}, layers: [] }; }, isStyleLoaded: function () { return false; },
+      hasImage: function () { return false; }, getLayersOrder: function () { return []; } };
+    ["getSource", "getLayer", "addSource", "removeSource", "addLayer", "removeLayer", "moveLayer", "setPaintProperty", "setLayoutProperty",
+      "getPaintProperty", "getLayoutProperty", "setFilter", "getFilter", "setTerrain", "getTerrain", "addImage", "removeImage", "setFeatureState",
+      "removeFeatureState", "getFeatureState", "queryRenderedFeatures", "querySourceFeatures", "getStyle", "isStyleLoaded", "hasImage",
+      "getLayersOrder", "setSky", "setLight"].forEach(function (k) {
+      var f = P[k]; if (typeof f !== "function") return;
+      P[k] = function () {
+        if (morto(this)) return neutro[k] ? neutro[k]() : (/^(add|remove|set|move)/.test(k) ? this : undefined);
+        return f.apply(this, arguments);
+      };
+    });
+    // Movimentos e redimensionamentos num mapa removido também saem sem fazer nada (o pintor já não existe).
+    ["resize", "easeTo", "flyTo", "jumpTo", "fitBounds", "setBearing", "setPitch", "setZoom", "setCenter", "triggerRepaint"].forEach(function (k) {
+      var f = P[k]; if (typeof f !== "function") return;
+      P[k] = function () { if (this && this._removed) return this; return f.apply(this, arguments); };
+    });
+  })();
   var SIGLA = "https://cdn.jsdelivr.net/gh/terracruadesignpt-dotcom/Ipr-atlas@3c382ba8826863c1dc0de2142ba8c2c5038e532b/atlas/marca/ipr-sigla.png";
   function ler(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
   function gravar(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
@@ -2888,6 +2916,7 @@
     function fechar() { parar(); vs = []; dados = null; pintar(); if (marca) marca.remove(); if (P) P.remove(); P = null; M.off("click", clique); M.off("dblclick", duplo); b.classList.remove("on"); b.setAttribute("aria-pressed", "false"); }
     function abrir() {
       if (P) { fechar(); return; }
+      var M2 = mapa(); if (M2 && M2 !== M) M = M2; // §70: o mapa pode ter sido criado de novo (mudança de modo)
       P = document.createElement("div"); P.id = "ipr-pf";
       P.innerHTML = '<div class="c"><b>Perfil de elevação</b><div class="a"><button type="button" data-a="fim" class="ok">Terminar</button><button type="button" data-a="inv">Inverter</button><button type="button" data-a="novo">Nova linha</button><button type="button" data-a="csv">CSV</button><button type="button" data-a="x">Fechar</button></div></div><div class="g"><p class="n">Clique no mapa para marcar o percurso (um ou vários segmentos).</p></div><div class="k"></div><div class="n"></div>';
       document.body.appendChild(P); b.classList.add("on"); b.setAttribute("aria-pressed", "true");
@@ -2942,6 +2971,7 @@
       var m = new window.maplibregl.Map({ container: C, attributionControl: false, pitch: 60, bearing: -20, maxPitch: 85, interactive: true,
         style: { version: 8, sources: { sat: { type: "raster", tiles: ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"], tileSize: 256, maxzoom: 19 }, dem: { type: "raster-dem", tiles: ["https://tiles.mapterhorn.com/{z}/{x}/{y}.webp"], encoding: "terrarium", tileSize: 512, maxzoom: 15 }, lim: { type: "geojson", data: gj } },
           layers: [{ id: "sat", type: "raster", source: "sat" }, { id: "lim-s", type: "line", source: "lim", paint: { "line-color": "#000", "line-width": 5, "line-opacity": 0.35 } }, { id: "lim", type: "line", source: "lim", paint: { "line-color": "#ffd23f", "line-width": 2.5 } }], terrain: { source: "dem", exaggeration: 1 } } });
+      vista3dReg(m, C);
       var ex = 1, ini = function () { m.fitBounds([[bx[0], bx[1]], [bx[2], bx[3]]], { padding: 40, pitch: 60, bearing: -20, duration: 0 }); };
       m.on("load", function () { ini(); S.textContent = "Relevo: Mapterhorn (LiDAR DGT 0,5 m onde existe; Copernicus GLO-30 no resto) · imagem Esri World Imagery · escala vertical real (1×). Arraste para rodar e inclinar; roda do rato para aproximar."; });
       m.on("error", function () { S.textContent = "Parte do relevo ou da imagem não carregou. Tente outra vez dentro de momentos."; });
@@ -2950,7 +2980,7 @@
         var hs = ["dragRotate", "dragPan", "scrollZoom", "touchZoomRotate", "doubleClickZoom", "keyboard", "touchPitch"], solto = false, gira = 0;
         hs.forEach(function (h) { try { m[h].disable(); } catch (x) {} });
         var dica = document.createElement("div"); dica.className = "ipr-fx-dica"; dica.textContent = "Passe o rato para rodar · clique para explorar"; C.parentNode.appendChild(dica);
-        function rodar() { if (solto) return; m.setBearing(m.getBearing() + 0.12); gira = requestAnimationFrame(rodar); }
+        function rodar() { if (solto || m._removed || !C.isConnected) { gira = 0; return; } m.setBearing(m.getBearing() + 0.12); gira = requestAnimationFrame(rodar); }
         C.addEventListener("mouseenter", function () { if (!solto && !gira) gira = requestAnimationFrame(rodar); });
         C.addEventListener("mouseleave", function () { cancelAnimationFrame(gira); gira = 0; });
         C.addEventListener("click", function () { if (solto) return; solto = true; cancelAnimationFrame(gira); gira = 0; hs.forEach(function (h) { try { m[h].enable(); } catch (x) {} }); dica.textContent = "Arraste para rodar e inclinar · roda do rato para aproximar"; });
@@ -2961,12 +2991,25 @@
         if (v === "ini") ini(); else if (v === "n") m.easeTo({ bearing: 0, duration: 400 });
         else if (v === "ex") { ex = ex === 1 ? 2 : 1; m.setTerrain({ source: "dem", exaggeration: ex }); e.target.textContent = ex + "×"; S.textContent = ex === 1 ? "Escala vertical real (1×)." : "Exagero vertical 2× (só para leitura; as cotas e medições usam a escala real)."; }
         else if (v === "ec") { var el = alvo.querySelector(".ipr-3d-c"); try { if (document.fullscreenElement) document.exitFullscreen(); else el.requestFullscreen(); } catch (x) {} setTimeout(function () { m.resize(); }, 300); }
-        else if (v === "x") { m.remove(); var j = document.getElementById("ipr-3d-j"); if (j) j.remove(); }
+        else if (v === "x") { try { m.remove(); } catch (x) {} var j = document.getElementById("ipr-3d-j"); if (j) j.remove(); }
       });
-      document.addEventListener("fullscreenchange", function () { setTimeout(function () { try { m.resize(); } catch (x) {} }, 200); });
+      document.addEventListener("fullscreenchange", function () { setTimeout(function () { try { if (!m._removed) m.resize(); } catch (x) {} }, 200); });
     }).catch(function (e) { S.textContent = e.message || "Sem limite do terreno para mostrar em 3D."; });
   }
   window.__iprVista3d = vista3d;
+  // §70 Cada vista 3D é um mapa com contexto WebGL próprio. As fichas são redesenhadas pelo app.js e os mapas antigos ficavam
+  // vivos fora da página; o navegador tem um limite de contextos (cerca de 16) e, passado esse limite, deita abaixo os mais
+  // antigos, às vezes o do mapa principal («reading 'bind'», «shaderPreludeCode» em cada fotograma). Os mapas 3D cujo contentor
+  // saiu da página são removidos; ficam no máximo 3 vistas 3D vivas ao mesmo tempo (as mais antigas fecham-se).
+  var V3D = [];
+  function vista3dLimpar() {
+    V3D = V3D.filter(function (x) { if (x.m._removed) return false; if (!x.c.isConnected) { try { x.m.remove(); } catch (e) {} return false; } return true; });
+    while (V3D.length > 3) { var v = V3D.shift(); try { v.m.remove(); } catch (e) {} }
+  }
+  function vista3dReg(m, c) {
+    V3D.push({ m: m, c: c }); vista3dLimpar();
+    if (!vista3dReg.obs) { vista3dReg.obs = 1; try { new MutationObserver(function () { clearTimeout(vista3dReg.t); vista3dReg.t = setTimeout(vista3dLimpar, 400); }).observe(document.body, { childList: true, subtree: true }); } catch (e) {} }
+  }
   // §60 Ficha do projecto mais completa (Nuno, 26/10, 10h27: «tem que ser um ambiente mais completo [...] cada user quando
   // entra vê toda aquela informação, os layers, vê o 3D, que está parado, mas [...] passa o rato e ele mexe, ou clica e mexe
   // [...] dependendo dos acessos vê mais ou menos»). Dentro da ficha aberta, por baixo do cabeçalho: o 3D já carregado
