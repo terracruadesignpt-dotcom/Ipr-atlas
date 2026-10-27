@@ -3960,7 +3960,7 @@
       q_planta: "Preciso de uma planta do terreno", qs_planta: "Uma planta à escala para a câmara, um projecto ou uma escritura.",
       q_planear: "Quero planear ou trabalhar o meu terreno", qs_planear: "Água, relevo, solo, acessos e trabalho de campo.",
       q_prof: "Trabalho com terrenos", qs_prof: "Arquitectos, engenheiros, topógrafos, técnicos, mediadores e associações.",
-      triRodape: "Pode voltar a este ecrã pelo botão «Por onde começar?» no topo.", sair: "Sair do assistente e ver o mapa", sairCurto: "Sair", explorar: "Explorar sozinho",
+      triRodape: "Pode voltar a este ecrã em Temas, na ligação «Por onde começar?».", sair: "Sair do assistente e ver o mapa", sairCurto: "Sair", explorar: "Explorar sozinho",
       fechar: "Fechar", voltar: "Voltar", seguinte: "Seguinte", inicio: "Voltar às perguntas iniciais", terminar: "Terminar",
       passo: "Passo {i} de {n}", continuar: "Continuar", minimizar: "Ver o mapa",
       s1t: "Procure o sítio", s1h: "Escreva o nome de uma localidade, uma morada, coordenadas ou o NIC do prédio na caixa de pesquisa. O mapa leva-o lá.",
@@ -4024,7 +4024,7 @@
       q_planta: "I need a plan of the land", qs_planta: "A scaled plan for the council, a project or a deed.",
       q_planear: "I want to plan or work my land", qs_planear: "Water, terrain, soil, access and fieldwork.",
       q_prof: "I work with land", qs_prof: "Architects, engineers, surveyors, consultants, agents and associations.",
-      triRodape: "You can come back to this screen with the «Where to start?» button at the top.", sair: "Leave the assistant and see the map", sairCurto: "Leave", explorar: "Explore on my own",
+      triRodape: "You can come back to this screen from Themes, with the «Where to start?» link.", sair: "Leave the assistant and see the map", sairCurto: "Leave", explorar: "Explore on my own",
       fechar: "Close", voltar: "Back", seguinte: "Next", inicio: "Back to the first questions", terminar: "Finish",
       passo: "Step {i} of {n}", continuar: "Continue", minimizar: "See the map",
       s1t: "Find the place", s1h: "Type a town, an address, coordinates or the property's NIC in the search box. The map takes you there.",
@@ -4567,7 +4567,7 @@
       document.head.appendChild(st); }
     function pos() {
       var n = document.querySelector("#ipe .maplibregl-ctrl-top-left.ipr-nav") || nav;
-      if (window.innerWidth > 900) { if (n.parentNode !== tools) tools.appendChild(n); }
+      if (window.innerWidth > 900 && !pequeno70()) { if (n.parentNode !== tools) tools.appendChild(n); }
       else if (casa && n.parentNode !== casa) casa.appendChild(n);
     }
     pos(); window.addEventListener("resize", function () { clearTimeout(nav65.t); nav65.t = setTimeout(pos, 150); });
@@ -4871,6 +4871,32 @@
       h.addEventListener("pointermove", mv); h.addEventListener("pointerup", up); h.addEventListener("pointercancel", up);
     }, true);
   })();
+
+  // §70 Nuno, 27/10/2026, 07h48 (iPad): menos cheio.
+  //  a) «Por onde começar?» sai da barra de cima; passa a ligação discreta no cabeçalho dos Temas.
+  //  b) Temas mais pequenos: uma linha por tema (ícone e nome), duas colunas.
+  //  c) Em tablets e ecrãs de toque (e janelas até 1280 px) a rosa dos ventos e o zoom ficam numa barra vertical à esquerda do
+  //     mapa; no computador continuam integrados na barra das ferramentas (§65).
+  function pequeno70() { try { return window.innerWidth <= 1280 || window.matchMedia("(pointer:coarse)").matches; } catch (e) { return window.innerWidth <= 1280; } }
+  (function () {
+    if (document.getElementById("ipr-70-css")) return;
+    var st = document.createElement("style"); st.id = "ipr-70-css";
+    st.textContent = "#ipr-comecar{display:none!important}" +
+      ".ipr-t62-g:not(.cmp){gap:4px!important}.ipr-t62-g:not(.cmp) button{flex-direction:row!important;align-items:center!important;min-height:32px!important;padding:5px 8px!important;font-size:12px!important;gap:6px!important;border-radius:8px!important}" +
+      ".ipr-t62-g:not(.cmp) button .tp{width:auto!important;order:0}.ipr-t62-g:not(.cmp) button i{display:none!important}.ipr-t62-g:not(.cmp) button svg{width:14px;height:14px}" +
+      ".ipr-t62-sub{display:none}.ipr-70-com{font:500 11.5px Inter,sans-serif;color:var(--ac,#b5c46a);background:none;border:0;padding:0;cursor:pointer;text-decoration:underline;text-underline-offset:2px}" +
+      "#ipe .maplibregl-ctrl-top-left.ipr-nav{z-index:3}#ipe .maplibregl-ctrl-top-left.ipr-nav .maplibregl-ctrl-group{margin:10px 0 0 10px}";
+    (document.head || document.documentElement).appendChild(st);
+  })();
+  function comecar70() {
+    var cab = document.querySelector("#ipr-t62 .ipr-t62-cab"); if (!cab) return false;
+    if (cab.querySelector(".ipr-70-com")) return true;
+    var b = document.createElement("button"); b.type = "button"; b.className = "ipr-70-com";
+    function rot() { b.textContent = t62("comecar"); } rot(); document.addEventListener("ipr:lingua", rot);
+    b.addEventListener("click", function (e) { e.stopPropagation(); try { abrir63(null); } catch (x) {} });
+    cab.appendChild(b); return false; // volta a correr: o §62 redesenha o cabeçalho
+  }
+  setInterval(function () { if (!document.hidden) try { comecar70(); } catch (e) {} }, 1500);
 
   function correr() {
     voltas++;
