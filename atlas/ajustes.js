@@ -444,9 +444,24 @@
     if (tme && dest && tme.parentNode !== dest) { tme.classList.add(window.tcdNonce ? "tme-dentro" : "tme-dir"); dest.insertBefore(tme, dest.firstChild); }
     // 26/10, 18h52 (Nuno): o #ipc-loc é a lista dos projectos (terrenos guardados), já no separador Projectos à direita;
     // aparecia em cima com o nome «Os meus locais» e duplicava os locais verdadeiros. Fica escondido à esquerda.
-    function pôr() { loc.classList.add("ipr-proj-fora"); }
-    if (!document.getElementById("ipr-loc-css")) { var cs = document.createElement("style"); cs.id = "ipr-loc-css"; cs.textContent = "#ipe #ipc-loc.ipr-g:not(.ipr-fechou)>.ipe-sbc{display:block!important}#ipe #ipc-loc.ipr-g:not(.ipr-fechou) .ipr-car{transform:rotate(90deg)}#ipe #ipc-loc.ipr-g.ipr-fechou>.ipe-sbc{display:none!important}#ipe #ipc-loc .ipe-loc-s,#ipe #ipc-loc .ipe-loc-p:has([data-am]){display:none!important}#ipe #ipc-loc>.ipe-sbc{max-height:30vh;overflow:auto}"; document.head.appendChild(cs); }
-    var gtb = loc.querySelector(".ipr-gt"); if (gtb && !gtb.__iprM) { gtb.__iprM = 1; gtb.addEventListener("click", function () { loc.classList.toggle("ipr-fechou"); }, true); }
+    // 27/10 (reportes 16262, 16263, 16328): o #ipc-loc é, afinal, o grupo dos locais (Ponto, Linha, Área, Importar, KML); escondê-lo
+    // tirava «Os meus locais» a quem não tem sessão. Só se esconde se não tiver esses botões. Fechar e abrir pelo título passa a
+    // ser tratado aqui, num só sítio, e o estado mantém-se quando o app.js redesenha a árvore das camadas.
+    function pôr() {
+      var l = document.getElementById("ipc-loc") || loc;
+      l.classList.toggle("ipr-proj-fora", !l.querySelector("[data-loc]"));
+      l.classList.toggle("ipr-fechou", ler("ipr_locais_fech") === "1");
+      var t = l.querySelector(":scope>.ipr-gc .ipr-gt, :scope>.ipr-gt"); if (t) t.setAttribute("aria-expanded", l.classList.contains("ipr-fechou") ? "false" : "true");
+    }
+    if (!document.getElementById("ipr-loc-css")) { var cs = document.createElement("style"); cs.id = "ipr-loc-css"; cs.textContent = "#ipe #ipc-loc.ipr-g:not(.ipr-fechou)>.ipe-sbc{display:block!important}#ipe #ipc-loc.ipr-g:not(.ipr-fechou) .ipr-car{transform:rotate(90deg)}#ipe #ipc-loc.ipr-g.ipr-fechou>.ipe-sbc{display:none!important}#ipe #ipc-loc .ipe-loc-s,#ipe #ipc-loc .ipe-loc-p:has([data-am]){display:none!important}#ipe #ipc-loc>.ipe-sbc{max-height:30vh;overflow:auto}" +
+      // 27/10 (reporte 16262): o grupo dos locais fica à vista no topo mesmo com «Todas as camadas» recolhido
+      "#ipe .ipr-arv.ipr-t62-rec>.ipr-66-loc:not(.ipr-proj-fora){display:block!important}"; document.head.appendChild(cs); }
+    if (!arrumar.del) { arrumar.del = 1; document.addEventListener("click", function (e) {
+      var t = e.target && e.target.closest && e.target.closest("#ipc-loc .ipr-gt"), l = document.getElementById("ipc-loc");
+      if (!t || !l || t.closest(".ipr-g") !== l) return;
+      e.preventDefault(); e.stopPropagation();
+      gravar("ipr_locais_fech", l.classList.contains("ipr-fechou") ? "0" : "1"); pôr();
+    }, true); }
     pôr();
     if (!arrumar.obs) { arrumar.obs = 1; new MutationObserver(function () { clearTimeout(arrumar.t); arrumar.t = setTimeout(pôr, 60); }).observe(cam, { childList: true, subtree: true }); }
     return true;
@@ -4682,12 +4697,13 @@
     var bts = [].slice.call(document.querySelectorAll("#ipe-esq button")).filter(function (b) { return /^(Ponto|Point)$/.test((b.textContent || "").trim()); });
     var g = bts.length ? (bts[0].closest(".ipr-g") || bts[0].closest("section")) : null;
     if (g && g !== arv && arv.contains(g)) {
-      g.classList.add("ipr-66-loc");
+      g.classList.add("ipr-66-loc"); g.classList.remove("ipr-proj-fora"); // 27/10: marcado antes de ter os botões, voltava a ficar escondido
       if (arv.firstElementChild !== g) arv.insertBefore(g, arv.firstChild);
     }
     var vistos66 = 0;
     if (g) [].forEach.call(g.querySelectorAll("*"), function (el) {
-      if (el.classList.contains("ipr-gn") || el.closest(".ipr-gt") || el.closest(".ipe-sbh") || el.children.length > 2) return;
+      // 27/10: a linha do título do próprio grupo (.ipr-gc com o botão que fecha e abre) não se esconde
+      if (el.classList.contains("ipr-gn") || el.closest(".ipr-gt") || el.closest(".ipe-sbh") || el.closest(".ipr-gc") || el.querySelector(".ipr-gt") || el.children.length > 2) return;
       if (!vistos66++ && !g.querySelector(".ipr-gt .ipr-gn, .ipe-sbh")) return;
       var tx = (el.firstChild && el.firstChild.nodeType === 3 ? el.firstChild.nodeValue : el.textContent || "").trim();
       if (/^(Os meus locais|My places)$/i.test(tx)) { var row = el.parentElement && el.parentElement !== g && el.parentElement.querySelector("svg") ? el.parentElement : el; row.style.display = "none"; }
