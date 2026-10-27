@@ -3169,6 +3169,162 @@
   // versão: A4 ou A3, horizontal ou vertical, 1:1 000 a 1:25 000; segunda página com o quadro de vértices para processo municipal.
   // Não é PDF/A validado nem peça municipal; diz-se isso no próprio documento.
   var PL = { libs: null };
+  // 27/10/2026 (Nuno, 10h06; catálogo de produtos B.4): folhas de cadastro, topografia LiDAR, perigosidade com gestão de
+  // combustível, COS 2023 e COS 2018, planta de condicionantes do PDM quando o concelho a tem; carimbo com freguesia,
+  // concelho e cantos da folha em PT-TM06; escolha das folhas no diálogo; dossier em português ou em inglês. A REN por
+  // tipologias fica de fora enquanto a camada «Reserva_Ecologica_Nacional_-_Tipologias» não estiver no catálogo (§64).
+  // Textos escritos por nós nas duas línguas; a língua do PDF escolhe-se no diálogo (por omissão, a do Atlas).
+  var PLG = "pt";
+  var PLX = {
+    pt: {
+      semLimite: "Este projecto não tem limite do terreno guardado.", naoArea: "O limite deste projecto não é uma área.",
+      orto25: "Ortofotomapa 2025, 25 cm (DGT)", sat23: "OrtoSat 2023, imagem de satélite (DGT)", semOrto: "Os serviços de ortofotomapa da DGT não responderam. Tente outra vez dentro de momentos.",
+      aviso: "Extracto informativo, sem valor de certidão. Algumas câmaras municipais exigem plantas emitidas por elas ou certidões: confirme antes de entregar num processo. Vinculativo é o publicado em Diário da República e no SNIT.",
+      maisClasses: "… e mais {n} {c} (ver o serviço de origem)", classe: "classe", classes: "classes", escala: "Escala",
+      legenda: "Legenda", oQue: "O que está a ver", projecto: "Projecto", ref: "Ref.", data: "Data", folha: "Folha",
+      src: "Sistema de coordenadas: ", imprimir: "Imprimir a 100 % (sem ajustar à página) em {p}.",
+      cantos: "Cantos da folha (PT-TM06, m)", freg: "Freguesia de {f}", conc: "Concelho de {c}", sitioNd: "Freguesia e concelho: sem resposta da CAOP no momento",
+      outras: "Outras categorias", nenhum: "{n}: nenhum elemento nesta folha",
+      mVect: "polígonos vectoriais do serviço (OGC API DGT), medidos em grelha de {px} m", mImg: "estimativa a partir da imagem do serviço (píxel de {px} m)",
+      semCor: "Cor sem correspondência na legenda", dadosDe: "dados de {a}", dadosA: " a {b}", actual: "actualizado em {d}", semTipo: "tipo de serviço sem extracto",
+      limite: "Limite do terreno", indisp: "{n}: serviço indisponível no momento",
+      sobreOrto: " Sobre o ortofotomapa atenuado, à mesma escala e com a mesma caixa da folha de localização; o limite do terreno está a vermelho.",
+      indispOQue: "Serviço indisponível no momento: não foi possível obter {n}. Gere o PDF de novo mais tarde. ",
+      fonte: "Fonte: ", semResp: ", sem resposta", licenca: ". Licença: termos de utilização do serviço de origem", soConsulta: "; só consulta, sem redistribuição dos dados",
+      consultado: ". Consultado em {h}. Fundo: {f}, atenuado.", extracto: "Extracto · {t}",
+      sinTit: "Quadro de síntese das folhas temáticas", sinIntro: "Área do terreno: {a} ha (calculada em PT-TM06 a partir do limite indicado no IPR Atlas). Para cada tema, área do terreno que abrange e percentagem. As áreas de temas diferentes sobrepõem-se e não se somam.",
+      cTema: "Tema", cCamada: "Camada", cArea: "Área (ha)", cPct: "% do terreno", cMetodo: "Método e observações",
+      sinIndisp: "Serviço indisponível no momento; sem valores.", linSim: "Há linhas deste tema dentro do limite", linNao: "Nenhuma linha deste tema dentro do limite",
+      linNota: " (elemento linear: a área não se aplica; a margem legal não está desenhada no serviço). ", semElem: "Nenhum elemento devolvido pelo serviço na área da folha. ",
+      sinNota: "Valores calculados no momento da emissão com os serviços indicados. «Estimativa a partir da imagem do serviço»: contagem dos píxeis coloridos da imagem devolvida pelo serviço dentro do limite; depende da simbologia e da resolução. Polígonos vectoriais: medição dos polígonos devolvidos pela OGC API da DGT numa grelha fina. Nenhum destes valores substitui a planta de condicionantes do PDM nem certidões da câmara municipal.",
+      preparar: "A preparar…", naoCabe25: "O terreno não cabe numa folha {p} a 1:25 000. Escolha A3 ou peça folhas de detalhe.",
+      naoCabeEsc: "À escala {e} o terreno não cabe numa folha {p}. Escolha uma escala maior ({s}) ou outro papel. A escala não é reduzida sem o dizer.",
+      pedirOrto: "A pedir o ortofotomapa à DGT…", pedirTemas: "A pedir as folhas temáticas ({t})…", compor: "A compor o dossier…",
+      enquadr: "Enquadramento, cerca de 30 km", plTit: "Planta de localização", posicao: "Posição do terreno no enquadramento",
+      dProj: "Projecto #{id}", dFin: "Finalidade: {f}", dReq: "Requerente: {r}", dArea: "Área do limite: {a} ha (calculada em PT-TM06)",
+      dCentro: "Centro: M {x} · P {y} · WGS84: {lat}, {lon}", dQuad: "Quadrícula de {q} · norte da quadrícula PT-TM06", dFundo: "Fundo: {f}",
+      plOQue: "Ortofotomapa da DGT ({f}) à escala {e}, com o limite do terreno a vermelho e a quadrícula PT-TM06 nas margens.",
+      plOQueIx: " No canto, enquadramento de cerca de 30 km sobre imagem de satélite, com a posição do terreno.", plOQueSeg: " As folhas seguintes repetem esta caixa com os temas escolhidos.",
+      plFonte: "Fontes: {f}; limites administrativos CAOP (DGT); limite do terreno indicado no IPR Atlas, sem verificação no terreno. Licença: termos de utilização dos serviços de origem. Consultado em {h}. Emitido por IPR Atlas · Terracrua Design, {d} · {id} · versão 2.",
+      plAviso: "Documento informativo: não é prova de propriedade, não substitui levantamento topográfico nem é emitido pela câmara municipal.",
+      indTit: "Serviço indisponível no momento", indTxt: "Não foi possível obter {t}. Gere o PDF de novo mais tarde.",
+      sinFolha: "Quadro de síntese", sinLeg: "Limite do terreno (base da medição)", sinOQue: "Para cada tema pedido, a área do terreno que abrange, em hectares e em percentagem da área do limite, e o método usado em cada linha.",
+      sinFonte: "Fonte: os serviços indicados em cada folha temática, consultados em {h}. Licença: termos de utilização dos serviços de origem.",
+      vTit: "Quadro de vértices", vCab: "Quadro de vértices · PT-TM06/ETRS89 (EPSG:3763)", vMais: "… e mais {n} vértices (ver ficheiro do limite).", vLeg: "Limite do terreno: vértices numerados pela ordem do desenho",
+      vOQue: "Coordenadas dos {n} vértices do limite em {s}, em metros, pela ordem em que foram desenhados", vAnel: "; entre parênteses, o número do anel ou parcela",
+      vFonte: "Fonte: limite do terreno indicado no IPR Atlas, sem verificação no terreno; conversão para PT-TM06 com proj4. Consultado em {h}.",
+      gerada: "Planta gerada: {id} · {e} · {p} · {n} {f}.", folhaS: "folha", folhasS: "folhas", falhas: " Serviço indisponível no momento: {t}.", semPdmMsg: " Sem planta de condicionantes do PDM no IPR Atlas para este concelho: a folha não foi incluída.",
+      ficheiro: "Planta-de-localizacao",
+      // folhas novas
+      t_cad: "Cadastro predial", t_topo: "Topografia · curvas de nível (LiDAR)", t_fgc: "Perigosidade de incêndio e gestão de combustível",
+      t_cos23: "Ocupação do solo · COS 2023", t_cos18: "Ocupação do solo · COS 2018 (a usada pelas câmaras)", t_pdmc: "PDM · planta de condicionantes",
+      t_ran: "Reserva Agrícola Nacional (RAN)", t_ren: "Reserva Ecológica Nacional (REN)", t_natura: "Rede Natura 2000 e áreas protegidas", t_dph: "Domínio hídrico",
+      t_fogo: "Perigosidade de incêndio rural", t_pdm: "PDM · ordenamento (qualificação do solo)",
+      cadLeg: "Limites das parcelas do cadastro", cadToca: "Parcelas que tocam o terreno", cadSem: "Sem referência no serviço",
+      cadOQue: "Limites das parcelas do cadastro predial da DGT na mesma caixa da folha de localização. As parcelas que o limite do terreno abrange estão realçadas e listadas no quadro de síntese com a área abrangida.",
+      cadNota: "O cadastro da DGT não cobre todo o país e pode não coincidir com o BUPi nem com a caderneta predial; o artigo matricial e a secção confirmam-se na caderneta e na conservatória.",
+      maisParc: "… e mais {n} parcelas (ver a folha do cadastro)",
+      cadMetodo: "parcelas vectoriais do serviço (OGC API DGT); área da parcela dentro do limite, em grelha de {px} m",
+      topoMestra: "Curva mestra (de {m} em {m} m)", topoCurva: "Curva de nível (equidistância {e} m)",
+      topoOQueDem: "Curvas de nível calculadas no momento a partir do modelo de elevação Mapterhorn (LiDAR DGT 0,5 m reamostrado, nível {z}, cerca de {r} m por píxel), com equidistância de {e} m e curvas mestras de {m} em {m} m. Servem para ler o relevo; não substituem um levantamento topográfico.",
+      topoOQueBase: "Curvas de nível da Base Cartográfica deste projecto ({f}), tiradas do LiDAR da DGT pelo processamento IPR, com equidistância de {e} m.",
+      topoCotas: "Cotas dentro do limite: mínima {a} m, máxima {b} m, média {c} m (amostragem do modelo de elevação).",
+      topoFonteDem: "Mapterhorn (tiles.mapterhorn.com) · LiDAR DGT 0,5 m · CC BY 4.0", topoFonteBase: "Base Cartográfica do projecto · LiDAR DGT · processamento IPR",
+      topoMetodo: "curvas de nível: elemento linear, sem área", topoSem: "O modelo de elevação não respondeu nesta área.",
+      pdmNota: "Imagem da planta de condicionantes publicada pela câmara municipal e servida pela DGT/SNIT, reprojectada para PT-TM06. Não substitui a planta em vigor nem a certidão da câmara.",
+      pdmMetodo: "imagem da planta publicada: sem medição de áreas (a planta é uma imagem opaca com várias servidões sobrepostas)",
+      pdmFonte: "Câmara Municipal de {m} · DGT/SNIT · CC BY 4.0", pdmNome: "Planta de condicionantes · {m}",
+      // diálogo
+      dlTit: "Planta de localização · projecto #{id}", dlFin: "Finalidade", fApr: "Apresentação", fTec: "Trabalho técnico", fMun: "Processo municipal",
+      dlMun: "Município", dlProc: "Procedimento", dlProcEx: "ex.: comunicação prévia", dlPapel: "Papel", dlOri: "Orientação", oAuto: "Automática", oH: "Horizontal", oV: "Vertical",
+      dlEsc: "Escala", eMin: "A menor possível (mais pormenor)", dlFundo: "Fundo", fOrto: "Ortofotomapa 2025", fSat: "Satélite 2023", dlReq: "Requerente (opcional)",
+      dlLing: "Língua do PDF", dlFolhas: "Folhas a incluir", dlLoc: "Localização", dlSin: "Quadro de síntese (ha e %)", dlVert: "Quadro de vértices",
+      dlPdmA: "a procurar o concelho…", dlPdmSim: "{m}", dlPdmNao: "{m} ainda não tem planta no IPR Atlas", dlPdmNd: "concelho por confirmar",
+      dlTxt: "PDF em PT-TM06 à escala exacta: folha de localização com ortofotomapa da DGT e folhas temáticas na mesma caixa, cada uma com carimbo (freguesia, concelho, cantos da folha, escala e data), rosa dos ventos, régua, legenda, fontes e identificador. Os extractos são informativos: algumas câmaras exigem plantas emitidas por elas ou certidões.",
+      dlGerar: "Gerar PDF", dlFechar: "Fechar"
+    },
+    en: {
+      semLimite: "This project has no saved plot boundary.", naoArea: "The boundary of this project is not an area.",
+      orto25: "Orthophoto 2025, 25 cm (DGT)", sat23: "OrtoSat 2023, satellite image (DGT)", semOrto: "The DGT orthophoto services did not respond. Please try again in a few moments.",
+      aviso: "Information extract with no certificate value. Some municipal councils require plans issued by themselves or certificates: check before submitting it to an application. Only what is published in the Diário da República and in SNIT is binding.",
+      maisClasses: "… and {n} more {c} (see the source service)", classe: "class", classes: "classes", escala: "Scale",
+      legenda: "Legend", oQue: "What you are looking at", projecto: "Project", ref: "Ref.", data: "Date", folha: "Sheet",
+      src: "Coordinate system: ", imprimir: "Print at 100 % (no fit to page) on {p}.",
+      cantos: "Sheet corners (PT-TM06, m)", freg: "Parish of {f}", conc: "Municipality of {c}", sitioNd: "Parish and municipality: no answer from CAOP at the moment",
+      outras: "Other categories", nenhum: "{n}: no features on this sheet",
+      mVect: "vector polygons from the service (DGT OGC API), measured on a {px} m grid", mImg: "estimate from the service image ({px} m pixel)",
+      semCor: "Colour not matched in the legend", dadosDe: "data from {a}", dadosA: " to {b}", actual: "updated on {d}", semTipo: "service type without extract",
+      limite: "Plot boundary", indisp: "{n}: service unavailable at the moment",
+      sobreOrto: " Over the faded orthophoto, at the same scale and with the same frame as the location sheet; the plot boundary is in red.",
+      indispOQue: "Service unavailable at the moment: {n} could not be obtained. Generate the PDF again later. ",
+      fonte: "Source: ", semResp: ", no answer", licenca: ". Licence: terms of use of the source service", soConsulta: "; viewing only, no redistribution of the data",
+      consultado: ". Retrieved on {h}. Background: {f}, faded.", extracto: "Extract · {t}",
+      sinTit: "Summary table of the theme sheets", sinIntro: "Plot area: {a} ha (computed in PT-TM06 from the boundary drawn in IPR Atlas). For each theme, the area of the plot it covers and the percentage. Areas of different themes overlap and do not add up.",
+      cTema: "Theme", cCamada: "Layer", cArea: "Area (ha)", cPct: "% of plot", cMetodo: "Method and notes",
+      sinIndisp: "Service unavailable at the moment; no values.", linSim: "There are lines of this theme inside the boundary", linNao: "No lines of this theme inside the boundary",
+      linNota: " (linear feature: area does not apply; the legal buffer is not drawn by the service). ", semElem: "The service returned no features within the sheet. ",
+      sinNota: "Values computed at the time of issue with the services listed. «Estimate from the service image»: count of the coloured pixels of the image returned by the service inside the boundary; it depends on the symbology and the resolution. Vector polygons: measurement of the polygons returned by the DGT OGC API on a fine grid. None of these values replaces the PDM constraints plan or certificates from the municipal council.",
+      preparar: "Preparing…", naoCabe25: "The plot does not fit on an {p} sheet at 1:25 000. Choose A3 or ask for detail sheets.",
+      naoCabeEsc: "At scale {e} the plot does not fit on an {p} sheet. Choose a larger scale ({s}) or another paper size. The scale is never reduced without saying so.",
+      pedirOrto: "Requesting the orthophoto from DGT…", pedirTemas: "Requesting the theme sheets ({t})…", compor: "Composing the dossier…",
+      enquadr: "Overview, about 30 km", plTit: "Location plan", posicao: "Position of the plot in the overview",
+      dProj: "Project #{id}", dFin: "Purpose: {f}", dReq: "Applicant: {r}", dArea: "Boundary area: {a} ha (computed in PT-TM06)",
+      dCentro: "Centre: E {x} · N {y} · WGS84: {lat}, {lon}", dQuad: "{q} grid · PT-TM06 grid north", dFundo: "Background: {f}",
+      plOQue: "DGT orthophoto ({f}) at scale {e}, with the plot boundary in red and the PT-TM06 grid along the margins.",
+      plOQueIx: " In the corner, an overview of about 30 km over satellite imagery, with the position of the plot.", plOQueSeg: " The following sheets repeat this frame with the chosen themes.",
+      plFonte: "Sources: {f}; CAOP administrative boundaries (DGT); plot boundary drawn in IPR Atlas, not checked on the ground. Licence: terms of use of the source services. Retrieved on {h}. Issued by IPR Atlas · Terracrua Design, {d} · {id} · version 2.",
+      plAviso: "Information document: it is not proof of ownership, does not replace a topographic survey and is not issued by the municipal council.",
+      indTit: "Service unavailable at the moment", indTxt: "{t} could not be obtained. Generate the PDF again later.",
+      sinFolha: "Summary table", sinLeg: "Plot boundary (basis of the measurement)", sinOQue: "For each theme requested, the area of the plot it covers, in hectares and as a percentage of the boundary area, and the method used on each row.",
+      sinFonte: "Source: the services listed on each theme sheet, retrieved on {h}. Licence: terms of use of the source services.",
+      vTit: "Vertex table", vCab: "Vertex table · PT-TM06/ETRS89 (EPSG:3763)", vMais: "… and {n} more vertices (see the boundary file).", vLeg: "Plot boundary: vertices numbered in drawing order",
+      vOQue: "Coordinates of the {n} boundary vertices in {s}, in metres, in the order they were drawn", vAnel: "; in brackets, the ring or parcel number",
+      vFonte: "Source: plot boundary drawn in IPR Atlas, not checked on the ground; converted to PT-TM06 with proj4. Retrieved on {h}.",
+      gerada: "Plan generated: {id} · {e} · {p} · {n} {f}.", folhaS: "sheet", folhasS: "sheets", falhas: " Service unavailable at the moment: {t}.", semPdmMsg: " No PDM constraints plan in IPR Atlas for this municipality: the sheet was left out.",
+      ficheiro: "Location-plan",
+      t_cad: "Cadastral parcels", t_topo: "Topography · contour lines (LiDAR)", t_fgc: "Wildfire hazard and fuel management",
+      t_cos23: "Land cover · COS 2023", t_cos18: "Land cover · COS 2018 (the one councils use)", t_pdmc: "PDM · constraints plan",
+      t_ran: "National Agricultural Reserve (RAN)", t_ren: "National Ecological Reserve (REN)", t_natura: "Natura 2000 and protected areas", t_dph: "Water public domain",
+      t_fogo: "Rural wildfire hazard", t_pdm: "PDM · zoning (land qualification)",
+      cadLeg: "Cadastral parcel boundaries", cadToca: "Parcels touching the plot", cadSem: "No reference in the service",
+      cadOQue: "Boundaries of the DGT cadastral parcels in the same frame as the location sheet. The parcels covered by the plot boundary are highlighted and listed in the summary table with the area covered.",
+      cadNota: "The DGT cadastre does not cover the whole country and may differ from BUPi and from the land registry record; the tax article and section are confirmed in the registry documents.",
+      maisParc: "… and {n} more parcels (see the cadastral sheet)",
+      cadMetodo: "vector parcels from the service (DGT OGC API); parcel area inside the boundary, on a {px} m grid",
+      topoMestra: "Index contour (every {m} m)", topoCurva: "Contour line ({e} m interval)",
+      topoOQueDem: "Contour lines computed on the spot from the Mapterhorn elevation model (DGT LiDAR 0.5 m resampled, level {z}, about {r} m per pixel), at a {e} m interval with index contours every {m} m. They are meant for reading the relief and do not replace a topographic survey.",
+      topoOQueBase: "Contour lines from this project's Base Cartográfica ({f}), derived from DGT LiDAR by IPR processing, at a {e} m interval.",
+      topoCotas: "Elevations inside the boundary: lowest {a} m, highest {b} m, mean {c} m (sampled from the elevation model).",
+      topoFonteDem: "Mapterhorn (tiles.mapterhorn.com) · DGT LiDAR 0.5 m · CC BY 4.0", topoFonteBase: "Project Base Cartográfica · DGT LiDAR · IPR processing",
+      topoMetodo: "contour lines: linear feature, no area", topoSem: "The elevation model did not respond for this area.",
+      pdmNota: "Image of the constraints plan published by the municipal council and served by DGT/SNIT, reprojected to PT-TM06. It does not replace the plan in force or the council's certificate.",
+      pdmMetodo: "image of the published plan: no area measurement (the plan is an opaque image with several overlapping constraints)",
+      pdmFonte: "Municipal Council of {m} · DGT/SNIT · CC BY 4.0", pdmNome: "Constraints plan · {m}",
+      dlTit: "Location plan · project #{id}", dlFin: "Purpose", fApr: "Presentation", fTec: "Technical work", fMun: "Municipal application",
+      dlMun: "Municipality", dlProc: "Procedure", dlProcEx: "e.g. prior notice", dlPapel: "Paper", dlOri: "Orientation", oAuto: "Automatic", oH: "Landscape", oV: "Portrait",
+      dlEsc: "Scale", eMin: "Smallest possible (most detail)", dlFundo: "Background", fOrto: "Orthophoto 2025", fSat: "Satellite 2023", dlReq: "Applicant (optional)",
+      dlLing: "PDF language", dlFolhas: "Sheets to include", dlLoc: "Location", dlSin: "Summary table (ha and %)", dlVert: "Vertex table",
+      dlPdmA: "looking up the municipality…", dlPdmSim: "{m}", dlPdmNao: "{m} has no plan in IPR Atlas yet", dlPdmNd: "municipality to be confirmed",
+      dlTxt: "PDF in PT-TM06 at exact scale: location sheet over the DGT orthophoto and theme sheets in the same frame, each with a title block (parish, municipality, sheet corners, scale and date), compass rose, scale bar, legend, sources and identifier. The extracts are for information only: some councils require plans issued by themselves or certificates.",
+      dlGerar: "Generate PDF", dlFechar: "Close"
+    }
+  };
+  function plT(k, v) {
+    var d = PLX[PLG] || PLX.pt, s = d[k] != null ? d[k] : (PLX.pt[k] != null ? PLX.pt[k] : k);
+    if (v) Object.keys(v).forEach(function (x) { s = s.split("{" + x + "}").join(v[x]); });
+    return s;
+  }
+  // Nomes das camadas em inglês (o catálogo do viz.js só os tem em português).
+  var PL_EN = { ran: "RAN (agricultural reserve)", ren: "REN (ecological reserve)", n2k: "Natura 2000 network", rnap: "Protected areas", la350: "Watercourses with catchment > 350 ha",
+    albzr: "Reservoirs and lagoons · reserved zone", albuf: "Classified reservoirs", perig_e: "Structural wildfire hazard 2020–2030", crus: "PDM · land qualification (CRUS)",
+    cad: "Cadastral parcels", r_curvas: "Contour lines (DGT LiDAR)", sgifr_a: "Fuel breaks and mosaics (SGIFR)", sgifr_l: "Fuel management network · lines (SGIFR)",
+    redeprim: "Primary fuel break network", cos23: "COS 2023 land cover", cos18: "COS 2018 land cover" };
+  var PL_CLS_EN = { "Artificializado": "Artificial surfaces", "Agricultura": "Agriculture", "Pastagens": "Pasture", "Agroflorestal": "Agroforestry", "Floresta": "Forest", "Matos": "Scrubland",
+    "Sem vegetação": "No vegetation", "Zonas húmidas": "Wetlands", "Água": "Water", "Agrícola": "Agricultural", "Florestal": "Forestry", "Natural": "Natural", "Urbano": "Urban",
+    "Actividades económicas": "Economic activities", "Recursos geológicos": "Geological resources" };
+  function plNome(e) { return PLG === "en" ? (PL_EN[e.id] || e.en || e.n) : e.n; }
+  function plCls(t) { return PLG === "en" && PL_CLS_EN[t] ? PL_CLS_EN[t] : t; }
+  function plLoc() { return PLG === "en" ? "en-GB" : "pt-PT"; }
   function plLibs() {
     if (PL.libs) return PL.libs;
     function carregar(u) { return new Promise(function (ok, ko) { var s = document.createElement("script"); s.src = u; s.onload = ok; s.onerror = function () { ko(new Error("Não foi possível carregar " + u)); }; document.head.appendChild(s); }); }
@@ -3182,7 +3338,7 @@
     return fetch("/wp-json/tcd/v1/meus-mapas", { credentials: "same-origin", headers: { "X-WP-Nonce": window.tcdNonce || "" } }).then(function (r) { return r.json(); }).then(function (d) {
       var achado = null;
       ["mapas", "partilhados", "rever"].forEach(function (k) { (d[k] || []).forEach(function (x) { if (!achado && x && +(x.encomenda || x.id) === +id && x.geojson) achado = x; }); });
-      if (!achado) throw new Error("Este projecto não tem limite do terreno guardado.");
+      if (!achado) throw new Error(plT("semLimite"));
       var gj = achado.geojson; if (typeof gj === "string") { try { gj = JSON.parse(gj); } catch (e) { gj = null; } }
       var aneis = [];
       (function andar(g) {
@@ -3193,8 +3349,8 @@
         if (g.type === "MultiPolygon") return g.coordinates.forEach(function (p) { p.forEach(function (r) { aneis.push(r); }); });
         if (g.type === "GeometryCollection") return g.geometries.forEach(andar);
       })(gj);
-      if (!aneis.length) throw new Error("O limite deste projecto não é uma área.");
-      return { nome: achado.local || achado.nome || ("Projecto " + id), aneis: aneis, ha: achado.area_ha };
+      if (!aneis.length) throw new Error(plT("naoArea"));
+      return { nome: achado.local || achado.nome || (plT("projecto") + " " + id), aneis: aneis, ha: achado.area_ha, downloads: achado.downloads || [] };
     });
   }
   function plNice(v) { var e = Math.pow(10, Math.floor(Math.log10(v))), f = v / e; return (f >= 5 ? 5 : f >= 2 ? 2 : 1) * e; }
@@ -3205,11 +3361,11 @@
     }).then(function (b) { return new Promise(function (ok, ko) { var fr = new FileReader(); fr.onload = function () { ok(fr.result); }; fr.onerror = ko; fr.readAsDataURL(b); }); });
   }
   function plWms(caixa, wpx, hpx, preferir) {
-    var fontes = [["https://cartografia.dgterritorio.gov.pt/wms/ortos2025", "Ortos2025-RGB", "Ortofotomapa 2025, 25 cm (DGT)"], ["https://ortos.dgterritorio.gov.pt/wms/ortosat2023", "ortoSat2023-CorVerdadeira", "OrtoSat 2023, imagem de satélite (DGT)"]];
+    var fontes = [["https://cartografia.dgterritorio.gov.pt/wms/ortos2025", "Ortos2025-RGB", plT("orto25")], ["https://ortos.dgterritorio.gov.pt/wms/ortosat2023", "ortoSat2023-CorVerdadeira", plT("sat23")]];
     if (preferir === "sat") fontes.reverse();
     var i = 0;
     function um() {
-      var f = fontes[i]; if (!f) return Promise.reject(new Error("Os serviços de ortofotomapa da DGT não responderam. Tente outra vez dentro de momentos."));
+      var f = fontes[i]; if (!f) return Promise.reject(new Error(plT("semOrto")));
       var u = f[0] + "?SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&LAYERS=" + f[1] + "&STYLES=&SRS=EPSG:3763&BBOX=" + caixa.map(function (v) { return v.toFixed(2); }).join(",") + "&WIDTH=" + wpx + "&HEIGHT=" + hpx + "&FORMAT=image/jpeg";
       return plImg(u).then(function (d) { return { dados: d, fonte: f[2] }; }, function () { i++; return um(); });
     }
@@ -3235,6 +3391,7 @@
   var PM_AVISO = "Extracto informativo, sem valor de certidão. Algumas câmaras municipais exigem plantas emitidas por elas ou certidões: confirme antes de entregar num processo. Vinculativo é o publicado em Diário da República e no SNIT.";
   var PM_OGC = "https://ogcapi.dgterritorio.gov.pt", PM_ICNF = "https://sigservices.icnf.pt/server/rest/services/BDG/", PM_APA = "https://sniambgeoogc.apambiente.pt/getogc/rest/services/";
   // Reserva, só para quando o catálogo do viz.js não estiver carregado: os mesmos URL e camadas que lá estão.
+  var PM_COS = [["#e04b4b", "Artificializado"], ["#f2d16b", "Agricultura"], ["#c7e08a", "Pastagens"], ["#a6c46a", "Agroflorestal"], ["#2e7d32", "Floresta"], ["#9ccc65", "Matos"], ["#d7ccc8", "Sem vegetação"], ["#80deea", "Zonas húmidas"], ["#4fc3f7", "Água"]];
   var PM_RES = {
     ran: { id: "ran", n: "RAN", t: "mvt", col: "srup_ran", cor: "#c9a227", fonte: "DGT · SRUP" },
     ren: { id: "ren", n: "REN", t: "mvt", col: "srup_ren_areal", cor: "#3a8a3a", fonte: "DGT · SRUP", lic: "r" },
@@ -3244,22 +3401,53 @@
     albzr: { id: "albzr", n: "Albufeiras e lagoas · zona reservada", t: "ags", url: PM_APA + "Visualizador/DominioPublicoHidrico/MapServer", layers: "show:34", cor: "#4fc3f7", fonte: "APA" },
     albuf: { id: "albuf", n: "Albufeiras classificadas", t: "mvt", col: "srup_albufeiras", cor: "#4fc3f7", fonte: "DGT · SRUP" },
     perig_e: { id: "perig_e", n: "Perigosidade estrutural 2020–2030", t: "ags", url: PM_ICNF + "perigosidade_estrutural/MapServer", cor: "#ef6c00", fonte: "ICNF" },
-    crus: { id: "crus", n: "PDM · qualificação do solo (CRUS)", t: "mvt", col: "crus", cor: "#c7b65a", nota: "Indicativo; vinculativo é o publicado em DR / SNIT", leg: [["#e9d66b", "Agrícola"], ["#5b9a4b", "Florestal"], ["#c7b65a", "Agroflorestal"], ["#2f6b3a", "Natural"], ["#d9534f", "Urbano"], ["#9b6bb5", "Actividades económicas"], ["#8c6d4f", "Recursos geológicos"], ["#5aa0d8", "Água"]] }
+    crus: { id: "crus", n: "PDM · qualificação do solo (CRUS)", t: "mvt", col: "crus", cor: "#c7b65a", nota: "Indicativo; vinculativo é o publicado em DR / SNIT", leg: [["#e9d66b", "Agrícola"], ["#5b9a4b", "Florestal"], ["#c7b65a", "Agroflorestal"], ["#2f6b3a", "Natural"], ["#d9534f", "Urbano"], ["#9b6bb5", "Actividades económicas"], ["#8c6d4f", "Recursos geológicos"], ["#5aa0d8", "Água"]] },
+    cad: { id: "cad", n: "Cadastro predial", t: "mvt", col: "cadastro", cor: "#e8dcb5", fonte: "DGT · Cadastro predial" },
+    r_curvas: { id: "r_curvas", n: "Curvas de nível (LiDAR DGT)", t: "curvas", cor: "#8c5a2b" },
+    sgifr_a: { id: "sgifr_a", n: "Faixas e mosaicos (SGIFR)", t: "mvt", col: "sgifr_areas", cor: "#ff8c42", fonte: "DGT · SGIFR" },
+    sgifr_l: { id: "sgifr_l", n: "Rede de gestão · linhas (SGIFR)", t: "mvt", col: "sgifr_linhas", cor: "#e8590c", fonte: "DGT · SGIFR" },
+    redeprim: { id: "redeprim", n: "Rede primária de faixas", t: "ags", url: PM_ICNF + "Rede_primaria/MapServer", cor: "#bf360c", fonte: "ICNF" },
+    cos23: { id: "cos23", n: "COS 2023 (vector)", t: "mvt", col: "cos2023v1", cor: "#a6c46a", fonte: "DGT", leg: PM_COS },
+    cos18: { id: "cos18", n: "COS 2018 (vector)", t: "mvt", col: "cos2018v4", cor: "#c7e08a", fonte: "DGT", leg: PM_COS }
   };
   // Temas das folhas de extracto. «linear»: camadas de linhas, em que só se diz se tocam o terreno (a área não se aplica).
-  // PDM · condicionantes: o catálogo do Atlas não tem essa camada (só a CRUS, de ordenamento), por isso não há folha.
+  // «def»: ligada por omissão no diálogo. As seis folhas de 26/10 continuam ligadas; das de 27/10 só o cadastro e a topografia.
+  // «pdmc»: planta de condicionantes do PDM (imagem WMS da DGT pelo proxy do site, pdm_<DICO> do §64), só quando o concelho
+  // ao centro do terreno tem uma; as camadas resolvem-se no momento (pmTemaCams).
   var PM_TEMAS = [
-    { k: "ran", t: "Reserva Agrícola Nacional (RAN)", c: ["ran"] },
-    { k: "ren", t: "Reserva Ecológica Nacional (REN)", c: ["ren"] },
-    { k: "natura", t: "Rede Natura 2000 e áreas protegidas", c: ["n2k", "rnap"] },
-    { k: "dph", t: "Domínio hídrico", c: ["la350", "albzr", "albuf"], linear: { la350: 1 } },
-    { k: "fogo", t: "Perigosidade de incêndio rural", c: ["perig_e"] },
-    { k: "pdm", t: "PDM · ordenamento (qualificação do solo)", c: ["crus"] }
+    { k: "cad", c: ["cad"], def: 1, cad: 1 },
+    { k: "topo", c: ["r_curvas"], def: 1, topo: 1 },
+    { k: "ran", c: ["ran"], def: 1 },
+    { k: "ren", c: ["ren"], def: 1 },
+    { k: "natura", c: ["n2k", "rnap"], def: 1 },
+    { k: "dph", c: ["la350", "albzr", "albuf"], linear: { la350: 1 }, def: 1 },
+    { k: "fogo", c: ["perig_e"], def: 1 },
+    { k: "fgc", c: ["perig_e", "sgifr_a", "sgifr_l", "redeprim"], linear: { sgifr_l: 1 } },
+    { k: "pdm", c: ["crus"], def: 1 },
+    { k: "pdmc", c: [], pdmc: 1 },
+    { k: "cos23", c: ["cos23"] },
+    { k: "cos18", c: ["cos18"] }
   ];
+  PM_TEMAS.forEach(function (t) { Object.defineProperty(t, "t", { get: function () { return plT("t_" + t.k); }, enumerable: true }); });
+  // Planta de condicionantes do PDM do concelho: as do §64 (PDM64) e as que o servidor publica para o país todo (§76,
+  // /wp-json/tcd/v1/pdm/lista, m90387). Resolve null quando o concelho ainda não tem planta pronta.
+  function plPdm(municipio) {
+    var k = String(municipio || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+    function entrada(id, n) { var e = pmCat(id); return e && e.t === "wmsp" ? Object.assign({}, e, { mun: n }) : { id: id, n: "Planta de condicionantes · " + n, t: "wmsp", src: id, cor: "#b07aa1", fonte: "Câmara Municipal de " + n + " · DGT/SNIT · CC BY 4.0", mun: n }; }
+    if (!k) return Promise.resolve(null);
+    var p = typeof PDM64 !== "undefined" && PDM64 ? PDM64[k] : null;
+    if (p) return Promise.resolve(entrada("pdm_" + p.d, p.n));
+    if (typeof PDM_IDS !== "undefined" && PDM_IDS[k]) return Promise.resolve(entrada(PDM_IDS[k], municipio));
+    if (typeof pdm76 !== "function") return Promise.resolve(null);
+    return new Promise(function (ok) {
+      var t = setTimeout(function () { ok(null); }, 15000);
+      try { pdm76(k, municipio, function () { clearTimeout(t); ok(PDM_IDS[k] ? entrada(PDM_IDS[k], municipio) : null); }); } catch (e) { clearTimeout(t); ok(null); }
+    });
+  }
   function pmHex(h) { h = String(h || "#888888").replace("#", ""); if (h.length === 3) h = h.replace(/./g, "$&$&"); var n = parseInt(h.slice(0, 6), 16) || 0; return [n >> 16 & 255, n >> 8 & 255, n & 255]; }
-  function pmBanda(W, H) { return W >= 400 || H >= 400 ? 60 : (W < H ? 56 : 48); }
-  function pmNum(v, d) { return (+v).toLocaleString("pt-PT", { minimumFractionDigits: d || 0, maximumFractionDigits: d || 0 }); }
-  function pmEsc(esc) { return "1:" + (+esc).toLocaleString("pt-PT"); }
+  function pmBanda(W, H) { return W >= 400 || H >= 400 ? 60 : (W < H ? 56 : 52); }
+  function pmNum(v, d) { return (+v).toLocaleString(plLoc(), { minimumFractionDigits: d || 0, maximumFractionDigits: d || 0 }); }
+  function pmEsc(esc) { return "1:" + (+esc).toLocaleString(plLoc()); }
   function pmData(d) { return ("0" + d.getDate()).slice(-2) + "/" + ("0" + (d.getMonth() + 1)).slice(-2) + "/" + d.getFullYear(); }
   function pmHora(d) { return pmData(d) + " " + ("0" + d.getHours()).slice(-2) + "h" + ("0" + d.getMinutes()).slice(-2); }
   function pmSemAc(t) { return String(t || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/actividade/g, "atividade"); }
@@ -3310,7 +3498,7 @@
     function r(v) { return String(Math.round(v / u * 100) / 100).replace(".", ","); }
     doc.setLineDashPattern([], 0); doc.setFillColor(255, 255, 255); doc.setDrawColor(90); doc.setLineWidth(0.2);
     doc.roundedRect(x - 3, y - 8.6, Lmm + 14, 13.4, 1.2, 1.2, "FD");
-    doc.setTextColor(0); doc.setFont("helvetica", "bold"); doc.setFontSize(7.5); doc.text("Escala " + pmEsc(esc), x, y - 4.4);
+    doc.setTextColor(0); doc.setFont("helvetica", "bold"); doc.setFontSize(7.5); doc.text(plT("escala") + " " + pmEsc(esc), x, y - 4.4);
     doc.setDrawColor(0); doc.setLineWidth(0.2);
     for (var k = 0; k < 4; k++) { var c = k % 2 ? 255 : 0; doc.setFillColor(c, c, c); doc.rect(x + k * Lmm / 4, y - 1.8, Lmm / 4, 1.8, "FD"); }
     doc.setFont("helvetica", "normal"); doc.setFontSize(6);
@@ -3322,8 +3510,8 @@
   function pmQuadricula(doc, F) {
     var M = F.M, fw = F.fw, fh = F.fh, caixa = F.caixa, gw = F.gw, gh = F.gh, passo = plNice(gw / 5);
     doc.setDrawColor(0); doc.setLineWidth(0.3); doc.setFont("helvetica", "normal"); doc.setFontSize(6); doc.setTextColor(0);
-    for (var x = Math.ceil(caixa[0] / passo) * passo; x < caixa[2]; x += passo) { var px = M + (x - caixa[0]) / gw * fw; doc.line(px, M, px, M + 2.5); doc.line(px, M + fh, px, M + fh - 2.5); doc.text("M " + Math.round(x), px + 0.6, M + 4.5); }
-    for (var y = Math.ceil(caixa[1] / passo) * passo; y < caixa[3]; y += passo) { var py = M + (caixa[3] - y) / gh * fh; doc.line(M, py, M + 2.5, py); doc.line(M + fw, py, M + fw - 2.5, py); doc.text("P " + Math.round(y), M + 3.2, py - 0.6); }
+    for (var x = Math.ceil(caixa[0] / passo) * passo; x < caixa[2]; x += passo) { var px = M + (x - caixa[0]) / gw * fw; doc.line(px, M, px, M + 2.5); doc.line(px, M + fh, px, M + fh - 2.5); doc.text((PLG === "en" ? "E " : "M ") + Math.round(x), px + 0.6, M + 4.5); }
+    for (var y = Math.ceil(caixa[1] / passo) * passo; y < caixa[3]; y += passo) { var py = M + (caixa[3] - y) / gh * fh; doc.line(M, py, M + 2.5, py); doc.line(M + fw, py, M + fw - 2.5, py); doc.text((PLG === "en" ? "N " : "P ") + Math.round(y), M + 3.2, py - 0.6); }
     return passo;
   }
   // Limite do terreno: traço vermelho com auréola branca, para se ler por cima de qualquer tema.
@@ -3339,7 +3527,7 @@
   function pmLegenda(doc, itens, x, y, w, ymax) {
     var lh = 3.5, mostrados = 0;
     for (var i = 0; i < itens.length; i++) {
-      if (y + lh > ymax) { pmTexto(doc, "… e mais " + (itens.length - i) + (itens.length - i === 1 ? " classe" : " classes") + " (ver o serviço de origem)", x, y, w, 5.4, 2.4, ymax + 2, "italic", [90, 90, 90]); return y + 2.6; }
+      if (y + lh > ymax) { pmTexto(doc, plT("maisClasses", { n: itens.length - i, c: plT(itens.length - i === 1 ? "classe" : "classes") }), x, y, w, 5.4, 2.4, ymax + 2, "italic", [90, 90, 90]); return y + 2.6; }
       var it = itens[i], c = it.cor || [0, 0, 0];
       if (it.t === "linha") { doc.setDrawColor(255, 255, 255); doc.setLineWidth(1.3); doc.line(x, y - 1.1, x + 6, y - 1.1); doc.setDrawColor(c[0], c[1], c[2]); doc.setLineWidth(0.6); doc.line(x, y - 1.1, x + 6, y - 1.1); }
       else if (it.t === "quadro") { doc.setDrawColor(c[0], c[1], c[2]); doc.setLineWidth(0.5); doc.rect(x + 1.8, y - 2.3, 2.4, 2.4); }
@@ -3369,7 +3557,7 @@
     doc.setLineWidth(0.2); doc.line(xb, by, xb, by + B); doc.line(xc, by, xc, by + B);
     var ymax = by + B - 1.8;
     // A · legenda e dados
-    var y = pmTexto(doc, "Legenda", xa + p, by + 4.6, xb - xa - 2 * p, 7, 3.2, ymax, "bold") + 0.6;
+    var y = pmTexto(doc, plT("legenda"), xa + p, by + 4.6, xb - xa - 2 * p, 7, 3.2, ymax, "bold") + 0.6;
     var reserva = S.dados ? Math.min(S.dados.length, 9) * 2.55 + 1.5 : 0;
     if (S.legendaImg) {
       var lw = xb - xa - 2 * p, lhm = Math.max(8, ymax - reserva - y), k = Math.min(lw / S.legendaImg.w, lhm / S.legendaImg.h, 0.12);
@@ -3380,8 +3568,8 @@
     // B · o que está a ver, fonte e licença, aviso
     var wb = xc - xb - 2 * p;
     doc.setFont("helvetica", "italic"); doc.setFontSize(5.4);
-    var av = doc.splitTextToSize((S.aviso ? S.aviso + " " : "") + PM_AVISO, wb), yAv = by + B - 2 - (av.length - 1) * 2.3;
-    y = pmTexto(doc, "O que está a ver", xb + p, by + 4.6, wb, 7, 3.2, ymax, "bold") + 0.4;
+    var av = doc.splitTextToSize((S.aviso ? S.aviso + " " : "") + plT("aviso"), wb), yAv = by + B - 2 - (av.length - 1) * 2.3;
+    y = pmTexto(doc, plT("oQue"), xb + p, by + 4.6, wb, 7, 3.2, ymax, "bold") + 0.4;
     y = pmTexto(doc, S.oQue || "", xb + p, y, wb, 6.2, 2.7, yAv - 9) + 1;
     pmTexto(doc, S.fonte || "", xb + p, y, wb, 5.4, 2.3, yAv - 3.2, "normal", cinz);
     doc.setDrawColor(170); doc.setLineWidth(0.15); doc.line(xb + p, yAv - 3, xc - p, yAv - 3);
@@ -3393,17 +3581,31 @@
     doc.text(doc.splitTextToSize(PM_MARCA, wc - 2 * p)[0], cx, by + 4.1); doc.setTextColor(0);
     var yT = pmTexto(doc, String(S.titulo || "").toUpperCase(), cx, by + 10.6, wc - 2 * p, 8.4, 3.4, by + 14.2, "bold");
     var yP = Math.max(yT + 0.6, by + 17.4);
-    pmTexto(doc, "Projecto", cx, yP, wc - 2 * p, 5, 2, yP + 1, "normal", cinz);
+    pmTexto(doc, plT("projecto"), cx, yP, wc - 2 * p, 5, 2, yP + 1, "normal", cinz);
     pmTexto(doc, String(F.nome), cx, yP + 3.1, wc - 2 * p, 7.2, 3, yP + 3.2, "bold");
-    doc.setFont("courier", "normal"); doc.setFontSize(6.2); doc.text("Ref. " + F.ident + " · #" + F.id, cx, yP + 6.3);
-    var g0 = by + B - 17.5; doc.setDrawColor(0); doc.setLineWidth(0.2); doc.line(xc, g0, xe, g0); doc.line(xc, by + B - 9, xe, by + B - 9);
+    doc.setFont("courier", "normal"); doc.setFontSize(6.2); doc.text(plT("ref") + " " + F.ident + " · #" + F.id, cx, yP + 6.3);
+    var g0 = by + B - 17.5;
+    // Carimbo (27/10): freguesia e concelho pela CAOP; cantos da caixa da folha em PT-TM06, nas folhas com mapa.
+    var st = F.sitio || {}, sit = [st.freguesia ? plT("freg", { f: st.freguesia }) : "", st.municipio ? plT("conc", { c: st.municipio }) : ""].filter(Boolean).join(" · ") || plT("sitioNd");
+    pmTexto(doc, sit, cx, yP + 9.2, wc - 2 * p, 6, 2.4, yP + 9.3, st.municipio ? "bold" : "italic", st.municipio ? [0, 0, 0] : cinz);
+    if (S.mapa) {
+      var k4 = F.caixa, en = PLG === "en", mx = en ? "E" : "M", py = en ? "N" : "P", r0 = function (v) { return String(Math.round(v)); };
+      function canto(n, x, y) { return n + " " + mx + " " + r0(x) + " " + py + " " + r0(y); }
+      var c1 = [canto(en ? "NW" : "NO", k4[0], k4[3]), canto("NE", k4[2], k4[3])], c2 = [canto(en ? "SW" : "SO", k4[0], k4[1]), canto("SE", k4[2], k4[1])];
+      var w0 = Math.max(c1[0].length, c2[0].length), pad = function (t) { while (t.length < w0) t += " "; return t; };
+      var l1 = pad(c1[0]) + "  " + c1[1], l2 = pad(c2[0]) + "  " + c2[1], tam = 5.4;
+      doc.setFont("courier", "normal"); doc.setFontSize(tam);
+      while (tam > 4 && doc.getTextWidth(l1.length > l2.length ? l1 : l2) > wc - 2 * p) { tam -= 0.2; doc.setFontSize(tam); }
+      doc.setTextColor(cinz[0], cinz[1], cinz[2]); doc.setFont("helvetica", "normal"); doc.setFontSize(4.6); doc.text(plT("cantos"), cx, yP + 11.6);
+      doc.setTextColor(0); doc.setFont("courier", "normal"); doc.setFontSize(tam); doc.text(l1, cx, yP + 13.9); doc.text(l2, cx, yP + 16.1);
+    } doc.setDrawColor(0); doc.setLineWidth(0.2); doc.line(xc, g0, xe, g0); doc.line(xc, by + B - 9, xe, by + B - 9);
     var cw = wc / 3; doc.line(xc + cw, g0, xc + cw, by + B - 9); doc.line(xc + 2 * cw, g0, xc + 2 * cw, by + B - 9);
-    [["Escala", S.mapa ? pmEsc(F.esc) : "—"], ["Data", pmData(F.agora)], ["Folha", n + " / " + N]].forEach(function (c, i) {
+    [[plT("escala"), S.mapa ? pmEsc(F.esc) : "—"], [plT("data"), pmData(F.agora)], [plT("folha"), n + " / " + N]].forEach(function (c, i) {
       pmTexto(doc, c[0], xc + i * cw + p, g0 + 2.9, cw - 2 * p, 5, 2, g0 + 3, "normal", cinz);
       pmTexto(doc, c[1], xc + i * cw + p, g0 + 6.7, cw - 2 * p, 7.4, 3, g0 + 6.8, "bold");
     });
-    pmTexto(doc, "Sistema de coordenadas: " + PM_SRC, cx, by + B - 5.2, wc - 2 * p, 5.8, 2.4, by + B - 5, "normal");
-    pmTexto(doc, "Imprimir a 100 % (sem ajustar à página) em " + (W >= 400 || H >= 400 ? "A3" : "A4") + ".", cx, by + B - 2.2, wc - 2 * p, 5, 2.2, by + B - 2, "normal", cinz);
+    pmTexto(doc, plT("src") + PM_SRC, cx, by + B - 5.2, wc - 2 * p, 5.8, 2.4, by + B - 5, "normal");
+    pmTexto(doc, plT("imprimir", { p: W >= 400 || H >= 400 ? "A3" : "A4" }), cx, by + B - 2.2, wc - 2 * p, 5, 2.2, by + B - 2, "normal", cinz);
     doc.setTextColor(0); doc.setFont("helvetica", "normal"); doc.setDrawColor(0);
   }
   // Pedidos com tempo-limite. As imagens vêm sempre pelo proxy do site (mesma origem: o canvas pode lê-las); o JSON tenta
@@ -3506,7 +3708,7 @@
       var mk = document.createElement("canvas"); mk.width = L.w; mk.height = L.h; var mc = mk.getContext("2d");
       var todos = document.createElement("canvas"); todos.width = L.w; todos.height = L.h; var tc = todos.getContext("2d"); tc.translate(-L.x0, -L.y0);
       Object.keys(grupos).forEach(function (k) {
-        var cor = +k >= 0 ? leg[+k][0] : base, nome = +k >= 0 ? leg[+k][1] : (leg ? "Outras categorias" : e.n);
+        var cor = +k >= 0 ? leg[+k][0] : base, nome = +k >= 0 ? plCls(leg[+k][1]) : (leg ? plT("outras") : plNome(e));
         pmDesenharGeo(c, grupos[k], F, cor, linear ? null : pmRgba(cor, 0.5));
         pmDesenharGeo(tc, grupos[k], F, linear ? "#000" : null, linear ? null : "#000");
         mc.setTransform(1, 0, 0, 1, 0, 0); mc.clearRect(0, 0, L.w, L.h); mc.translate(-L.x0, -L.y0);
@@ -3520,10 +3722,10 @@
       var M0 = pmMedida(tot, L, F);
       classes = classes.filter(function (k) { return k.cnt > 0; }).sort(function (a, b) { return b.cnt - a.cnt; }).map(function (k) { var m = pmMedida(k.cnt, L, F); return { n: k.n, cor: k.cor, ha: m.ha, pct: m.pct }; });
       // Legenda: só as categorias presentes na folha (a legenda completa está no Atlas).
-      var itens = leg ? leg.map(function (l, i) { return grupos[i] ? { t: linear ? "linha" : "area", cor: pmHex(l[0]), txt: l[1] } : null; }).filter(Boolean) : [{ t: linear ? "linha" : "area", cor: pmHex(base), txt: e.n }];
-      if (leg && grupos[-1]) itens.push({ t: "area", cor: pmHex(base), txt: "Outras categorias" });
-      if (!fs.length) itens = [{ t: linear ? "linha" : "area", cor: pmHex(base), txt: e.n + ": nenhum elemento nesta folha" }];
-      return { canvas: cv, op: 1, legenda: itens, medida: { ha: M0.ha, pct: M0.pct, presente: tot > 0, classes: leg ? classes : [], n: fs.length, metodo: "polígonos vectoriais do serviço (OGC API DGT), medidos em grelha de " + pmNum(px, px < 1 ? 2 : 1) + " m" } };
+      var itens = leg ? leg.map(function (l, i) { return grupos[i] ? { t: linear ? "linha" : "area", cor: pmHex(l[0]), txt: plCls(l[1]) } : null; }).filter(Boolean) : [{ t: linear ? "linha" : "area", cor: pmHex(base), txt: plNome(e) }];
+      if (leg && grupos[-1]) itens.push({ t: "area", cor: pmHex(base), txt: plT("outras") });
+      if (!fs.length) itens = [{ t: linear ? "linha" : "area", cor: pmHex(base), txt: plT("nenhum", { n: plNome(e) }) }];
+      return { canvas: cv, op: 1, legenda: itens, medida: { ha: M0.ha, pct: M0.pct, presente: tot > 0, classes: leg ? classes : [], n: fs.length, metodo: plT("mVect", { px: pmNum(px, px < 1 ? 2 : 1) }) } };
     });
   }
   // Legenda de um serviço ArcGIS (legend?f=json) ou WMS (GetLegendGraphic), com a cor de cada amostra para classificar.
@@ -3565,27 +3767,208 @@
         if (sw) { var bi = -1, bd = 1e9; for (var k = 0; k < sw.length; k++) { var a = d[i * 4] - sw[k].cor[0], b = d[i * 4 + 1] - sw[k].cor[1], g = d[i * 4 + 2] - sw[k].cor[2], dd = a * a + b * b + g * g; if (dd < bd) { bd = dd; bi = k; } } if (bd < 3600) cont[bi]++; else outras++; }
       }
       var px = F.gw / F.wpx, M0 = pmMedida(tot, L, F), classes = [];
-      if (sw) { sw.forEach(function (s, k) { if (cont[k]) { var m = pmMedida(cont[k], L, F); classes.push({ n: s.txt, cor: s.cor, ha: m.ha, pct: m.pct }); } }); if (outras) { var m2 = pmMedida(outras, L, F); classes.push({ n: "Cor sem correspondência na legenda", ha: m2.ha, pct: m2.pct }); } classes.sort(function (a, b) { return b.pct - a.pct; }); }
-      var itens = lg && lg.itens && lg.itens.length ? lg.itens : [{ t: linear ? "linha" : "area", cor: pmHex(e.cor), txt: e.n }];
-      return { canvas: cv, op: 0.8, legenda: itens, legendaImg: lg && lg.img, medida: { ha: M0.ha, pct: M0.pct, presente: tot > 0, classes: classes, imagem: 1, metodo: "estimativa a partir da imagem do serviço (píxel de " + pmNum(px, px < 1 ? 2 : 1) + " m)" } };
+      if (sw) { sw.forEach(function (s, k) { if (cont[k]) { var m = pmMedida(cont[k], L, F); classes.push({ n: s.txt, cor: s.cor, ha: m.ha, pct: m.pct }); } }); if (outras) { var m2 = pmMedida(outras, L, F); classes.push({ n: plT("semCor"), ha: m2.ha, pct: m2.pct }); } classes.sort(function (a, b) { return b.pct - a.pct; }); }
+      var itens = lg && lg.itens && lg.itens.length ? lg.itens : [{ t: linear ? "linha" : "area", cor: pmHex(e.cor), txt: plNome(e) }];
+      return { canvas: cv, op: 0.8, legenda: itens, legendaImg: lg && lg.img, medida: { ha: M0.ha, pct: M0.pct, presente: tot > 0, classes: classes, imagem: 1, metodo: plT("mImg", { px: pmNum(px, px < 1 ? 2 : 1) }) } };
     });
   }
+  // 27/10 · Teselas XYZ (Web Mercator) reprojectadas para a caixa PT-TM06 da folha: plantas de condicionantes do PDM (proxy
+  // WMS do site, que só aceita mosaicos 256 px, m90379) e modelo de elevação Mapterhorn (terrarium) para as curvas de nível.
+  function pmLL(F) {
+    var P = window.proj4("EPSG:3763", "EPSG:4326"), c = F.caixa, bb = [180, 90, -180, -90], mx = (c[0] + c[2]) / 2, my = (c[1] + c[3]) / 2;
+    [[c[0], c[1]], [c[2], c[1]], [c[2], c[3]], [c[0], c[3]], [mx, c[1]], [mx, c[3]], [c[0], my], [c[2], my]].forEach(function (p) { var q = P.forward(p); bb[0] = Math.min(bb[0], q[0]); bb[1] = Math.min(bb[1], q[1]); bb[2] = Math.max(bb[2], q[0]); bb[3] = Math.max(bb[3], q[1]); });
+    return bb;
+  }
+  function pmTxy(lon, lat, z) { var n = Math.pow(2, z), r = lat * Math.PI / 180; return [(lon + 180) / 360 * n, (1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2 * n]; }
+  function pmNTeselas(F, z) { var bb = pmLL(F), a = pmTxy(bb[0], bb[3], z), b = pmTxy(bb[2], bb[1], z); return (Math.floor(b[0]) - Math.floor(a[0]) + 1) * (Math.floor(b[1]) - Math.floor(a[1]) + 1); }
+  // Nível de teselas: píxel da tesela próximo de «res» metros no terreno, sem passar de «max» teselas.
+  function pmNivel(F, res, ts, zmin, zmax, max) {
+    var lat = window.proj4("EPSG:3763", "EPSG:4326", [(F.caixa[0] + F.caixa[2]) / 2, (F.caixa[1] + F.caixa[3]) / 2])[1];
+    var z = Math.max(zmin, Math.min(zmax, Math.round(Math.log(40075016.686 * Math.cos(lat * Math.PI / 180) / (ts * res)) / Math.LN2)));
+    while (z > zmin && pmNTeselas(F, z) > max) z--;
+    return z;
+  }
+  function pmBlobImg(b) { return new Promise(function (ok, ko) { var u = URL.createObjectURL(b), im = new Image(); im.onload = function () { ok(im); setTimeout(function () { URL.revokeObjectURL(u); }, 0); }; im.onerror = function () { URL.revokeObjectURL(u); ko(new Error("imagem inválida")); }; im.src = u; }); }
+  function pmMosaico(url, F, z) {
+    var bb = pmLL(F), a = pmTxy(bb[0], bb[3], z), b = pmTxy(bb[2], bb[1], z), tx0 = Math.floor(a[0]), ty0 = Math.floor(a[1]), tx1 = Math.floor(b[0]), ty1 = Math.floor(b[1]);
+    var lista = [], ims = [], falhas = 0, i = 0;
+    for (var y = ty0; y <= ty1; y++) for (var x = tx0; x <= tx1; x++) lista.push([x, y]);
+    function chk(r) { var ct = r.headers.get("content-type") || ""; if (!r.ok || ct.indexOf("image") < 0) throw new Error("serviço " + r.status); return r.blob(); }
+    function um(t) {
+      var u = url(z, t[0], t[1]), abs = /^https?:/.test(u);
+      return (abs ? pmPedir(u, 20000, false).then(chk).catch(function () { return pmPedir(u, 20000, true).then(chk); }) : pmPedir(u, 30000, false).then(chk)).then(pmBlobImg)
+        .then(function (im) { if (im.naturalWidth < 8) throw new Error("vazio"); ims.push([t, im]); }, function () { falhas++; });
+    }
+    function fio() { if (i >= lista.length) return Promise.resolve(); return um(lista[i++]).then(fio); }
+    return Promise.all([fio(), fio(), fio(), fio()]).then(function () {
+      var ts = ims.length ? ims[0][1].naturalWidth : 256, cv = document.createElement("canvas"); cv.width = (tx1 - tx0 + 1) * ts; cv.height = (ty1 - ty0 + 1) * ts;
+      var c = cv.getContext("2d"); ims.forEach(function (p) { c.drawImage(p[1], (p[0][0] - tx0) * ts, (p[0][1] - ty0) * ts, ts, ts); });
+      return { cv: cv, z: z, tx0: tx0, ty0: ty0, ts: ts, falhas: falhas, total: lista.length };
+    });
+  }
+  // Função (px, py) da grelha de saída (w × h sobre a caixa) para o píxel do mosaico; proj4 de 8 em 8 e interpolação.
+  function pmGrelha(mos, F, w, h) {
+    var P = window.proj4("EPSG:3763", "EPSG:4326"), s = 8, gx = Math.ceil(w / s) + 2, gy = Math.ceil(h / s) + 2, ax = new Float64Array(gx * gy), ay = new Float64Array(gx * gy);
+    for (var j = 0; j < gy; j++) for (var i = 0; i < gx; i++) {
+      var q = P.forward([F.caixa[0] + i * s / w * F.gw, F.caixa[3] - j * s / h * F.gh]), t = pmTxy(q[0], q[1], mos.z);
+      ax[j * gx + i] = (t[0] - mos.tx0) * mos.ts; ay[j * gx + i] = (t[1] - mos.ty0) * mos.ts;
+    }
+    return function (px, py) {
+      var fx = px / s, fy = py / s, i = Math.max(0, Math.min(gx - 2, Math.floor(fx))), j = Math.max(0, Math.min(gy - 2, Math.floor(fy))), u = fx - i, v = fy - j, k = j * gx + i;
+      return [ax[k] * (1 - u) * (1 - v) + ax[k + 1] * u * (1 - v) + ax[k + gx] * (1 - u) * v + ax[k + gx + 1] * u * v, ay[k] * (1 - u) * (1 - v) + ay[k + 1] * u * (1 - v) + ay[k + gx] * (1 - u) * v + ay[k + gx + 1] * u * v];
+    };
+  }
+  function pmReproj(mos, F) {
+    var w = F.wpx, h = F.hpx, g = pmGrelha(mos, F, w, h), sw = mos.cv.width, sh = mos.cv.height, src = mos.cv.getContext("2d").getImageData(0, 0, sw, sh).data;
+    var cv = document.createElement("canvas"); cv.width = w; cv.height = h; var c = cv.getContext("2d"), out = c.createImageData(w, h), d = out.data;
+    for (var y = 0; y < h; y++) for (var x = 0; x < w; x++) {
+      var m = g(x + 0.5, y + 0.5), mx = m[0] | 0, my = m[1] | 0; if (mx < 0 || my < 0 || mx >= sw || my >= sh) continue;
+      var a = (my * sw + mx) * 4, o = (y * w + x) * 4; d[o] = src[a]; d[o + 1] = src[a + 1]; d[o + 2] = src[a + 2]; d[o + 3] = src[a + 3];
+    }
+    c.putImageData(out, 0, 0); return cv;
+  }
+  // Planta de condicionantes do PDM (imagem): sem medição de áreas, legenda oficial pelo próprio proxy (?leg=1).
+  function pmCamadaWmsp(e, F) {
+    var o = 20037508.342789244, z = pmNivel(F, F.gw / F.wpx, 256, 10, 18, 48);
+    function url(z, x, y) { var l = 2 * o / Math.pow(2, z), x0 = -o + x * l, y1 = o - y * l; return "/wp-json/tcd/v1/wms/" + e.src + "?bbox=" + [x0, y1 - l, x0 + l, y1].join(","); }
+    var leg = pmPedir("/wp-json/tcd/v1/wms/" + e.src + "?leg=1", 15000, false).then(function (r) { if (!r.ok) throw 0; return r.blob(); }).then(function (b) {
+      return new Promise(function (ok, ko) { var fr = new FileReader(); fr.onload = function () { ok(fr.result); }; fr.onerror = ko; fr.readAsDataURL(b); });
+    }).then(function (src) { return pmImagem(src).then(function (im) { return im.naturalWidth > 8 ? { src: src, w: im.naturalWidth, h: im.naturalHeight } : null; }); }).catch(function () { return null; });
+    return Promise.all([pmMosaico(url, F, z), leg]).then(function (R) {
+      var mos = R[0]; if (mos.falhas >= mos.total) throw new Error("serviço sem resposta");
+      var nome = e.mun ? plT("pdmNome", { m: e.mun }) : plNome(e), mun = e.mun || String(e.n || "").replace(/^.*·\s*/, "");
+      return { canvas: pmReproj(mos, F), op: 0.85, legenda: [{ t: "area", cor: pmHex(e.cor || "#b07aa1"), txt: nome }], legendaImg: R[1],
+        medida: { semMedida: 1, presente: true, metodo: plT("pdmMetodo") }, oQue: plT("pdmNota"), fonteTxt: plT("pdmFonte", { m: mun }) };
+    });
+  }
+  // Cadastro: limites de todas as parcelas da folha; as que o terreno abrange ficam realçadas, com referência e área abrangida.
+  function pmRefCad(p) {
+    var ks = ["nationalcadastralreference", "national_cadastral_reference", "referencia", "referencia_cadastral", "label", "inspireid", "localid"];
+    for (var i = 0; i < ks.length; i++) for (var k in p) if (k.toLowerCase() === ks[i] && p[k] != null && String(p[k]).trim()) return String(p[k]).trim();
+    return "";
+  }
+  function pmCamadaCad(e, F, L) {
+    return pmItems(e.col, F).then(function (fs) {
+      var cv = document.createElement("canvas"); cv.width = F.wpx; cv.height = F.hpx; var c = cv.getContext("2d");
+      var lb = [1e12, 1e12, -1e12, -1e12]; F.an.forEach(function (r) { r.forEach(function (q) { lb[0] = Math.min(lb[0], q[0]); lb[1] = Math.min(lb[1], q[1]); lb[2] = Math.max(lb[2], q[0]); lb[3] = Math.max(lb[3], q[1]); }); });
+      var mk = document.createElement("canvas"); mk.width = L.w; mk.height = L.h; var mc = mk.getContext("2d"), toca = [], tot = 0, todos = new Uint8Array(L.m.length);
+      fs.forEach(function (f) {
+        var b = [1e12, 1e12, -1e12, -1e12]; f.pol.forEach(function (pg) { pg[0].forEach(function (q) { b[0] = Math.min(b[0], q[0]); b[1] = Math.min(b[1], q[1]); b[2] = Math.max(b[2], q[0]); b[3] = Math.max(b[3], q[1]); }); });
+        if (b[0] > lb[2] || b[2] < lb[0] || b[1] > lb[3] || b[3] < lb[1]) return;
+        mc.setTransform(1, 0, 0, 1, 0, 0); mc.clearRect(0, 0, L.w, L.h); mc.translate(-L.x0, -L.y0); pmDesenharGeo(mc, [f], F, null, "#000");
+        var d = mc.getImageData(0, 0, L.w, L.h).data, n = 0;
+        for (var i = 0; i < L.m.length; i++) if (L.m[i] && d[i * 4 + 3] > 127) { n++; todos[i] = 1; }
+        if (n) { f.toca = 1; toca.push({ f: f, n: n, b: b }); }
+      });
+      for (var i = 0; i < todos.length; i++) tot += todos[i];
+      pmDesenharGeo(c, fs.filter(function (f) { return f.toca; }), F, null, "rgba(244,211,94,0.42)");
+      c.lineJoin = "round"; pmDesenharGeo(c, fs, F, "rgba(255,255,255,0.9)", null);
+      fs.forEach(function (f) { pmDesenharGeo(c, [f], F, f.toca ? "#8a5a00" : "#5d4037", null); });
+      // Referência no centro de cada parcela abrangida (até 40).
+      var sx = F.wpx / F.gw, sy = F.hpx / F.gh, fsz = Math.max(11, Math.round(F.wpx / 110));
+      c.font = "600 " + fsz + "px Helvetica, Arial, sans-serif"; c.textAlign = "center"; c.textBaseline = "middle";
+      toca.sort(function (a, b) { return b.n - a.n; }).slice(0, 40).forEach(function (t, i) {
+        var ref = pmRefCad(t.f.p) || String(i + 1), x = ((t.b[0] + t.b[2]) / 2 - F.caixa[0]) * sx, y = (F.caixa[3] - (t.b[1] + t.b[3]) / 2) * sy;
+        c.lineWidth = 3; c.strokeStyle = "rgba(255,255,255,0.95)"; c.strokeText(ref, x, y); c.fillStyle = "#3e2723"; c.fillText(ref, x, y);
+      });
+      var px = F.gw / F.wpx, M0 = pmMedida(tot, L, F);
+      var classes = toca.map(function (t, i) { var m = pmMedida(t.n, L, F); return { n: pmRefCad(t.f.p) || plT("cadSem"), ha: m.ha, pct: m.pct, cor: "#f4d35e" }; });
+      var itens = [{ t: "linha", cor: [93, 64, 55], txt: plT("cadLeg") }, { t: "area", cor: [244, 211, 94], txt: plT("cadToca") + " (" + toca.length + ")" }];
+      if (!fs.length) itens = [{ t: "linha", cor: [93, 64, 55], txt: plT("nenhum", { n: plNome(e) }) }];
+      return { canvas: cv, op: 1, legenda: itens, oQue: plT("cadOQue") + " " + plT("cadNota"),
+        medida: { ha: M0.ha, pct: M0.pct, presente: tot > 0, classes: classes, n: fs.length, metodo: plT("cadMetodo", { px: pmNum(px, px < 1 ? 2 : 1) }) } };
+    });
+  }
+  // Curvas de nível: da Base Cartográfica do projecto quando foi entregue (GeoJSON curvasN), senão calculadas do Mapterhorn.
+  var PM_EQ = { 1000: [1, 5], 2000: [1, 5], 5000: [2, 10], 10000: [5, 25], 25000: [10, 50] };
+  var PM_BASE_CURVAS = { 1000: ["curvas1", "curvas05", "curvas2"], 2000: ["curvas1", "curvas2", "curvas05"], 5000: ["curvas2", "curvas5", "curvas1"], 10000: ["curvas5", "curvas2"], 25000: ["curvas5"] };
+  function pmCurvasBase(F, dl) {
+    var tem = {}; (dl || []).forEach(function (d) { var m = /(?:^|\/)(curvas(?:05|1|2|5))\.geojson$/i.exec(String(d && d.nome || "")); if (m && d.url) tem[m[1].toLowerCase()] = d.url; });
+    var lid = (PM_BASE_CURVAS[F.esc] || ["curvas5"]).filter(function (k) { return tem[k]; })[0];
+    if (!lid) return Promise.reject(new Error("sem Base"));
+    var eq = { curvas05: 0.5, curvas1: 1, curvas2: 2, curvas5: 5 }[lid], ms = eq * 5, T = window.proj4("EPSG:4326", "EPSG:3763");
+    return pmJson(tem[lid], 60000).then(function (j) {
+      var cv = document.createElement("canvas"); cv.width = F.wpx; cv.height = F.hpx; var c = cv.getContext("2d"), sx = F.wpx / F.gw, sy = F.hpx / F.gh, n = 0;
+      c.lineJoin = "round"; c.lineCap = "round";
+      (j.features || []).forEach(function (f) {
+        var p = f.properties || {}, z = null; for (var k in p) if (/^(elev|elevation|cota|z|altitude|alt|level|value|contour)$/i.test(k) && isFinite(+p[k])) { z = +p[k]; break; }
+        var mestra = z != null && Math.abs(z / ms - Math.round(z / ms)) < 1e-6, ls = [];
+        (function andar(g) { if (!g) return; if (g.type === "LineString") ls.push(g.coordinates); else if (g.type === "MultiLineString") g.coordinates.forEach(function (l) { ls.push(l); }); else if (g.type === "GeometryCollection") g.geometries.forEach(andar); })(f.geometry);
+        c.beginPath(); ls.forEach(function (l) { l.forEach(function (q, i) { var t = T.forward([+q[0], +q[1]]), x = (t[0] - F.caixa[0]) * sx, y = (F.caixa[3] - t[1]) * sy; if (i) c.lineTo(x, y); else c.moveTo(x, y); }); });
+        c.strokeStyle = mestra ? "#7a4a1e" : "#a8743f"; c.lineWidth = mestra ? 2.2 : 1.1; c.stroke(); n++;
+      });
+      if (!n) throw new Error("Base sem curvas");
+      var nome = lid.replace("curvas", "curvas ").replace(" 05", " 0,5") + " m";
+      return { canvas: cv, op: 1, legenda: [{ t: "linha", cor: [122, 74, 30], txt: plT("topoMestra", { m: pmNum(ms, ms % 1 ? 1 : 0) }) }, { t: "linha", cor: [168, 116, 63], txt: plT("topoCurva", { e: pmNum(eq, eq % 1 ? 1 : 0) }) }],
+        medida: { topo: 1, presente: true, metodo: plT("topoMetodo") }, oQue: plT("topoOQueBase", { f: nome, e: pmNum(eq, eq % 1 ? 1 : 0) }), fonteTxt: plT("topoFonteBase") };
+    });
+  }
+  function pmCurvasDem(F, L) {
+    var cell = Math.max(F.gw / 700, 1), gw = Math.round(F.gw / cell), gh = Math.round(F.gh / cell), nx = gw + 1, ny = gh + 1, q = PM_EQ[F.esc] || [5, 25], eq = q[0], ms = q[1];
+    function url(z, x, y) { return "https://tiles.mapterhorn.com/" + z + "/" + x + "/" + y + ".webp"; }
+    function tentar(z, resta) { return pmMosaico(url, F, z).then(function (m) { return m.falhas * 3 > m.total && resta > 0 && z > 10 ? tentar(z - 1, resta - 1) : m; }); }
+    return tentar(pmNivel(F, cell, 512, 8, 15, 36), 2).then(function (mos) {
+      if (mos.falhas >= mos.total) throw new Error(plT("topoSem"));
+      var g = pmGrelha(mos, F, gw, gh), sw = mos.cv.width, sh = mos.cv.height, d = mos.cv.getContext("2d").getImageData(0, 0, sw, sh).data, E0 = new Float32Array(nx * ny);
+      for (var j = 0; j < ny; j++) for (var i = 0; i < nx; i++) {
+        var m = g(i, j), mx = Math.min(sw - 1, Math.max(0, Math.round(m[0] - 0.5))), my = Math.min(sh - 1, Math.max(0, Math.round(m[1] - 0.5))), a = (my * sw + mx) * 4;
+        E0[j * nx + i] = d[a + 3] < 128 ? NaN : d[a] * 256 + d[a + 1] + d[a + 2] / 256 - 32768;
+      }
+      // Suavização 3 × 3 (o modelo é reamostrado; evita curvas em escada).
+      var E = new Float32Array(nx * ny), lo = Infinity, hi = -Infinity;
+      for (j = 0; j < ny; j++) for (i = 0; i < nx; i++) {
+        var s = 0, n = 0; for (var dj = -1; dj <= 1; dj++) for (var di = -1; di <= 1; di++) { var ii = i + di, jj = j + dj; if (ii < 0 || jj < 0 || ii >= nx || jj >= ny) continue; var v = E0[jj * nx + ii]; if (v === v) { s += v; n++; } }
+        E[j * nx + i] = n ? s / n : NaN; if (n) { lo = Math.min(lo, s / n); hi = Math.max(hi, s / n); }
+      }
+      if (!(hi >= lo)) throw new Error(plT("topoSem"));
+      while ((hi - lo) / eq > 300) { eq *= 2; ms *= 2; }
+      var cv = document.createElement("canvas"); cv.width = F.wpx; cv.height = F.hpx; var c = cv.getContext("2d"), kx = F.wpx / gw, ky = F.hpx / gh;
+      c.lineCap = "round";
+      for (var nv = Math.ceil(lo / eq) * eq; nv <= hi; nv += eq) {
+        var mestra = Math.abs(nv / ms - Math.round(nv / ms)) < 1e-6;
+        c.beginPath();
+        for (j = 0; j < ny - 1; j++) for (i = 0; i < nx - 1; i++) {
+          var k = j * nx + i, A = E[k], B = E[k + 1], C = E[k + nx + 1], D = E[k + nx];
+          if (A !== A || B !== B || C !== C || D !== D) continue;
+          var id = (A > nv ? 8 : 0) | (B > nv ? 4 : 0) | (C > nv ? 2 : 0) | (D > nv ? 1 : 0); if (id === 0 || id === 15) continue;
+          var T = [i + (nv - A) / (B - A), j], R = [i + 1, j + (nv - B) / (C - B)], Bo = [i + (nv - D) / (C - D), j + 1], Le = [i, j + (nv - A) / (D - A)];
+          var sg = id === 1 || id === 14 ? [Le, Bo] : id === 2 || id === 13 ? [Bo, R] : id === 3 || id === 12 ? [Le, R] : id === 4 || id === 11 ? [T, R] : id === 6 || id === 9 ? [T, Bo] : id === 7 || id === 8 ? [T, Le] : id === 5 ? [T, R, Le, Bo] : [T, Le, Bo, R];
+          for (var t = 0; t < sg.length; t += 2) { c.moveTo(sg[t][0] * kx, sg[t][1] * ky); c.lineTo(sg[t + 1][0] * kx, sg[t + 1][1] * ky); }
+        }
+        c.strokeStyle = mestra ? "#7a4a1e" : "#a8743f"; c.lineWidth = mestra ? 2.2 : 1.1; c.stroke();
+      }
+      // Cotas dentro do limite.
+      var cmin = Infinity, cmax = -Infinity, csum = 0, cn = 0;
+      for (j = 0; j < ny; j++) for (i = 0; i < nx; i++) {
+        var lx = Math.floor(i * kx) - L.x0, ly = Math.floor(j * ky) - L.y0, v2 = E[j * nx + i];
+        if (lx < 0 || ly < 0 || lx >= L.w || ly >= L.h || !L.m[ly * L.w + lx] || v2 !== v2) continue;
+        cmin = Math.min(cmin, v2); cmax = Math.max(cmax, v2); csum += v2; cn++;
+      }
+      var res = 40075016.686 * Math.cos(window.proj4("EPSG:3763", "EPSG:4326", [(F.caixa[0] + F.caixa[2]) / 2, (F.caixa[1] + F.caixa[3]) / 2])[1] * Math.PI / 180) / (mos.ts * Math.pow(2, mos.z));
+      var cotas = cn ? plT("topoCotas", { a: pmNum(cmin, 1), b: pmNum(cmax, 1), c: pmNum(csum / cn, 1) }) : "";
+      return { canvas: cv, op: 1, legenda: [{ t: "linha", cor: [122, 74, 30], txt: plT("topoMestra", { m: pmNum(ms) }) }, { t: "linha", cor: [168, 116, 63], txt: plT("topoCurva", { e: pmNum(eq) }) }],
+        medida: { topo: 1, presente: true, metodo: plT("topoMetodo") + (cotas ? ". " + cotas : "") },
+        oQue: plT("topoOQueDem", { z: mos.z, r: pmNum(res, 1), e: pmNum(eq), m: pmNum(ms) }) + (cotas ? " " + cotas : ""), fonteTxt: plT("topoFonteDem") };
+    });
+  }
+  function pmCamadaTopo(F, L) { return pmCurvasBase(F, F.downloads).catch(function () { return pmCurvasDem(F, L); }); }
   // Data ou versão do serviço, quando o próprio serviço a declara; senão fica só a data da consulta.
   function pmMeta(e) {
     var u = e.t === "mvt" ? PM_OGC + "/collections/" + e.col + "?f=json" : e.url + (e.t === "ags" ? "?f=json" : "");
     if (e.t !== "mvt" && e.t !== "ags") return Promise.resolve("");
     return pmJson(u, 8000).then(function (j) {
       var t = [];
-      if (e.t === "mvt") { var iv = j && j.extent && j.extent.temporal && j.extent.temporal.interval && j.extent.temporal.interval[0]; if (iv && iv[0]) t.push("dados de " + String(iv[0]).slice(0, 10) + (iv[1] ? " a " + String(iv[1]).slice(0, 10) : "")); if (j && j.updated) t.push("actualizado em " + String(j.updated).slice(0, 10)); }
+      if (e.t === "mvt") { var iv = j && j.extent && j.extent.temporal && j.extent.temporal.interval && j.extent.temporal.interval[0]; if (iv && iv[0]) t.push(plT("dadosDe", { a: String(iv[0]).slice(0, 10) }) + (iv[1] ? plT("dadosA", { b: String(iv[1]).slice(0, 10) }) : "")); if (j && j.updated) t.push(plT("actual", { d: String(j.updated).slice(0, 10) })); }
       else { if (j && j.copyrightText) t.push(String(j.copyrightText).replace(/\s+/g, " ").slice(0, 90)); if (j && j.currentVersion) t.push("ArcGIS Server " + j.currentVersion); }
       return t.join(", ");
     }).catch(function () { return ""; });
   }
   function pmTema(tema, F, L, fundo) {
-    var cams = tema.c.map(pmCat).filter(Boolean);
+    var cams = tema.pdmc ? [F.pdm] : tema.topo ? [pmCat("r_curvas") || PM_RES.r_curvas] : tema.c.map(pmCat);
+    cams = cams.filter(Boolean);
     return Promise.all(cams.map(function (e) {
       var lin = !!(tema.linear && tema.linear[e.id]);
-      var p = e.t === "mvt" ? pmCamadaMvt(e, F, L, lin) : (e.t === "ags" || e.t === "wms") ? pmCamadaImg(e, F, L, lin) : Promise.reject(new Error("tipo de serviço sem extracto"));
+      var p = tema.topo ? pmCamadaTopo(F, L) : tema.cad ? pmCamadaCad(e, F, L) : e.t === "wmsp" ? pmCamadaWmsp(e, F) : e.t === "mvt" ? pmCamadaMvt(e, F, L, lin) : (e.t === "ags" || e.t === "wms") ? pmCamadaImg(e, F, L, lin) : Promise.reject(new Error(plT("semTipo")));
       return Promise.all([p, pmMeta(e)]).then(function (R) { R[0].ent = e; R[0].linear = lin; R[0].meta = R[1]; return R[0]; }, function (x) { return { ent: e, linear: lin, erro: (x && x.message) || String(x) }; });
     })).then(function (rs) {
       return pmImagem(fundo).then(function (im0) {
@@ -3598,35 +3981,36 @@
   }
   // Textos da folha de um tema: o que está a ver, fonte e licença, legenda.
   function pmFolhaTema(T, F, fundoTxt) {
-    var ok = T.rs.filter(function (r) { return !r.erro; }), leg = [{ t: "linha", cor: [230, 30, 30], txt: "Limite do terreno" }];
-    var legImg = null;
+    var en = PLG === "en", leg = [{ t: "linha", cor: [230, 30, 30], txt: plT("limite") }], legImg = null;
     T.rs.forEach(function (r) {
-      if (r.erro) { leg.push({ t: "area", cor: [235, 235, 235], txt: r.ent.n + ": serviço indisponível no momento" }); return; }
+      if (r.erro) { leg.push({ t: "area", cor: [235, 235, 235], txt: plT("indisp", { n: plNome(r.ent) }) }); return; }
       if (r.legendaImg && !legImg) legImg = r.legendaImg;
       (r.legenda || []).forEach(function (it) { leg.push(it); });
     });
-    var o = T.rs.map(function (r) { var f = pmFicha(r.ent.id); return (f && f.o && f.o.indexOf("a confirmar") < 0) ? f.o : r.ent.n + "."; });
-    var notas = T.rs.map(function (r) { return r.ent.nota || ""; }).filter(function (x, i, a) { return x && a.indexOf(x) === i; });
-    var oQue = o.join(" ") + " Sobre o ortofotomapa atenuado, à mesma escala e com a mesma caixa da folha de localização; o limite do terreno está a vermelho." + (notas.length ? " " + notas.join(". ") + "." : "");
-    if (T.indisponivel) oQue = "Serviço indisponível no momento: não foi possível obter " + T.rs.map(function (r) { return r.ent.n; }).join(", ") + ". Gere o PDF de novo mais tarde. " + o.join(" ");
-    var fonte = "Fonte: " + T.rs.map(function (r) {
-      var f = pmFicha(r.ent.id), fo = r.ent.fonte || (f && f.f && f.f.indexOf("a confirmar") < 0 ? f.f : "") || pmHost(r.ent);
-      return r.ent.n + " · " + fo + " (" + pmHost(r.ent) + ")" + (r.meta ? ", " + r.meta : "") + (r.erro ? ", sem resposta" : "");
-    }).join("; ") + ". Licença: termos de utilização do serviço de origem" + (T.rs.some(function (r) { return r.ent.lic === "r"; }) ? "; só consulta, sem redistribuição dos dados" : "") + ". Consultado em " + pmHora(F.agora) + ". Fundo: " + fundoTxt + ", atenuado.";
-    return { titulo: "Extracto · " + T.tema.t, mapa: true, legenda: leg, legendaImg: legImg, oQue: oQue, fonte: fonte };
+    // Texto próprio da folha (cadastro, topografia, planta do PDM) ou a ficha da camada; em inglês, o nome da camada.
+    var o = T.rs.map(function (r) { if (r.oQue) return r.oQue; var f = pmFicha(r.ent.id); return (!en && f && f.o && f.o.indexOf("a confirmar") < 0) ? f.o : plNome(r.ent) + "."; });
+    var notas = en ? [] : T.rs.map(function (r) { return r.oQue ? "" : r.ent.nota || ""; }).filter(function (x, i, a) { return x && a.indexOf(x) === i; });
+    var oQue = o.join(" ") + plT("sobreOrto") + (notas.length ? " " + notas.join(". ") + "." : "");
+    if (T.indisponivel) oQue = plT("indispOQue", { n: T.rs.map(function (r) { return plNome(r.ent); }).join(", ") }) + T.rs.map(function (r) { var f = pmFicha(r.ent.id); return (!en && f && f.o && f.o.indexOf("a confirmar") < 0) ? f.o : plNome(r.ent) + "."; }).join(" ");
+    var fonte = plT("fonte") + T.rs.map(function (r) {
+      var f = pmFicha(r.ent.id), fo = r.fonteTxt || r.ent.fonte || (f && f.f && f.f.indexOf("a confirmar") < 0 ? f.f : "") || pmHost(r.ent), h = pmHost(r.ent);
+      return plNome(r.ent) + " · " + fo + (h && !r.fonteTxt ? " (" + h + ")" : "") + (r.meta ? ", " + r.meta : "") + (r.erro ? plT("semResp") : "");
+    }).join("; ") + plT("licenca") + (T.rs.some(function (r) { return r.ent.lic === "r"; }) ? plT("soConsulta") : "") + plT("consultado", { h: pmHora(F.agora), f: fundoTxt });
+    return { titulo: plT("extracto", { t: T.tema.t }), mapa: true, legenda: leg, legendaImg: legImg, oQue: oQue, fonte: fonte };
   }
   // Quadro de síntese: área abrangida (ha) e % do terreno por condicionante; nunca números que o serviço não deu.
   function pmSintese(doc, F, temas) {
     var W = doc.internal.pageSize.getWidth(), H = doc.internal.pageSize.getHeight(), M = F.M, ymax = H - M - pmBanda(W, H) - 6;
     var x = M + 2, w = W - 2 * M - 4, cols = [0, 0.25, 0.53, 0.63, 0.71].map(function (f) { return x + w * f; });
-    doc.setTextColor(0); doc.setFont("helvetica", "bold"); doc.setFontSize(12); doc.text("Quadro de síntese das condicionantes", x, M + 7);
-    var y = pmTexto(doc, "Área do terreno: " + pmNum(F.area / 10000, 2) + " ha (calculada em PT-TM06 a partir do limite indicado no IPR Atlas). Para cada condicionante, área do terreno que abrange e percentagem. As áreas de temas diferentes sobrepõem-se e não se somam.", x, M + 12.5, w, 7.5, 3.3, ymax);
+    doc.setTextColor(0); doc.setFont("helvetica", "bold"); doc.setFontSize(12); doc.text(plT("sinTit"), x, M + 7);
+    var y = pmTexto(doc, plT("sinIntro", { a: pmNum(F.area / 10000, 2) }), x, M + 12.5, w, 7.5, 3.3, ymax);
     y += 2;
     function cab() {
       doc.setFillColor(63, 70, 48); doc.rect(x - 1, y - 3.6, w + 2, 5.2, "F"); doc.setTextColor(250, 247, 238); doc.setFont("helvetica", "bold"); doc.setFontSize(7);
-      ["Tema", "Camada", "Área (ha)", "% do terreno", "Método e observações"].forEach(function (t, i) { doc.text(t, cols[i] + (i === 2 || i === 3 ? (cols[i + 1] - cols[i]) - 3 : 0), y, i === 2 || i === 3 ? { align: "right" } : undefined); });
+      [plT("cTema"), plT("cCamada"), plT("cArea"), plT("cPct"), plT("cMetodo")].forEach(function (t, i) { doc.text(t, cols[i] + (i === 2 || i === 3 ? (cols[i + 1] - cols[i]) - 3 : 0), y, i === 2 || i === 3 ? { align: "right" } : undefined); });
       doc.setTextColor(0); y += 4.6;
     }
+    var pags = [doc.getNumberOfPages()];
     cab();
     var fundo = 0;
     function linha(c, op) {
@@ -3635,7 +4019,7 @@
       doc.setFont("helvetica", "normal"); doc.setFontSize(op.peq ? 6.4 : 7); ls[1] = doc.splitTextToSize(String(c[1] || ""), ws[1]);
       doc.setFontSize(6.2); ls[2] = doc.splitTextToSize(String(c[4] || ""), ws[2]);
       var n = Math.max(ls[0].length, ls[1].length, ls[2].length, 1), h = n * 2.9 + 1.6;
-      if (y + h > ymax) return false;
+      if (y + h > ymax) { doc.addPage(); pags.push(doc.getNumberOfPages()); y = M + 8; fundo = 0; cab(); } // continua na folha seguinte
       if (fundo++ % 2 === 0 && !op.peq) { doc.setFillColor(244, 242, 234); doc.rect(x - 1, y - 3, w + 2, h, "F"); }
       doc.setFont("helvetica", "bold"); doc.setFontSize(7); ls[0].forEach(function (l, i) { doc.text(l, cols[0], y + i * 2.9); });
       doc.setFont("helvetica", "normal"); doc.setFontSize(op.peq ? 6.4 : 7); ls[1].forEach(function (l, i) { doc.text(l, cols[1] + (op.peq ? 3 : 0), y + i * 2.9); });
@@ -3645,23 +4029,29 @@
       doc.setFont("helvetica", "normal"); doc.setFontSize(6.2); doc.setTextColor(70); ls[2].forEach(function (l, i) { doc.text(l, cols[4], y + i * 2.9); }); doc.setTextColor(0);
       y += h; return true;
     }
-    var cortado = false;
+    var cortado = false, vistas = {};
     temas.forEach(function (T) {
-      T.rs.forEach(function (r, i) {
+      var rs = T.rs.filter(function (r) { if (vistas[r.ent.id]) return false; vistas[r.ent.id] = 1; return true; }); // a mesma camada em duas folhas conta uma vez
+      rs.forEach(function (r, i) {
         if (cortado) return;
-        var tt = i === 0 ? T.tema.t : "", m = r.medida;
-        if (r.erro) { cortado = !linha([tt, r.ent.n, "—", "—", "Serviço indisponível no momento; sem valores."]); return; }
-        if (r.linear) { cortado = !linha([tt, r.ent.n, "—", "—", (m.presente ? "Há linhas deste tema dentro do limite" : "Nenhuma linha deste tema dentro do limite") + " (elemento linear: a área não se aplica; a margem legal não está desenhada no serviço). " + m.metodo + "."]); return; }
-        var obs = (m.n === 0 ? "Nenhum elemento devolvido pelo serviço na área da folha. " : "") + m.metodo.charAt(0).toUpperCase() + m.metodo.slice(1) + ".";
-        cortado = !linha([tt, r.ent.n, pmNum(m.ha, 2), pmNum(m.pct, 1) + " %", obs]);
-        (m.classes || []).forEach(function (k) { if (!cortado && (m.classes.length > 1 || k.n !== r.ent.n)) cortado = !linha(["", k.n, pmNum(k.ha, 2), pmNum(k.pct, 1) + " %", ""], { peq: 1, cor: k.cor ? (typeof k.cor === "string" ? pmHex(k.cor) : k.cor) : null }); });
+        var tt = i === 0 ? T.tema.t : "", m = r.medida, nm = plNome(r.ent);
+        if (r.erro) { cortado = !linha([tt, nm, "—", "—", plT("sinIndisp")]); return; }
+        if (m.topo || m.semMedida) { cortado = !linha([tt, nm, "—", "—", (m.metodo.charAt(0).toUpperCase() + m.metodo.slice(1) + ".").replace(/\.\.$/, ".")]); return; }
+        if (r.linear) { cortado = !linha([tt, nm, "—", "—", plT(m.presente ? "linSim" : "linNao") + plT("linNota") + m.metodo + "."]); return; }
+        var obs = (m.n === 0 ? plT("semElem") : "") + m.metodo.charAt(0).toUpperCase() + m.metodo.slice(1) + ".";
+        cortado = !linha([tt, nm, pmNum(m.ha, 2), pmNum(m.pct, 1) + " %", obs]);
+        var cls = m.classes || [], lim = T.tema.cad ? 6 : 99; // cadastro: as 6 parcelas com mais área; a lista completa está na folha
+        cls.slice(0, lim).forEach(function (k) { if (!cortado && (cls.length > 1 || k.n !== r.ent.n)) cortado = !linha(["", k.n, pmNum(k.ha, 2), pmNum(k.pct, 1) + " %", ""], { peq: 1, cor: k.cor ? (typeof k.cor === "string" ? pmHex(k.cor) : k.cor) : null }); });
+        if (!cortado && cls.length > lim) cortado = !linha(["", plT("maisParc", { n: cls.length - lim }), "", "", ""], { peq: 1 });
       });
     });
-    if (cortado) pmTexto(doc, "… o quadro não cabe numa folha; as linhas em falta estão nas folhas de cada tema.", x, y + 1, w, 6.4, 2.8, ymax + 4, "italic");
-    pmTexto(doc, "Valores calculados no momento da emissão com os serviços indicados. «Estimativa a partir da imagem do serviço»: contagem dos píxeis coloridos da imagem devolvida pelo serviço dentro do limite; depende da simbologia e da resolução. Polígonos vectoriais: medição dos polígonos devolvidos pela OGC API da DGT numa grelha fina. Nenhum destes valores substitui a planta de condicionantes do PDM nem certidões da câmara municipal.", x, Math.min(y + 5, ymax - 8), w, 6, 2.6, ymax + 5, "italic", [70, 70, 70]);
+    if (y + 10 > ymax) { doc.addPage(); pags.push(doc.getNumberOfPages()); y = M + 4; }
+    pmTexto(doc, plT("sinNota"), x, y + 4, w, 6, 2.6, ymax + 5, "italic", [70, 70, 70]);
+    return pags;
   }
   function plGerar(id, op, msg) {
-    msg("A preparar…");
+    PLG = PLX[op.lingua] ? op.lingua : (PLX[window.IPR_LINGUA] ? window.IPR_LINGUA : "pt");
+    msg(plT("preparar"));
     return plLibs().then(function () { return plGeo(id); }).then(function (T) {
       var P = window.proj4("EPSG:4326", "EPSG:3763");
       var an = T.aneis.map(function (r) { return r.map(function (c) { return P.forward([+c[0], +c[1]]); }); });
@@ -3673,26 +4063,31 @@
       var M = 10, BAND = pmBanda(W, H), fw = W - 2 * M, fh = H - 2 * M - BAND - 4;
       var escalas = [1000, 2000, 5000, 10000, 25000], esc = +op.escala;
       function cabe(e) { return bw * 1.12 <= fw / 1000 * e && bh * 1.12 <= fh / 1000 * e; }
-      if (!esc) { esc = escalas.filter(cabe)[0]; if (!esc) throw new Error("O terreno não cabe numa folha " + (A3 ? "A3" : "A4") + " a 1:25 000. Escolha A3 ou peça folhas de detalhe."); }
-      else if (!cabe(esc)) throw new Error("À escala 1:" + esc.toLocaleString("pt-PT") + " o terreno não cabe numa folha " + (A3 ? "A3" : "A4") + ". Escolha uma escala maior (" + (escalas.filter(cabe)[0] ? "1:" + escalas.filter(cabe)[0].toLocaleString("pt-PT") : "A3") + ") ou outro papel. A escala não é reduzida sem o dizer.");
+      if (!esc) { esc = escalas.filter(cabe)[0]; if (!esc) throw new Error(plT("naoCabe25", { p: A3 ? "A3" : "A4" })); }
+      else if (!cabe(esc)) throw new Error(plT("naoCabeEsc", { e: pmEsc(esc), p: A3 ? "A3" : "A4", s: escalas.filter(cabe)[0] ? pmEsc(escalas.filter(cabe)[0]) : "A3" }));
       var gw = fw / 1000 * esc, gh = fh / 1000 * esc, cx = (bx[0] + bx[2]) / 2, cy = (bx[1] + bx[3]) / 2;
       var caixa = [cx - gw / 2, cy - gh / 2, cx + gw / 2, cy + gh / 2];
       var dpi = 150, wpx = Math.min(4000, Math.round(fw / 25.4 * dpi)), hpx = Math.min(4000, Math.round(fh / 25.4 * dpi));
       var ll = window.proj4("EPSG:3763", "EPSG:4326", [cx, cy]);
-      var temas = PM_TEMAS.filter(function (t) { return op["f_" + t.k] !== false; }), sintese = op.f_sintese !== false && temas.length > 0;
+      var temas = PM_TEMAS.filter(function (t) { return op["f_" + t.k] === undefined ? !!t.def : !!op["f_" + t.k]; }), sintese = op.f_sintese !== false && temas.length > 0, semPdm = false;
       var agora = new Date(), carimbo = agora.getFullYear() + ("0" + (agora.getMonth() + 1)).slice(-2) + ("0" + agora.getDate()).slice(-2) + ("0" + agora.getHours()).slice(-2) + ("0" + agora.getMinutes()).slice(-2);
       var ident = "IPR-PL-" + id + "-" + carimbo;
-      var F = { M: M, W: W, H: H, fw: fw, fh: fh, A3: A3, esc: esc, caixa: caixa, gw: gw, gh: gh, wpx: wpx, hpx: hpx, an: an, area: area, id: id, nome: String(T.nome).slice(0, 80), ident: ident, agora: agora };
-      msg("A pedir o ortofotomapa à DGT…");
+      var F = { M: M, W: W, H: H, fw: fw, fh: fh, A3: A3, esc: esc, caixa: caixa, gw: gw, gh: gh, wpx: wpx, hpx: hpx, an: an, area: area, id: id, nome: String(T.nome).slice(0, 80), ident: ident, agora: agora, downloads: T.downloads, sitio: {} };
+      msg(plT("pedirOrto"));
       var gi = 30000, gj2 = gi * (fh / fw);
       var ixw = 52, ixh = 38;
       return Promise.all([plWms(caixa, wpx, hpx, op.fundo), plWms([cx - 15000, cy - 15000 * ixh / ixw, cx + 15000, cy + 15000 * ixh / ixw], 420, Math.round(420 * ixh / ixw), "sat").catch(function () { return null; }), plSitio(ll[0], ll[1])]).then(function (R) {
+        F.sitio = R[2] || {};
+        // Planta de condicionantes do PDM: só quando o concelho do centro do terreno tem uma no IPR Atlas.
+        return (temas.some(function (t) { return t.pdmc; }) ? plPdm(F.sitio.municipio) : Promise.resolve(null)).then(function (pdm) {
+        F.pdm = pdm; if (!pdm && temas.some(function (t) { return t.pdmc; })) { semPdm = true; temas = temas.filter(function (t) { return !t.pdmc; }); sintese = sintese && temas.length > 0; }
         if (!temas.length) return R;
-        msg("A pedir as condicionantes (" + temas.map(function (t) { return t.t; }).join(", ") + ")…");
+        msg(plT("pedirTemas", { t: temas.map(function (t) { return t.t; }).join(", ") }));
         var L = pmMascara(F);
-        return Promise.all(temas.map(function (t) { return pmTema(t, F, L, R[0].dados).catch(function (x) { return { tema: t, rs: t.c.map(function (k) { return { ent: pmCat(k) || { id: k, n: k }, erro: (x && x.message) || String(x) }; }), indisponivel: true, img: null }; }); })).then(function (TT) { R.temas = TT; return R; });
+        return Promise.all(temas.map(function (t) { return pmTema(t, F, L, R[0].dados).catch(function (x) { return { tema: t, rs: (t.pdmc ? [F.pdm] : t.c.map(function (k) { return pmCat(k) || { id: k, n: k }; })).map(function (e) { return { ent: e, erro: (x && x.message) || String(x) }; }), indisponivel: true, img: null }; }); })).then(function (TT) { R.temas = TT; return R; });
+        });
       }).then(function (R) {
-        msg("A compor o dossier…");
+        msg(plT("compor"));
         var J = window.jspdf.jsPDF, orient = W > H ? "landscape" : "portrait", fmt = A3 ? "a3" : "a4", doc = new J({ orientation: orient, unit: "mm", format: fmt, compress: true });
         var folhas = [];
         function mm(p) { return [M + (p[0] - caixa[0]) / gw * fw, M + (caixa[3] - p[1]) / gh * fh]; }
@@ -3701,20 +4096,21 @@
         pmLimite(doc, F);
         if (R[1]) {
           doc.setFont("helvetica", "normal"); doc.setFontSize(5.5);
-          var iw = ixw * 0.5, ih = ixh * 0.5, tw = Math.max(iw, doc.getTextWidth("Enquadramento, cerca de 30 km")), ix = M + fw - tw - 3, iy = M + fh - ih - 6;
+          var iw = ixw * 0.5, ih = ixh * 0.5, tw = Math.max(iw, doc.getTextWidth(plT("enquadr"))), ix = M + fw - tw - 3, iy = M + fh - ih - 6;
           doc.setFillColor(255, 255, 255); doc.rect(ix - 1.2, iy - 1.2, tw + 2.4, ih + 5.4, "F");
           doc.addImage(R[1].dados, "JPEG", ix, iy, iw, ih, undefined, "FAST"); doc.setDrawColor(230, 30, 30); doc.setLineWidth(0.5); doc.rect(ix + iw / 2 - 1.2, iy + ih / 2 - 1.2, 2.4, 2.4);
-          doc.setDrawColor(0); doc.setLineWidth(0.2); doc.rect(ix, iy, iw, ih); doc.setFont("helvetica", "normal"); doc.setFontSize(5.5); doc.setTextColor(0); doc.text("Enquadramento, cerca de 30 km", ix, iy + ih + 2.8);
+          doc.setDrawColor(0); doc.setLineWidth(0.2); doc.rect(ix, iy, iw, ih); doc.setFont("helvetica", "normal"); doc.setFontSize(5.5); doc.setTextColor(0); doc.text(plT("enquadr"), ix, iy + ih + 2.8);
         }
         var passo = plNice(gw / 5);
-        var sitio = R[2].municipio || R[2].freguesia ? [R[2].freguesia ? "Freguesia de " + R[2].freguesia : "", R[2].municipio ? "Concelho de " + R[2].municipio : ""].filter(Boolean).join(", ") : "";
+        var sitio = R[2].municipio || R[2].freguesia ? [R[2].freguesia ? plT("freg", { f: R[2].freguesia }) : "", R[2].municipio ? plT("conc", { c: R[2].municipio }) : ""].filter(Boolean).join(", ") : "";
+        var fin = { apr: plT("fApr"), tec: plT("fTec"), mun: plT("fMun") }[op.finalidade] || op.finalidade || plT("fApr");
         folhas.push({ pag: 1, S: {
-          titulo: "Planta de localização", mapa: true,
-          legenda: [{ t: "linha", cor: [230, 30, 30], txt: "Limite do terreno" }].concat(R[1] ? [{ t: "quadro", cor: [230, 30, 30], txt: "Posição do terreno no enquadramento" }] : []),
-          dados: ["Projecto #" + id + (sitio ? " · " + sitio : ""), "Finalidade: " + op.finalidade + (op.municipio ? " · " + op.municipio : "") + (op.proc ? " · " + op.proc : ""), op.requerente ? "Requerente: " + op.requerente : "", "Área do limite: " + (area / 10000).toLocaleString("pt-PT", { maximumFractionDigits: 2 }) + " ha (calculada em PT-TM06)", "Centro: M " + Math.round(cx) + " · P " + Math.round(cy) + " · WGS84: " + ll[1].toFixed(6) + ", " + ll[0].toFixed(6), "Quadrícula de " + (passo >= 1000 ? passo / 1000 + " km" : passo + " m") + " · norte da quadrícula PT-TM06", "Fundo: " + R[0].fonte].filter(Boolean),
-          oQue: "Ortofotomapa da DGT (" + R[0].fonte + ") à escala " + pmEsc(esc) + ", com o limite do terreno a vermelho e a quadrícula PT-TM06 nas margens." + (R[1] ? " No canto, enquadramento de cerca de 30 km sobre imagem de satélite, com a posição do terreno." : "") + (temas.length ? " As folhas seguintes repetem esta caixa com as condicionantes." : ""),
-          fonte: "Fontes: " + R[0].fonte + "; limites administrativos CAOP (DGT); limite do terreno indicado no IPR Atlas, sem verificação no terreno. Licença: termos de utilização dos serviços de origem. Consultado em " + pmHora(agora) + ". Emitido por IPR Atlas · Terracrua Design, " + agora.toLocaleString("pt-PT") + " · " + ident + " · versão 1.",
-          aviso: "Documento informativo: não é prova de propriedade, não substitui levantamento topográfico nem é emitido pela câmara municipal."
+          titulo: plT("plTit"), mapa: true,
+          legenda: [{ t: "linha", cor: [230, 30, 30], txt: plT("limite") }].concat(R[1] ? [{ t: "quadro", cor: [230, 30, 30], txt: plT("posicao") }] : []),
+          dados: [plT("dProj", { id: id }) + (sitio ? " · " + sitio : ""), plT("dFin", { f: fin }) + (op.municipio ? " · " + op.municipio : "") + (op.proc ? " · " + op.proc : ""), op.requerente ? plT("dReq", { r: op.requerente }) : "", plT("dArea", { a: (area / 10000).toLocaleString(plLoc(), { maximumFractionDigits: 2 }) }), plT("dCentro", { x: Math.round(cx), y: Math.round(cy), lat: ll[1].toFixed(6), lon: ll[0].toFixed(6) }), plT("dQuad", { q: passo >= 1000 ? passo / 1000 + " km" : passo + " m" }), plT("dFundo", { f: R[0].fonte })].filter(Boolean),
+          oQue: plT("plOQue", { f: R[0].fonte, e: pmEsc(esc) }) + (R[1] ? plT("plOQueIx") : "") + (temas.length ? plT("plOQueSeg") : ""),
+          fonte: plT("plFonte", { f: R[0].fonte, h: pmHora(agora), d: agora.toLocaleString(plLoc()), id: ident }),
+          aviso: plT("plAviso")
         } });
         // 2 · extractos das condicionantes, à mesma escala e caixa
         (R.temas || []).forEach(function (TT) {
@@ -3724,62 +4120,75 @@
           if (TT.indisponivel) {
             var bw2 = Math.min(120, fw - 40), bx2 = M + (fw - bw2) / 2, by2 = M + fh / 2 - 9;
             doc.setFillColor(255, 255, 255); doc.setDrawColor(180, 40, 30); doc.setLineWidth(0.4); doc.roundedRect(bx2, by2, bw2, 18, 2, 2, "FD");
-            doc.setTextColor(180, 40, 30); doc.setFont("helvetica", "bold"); doc.setFontSize(11); doc.text("Serviço indisponível no momento", M + fw / 2, by2 + 7.5, { align: "center" });
-            doc.setFont("helvetica", "normal"); doc.setFontSize(7.5); doc.setTextColor(60); doc.text(doc.splitTextToSize("Não foi possível obter " + TT.tema.t + ". Gere o PDF de novo mais tarde.", bw2 - 8), M + fw / 2, by2 + 12.5, { align: "center" }); doc.setTextColor(0);
+            doc.setTextColor(180, 40, 30); doc.setFont("helvetica", "bold"); doc.setFontSize(11); doc.text(plT("indTit"), M + fw / 2, by2 + 7.5, { align: "center" });
+            doc.setFont("helvetica", "normal"); doc.setFontSize(7.5); doc.setTextColor(60); doc.text(doc.splitTextToSize(plT("indTxt", { t: TT.tema.t }), bw2 - 8), M + fw / 2, by2 + 12.5, { align: "center" }); doc.setTextColor(0);
           }
           folhas.push({ pag: doc.getNumberOfPages(), S: pmFolhaTema(TT, F, R[0].fonte) });
         });
         // 3 · quadro de síntese
         if (sintese && R.temas) {
-          doc.addPage(fmt, orient); pmSintese(doc, F, R.temas);
-          folhas.push({ pag: doc.getNumberOfPages(), S: { titulo: "Quadro de síntese das condicionantes", legenda: [{ t: "linha", cor: [230, 30, 30], txt: "Limite do terreno (base da medição)" }], oQue: "Para cada condicionante pedida, a área do terreno que abrange, em hectares e em percentagem da área do limite, e o método usado em cada linha.", fonte: "Fonte: os serviços indicados em cada folha de extracto, consultados em " + pmHora(agora) + ". Licença: termos de utilização dos serviços de origem." } });
+          doc.addPage(fmt, orient);
+          pmSintese(doc, F, R.temas).forEach(function (pg) { folhas.push({ pag: pg, S: { titulo: plT("sinFolha"), legenda: [{ t: "linha", cor: [230, 30, 30], txt: plT("sinLeg") }], oQue: plT("sinOQue"), fonte: plT("sinFonte", { h: pmHora(agora) }) } }); });
         }
         // 4 · quadro de vértices (como antes, agora com a moldura)
         if (op.vertices) {
           doc.addPage(fmt, "portrait");
           var Hv = doc.internal.pageSize.getHeight(), Wv = doc.internal.pageSize.getWidth(), ylim = Hv - M - pmBanda(Wv, Hv) - 6, pv0 = doc.getNumberOfPages();
-          doc.setFontSize(11); doc.setFont("helvetica", "bold"); doc.text("Quadro de vértices · PT-TM06/ETRS89 (EPSG:3763)", 12, 16); doc.setFont("helvetica", "normal"); doc.setFontSize(8);
+          doc.setFontSize(11); doc.setFont("helvetica", "bold"); doc.text(plT("vCab"), 12, 16); doc.setFont("helvetica", "normal"); doc.setFontSize(8);
           doc.text(String(T.nome).slice(0, 90) + " · " + ident, 12, 22);
           var vs = []; an.forEach(function (r, ri) { r.slice(0, -1).forEach(function (p) { vs.push([ri + 1, p[0], p[1]]); }); });
           var yy = 30, colx = 12; doc.setFontSize(7.5);
           vs.slice(0, 400).forEach(function (v, i) {
             if (yy > ylim) { yy = 30; colx += 64; if (colx > (A3 ? 240 : 150)) { doc.addPage(fmt, "portrait"); colx = 12; } }
-            doc.text((i + 1) + (an.length > 1 ? " (" + v[0] + ")" : ""), colx, yy); doc.text("M " + v[1].toFixed(2), colx + 12, yy); doc.text("P " + v[2].toFixed(2), colx + 36, yy); yy += 4.2;
+            doc.text((i + 1) + (an.length > 1 ? " (" + v[0] + ")" : ""), colx, yy); doc.text((PLG === "en" ? "E " : "M ") + v[1].toFixed(2), colx + 12, yy); doc.text((PLG === "en" ? "N " : "P ") + v[2].toFixed(2), colx + 36, yy); yy += 4.2;
           });
-          if (vs.length > 400) doc.text("… e mais " + (vs.length - 400) + " vértices (ver ficheiro do limite).", 12, Math.min(yy + 6, ylim + 4));
-          for (var pv = pv0; pv <= doc.getNumberOfPages(); pv++) folhas.push({ pag: pv, S: { titulo: "Quadro de vértices", legenda: [{ t: "linha", cor: [230, 30, 30], txt: "Limite do terreno: vértices numerados pela ordem do desenho" }], oQue: "Coordenadas dos " + vs.length + " vértices do limite em " + PM_SRC + ", em metros, pela ordem em que foram desenhados" + (an.length > 1 ? "; entre parênteses, o número do anel ou parcela" : "") + ".", fonte: "Fonte: limite do terreno indicado no IPR Atlas, sem verificação no terreno; conversão para PT-TM06 com proj4. Consultado em " + pmHora(agora) + "." } });
+          if (vs.length > 400) doc.text(plT("vMais", { n: vs.length - 400 }), 12, Math.min(yy + 6, ylim + 4));
+          for (var pv = pv0; pv <= doc.getNumberOfPages(); pv++) folhas.push({ pag: pv, S: { titulo: plT("vTit"), legenda: [{ t: "linha", cor: [230, 30, 30], txt: plT("vLeg") }], oQue: plT("vOQue", { n: vs.length, s: PM_SRC }) + (an.length > 1 ? plT("vAnel") : "") + ".", fonte: plT("vFonte", { h: pmHora(agora) }) } });
         }
         // Moldura em todas as folhas, no fim, para saber o N de «folha n/N».
         var N = doc.getNumberOfPages();
         folhas.forEach(function (f) { doc.setPage(f.pag); pmMoldura(doc, F, f.S, f.pag, N); });
-        doc.save("Planta-de-localizacao-" + id + "-1-" + esc + ".pdf");
+        doc.save(plT("ficheiro") + "-" + id + "-1-" + esc + ".pdf");
         var falhas = (R.temas || []).filter(function (t) { return t.indisponivel; }).map(function (t) { return t.tema.t; });
-        msg("Planta gerada: " + ident + " · 1:" + esc.toLocaleString("pt-PT") + " · " + (A3 ? "A3" : "A4") + " · " + N + (N === 1 ? " folha" : " folhas") + "." + (falhas.length ? " Serviço indisponível no momento: " + falhas.join(", ") + "." : ""));
+        msg(plT("gerada", { id: ident, e: pmEsc(esc), p: A3 ? "A3" : "A4", n: N, f: plT(N === 1 ? "folhaS" : "folhasS") }) + (falhas.length ? plT("falhas", { t: falhas.join(", ") }) : "") + (semPdm ? plT("semPdmMsg") : ""));
       });
     });
   }
   function plantaDialogo(id) {
+    PLG = PLX[window.IPR_LINGUA] ? window.IPR_LINGUA : "pt";
     var o = document.getElementById("ipr-pl"); if (o) o.remove();
-    o = document.createElement("div"); o.id = "ipr-pl";
-    o.innerHTML = '<div class="c"><b>Planta de localização · projecto #' + id + '</b>' +
-      '<label>Finalidade<select data-k="finalidade"><option>Apresentação</option><option>Trabalho técnico</option><option>Processo municipal</option></select></label>' +
-      '<div class="mun" hidden><label>Município<input data-k="municipio" type="text"></label><label>Procedimento<input data-k="proc" type="text" placeholder="ex.: comunicação prévia"></label></div>' +
-      '<div class="g"><label>Papel<select data-k="papel"><option>A4</option><option>A3</option></select></label><label>Orientação<select data-k="orient"><option value="auto">Automática</option><option value="h">Horizontal</option><option value="v">Vertical</option></select></label>' +
-      '<label>Escala<select data-k="escala"><option value="0">A menor possível (mais pormenor)</option><option value="1000">1:1 000</option><option value="2000">1:2 000</option><option value="5000">1:5 000</option><option value="10000">1:10 000</option><option value="25000">1:25 000</option></select></label>' +
-      '<label>Fundo<select data-k="fundo"><option value="orto">Ortofotomapa 2025</option><option value="sat">Satélite 2023</option></select></label></div>' +
-      '<label>Requerente (opcional)<input data-k="requerente" type="text"></label>' +
-      '<fieldset class="fl"><legend>Folhas a incluir</legend><label class="ck"><input type="checkbox" checked disabled> Localização</label>' +
-      PM_TEMAS.map(function (t) { return '<label class="ck"><input data-k="f_' + t.k + '" type="checkbox" checked> ' + t.t + '</label>'; }).join("") +
-      '<label class="ck"><input data-k="f_sintese" type="checkbox" checked> Quadro de síntese (ha e %)</label><label class="ck"><input data-k="vertices" type="checkbox"> Quadro de vértices</label></fieldset>' +
-      '<p class="m">PDF em PT-TM06 à escala exacta: folha de localização com ortofotomapa da DGT e extractos das condicionantes na mesma caixa, cada folha com cartucho, rosa dos ventos, régua, legenda, fontes e identificador. Os extractos são informativos: algumas câmaras exigem plantas emitidas por elas ou certidões.</p>' +
-      '<div class="a"><button type="button" data-a="ok">Gerar PDF</button><button type="button" data-a="x">Fechar</button></div><div class="s"></div></div>';
+    o = document.createElement("div"); o.id = "ipr-pl"; o.lang = PLG;
+    function e(t) { return String(t).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+    function ck(t) { return '<label class="ck"' + (t.pdmc ? ' data-pdm' : "") + '><input data-k="f_' + t.k + '" type="checkbox"' + (t.def ? " checked" : "") + (t.pdmc ? " disabled" : "") + "> <span>" + e(t.t) + (t.pdmc ? ' <small>(' + e(plT("dlPdmA")) + ")</small>" : "") + "</span></label>"; }
+    o.innerHTML = '<div class="c"><b>' + e(plT("dlTit", { id: id })) + '</b>' +
+      '<label>' + e(plT("dlFin")) + '<select data-k="finalidade"><option value="apr">' + e(plT("fApr")) + '</option><option value="tec">' + e(plT("fTec")) + '</option><option value="mun">' + e(plT("fMun")) + '</option></select></label>' +
+      '<div class="mun" hidden><label>' + e(plT("dlMun")) + '<input data-k="municipio" type="text"></label><label>' + e(plT("dlProc")) + '<input data-k="proc" type="text" placeholder="' + e(plT("dlProcEx")) + '"></label></div>' +
+      '<div class="g"><label>' + e(plT("dlPapel")) + '<select data-k="papel"><option>A4</option><option>A3</option></select></label><label>' + e(plT("dlOri")) + '<select data-k="orient"><option value="auto">' + e(plT("oAuto")) + '</option><option value="h">' + e(plT("oH")) + '</option><option value="v">' + e(plT("oV")) + '</option></select></label>' +
+      '<label>' + e(plT("dlEsc")) + '<select data-k="escala"><option value="0">' + e(plT("eMin")) + '</option><option value="1000">' + pmEsc(1000) + '</option><option value="2000">' + pmEsc(2000) + '</option><option value="5000">' + pmEsc(5000) + '</option><option value="10000">' + pmEsc(10000) + '</option><option value="25000">' + pmEsc(25000) + '</option></select></label>' +
+      '<label>' + e(plT("dlFundo")) + '<select data-k="fundo"><option value="orto">' + e(plT("fOrto")) + '</option><option value="sat">' + e(plT("fSat")) + '</option></select></label></div>' +
+      '<div class="g"><label>' + e(plT("dlReq")) + '<input data-k="requerente" type="text"></label><label>' + e(plT("dlLing")) + '<select data-k="lingua"><option value="pt"' + (PLG === "pt" ? " selected" : "") + '>Português</option><option value="en"' + (PLG === "en" ? " selected" : "") + '>English</option></select></label></div>' +
+      '<fieldset class="fl"><legend>' + e(plT("dlFolhas")) + '</legend><label class="ck"><input type="checkbox" checked disabled> <span>' + e(plT("dlLoc")) + '</span></label>' +
+      PM_TEMAS.map(ck).join("") +
+      '<label class="ck"><input data-k="f_sintese" type="checkbox" checked> <span>' + e(plT("dlSin")) + '</span></label><label class="ck"><input data-k="vertices" type="checkbox"> <span>' + e(plT("dlVert")) + '</span></label></fieldset>' +
+      '<p class="m">' + e(plT("dlTxt")) + '</p>' +
+      '<div class="a"><button type="button" data-a="ok">' + e(plT("dlGerar")) + '</button><button type="button" data-a="x">' + e(plT("dlFechar")) + '</button></div><div class="s" aria-live="polite"></div></div>';
     document.body.appendChild(o);
-    var fin = o.querySelector('[data-k="finalidade"]'); fin.addEventListener("change", function () { o.querySelector(".mun").hidden = fin.value !== "Processo municipal"; if (fin.value === "Processo municipal") { o.querySelector('[data-k="escala"]').value = "1000"; o.querySelector('[data-k="vertices"]').checked = true; } });
-    o.addEventListener("click", function (e) {
-      if (e.target === o || (e.target.dataset && e.target.dataset.a === "x")) { o.remove(); return; }
-      if (e.target.dataset && e.target.dataset.a === "ok") {
-        var op = {}; o.querySelectorAll("[data-k]").forEach(function (el) { op[el.dataset.k] = el.type === "checkbox" ? el.checked : el.value.trim(); });
-        var s = o.querySelector(".s"), b = e.target; b.disabled = true;
+    // Planta de condicionantes do PDM: procura-se o concelho do terreno (CAOP) e só se deixa escolher quando há planta.
+    var lp = o.querySelector("[data-pdm]");
+    if (lp) plGeo(id).then(function (T) {
+      var r = T.aneis[0], x = 0, y = 0; r.forEach(function (c) { x += +c[0]; y += +c[1]; });
+      return plSitio(x / r.length, y / r.length);
+    }).then(function (st) { return plPdm(st.municipio).then(function (p) { return [st, p]; }); }).then(function (A) {
+      var st = A[0], p = A[1], sm = lp.querySelector("small"), inp = lp.querySelector("input");
+      if (sm) sm.textContent = "(" + (p ? plT("dlPdmSim", { m: st.municipio }) : st.municipio ? plT("dlPdmNao", { m: st.municipio }) : plT("dlPdmNd")) + ")";
+      inp.disabled = !p;
+    }).catch(function () { var sm = lp.querySelector("small"); if (sm) sm.textContent = "(" + plT("dlPdmNd") + ")"; });
+    var fin = o.querySelector('[data-k="finalidade"]'); fin.addEventListener("change", function () { o.querySelector(".mun").hidden = fin.value !== "mun"; if (fin.value === "mun") { o.querySelector('[data-k="escala"]').value = "1000"; o.querySelector('[data-k="vertices"]').checked = true; } });
+    o.addEventListener("click", function (ev) {
+      if (ev.target === o || (ev.target.dataset && ev.target.dataset.a === "x")) { o.remove(); return; }
+      if (ev.target.dataset && ev.target.dataset.a === "ok") {
+        var op = {}; o.querySelectorAll("[data-k]").forEach(function (el) { op[el.dataset.k] = el.type === "checkbox" ? (el.checked && !el.disabled) : el.value.trim(); });
+        var s = o.querySelector(".s"), b = ev.target; b.disabled = true;
         plGerar(id, op, function (t) { s.textContent = t; }).catch(function (x) { s.textContent = x.message || String(x); }).then(function () { b.disabled = false; });
       }
     });
@@ -3792,7 +4201,7 @@
       "#ipr-pl label{display:flex;flex-direction:column;gap:4px;font:600 11px Inter,sans-serif;color:var(--mu,#9aa08f);text-transform:uppercase;letter-spacing:.04em}#ipr-pl label.ck{flex-direction:row;align-items:center;text-transform:none;font-size:13px;color:var(--tx)}" +
       "#ipr-pl select,#ipr-pl input[type=text]{font:13px Inter,sans-serif;padding:7px;border:1px solid var(--ln,#333);border-radius:7px;background:var(--p2,#1d221c);color:var(--tx,#e9eadf);text-transform:none}#ipr-pl .g{display:grid;grid-template-columns:1fr 1fr;gap:8px}#ipr-pl .mun{display:grid;grid-template-columns:1fr 1fr;gap:8px}#ipr-pl .mun[hidden]{display:none}" +
       "#ipr-pl .m{margin:0;color:var(--mu,#9aa08f);font-size:12px}#ipr-pl .a{display:flex;gap:8px;justify-content:flex-end}#ipr-pl .a button{font:600 13px Inter,sans-serif;padding:8px 14px;border-radius:8px;border:1px solid var(--ln,#333);background:transparent;color:var(--tx,#e9eadf);cursor:pointer}#ipr-pl .a button[data-a=ok]{background:var(--ac,#b5c46a);border-color:var(--ac,#b5c46a);color:#141814}#ipr-pl .s{font-size:12px;color:var(--ac2,#c9d36a);min-height:16px}" +
-      "#ipr-pl fieldset.fl{margin:0;border:1px solid var(--ln,#333);border-radius:8px;padding:6px 10px 8px;display:grid;grid-template-columns:1fr 1fr;gap:4px 10px}#ipr-pl fieldset.fl legend{font:600 11px Inter,sans-serif;color:var(--mu,#9aa08f);text-transform:uppercase;letter-spacing:.04em;padding:0 4px}#ipr-pl fieldset.fl label.ck{font-size:12.5px;font-weight:500;gap:6px;align-items:flex-start}#ipr-pl fieldset.fl input{margin:2px 0 0}@media (max-width:480px){#ipr-pl fieldset.fl{grid-template-columns:1fr}}";
+      "#ipr-pl fieldset.fl{margin:0;border:1px solid var(--ln,#333);border-radius:8px;padding:6px 10px 8px;display:grid;grid-template-columns:1fr 1fr;gap:4px 10px}#ipr-pl fieldset.fl legend{font:600 11px Inter,sans-serif;color:var(--mu,#9aa08f);text-transform:uppercase;letter-spacing:.04em;padding:0 4px}#ipr-pl fieldset.fl label.ck{font-size:12.5px;font-weight:500;gap:6px;align-items:flex-start}#ipr-pl fieldset.fl input{margin:2px 0 0}#ipr-pl fieldset.fl label.ck small{color:var(--mu,#9aa08f);font-weight:400}#ipr-pl fieldset.fl label.ck[data-pdm] input:disabled+span{opacity:.6}@media (max-width:480px){#ipr-pl fieldset.fl{grid-template-columns:1fr}}";
     (document.head || document.documentElement).appendChild(st);
   })();
   // 26/10, 00h05 (Nuno: «na lista de projectos continuo sem ver os botões editar, eliminar»). A lista que se vê é a do
