@@ -4890,6 +4890,33 @@
     (document.head || document.documentElement).appendChild(st);
   })();
 
+  // §70 Caixa de mensagens e medições do mapa (#ipe-hud: distância, área, avisos) por baixo da Formiga (reporte 16260 do
+  // Bernardo, 26/10/2026). No computador a Formiga fica no canto de baixo, à esquerda, e a caixa abre no mesmo canto (74 px da
+  // margem): tapavam-se. Quando as duas se cruzam e a Formiga está por cima, a caixa passa para a direita da Formiga; quando
+  // deixam de se cruzar, volta ao sítio. A Formiga não muda de lugar (continua arrastável) e a caixa não perde nada.
+  (function hudFormiga() {
+    function ajustar() {
+      var h = document.getElementById("ipe-hud"), f = document.getElementById("tcdfmb"); if (!h) return;
+      var ch = getComputedStyle(h);
+      if (!f || window.innerWidth <= 900 || ch.display === "none" || getComputedStyle(f).display === "none") { if (h.__ipr70) { h.style.removeProperty("left"); h.__ipr70 = 0; } return; }
+      var tinha = h.__ipr70; if (tinha) h.style.removeProperty("left");
+      var a = h.getBoundingClientRect(), b = f.getBoundingClientRect();
+      var cruza = b.width > 0 && a.right > b.left && a.left < b.right && a.bottom > b.top && a.top < b.bottom;
+      var el = cruza ? document.elementFromPoint(b.left + b.width / 2, b.top + b.height / 2) : null, fmCima = !!(el && (el === f || f.contains(el)));
+      if (cruza && (fmCima || tinha)) {
+        var pai = (h.offsetParent || document.body).getBoundingClientRect();
+        h.style.setProperty("left", Math.round(b.right - pai.left + 10) + "px", "important"); h.__ipr70 = 1;
+      } else h.__ipr70 = 0;
+    }
+    function ligar() {
+      var h = document.getElementById("ipe-hud"); if (!h) return setTimeout(ligar, 1000);
+      try { new MutationObserver(function () { clearTimeout(ligar.t); ligar.t = setTimeout(ajustar, 30); }).observe(h, { attributes: true, attributeFilter: ["class", "hidden"], childList: true }); } catch (e) {}
+      setInterval(function () { if (!document.hidden) ajustar(); }, 1200);
+      window.addEventListener("resize", ajustar);
+    }
+    ligar();
+  })();
+
   // §69 Reportes do Miguel Clemente (26/10/2026, 18h55 e 21h54).
   //  a) O quadro do perfil de elevação não saía do sítio: passa a arrastar-se pelo cabeçalho (rato, dedo ou caneta) e tem
   //     botão para encolher a uma barra fina e voltar a abrir.
