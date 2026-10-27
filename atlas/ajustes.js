@@ -4660,7 +4660,7 @@
   // Zoom geral do Atlas no topo, ao lado de PT/EN (Nuno, 26/10/2026, 19h00: «um zoom a todo o ecrã [...] para que os
   // desenhadores possam adaptar isto aos seus diferentes monitores»). «Auto» segue o tamanho do ecrã (§65); − e + fixam um
   // valor guardado neste navegador. O mapa não é ampliado (só as barras, painéis e textos), para não deformar o desenho.
-  var Z67 = [0.8, 0.9, 1, 1.1, 1.2, 1.3, 1.4, 1.5, 1.65, 1.8, 2];
+  var Z67 = [0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.2, 1.3, 1.4, 1.5, 1.65, 1.8, 2]; // §73: desce até 60 % (Nuno, 27/10, iPad)
   function zoomAplicar67(v) {
     var st = document.getElementById("ipr-67-z"); if (!st) { st = document.createElement("style"); st.id = "ipr-67-z"; document.head.appendChild(st); }
     if (!v) { st.textContent = ""; return; }
@@ -4977,6 +4977,32 @@
     var li = t.closest("li.tme-t");
     if (li) { var a = li.querySelector('a[href*="mapa="]') || [].filter.call(li.querySelectorAll("a,button"), function (x) { return /^Abrir$/i.test((x.textContent || "").trim()); })[0]; if (a) a.click(); }
   });
+
+  // §73 Nuno, 27/10/2026, 08h09-08h10 (iPad):
+  //  a) «Onde está a rosa dos ventos?»: depois do §70, no iPad a rosa e o zoom deixaram de se ver. Em ecrãs de toque e até 1280 px
+  //     fica garantido que o grupo (zoom, rosa, localizar) está no canto de cima à esquerda do mapa, visível e por cima de tudo
+  //     o que o possa tapar; revê-se de 2 em 2 segundos, sem mexer no §65/§70.
+  //  b) Tira da barra de cima o botão «AutoCAD para SIG · grátis» (o conversor continua em Processar › Converter ficheiros).
+  //  c) INTELLIGENCE/EXPLORER e BETA com o mesmo estilo e a barra de cima com espaços iguais.
+  (function () {
+    if (document.getElementById("ipr-73-css")) return;
+    var st = document.createElement("style"); st.id = "ipr-73-css";
+    st.textContent = "#ipr-cad-g{display:none!important}" +
+      "#ipe .maplibregl-control-container>.maplibregl-ctrl-top-left.ipr-nav.ipr-73{visibility:visible!important;opacity:1!important;z-index:30!important;pointer-events:auto}" +
+      "#ipe .maplibregl-control-container>.ipr-nav.ipr-73[style*=\"display: none\"]{display:flex!important}#ipe .ipr-73 .ipe-rosa,#ipe .ipr-73 .maplibregl-ctrl{visibility:visible!important;opacity:1!important}" +
+      "#ipe .ipe-top .ipe-nivel,#ipe .ipe-top .ipe-beta{all:unset;box-sizing:border-box;display:inline-flex;align-items:center;height:22px;padding:0 9px;border:1px solid var(--ac2,#b5c46a);border-radius:999px;background:transparent;color:var(--ac2,#b5c46a);font:600 10.5px/1 Inter,system-ui,sans-serif;letter-spacing:.07em;text-transform:uppercase;white-space:nowrap;cursor:default;margin:0 0 0 8px}" +
+      "#ipe .ipe-top{column-gap:10px}#ipe .ipe-top>*{margin-top:0;margin-bottom:0}";
+    (document.head || document.documentElement).appendChild(st);
+  })();
+  function nav73() {
+    if (!pequeno70()) return;
+    var n = document.querySelector("#ipe .maplibregl-ctrl-top-left.ipr-nav"), mc = document.querySelector("#ipe .maplibregl-control-container");
+    if (!n || !mc) return;
+    if (n.parentNode !== mc) mc.appendChild(n);
+    if (!n.classList.contains("ipr-73")) n.classList.add("ipr-73");
+  }
+  setInterval(function () { if (!document.hidden) try { nav73(); } catch (e) {} }, 2000);
+  setTimeout(function () { try { nav73(); } catch (e) {} }, 800);
 
   function correr() {
     voltas++;
