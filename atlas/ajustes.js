@@ -2289,7 +2289,7 @@
       var antes; for (var k = ult + 1; k < ls.length; k++) { if (ls[k].id !== "ipr-longe-relevo") { antes = ls[k].id; break; } }
       if (!m.getLayer("ipr-longe-relevo")) {
         try {
-          m.addLayer({ id: "ipr-longe-relevo", type: "hillshade", source: "ipr-longe-dem", paint: {
+          m.addLayer({ id: "ipr-longe-relevo", type: "hillshade", source: "ipr-longe-dem", minzoom: 7, paint: {
             "hillshade-exaggeration": ["interpolate", ["linear"], ["zoom"], 5, 0.6, 9, 0.5, 12, 0.38, 16, 0.3],
             "hillshade-illumination-direction": 315,
             "hillshade-shadow-color": "rgba(18,22,14,0.6)", "hillshade-highlight-color": "rgba(255,248,228,0.25)", "hillshade-accent-color": "rgba(10,12,8,0.22)" } }, antes);
@@ -2298,6 +2298,9 @@
         var pos = ls.findIndex(function (l) { return l.id === "ipr-longe-relevo"; });
         if (pos >= 0 && pos < ult) { try { m.moveLayer("ipr-longe-relevo", antes); } catch (e) {} }
       }
+      // 27/10 (screenshot do Nuno, telemóvel, 16h18): à escala do país o relevo sombreado desenhava quadrados claros por cima
+      // do mar e da terra (os mosaicos do DEM com e sem dados). Só aparece a partir do zoom 7.
+      if (m.getLayer("ipr-longe-relevo")) { try { var lr = m.getLayer("ipr-longe-relevo"); if ((lr.minzoom || 0) < 7) m.setLayerZoomRange("ipr-longe-relevo", 7, 24); } catch (e) {} }
       if (m.getLayer("ipr-longe-relevo")) {
         var desenho = ls.some(function (l) { return DESENHO.test(l.id) && m.getLayoutProperty(l.id, "visibility") !== "none"; });
         var v = desenho ? "none" : "visible";
