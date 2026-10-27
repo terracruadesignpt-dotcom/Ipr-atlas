@@ -41,6 +41,7 @@
       faixa: "Em testes · só informativo e para aprendizagem · não usar para decisões de segurança. Emergência: 112.",
       talI: "Talude interior (1:x)", talE: "Talude exterior (1:x)", folga: "Folga até ao coroamento", coroaL: "Largura do coroamento", cotaAgua: "Cota da água (vazio = automática)",
       fundoQ: "Fundo", fundo_impermeavel: "Impermeabilizado (tela ou argila)", fundo_natural: "Terreno natural", fundo_infiltracao: "Charca de infiltração",
+      montT: "Água de montante", montSem: "Esta Base ainda não tem os dados de montante: só entra a chuva que cai no terreno. Se chegar água de fora, os resultados ficam por baixo da realidade.", montTx: "{v} m³ de fora do terreno ({p} % da água), {n} troços de entrada, {a} km² a montante.",
       charcaR: "Charca", volUtil: "Volume útil", cotaA: "Cota da água", corte: "Corte", aterro: "Aterro", dique: "Altura máx. do dique", descR: "Descarregador", aviso: "Resultados de modelo para apoiar decisões de projecto; não substituem estudo hidráulico nem licenciamento."
     },
     en: {
@@ -73,6 +74,7 @@
       faixa: "In testing · information and learning only · not for safety decisions. Emergency: 112.",
       talI: "Inner slope (1:x)", talE: "Outer slope (1:x)", folga: "Freeboard to crest", coroaL: "Crest width", cotaAgua: "Water level (empty = automatic)",
       fundoQ: "Bottom", fundo_impermeavel: "Lined (membrane or clay)", fundo_natural: "Natural ground", fundo_infiltracao: "Infiltration pond",
+      montT: "Upstream water", montSem: "This Base Map has no upstream data yet: only rain falling on the land is counted. If water arrives from outside, results are underestimated.", montTx: "{v} m³ from outside the land ({p} % of the water), {n} inflow sections, {a} km² upstream.",
       charcaR: "Pond", volUtil: "Useful volume", cotaA: "Water level", corte: "Cut", aterro: "Fill", dique: "Max. embankment height", descR: "Spillway", aviso: "Model results to support design decisions; they do not replace a hydraulic study or permitting."
     }
   };
@@ -235,6 +237,14 @@
   // ───────────── resultados ─────────────
   function resultados() {
     var r = S.res, s = r.resumo || {}, h = '<span class="as-h">' + esc(t("resultados")) + "</span>";
+    if (s.aviso_montante) h += '<p class="faixa">' + esc(t("montSem")) + "</p>";
+    else if (s.montante) {
+      var vm = 0, tot = 0;
+      if (s.cenarios && s.cenarios.length) { vm = s.cenarios[s.cenarios.length - 1].montante_m3; tot = s.cenarios[s.cenarios.length - 1].entrada_total_m3; }
+      else if (s.balanco) { vm = s.balanco.montante_m3; tot = s.balanco.chuva_m3 + s.balanco.montante_m3; }
+      else if (s.montante.volume_montante_m3) { vm = s.montante.volume_montante_m3; }
+      h += '<p class="nota"><b>' + esc(t("montT")) + "</b> · " + esc(t("montTx").replace("{v}", n(vm, 0)).replace("{p}", tot ? n(100 * vm / tot, 0) : "–").replace("{n}", s.montante.trocos).replace("{a}", n(s.montante.area_montante_km2, 2))) + "</p>";
+    }
     if (r.processo === "retencao-rapida") {
       h += '<p class="nota">' + esc(t("estatico")) + "</p>";
       (s.cenarios || []).forEach(function (c) {
