@@ -35,7 +35,13 @@
       retido: "Retido", saido: "Saiu do terreno", chuvaUtil: "Chuva útil", depressoes: "Depressões listadas", capacidade: "Capacidade total",
       saida: "Saída medida", infiltracao: "Infiltração", armazenado: "Ficou no terreno", pico: "Caudal de pico à saída", tpico: "aos",
       ganho: "Ganho de retenção", reducao: "Redução do pico", atraso: "Atraso do pico", erro: "Erro do balanço", fechado: "fecha", naoFecha: "não fecha",
-      miraPrep: "Os cenários da bacia do Mira estão em preparação.", aviso: "Resultados de modelo para apoiar decisões de projecto; não substituem estudo hidráulico nem licenciamento."
+      miraPrep: "Os cenários da bacia do Mira estão em preparação.",
+      avisoT: "Aviso importante", avisoTx: "O Simulador de Água do IPR Atlas está em testes e serve apenas para informação e aprendizagem. Os resultados são estimativas de um modelo, com as incertezas do terreno (LiDAR), da chuva, dos solos e do próprio modelo, e podem estar errados. Não servem para decisões sobre a segurança de pessoas e bens, protecção civil, evacuação, dimensionamento de obras ou licenciamento, e não substituem estudos de hidrologia e hidráulica assinados por técnico habilitado nem a informação oficial (APA, ANEPC, IPMA, câmara municipal). Em situação de cheia ou de perigo, siga as indicações da Protecção Civil e, em emergência, ligue 112. A Terracrua Design não se responsabiliza por decisões tomadas com base nestes resultados.",
+      avisoChk: "Li e compreendo: os resultados são informativos, estão em testes e não servem para decisões de segurança.", aceitar: "Aceitar e continuar",
+      faixa: "Em testes · só informativo e para aprendizagem · não usar para decisões de segurança. Emergência: 112.",
+      talI: "Talude interior (1:x)", talE: "Talude exterior (1:x)", folga: "Folga até ao coroamento", coroaL: "Largura do coroamento", cotaAgua: "Cota da água (vazio = automática)",
+      fundoQ: "Fundo", fundo_impermeavel: "Impermeabilizado (tela ou argila)", fundo_natural: "Terreno natural", fundo_infiltracao: "Charca de infiltração",
+      charcaR: "Charca", volUtil: "Volume útil", cotaA: "Cota da água", corte: "Corte", aterro: "Aterro", dique: "Altura máx. do dique", descR: "Descarregador", aviso: "Resultados de modelo para apoiar decisões de projecto; não substituem estudo hidráulico nem licenciamento."
     },
     en: {
       botao: "Water simulator", titulo: "Water simulator", fechar: "Close", min: "Minimise",
@@ -61,7 +67,13 @@
       retido: "Retained", saido: "Left the land", chuvaUtil: "Effective rain", depressoes: "Listed depressions", capacidade: "Total capacity",
       saida: "Measured outflow", infiltracao: "Infiltration", armazenado: "Left on the land", pico: "Peak outflow", tpico: "at",
       ganho: "Retention gain", reducao: "Peak reduction", atraso: "Peak delay", erro: "Balance error", fechado: "closes", naoFecha: "does not close",
-      miraPrep: "The Mira basin scenarios are being prepared.", aviso: "Model results to support design decisions; they do not replace a hydraulic study or permitting."
+      miraPrep: "The Mira basin scenarios are being prepared.",
+      avisoT: "Important notice", avisoTx: "The IPR Atlas Water Simulator is in testing and is for information and learning only. Results are model estimates, subject to uncertainty in the terrain (LiDAR), rainfall, soils and the model itself, and may be wrong. They must not be used for decisions on the safety of people or property, civil protection, evacuation, structural design or permitting, and they do not replace hydrological and hydraulic studies signed by a qualified professional or official information (APA, ANEPC, IPMA, local council). In a flood or any danger, follow Civil Protection instructions and call 112 in an emergency. Terracrua Design accepts no liability for decisions made on the basis of these results.",
+      avisoChk: "I have read and understand: results are for information only, in testing, and not for safety decisions.", aceitar: "Accept and continue",
+      faixa: "In testing · information and learning only · not for safety decisions. Emergency: 112.",
+      talI: "Inner slope (1:x)", talE: "Outer slope (1:x)", folga: "Freeboard to crest", coroaL: "Crest width", cotaAgua: "Water level (empty = automatic)",
+      fundoQ: "Bottom", fundo_impermeavel: "Lined (membrane or clay)", fundo_natural: "Natural ground", fundo_infiltracao: "Infiltration pond",
+      charcaR: "Pond", volUtil: "Useful volume", cotaA: "Water level", corte: "Cut", aterro: "Fill", dique: "Max. embankment height", descR: "Spillway", aviso: "Model results to support design decisions; they do not replace a hydraulic study or permitting."
     }
   };
   function L() { return (W.IPR_LINGUA || document.documentElement.lang || "pt").slice(0, 2) === "en" ? "en" : "pt"; }
@@ -79,9 +91,11 @@
   }
   function urlF(u) { return u + (u.indexOf("?") < 0 ? "?" : "&") + "_wpnonce=" + encodeURIComponent(W.tcdNonce || ""); }
 
+  var AVISO_VERSAO = "2026-10-27";
+  function lerAviso() { try { return localStorage.getItem("ipr_agua_aviso") === AVISO_VERSAO; } catch (e) { return false; } }
   var IC = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c3.5 4.2 6 7.6 6 10.5A6 6 0 0 1 6 13.5C6 10.6 8.5 7.2 12 3z"/><path d="M9 14.5a3 3 0 0 0 3 3"/></svg>';
   var S = { tab: "ret", chuva: { modo: "livre", total_mm: 50, duracao_h: 1, forma: "uniforme", T: 10, obs: "", fonte: "" },
-    cenarios: "20, 50, 100", horas: 3, modoAD: "retencao-rapida", feats: [], des: null, job: null, res: null, erro: "", lista: [], camadas: {} };
+    aviso: lerAviso(), avisoChk: false, cenarios: "20, 50, 100", horas: 3, modoAD: "retencao-rapida", feats: [], des: null, job: null, res: null, erro: "", lista: [], camadas: {} };
 
   // ───────────── estilos ─────────────
   function css() {
@@ -108,6 +122,8 @@
       "#ipr-as ul.fx{margin:0;padding-left:16px;font-size:12px}#ipr-as ul.fx a{color:var(--ac,#a8b878)}" +
       "#ipr-as .prog{height:4px;border-radius:2px;background:var(--ln,#2b3024);overflow:hidden;margin:8px 0}#ipr-as .prog i{display:block;height:100%;width:30%;background:var(--ac,#a8b878);animation:ipras 1.4s ease-in-out infinite}@keyframes ipras{0%{margin-left:-30%}100%{margin-left:100%}}" +
       "#ipr-as .des{padding:8px 10px;border:1px dashed var(--ac,#a8b878);border-radius:9px;margin:8px 0;font-size:12px}" +
+      "#ipr-as .faixa{margin:0 0 10px;padding:6px 9px;border-radius:8px;background:rgba(217,164,65,.14);border:1px solid #d9a441;font-size:11.5px;line-height:1.4}" +
+      "#ipr-as .avbox{border:1px solid #d9a441;border-radius:10px;padding:10px;background:var(--p2,#1d2118)}#ipr-as .avbox p{font-size:12px;margin:6px 0 10px}#ipr-as .chk{display:flex;gap:8px;align-items:flex-start;font-size:12px}" +
       ".ipr-ag-c [data-agua-sim]{border-color:var(--ac,#a8b878)!important;display:inline-flex;align-items:center;gap:5px}" +
       "@media (max-width:600px){#ipr-as{left:8px!important;right:8px;top:auto!important;bottom:60px;width:auto;max-width:none;max-height:min(62vh,calc(100% - 76px))}}";
     document.head.appendChild(st);
@@ -140,7 +156,11 @@
     if (!W.tcdNonce) return '<p class="sub">' + esc(t("semConta")) + "</p>";
     var a = actual();
     if (!a || !a.id || (a.estado_k && a.estado_k !== "entregue")) return '<p class="sub">' + esc(t("semMapa")) + "</p>";
-    var h = '<p class="sub">' + esc(t("d_" + S.tab)) + "</p>";
+    var h = '<p class="faixa">' + esc(t("faixa")) + "</p>";
+    if (!S.aviso) {
+      return h + '<div class="avbox"><b>' + esc(t("avisoT")) + "</b><p>" + esc(t("avisoTx")) + '</p><label class="chk"><input type="checkbox" data-k="avisoChk"' + (S.avisoChk ? " checked" : "") + "> " + esc(t("avisoChk")) + '</label><div class="acc"><button class="b pri" data-as="aceitar"' + (S.avisoChk ? "" : " disabled") + ">" + esc(t("aceitar")) + "</button></div></div>" + (S.erro ? '<div class="err">' + esc(S.erro) + "</div>" : "");
+    }
+    h += '<p class="sub">' + esc(t("d_" + S.tab)) + "</p>";
     if (S.tab === "mira") return h + mira();
     if (S.tab === "ret") h += formRet();
     if (S.tab === "2d") h += formChuva() + campo("horas", "horas", S.horas, "h", 0, 24, 1);
@@ -189,7 +209,10 @@
     S.feats.forEach(function (f, i) {
       var p = f.properties, k = p.tipo;
       h += '<div class="it"><div class="ln"><b style="flex:1">' + (i + 1) + ". " + esc(t(k)) + '</b><button class="b" data-apagar="' + i + '">' + esc(t("apagar")) + "</button></div>";
-      if (k === "charca") h += cp(i, "profundidade_m", "prof", "m");
+      if (k === "charca") {
+        h += cp(i, "profundidade_m", "prof", "m") + cp(i, "talude_interior", "talI", "") + cp(i, "talude_exterior", "talE", "") + cp(i, "folga_m", "folga", "m") + cp(i, "coroamento_largura_m", "coroaL", "m") + cp(i, "cota_agua_m", "cotaAgua", "m");
+        h += '<label class="f">' + esc(t("fundoQ")) + '<select data-fi="' + i + '" data-fc="fundo" data-txt="1">' + ["impermeavel", "natural", "infiltracao"].map(function (o) { return '<option value="' + o + '"' + (p.fundo === o ? " selected" : "") + ">" + esc(t("fundo_" + o)) + "</option>"; }).join("") + "</select></label>";
+      }
       if (k === "vala") h += cp(i, "largura_m", "largura", "m") + cp(i, "profundidade_m", "prof", "m") + cp(i, "berma_altura_m", "berma", "m");
       if (k === "acude") h += cp(i, "cota_coroamento_m", "coroa", "m") + cp(i, "descarregador_cota_m", "desc", "m");
       if (k === "ocupacao") h += cp(i, "cn", "cn", "") + cp(i, "manning", "manning", "");
@@ -225,6 +248,14 @@
       h += "<span>" + esc(t("saida")) + "</span><span>" + n(b.saida_medida_m3, 0) + " m³</span><span>" + esc(t("infiltracao")) + "</span><span>" + n(b.infiltracao_m3, 0) + " m³</span><span>" + esc(t("armazenado")) + "</span><span>" + n(b.armazenado_fim_m3, 0) + " m³</span>";
       h += "<span>" + esc(t("erro")) + "</span><span>" + n(100 * (b.erro_rel || 0), 2) + " % · " + esc(s.balanco_ok ? t("fechado") : t("naoFecha")) + "</span></div>";
     } else if (r.processo === "antes-depois") {
+      (s.intervencoes || []).filter(function (x) { return x.tipo === "charca"; }).forEach(function (c) {
+        h += '<div class="kv"><span><b>' + esc(t("charcaR")) + " " + (c.i + 1) + "</b></span><span></span><span>" + esc(t("volUtil")) + "</span><span>" + n(c.volume_util_m3, 0) + " m³</span><span>" + esc(t("cotaA")) + "</span><span>" + n(c.cota_agua_m, 2) + " m</span>";
+        h += "<span>" + esc(t("corte")) + " / " + esc(t("aterro")) + "</span><span>" + n(c.corte_m3, 0) + " / " + n(c.aterro_m3, 0) + " m³</span><span>" + esc(t("dique")) + "</span><span>" + n(c.altura_max_dique_m, 2) + " m</span>";
+        if (c.descarregador) h += "<span>" + esc(t("descR")) + "</span><span>" + n(c.descarregador.cota_m, 2) + " m</span>";
+        h += "</div>";
+        if (c.aviso_descarregador) h += '<p class="nota">' + esc(c.aviso_descarregador) + "</p>";
+        if (c.aviso_fundo) h += '<p class="nota">' + esc(c.aviso_fundo) + "</p>";
+      });
       (s.comparacao || []).forEach(function (c) {
         if (c.ganho_m3 != null) h += '<div class="kv"><span><b>' + n(c.chuva_mm, 0) + " mm</b></span><span></span><span>" + esc(t("ganho")) + "</span><span>" + n(c.ganho_m3, 0) + " m³</span><span>" + esc(t("retido")) + "</span><span>" + n(c.retido_antes_m3, 0) + " → " + n(c.retido_depois_m3, 0) + " m³</span></div>";
         else h += '<div class="kv"><span>' + esc(t("reducao")) + "</span><span>" + n(c.reducao_pico_pct) + " %</span><span>" + esc(t("atraso")) + "</span><span>" + n(c.atraso_pico_min, 0) + " min</span><span>" + esc(t("pico")) + "</span><span>" + n(c.pico_antes_m3s, 3) + " → " + n(c.pico_depois_m3s, 3) + " m³/s</span></div>";
@@ -262,6 +293,11 @@
     if (a === "min") { P.classList.toggle("min"); return; }
     if (el.hasAttribute("data-tab")) { S.tab = el.getAttribute("data-tab"); pararDesenho(); pintar(); return; }
     if (a === "simular") return simular();
+    if (a === "aceitar") {
+      api("agua/aviso", { method: "POST", body: {} }).then(function () { S.aviso = true; S.erro = ""; try { localStorage.setItem("ipr_agua_aviso", AVISO_VERSAO); } catch (e2) {} pintar(); })
+        .catch(function (err) { S.erro = err.message; pintar(); });
+      return;
+    }
     if (el.hasAttribute("data-des")) return comecarDesenho(el.getAttribute("data-des"));
     if (a === "terminar") return pararDesenho(true);
     if (a === "cancelar") return pararDesenho(false);
@@ -271,10 +307,11 @@
   function mudar(e) {
     var el = e.target;
     if (el.hasAttribute("data-cam")) { alternarCamada(el.getAttribute("data-cam"), el.checked); pintar(); return; }
-    if (el.hasAttribute("data-fi")) { var v = el.value === "" ? null : parseFloat(el.value); S.feats[+el.getAttribute("data-fi")].properties[el.getAttribute("data-fc")] = v; return; }
+    if (el.hasAttribute("data-fi")) { var v = el.hasAttribute("data-txt") ? el.value : (el.value === "" ? null : parseFloat(el.value)); S.feats[+el.getAttribute("data-fi")].properties[el.getAttribute("data-fc")] = v; return; }
     var k = el.getAttribute("data-k"); if (!k) return;
     if (k === "cmodo") { S.chuva.modo = el.value; pintar(); return; }
     if (k === "modoAD") { S.modoAD = el.value; pintar(); return; }
+    if (k === "avisoChk") { S.avisoChk = el.checked; pintar(); return; }
     if (k === "cenarios") { S.cenarios = el.value; return; }
     if (k === "horas") { S.horas = +el.value; return; }
     if (k === "obs" || k === "fonte" || k === "forma") { S.chuva[k] = el.value; return; }
@@ -300,7 +337,7 @@
     S.erro = ""; S.res = null; S.job = { enviar: true }; limparCamadas(); pintar();
     api("agua/simular", { method: "POST", body: { enc: a.id, processo: proc, entradas: ent } })
       .then(function (r) { S.job = { id: r.trabalho.jobID, estado: r.trabalho.status }; pintar(); listar(); acompanhar(); })
-      .catch(function (err) { S.job = null; S.erro = err.message; pintar(); });
+      .catch(function (err) { S.job = null; S.erro = err.message; if (/aviso/i.test(err.message)) { S.aviso = false; try { localStorage.removeItem("ipr_agua_aviso"); } catch (e2) {} } pintar(); });
   }
   var timer = null;
   function acompanhar() {
@@ -351,7 +388,7 @@
 
   // ───────────── desenho (pontos por clique; linhas para valas e açudes, polígonos para charcas e ocupação) ─────────────
   var SRC = "ipr-as-des";
-  var DEF = { charca: { profundidade_m: 2 }, vala: { largura_m: 1, profundidade_m: 0.5, berma_altura_m: 0.5 }, acude: { cota_coroamento_m: null, descarregador_cota_m: null }, ocupacao: { cn: 60, manning: 0.1 } };
+  var DEF = { charca: { profundidade_m: 2.5, talude_interior: 3, talude_exterior: 3, folga_m: 0.5, coroamento_largura_m: 3, cota_agua_m: null, fundo: "impermeavel" }, vala: { largura_m: 1, profundidade_m: 0.5, berma_altura_m: 0.5 }, acude: { cota_coroamento_m: null, descarregador_cota_m: null }, ocupacao: { cn: 60, manning: 0.1 } };
   function linha(k) { return k === "vala" || k === "acude"; }
   function comecarDesenho(k) {
     var M = mapa(); if (!M) return;
