@@ -4344,10 +4344,28 @@
   }
   // PDM do município ao centro do mapa (só com o tema Condicionantes aberto)
   var PDM_EST = { k: null, nome: "", a: false };
+  // §76 PDM do país todo (Nuno, 27/10/2026, 10h20). O servidor (m90387) lê o catálogo do SNIG e as camadas de cada PDM e
+  //     publica em /wp-json/tcd/v1/pdm/lista os municípios com planta de condicionantes pronta; o proxy (m90379) serve
+  //     pdm_<DICO>. Quando o centro do mapa cai num município ainda não registado, a camada entra no catálogo nessa altura.
+  var PDM76 = null, PDM76_P = null;
+  function pdm76(k, nome, feito) {
+    if (!k || PDM_IDS[k]) return feito();
+    if (!PDM76_P) PDM76_P = fetch("/wp-json/tcd/v1/pdm/lista").then(function (r) { return r.ok ? r.json() : {}; }).then(function (j) { PDM76 = {}; (j.pdm || []).forEach(function (p) { PDM76[norm64(p.n)] = p; }); }).catch(function () { PDM76 = {}; });
+    PDM76_P.then(function () {
+      var p = PDM76 && PDM76[k], V = window.IPRViz;
+      if (p && V && typeof V.juntar === "function") {
+        var id = "pdm_" + p.d;
+        V.juntar({ id: id, g: "cond", sub: "PDM · planta de condicionantes (imagem)", n: "Planta de condicionantes · " + (nome || p.n), t: "wmsp", src: id, lic: "v", op: .7, cor: "#b07aa1", minz: 10,
+          fonte: "Câmara Municipal de " + (nome || p.n) + " · DGT/SNIT · CC BY 4.0", nota: "Imagem da planta publicada. Prevalece o que está publicado em Diário da República.", pdm: 1 });
+        PDM_IDS[k] = id; TEMA_CAT[id] = "cond";
+      }
+      feito();
+    });
+  }
   function pdmCentro() {
     var M = mapa(); if (!M || EST62.tema !== "cond") return;
     var c = M.getCenter(); PDM_EST.a = true; pintarPdm();
-    plSitio(c.lng, c.lat).then(function (s) { PDM_EST.a = false; PDM_EST.nome = s.municipio || ""; PDM_EST.k = norm64(s.municipio); pintarPdm(); });
+    plSitio(c.lng, c.lat).then(function (s) { PDM_EST.a = false; PDM_EST.nome = s.municipio || ""; PDM_EST.k = norm64(s.municipio); pdm76(PDM_EST.k, PDM_EST.nome, pintarPdm); });
   }
   function pintarPdm() {
     var w = document.querySelector("#ipr-t62 .ipr-t62-pdm"); if (!w) return;
