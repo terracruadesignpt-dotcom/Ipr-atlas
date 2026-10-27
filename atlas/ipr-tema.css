@@ -1,0 +1,223 @@
+/* IPR Atlas · tema IPR (versão B do sistema de design regenerativo.pt, escolhida pelo Nuno a 27/10/2026, 20h02).
+   Fundo verde noite, verde IPR #94BE39, Outfit nos títulos, Inter nos controlos, IBM Plex Mono nos dados, cantos de 2 px.
+   Carregado depois de camadas.css, viz.css e estudio.css. Para voltar à versão anterior basta tirar este ficheiro do atlas.json.
+   Propriedade de IPR – Instituto de Planeamento Regenerativo, Lda. */
+.ipe{--bg:#0F170B;--p1:#14200F;--p2:#1B2816;--p3:#22311C;--ln:#2E3A26;--ln2:#3C4B32;--tx:#E4E2D8;--mu:#9AA088;--mu2:#64703F;--ac:#94BE39;--ac2:#B3D466;--acs:rgba(148,190,57,.16);--ok:#94BE39;--ko:#E0705A;--ar:#E4E2D8;--ouro:#B8A83A;--titulo:'Outfit','Inter',system-ui,sans-serif}
+.ipe.claro{--bg:#F6F5EE;--p1:#FFFFFF;--p2:#FFFFFF;--p3:#EFEEE5;--ln:#DCDCCB;--ln2:#C5C7AF;--tx:#1B2816;--mu:#5D6450;--mu2:#8A9077;--ac:#4E6B12;--ac2:#3E5610;--acs:rgba(78,107,18,.12);--ok:#4E6B12;--ko:#B6432E;--ouro:#8A7C1E}
+/* Títulos: Outfit */
+.ipe-h{font:400 17px/1.25 var(--titulo)}
+.ipr-userpop .ipe-h{font:500 15px/1.25 var(--titulo)}
+.ipe h1,.ipe h2,.ipe h3,#ipr-int h1,#ipr-int h3{font-family:var(--titulo)}
+/* Marca: Outfit 600 16 px; linha do Instituto em Inter 11 px */
+.ipe-marca b,.ipe-marca.ipr-marca-txt b{font:600 16px/1.1 var(--titulo);letter-spacing:0;text-transform:none}
+.ipe-marca span,.ipe-marca.ipr-marca-txt span{font:400 11px/1.3 'Inter',system-ui,sans-serif;letter-spacing:0}
+/* Etiquetas (Explorer, Intelligence, Beta): Plex Mono 10 px maiúsculas, contorno */
+.ipe-nivel,.ipe-beta{font:500 10px/1.4 var(--mono);letter-spacing:.1em;text-transform:uppercase;border-radius:2px}
+.ipe-beta{background:transparent;color:var(--ouro);border:1px solid var(--ouro)}
+/* Botões: Inter 600 12 px, só a primeira letra maiúscula */
+.ipe button,.ipe .ipe-b{font-family:'Inter',system-ui,sans-serif;text-transform:none}
+.ipe-b--ac,.ipe-t[aria-pressed=true],.ipe .ipr-n,.ipe-hist-a button.on{color:#0F170B!important}
+#ipe .ipr-todas-f button[aria-pressed=true]{color:#0F170B}
+.ipe.claro .ipe-b--ac,.ipe.claro .ipe-t[aria-pressed=true],.ipe.claro .ipe-hist-a button.on{color:#FFFFFF!important}
+#ipe .ipe.claro .ipr-todas-f button[aria-pressed=true],.ipe.claro#ipe .ipr-todas-f button[aria-pressed=true]{color:#FFFFFF}
+/* Campos e dados: Plex Mono */
+.ipe input[type=text],.ipe input[type=search],.ipe-busca input{font-family:var(--mono)}
+/* Cantos de 2 px (regras geradas a partir de todas as folhas e estilos injectados do Atlas; círculos ficam) */
+html .ipr-rail{border-radius:2px}
+html .ipr-rb{border-radius:2px}
+html .ipr-n{border-radius:2px}
+html .ipr-tip{border-radius:2px}
+html .ipr-fly{border-radius:2px}
+html .ipr-fx{border-radius:2px}
+html .ipr-busca{border-radius:2px}
+html .ipr-cor{border-radius:2px}
+html .ipr-sw{border-radius:2px}
+html .iprv-aviso{border-radius:2px}
+html .iprv-pop .maplibregl-popup-content{border-radius:2px}
+html .ipe-busca{border-radius:2px}
+html .ipe-busca kbd{border-radius:2px}
+html .ipe-lk{border-radius:2px}
+html .ipe-ib{border-radius:2px}
+html .ipe-tools{border-radius:2px}
+html .ipe-t{border-radius:2px}
+html .ipe-t .ipe-tip{border-radius:2px}
+html .ipe-hud{border-radius:2px}
+html .ipe-mapa .iprv-aviso{border-radius:2px}
+html .ipe .ipr-rb{border-radius:2px}
+html .ipe .maplibregl-ctrl-group{border-radius:2px}
+html .ipe .maplibregl-popup-content{border-radius:2px}
+html .ipe-b{border-radius:2px}
+html .ipe-in{border-radius:2px}
+html .ipe-estado.ok{border-radius:2px}
+html .ipe-estado.erro{border-radius:2px}
+html .ipe-mb{border-radius:2px}
+html .ipe-kpi{border-radius:2px}
+html .ipe-card{border-radius:2px}
+html .ipe-thumb{border-radius:2px}
+html .ipe-pill{border-radius:2px}
+html .ipe-vazio{border-radius:2px}
+html .ipe-st button{border-radius:2px}
+@media (max-width:900px){html .ipe-dir{border-radius:2px 2px 0 0}}
+html .ipe-tour-luz{border-radius:2px}
+html .ipe-tour-c{border-radius:2px}
+html .ipe-lidar{border-radius:2px}
+html .ipe-rep-c{border-radius:2px}
+html .ipe-guia{border-radius:2px}
+html .ipe-seg button{border-radius:2px}
+html .ipe-dg-t{border-radius:2px}
+html .ipe-nivel{border-radius:2px}
+html .ipe-res{border-radius:2px}
+html .ipe-res-bar{border-radius:2px}
+html .ipe-loc-x{border-radius:2px}
+html .ipe-loc-in{border-radius:2px}
+html .ipe .ipr-arv .ipr-busca{border-radius:2px}
+html .ipe-pan{border-radius:2px}
+html .ipe-hist-a button{border-radius:2px}
+html .ipe-sol-l input{border-radius:2px}
+html .ipe-pf{border-radius:2px}
+html .ipe-pf-tip{border-radius:2px}
+html .ipe-beta{border-radius:2px}
+html .ipe-basecam{border-radius:2px}
+html .ipe-chip{border-radius:2px}
+html .ipc-nav button{border-radius:2px}
+html .ipc-badge{border-radius:2px}
+html .ipc-mapa{border-radius:2px}
+html .ipc-capa{border-radius:2px}
+html .ipc-eq{border-radius:2px}
+html .ipc-num div{border-radius:2px}
+html .ipc-conq span{border-radius:2px}
+html .ipc-chip{border-radius:2px}
+html .ipc-ent img{border-radius:2px}
+html .ipc-mk--pedido{border-radius:2px}
+html .ipc-mk--oferta{border-radius:2px}
+html .ipe-rosa-g{border-radius:2px}
+html .ipe-escg{border-radius:2px}
+html .ipe-mais-m{border-radius:2px}
+html .ipe-mais-m .ipe-ib,html .ipe-mais-m .ipe-lk{border-radius:2px}
+html .ipe-gpsq{border-radius:2px}
+html .ipe-ab-saltar button{border-radius:2px}
+@media (max-width:900px) and (min-height:501px){html .ipe .maplibregl-ctrl-top-right .maplibregl-ctrl:first-child{border-radius:2px 2px 0 0}}
+@media (max-width:900px) and (min-height:501px){html .ipe .ipe-tools{border-radius:0 0 2px 2px}}
+@media (min-width:901px) and (min-height:501px){html .ipe .maplibregl-ctrl-top-right .maplibregl-ctrl:first-child{border-radius:2px 2px 0 0}}
+@media (min-width:901px) and (min-height:501px){html .ipe .ipe-tools{border-radius:0 0 2px 2px}}
+@media (min-width:901px) and (min-height:501px){html .ipe .ipe-tools .ipe-t--mais:after{border-radius:2px}}
+html .ipe .ipc-etq em{border-radius:2px}
+html #ipe .ipr-g.ipc-loc{border-radius:2px}
+html #ipe .ipr-g.ipc-loc .ipr-gn:before{border-radius:2px 2px 2px 2px}
+html .ipe-marca img.ipr-sigla{border-radius:2px}
+html .ipe-st input.ipr-in{border-radius:2px}
+html #ipe .ipe-tab{border-radius:2px 2px 0 0}
+html #ipe .ipe-tab[aria-selected=true]::before{border-radius:2px 2px 0 0}
+html #ipe-proj .ipe-thumb{border-radius:2px}
+html #ipe-proj .ipe-chips>*{border-radius:2px!important}
+html #ipe-esq #tcd-testar-cam{border-radius:2px}
+html .ipr-casc{border-radius:2px}
+html .ipr-userpop{border-radius:2px}
+html .ipr-userpop .ipe-b{border-radius:2px}
+html #ipe .ipr-todas{border-radius:2px}
+html #ipe .ipr-todas-f button{border-radius:2px}
+html #ipe .ipr-sint{border-radius:2px}
+html .ipr-opc-b{border-radius:2px}
+html .ipr-opc{border-radius:2px}
+html #ipe .ipr-wk{border-radius:2px}
+html #ipe .ipr-todas-mais{border-radius:2px}
+html .ipr-painel{border-radius:2px}
+html .ipr-qf-qr svg{border-radius:2px}
+html .ipr-temas-b{border-radius:2px}
+html .ipr-temas-m{border-radius:2px}
+html .ipr-temas-m button{border-radius:2px}
+html .ipr-temas-in input{border-radius:2px}
+html .ipr-natural-n{border-radius:2px}
+html .ipr-ficha{border-radius:2px}
+html .ipr-ficha-x{border-radius:2px}
+html .ipr-pp{border-radius:2px}
+html .ipr-shq-qr svg{border-radius:2px}
+html .ipr-crono{border-radius:2px}
+html .ipe-fl2 li.ipe-fl-tudo{border-radius:2px}
+html .ipr-ag-pf select{border-radius:2px}
+html #ipr-ag-av{border-radius:2px}
+html #ipr-app-p{border-radius:2px}
+html .ipr-of{border-radius:2px}
+html .ipr-orgsel{border-radius:2px}
+html #ipe .maplibregl-ctrl-top-left.ipr-nav .maplibregl-ctrl-group{border-radius:2px}
+html .ipr-crono-int{border-radius:2px}
+html #ipr-lig-b{border-radius:2px}
+html #ipr-lig-r{border-radius:2px}
+html #ipr-lingueta{border-radius:0 2px 2px 0}
+html .ipr-pb{border-radius:2px}
+html #ipr-conv-res button{border-radius:2px}
+html #ipr-proc-sel{border-radius:2px}
+html #ipr-proc-sel button{border-radius:2px}
+html #ipr-conv select{border-radius:2px}
+html #ipr-drop{border-radius:2px}
+html #ipr-conv-l li{border-radius:2px}
+html #ipr-conv-ligar button{border-radius:2px}
+html #ipr-conv-l .ac a,html #ipr-conv-l .ac button{border-radius:2px}
+html #ipr-pos{border-radius:2px}
+html #ipr-pos svg{border-radius:2px}
+html #ipr-pos button{border-radius:2px}
+html #ipr-orgv details{border-radius:2px}
+html #ipr-orgv button.ov-z{border-radius:2px}
+html #ipr-orgv .ov-acc button{border-radius:2px}
+html #ipr-orgv .ov-cl{border-radius:2px}
+html #ipr-pf{border-radius:2px}
+html #ipr-pf button{border-radius:2px}
+html .ipr-fx .ipr-3d-c{border-radius:2px}
+html .ipr-fx .ipr-3d-c .b button{border-radius:2px}
+html .ipr-fx-dica{border-radius:2px}
+html .ipr-fx-g div{border-radius:2px}
+html .ipr-fx-a button{border-radius:2px}
+html #ipr-pl .c{border-radius:2px}
+html #ipr-pl select,html #ipr-pl input[type=text]{border-radius:2px}
+html #ipr-pl .a button{border-radius:2px}
+html #ipr-pl fieldset.fl{border-radius:2px}
+html .ipr-tma .f input{border-radius:2px}
+html #ipr-projorg .po{border-radius:2px}
+html #ipr-projorg .po button{border-radius:2px}
+html .ipr-jorg-esc select{border-radius:2px}
+html .ipr-jorg-esc button{border-radius:2px}
+html .ipr-pf input{border-radius:2px}
+html .ipr-lg{border-radius:2px}
+html .ipr-comecar{border-radius:2px}
+html .ipr-t62-g button{border-radius:2px}
+html .ipr-t62-g.cmp button{border-radius:2px}
+html .ipr-t62-c{border-radius:2px}
+html .ipr-t62-f button{border-radius:2px}
+html .ipr-t62-p button{border-radius:2px}
+html #ipr-av62{border-radius:2px}
+html #ipr-tri .ipr-tri-c{border-radius:2px}
+html #ipr-tri .ipr-tri-q button{border-radius:2px}
+html #ipr-tri .ipr-tri-m4 button{border-radius:2px}
+html #ipr-tri .ipr-tri-r button,html #ipr-tri .ipr-tri-n button,html #ipr-tri .ipr-tri-a button{border-radius:2px}
+html #ipr-tri .ipr-tri-bar{border-radius:2px}
+html #ipr-tri .ipr-tri-bar button[data-a63=max]{border-radius:2px}
+html #ipr-tri .ipr-tri-c{border-radius:2px 2px 0 0}
+html #ipr-z67{border-radius:2px}
+html #ipr-m68 .ipr-m68-c{border-radius:2px}
+html #ipr-m68 .a button{border-radius:2px}
+html #ipr-m68 .ipr-m68-c{border-radius:2px 2px 0 0}
+html .ipr-t62-g:not(.cmp) button{border-radius:2px!important}
+html #ipr-lgd{border-radius:2px}
+html #ipr-lgd img{border-radius:2px}
+html #ipe .ipe-top .ipe-nivel,html #ipe .ipe-top .ipe-beta{border-radius:2px}
+html .ipr-pf73{border-radius:2px}
+html .ipr-pf73 .dz{border-radius:2px}
+html .ipr-pf73 select{border-radius:2px}
+html .ipr-pf73 li{border-radius:2px}
+html #ipr-78-sair{border-radius:2px}
+html #ipr-79 select{border-radius:2px}
+html .tes{border-radius:2px}
+html .teu{border-radius:2px}
+html .tfr{border-radius:2px}
+html #ipr-int{border-radius:2px}
+html #ipr-int .ii-ib{border-radius:2px}
+html #ipr-int .ii-passos button{border-radius:2px}
+html #ipr-int .ii-tipos button{border-radius:2px}
+html #ipr-int .ii-f select,html #ipr-int .ii-f input[type=number]{border-radius:2px}
+html #ipr-int .ii-b{border-radius:2px}
+html #ipr-int .ii-des{border-radius:2px}
+html #ipr-int .ii-est{border-radius:2px}
+html #ipr-int .ii-lt>div{border-radius:2px}
+html #ipr-int .ii-tranc{border-radius:2px}
+html .est{border-radius:2px}
+html .lt div{border-radius:2px}
