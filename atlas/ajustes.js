@@ -221,12 +221,12 @@
   function acertarLista(sec) {
     if (sec.getAttribute("data-ipr-a")) return; sec.setAttribute("data-ipr-a", "1");
     var h3 = sec.querySelector("h3"); if (h3) h3.textContent = "Os meus projectos";
-    [].forEach.call(sec.querySelectorAll("a.tme-b"), function (a) { if (/Abrir/.test(a.textContent)) a.textContent = "Abrir"; });
+    [].forEach.call(sec.querySelectorAll("a.tme-b"), function (a) { var tx = a.textContent; if (/Abrir|^Open/.test(tx) && tx !== "Abrir" && tx !== "Open") a.textContent = "Abrir"; });
     [].forEach.call(sec.querySelectorAll("p"), function (p) { p.textContent = p.textContent.replace("Ainda não tem terrenos", "Ainda não tem projectos"); });
     var lista = (nuvem || []).filter(function (c) { return c && (c.nome || c.codigo); });
     if (lista.length) {
       var ul = sec.querySelector(".tme-l");
-      if (!ul) { ul = document.createElement("ul"); ul.className = "tme-l"; var pp = sec.querySelector("p"); if (pp && /projectos/.test(pp.textContent)) pp.remove(); var acc = sec.querySelector(".tme-acc"); sec.insertBefore(ul, acc || null); }
+      if (!ul) { ul = document.createElement("ul"); ul.className = "tme-l"; var pp = sec.querySelector("p"); if (pp && /projectos|projects/.test(pp.textContent)) pp.remove(); var acc = sec.querySelector(".tme-acc"); sec.insertBefore(ul, acc || null); }
       lista.forEach(function (c, i) {
         var li = document.createElement("li"); li.className = "tme-t ipr-nuvem";
         li.innerHTML = "<b>" + escH(c.nome || c.codigo) + "</b><small>" + escH([haTxt(c.area_ha), c.local, "IPR Cloud"].filter(Boolean).join(" · ")) + "</small><button type=\"button\" class=\"tme-b\">Abrir</button>";
@@ -431,7 +431,7 @@
     var nome = document.getElementById("ipe-nome"), em = document.getElementById("ipe-email");
     if (nome && !nome.value) nome.value = E.nome || E.email; if (em) em.value = E.email;
     var ck = f.querySelector('input[name="consentimento"]'); if (ck) ck.checked = true;
-    var bt = document.getElementById("ipe-enviar"); if (bt && /Enviar pedido/.test(bt.textContent)) bt.textContent = "Processar";
+    var bt = document.getElementById("ipe-enviar"); if (bt && /Enviar pedido|Send request/.test(bt.textContent)) bt.textContent = "Processar";
     if (f.getAttribute("data-ipr-eq")) return true;
     f.setAttribute("data-ipr-eq", "1");
     var esc = false;
@@ -442,7 +442,7 @@
       if (esc && !(e.nextElementSibling && e.nextElementSibling.id === "ipe-notas")) e.style.display = "none";
       if (e.classList && e.classList.contains("ipe-nota") && /paga|IVA/.test(e.textContent)) e.style.display = "none";
     });
-    var g = document.getElementById("ipe-guia"); if (g) { [].forEach.call(g.querySelectorAll("*"), function (x) { if (x.children.length === 0 && /^Dados$/.test((x.textContent || "").trim())) { var li = x.closest("li,span,div"); if (li && li !== g) li.style.display = "none"; } }); }
+    var g = document.getElementById("ipe-guia"); if (g) { [].forEach.call(g.querySelectorAll("*"), function (x) { if (x.children.length === 0 && /^(Dados|Details)$/.test((x.textContent || "").trim())) { var li = x.closest("li,span,div"); if (li && li !== g) li.style.display = "none"; } }); }
     // 23/10, 01h07 (Nuno): só os botões directos, sem tutorial, sem valores, Leitura sempre incluída, sem notas nem vale.
     var gu = document.getElementById("ipe-guia"); if (gu) gu.style.display = "none";
     [].forEach.call(f.querySelectorAll(".ipe-mp > p.ipe-p"), function (p) { p.style.display = "none"; });
@@ -504,7 +504,7 @@
   function projDir() {
     var box = document.getElementById("ipe-proj"); if (!box) return false;
     function aplicar() {
-      [].forEach.call(box.querySelectorAll("h3.ipe-h"), function (h) { if (/^Os seus projectos/.test((h.textContent || "").trim())) h.classList.add("ipr-oculto-h"); });
+      [].forEach.call(box.querySelectorAll("h3.ipe-h"), function (h) { if (/^(Os seus projectos|Your projects)/.test((h.textContent || "").trim())) h.classList.add("ipr-oculto-h"); });
       if (window.tcdNonce) [].forEach.call(box.querySelectorAll(".ipe-card"), function (c) { if (c.querySelector(".ipc-cmp") || /#\d+/.test(c.textContent)) renomear(c); });
       if (!window.tcdEquipa) return;
       [].forEach.call(box.querySelectorAll(".ipe-card .ipe-res--proj:not(.ipr-ficha-eq)"), function (r) {
@@ -512,7 +512,7 @@
         var card = r.closest(".ipe-card"), bt = r.querySelector("[data-res-proj]"), out = r.querySelector("[data-res-out]");
         var fl = card && card.querySelector(".ipe-cx > ul.ipe-fl:not([data-sh-lista])");
         var li = document.createElement("li"); li.innerHTML = '<span>Ficha do terreno (indicativa)</span><a href="#" data-ipr-ficha>Abrir</a>';
-        if (!fl) { var h4 = [].filter.call(card.querySelectorAll(".ipe-cx > h4.ipe-h"), function (x) { return /^Ficheiros/.test(x.textContent); })[0]; fl = document.createElement("ul"); fl.className = "ipe-fl"; if (h4) { var nx = h4.nextElementSibling; if (nx && nx.tagName === "P") nx.remove(); h4.parentNode.insertBefore(fl, h4.nextSibling); } else { r.parentNode.insertBefore(fl, r); } }
+        if (!fl) { var h4 = [].filter.call(card.querySelectorAll(".ipe-cx > h4.ipe-h"), function (x) { return /^(Ficheiros|Files)/.test(x.textContent); })[0]; fl = document.createElement("ul"); fl.className = "ipe-fl"; if (h4) { var nx = h4.nextElementSibling; if (nx && nx.tagName === "P") nx.remove(); h4.parentNode.insertBefore(fl, h4.nextSibling); } else { r.parentNode.insertBefore(fl, r); } }
         fl.appendChild(li);
         if (out) { out.classList.add("ipr-ficha-out"); fl.parentNode.insertBefore(out, fl.nextSibling); }
         li.querySelector("a").addEventListener("click", function (e) { e.preventDefault(); e.stopPropagation(); if (bt) bt.click(); });
@@ -674,7 +674,7 @@
     var box = document.getElementById("ipe-proj"); if (!box) return false;
     function acertar() {
       [].forEach.call(box.querySelectorAll(".ipc-cmp"), function (l) { var t = l.lastChild; if (t && t.nodeType === 3 && /comparar/.test(t.nodeValue)) t.nodeValue = " escolher"; l.title = "Escolher este terreno para sintetizar (extrair, analisar e comparar) com outros"; });
-      var bt = box.querySelector("[data-comparar]"); if (bt && /Comparar/.test(bt.textContent)) bt.textContent = "Sintetizar os terrenos escolhidos";
+      var bt = box.querySelector("[data-comparar]"); if (bt && /Comparar|Compare/.test(bt.textContent)) bt.textContent = "Sintetizar os terrenos escolhidos";
       var n = box.querySelectorAll("[data-cmp-sel]:checked").length, bar = document.getElementById("ipr-sint");
       if (!bar) {
         bar = document.createElement("div"); bar.id = "ipr-sint"; bar.className = "ipr-sint"; bar.hidden = true;
@@ -1803,7 +1803,7 @@
         if (!m) return;
         var g = b.closest(".ipo-c"), h = g && g.previousElementSibling;
         while (h && !h.classList.contains("ipo-g")) h = h.previousElementSibling;
-        if (h && (h.textContent.indexOf(m[1]) >= 0 || /Temas do projecto/.test(h.textContent))) { b.title = t; b.textContent = m[2]; }
+        if (h && (h.textContent.indexOf(m[1]) >= 0 || /Temas do projecto|Project themes/.test(h.textContent))) { b.title = t; b.textContent = m[2]; }
       });
     }
     new MutationObserver(limpar).observe(document.body, { childList: true, subtree: true });
@@ -2155,7 +2155,7 @@
       ".ipr-crono-int{font:12.5px/1.4 Inter,sans-serif;color:var(--mu);margin:6px 0 0;padding:8px 10px;border:1px solid var(--ln);border-radius:8px}";
     document.head.appendChild(st);
     function vale() {
-      var l = document.querySelector('label[for="ipe-vale"]'); if (l && l.textContent !== "Vale de oferta (opcional)") l.textContent = "Vale de oferta (opcional)";
+      var l = document.querySelector('label[for="ipe-vale"]'); if (l && !(window.__iprIgual ? window.__iprIgual(l.textContent, "Vale de oferta (opcional)") : l.textContent === "Vale de oferta (opcional)")) l.textContent = "Vale de oferta (opcional)";
       var n = document.getElementById("ipe-vale-nota"); if (n && !n.dataset.c) { n.dataset.c = "1"; n.textContent = "O código OFERTA-… que recebeu. Sem o código, reconhecemos o vale pelo seu nome."; }
     }
     vale(); new MutationObserver(vale).observe(document.getElementById("ipe") || document.body, { childList: true, subtree: true });
@@ -4276,7 +4276,7 @@
       }).join("");
       desenhando = true;
       if (!W) { W = document.createElement("div"); W.id = "ipr-projorg"; }
-      var parti = [].slice.call(P.children).filter(function (el) { return /Partilhados consigo/.test(el.textContent || "") && el.children.length < 4; })[0];
+      var parti = [].slice.call(P.children).filter(function (el) { return /Partilhados consigo|Shared with you/.test(el.textContent || "") && el.children.length < 4; })[0];
       if (W.innerHTML !== h) W.innerHTML = h;
       if (parti) { if (W.nextSibling !== parti) P.insertBefore(W, parti); } else if (W.parentNode !== P || P.lastElementChild !== W) P.appendChild(W);
       desenhando = false;
@@ -4344,7 +4344,7 @@
       P.querySelectorAll(".ipe-card").forEach(function (c) {
         var id = enc(c); if (!id) return;
         var a = arq.indexOf(id) >= 0; c.classList.toggle("ipr-arq", a); if (a) n++;
-        var ct = c.querySelector(".ipe-ct"); if (!ct || ct.querySelector(".ipr-ca")) { var bt = ct && ct.querySelector("[data-arq]"); var tx0 = a ? "Desarquivar" : "Arquivar"; if (bt && bt.textContent !== tx0) bt.textContent = tx0; return; }
+        var ct = c.querySelector(".ipe-ct"); if (!ct || ct.querySelector(".ipr-ca")) { var bt = ct && ct.querySelector("[data-arq]"); var tx0 = a ? "Desarquivar" : "Arquivar"; if (bt && !(window.__iprIgual ? window.__iprIgual(bt.textContent, tx0) : bt.textContent === tx0)) bt.textContent = tx0; return; }
         var d = document.createElement("div"); d.className = "ipr-ca";
         // 25/10, 22h59 (Nuno): editar, partilhar e eliminar na própria lista (m90360).
         d.innerHTML = '<button type="button" data-ppl="' + id + '">Planta de localização</button><button type="button" data-pnome="' + id + '">Editar nome</button><button type="button" data-psh="' + id + '">Partilhar</button><button type="button" data-arq="' + id + '">' + (a ? "Desarquivar" : "Arquivar") + '</button><button type="button" data-jorg="' + id + '">Juntar à organização</button>' + (ADM ? '<button type="button" data-pdel="' + id + '" class="ipr-del">Eliminar</button>' : "");
@@ -4352,7 +4352,7 @@
       });
       var b = document.getElementById("ipr-arq-b");
       if (n && !b) { b = document.createElement("button"); b.type = "button"; b.id = "ipr-arq-b"; P.insertBefore(b, P.firstChild); b.addEventListener("click", function () { mostrarArq = !mostrarArq; P.classList.toggle("ipr-ver-arq", mostrarArq); aplicar(); }); }
-      if (b) { if (b.hidden !== !n) b.hidden = !n; var tx1 = (mostrarArq ? "Esconder" : "Mostrar") + " arquivados (" + n + ")"; if (b.textContent !== tx1) b.textContent = tx1; }
+      if (b) { if (b.hidden !== !n) b.hidden = !n; var tx1 = (mostrarArq ? "Esconder" : "Mostrar") + " arquivados (" + n + ")"; if (!(window.__iprIgual ? window.__iprIgual(b.textContent, tx1) : b.textContent === tx1)) b.textContent = tx1; }
     }
     var orgsJ = null, ADM = false;
     api("projecto/gestao").then(function (j) { if (j && j.admin) { ADM = true; P.querySelectorAll(".ipr-ca").forEach(function (x) { x.remove(); }); aplicar(); } }).catch(function () {});
@@ -4728,10 +4728,10 @@
       avisar62(t62("plantaSem")); return;
     }
     abrirSeparador("enc");
-    var sb = [].filter.call(document.querySelectorAll("#ipe button"), function (b) { return /^Base Cartogr/.test(b.textContent.trim()) && b.offsetParent; })[0]; if (sb) sb.click();
+    var sb = [].filter.call(document.querySelectorAll("#ipe button"), function (b) { return /^(Base Cartogr|Base Map$)/.test(b.textContent.trim()) && b.offsetParent; })[0]; if (sb) sb.click();
     if (k === "leitura") {
       setTimeout(function () {
-        var lab = [].filter.call(document.querySelectorAll('#ipe [data-pane="enc"] label, #ipe [data-pane="enc"] .ipe-ck, #ipe [data-pane="enc"] div'), function (x) { return /Leitura Territorial/.test(x.textContent) && x.querySelector('input[type="checkbox"]'); }).pop();
+        var lab = [].filter.call(document.querySelectorAll('#ipe [data-pane="enc"] label, #ipe [data-pane="enc"] .ipe-ck, #ipe [data-pane="enc"] div'), function (x) { return /Leitura Territorial|Land Reading/.test(x.textContent) && x.querySelector('input[type="checkbox"]'); }).pop();
         var ck = lab && lab.querySelector('input[type="checkbox"]');
         if (ck && !ck.checked) ck.click();
         if (lab) { try { lab.scrollIntoView({ block: "center", behavior: "smooth" }); } catch (e) {} }
@@ -5121,7 +5121,7 @@
       [].forEach.call(document.querySelectorAll("#ipe .ipr-g"), function (g) {
         var gn = g.querySelector(":scope>.ipr-gt .ipr-gn"); if (!gn) return;
         var leva = !!g.querySelector('.ipr-arv-l, input[placeholder*="iltrar"], input[placeholder*="ilter"]');
-        g.classList.toggle("ipr-lu-cam", /^os meus locais/i.test(gn.textContent.trim()) && leva);
+        g.classList.toggle("ipr-lu-cam", /^(os meus locais|my places)/i.test(gn.textContent.trim()) && leva);
       });
     }
     rever(); new MutationObserver(function () { clearTimeout(guarda65.t); guarda65.t = setTimeout(rever, 200); }).observe(cam, { childList: true, subtree: true });
@@ -5189,7 +5189,7 @@
     });
     [].forEach.call(document.querySelectorAll("#ipe-esq .ipr-gn"), function (n) {
       var gg = n.closest(".ipr-g"); if (!gg || gg === g || (g && (g.contains(gg) || gg.contains(g)))) return;
-      if (/^os meus locais/i.test(n.textContent.trim())) gg.classList.add("ipr-proj-fora");
+      if (/^(os meus locais|my places)/i.test(n.textContent.trim())) gg.classList.add("ipr-proj-fora");
     });
     if (!esquerda66.obs) { esquerda66.obs = 1; new MutationObserver(function () { clearTimeout(esquerda66.t); esquerda66.t = setTimeout(esquerda66, 250); }).observe(cam, { childList: true, subtree: true }); }
     return true;
@@ -5564,11 +5564,11 @@
     var ct = t.closest("#ipe-proj .ipe-card .ipe-ct");
     if (ct) {
       var card = ct.closest(".ipe-card");
-      var b = card.querySelector(".ipr-ver-mapa") || [].filter.call(card.querySelectorAll("button"), function (x) { return /^Ver no mapa$/i.test((x.textContent || "").trim()); })[0];
+      var b = card.querySelector(".ipr-ver-mapa") || [].filter.call(card.querySelectorAll("button"), function (x) { return /^(Ver no mapa|View on map)$/i.test((x.textContent || "").trim()); })[0];
       if (b) { b.click(); return; }
     }
     var li = t.closest("li.tme-t");
-    if (li) { var a = li.querySelector('a[href*="mapa="]') || [].filter.call(li.querySelectorAll("a,button"), function (x) { return /^Abrir$/i.test((x.textContent || "").trim()); })[0]; if (a) a.click(); }
+    if (li) { var a = li.querySelector('a[href*="mapa="]') || [].filter.call(li.querySelectorAll("a,button"), function (x) { return /^(Abrir|Open)$/i.test((x.textContent || "").trim()); })[0]; if (a) a.click(); }
   });
 
   // §73 Nuno, 27/10/2026, 08h09-08h10 (iPad):
@@ -5849,4 +5849,446 @@
     if (!localStorage.getItem("ipr_triagem_v1")) localStorage.setItem("ipr_triagem_v1", JSON.stringify({ q: null, p: 0, t: Date.now(), m79: 1 })); // com perfil, a triagem não abre sozinha
     try { sessionStorage.removeItem("ipr_perfil_s_" + P.perfil); sessionStorage.removeItem("ipr_perfil_sess"); } catch (e) {}
   } catch (e) {}
+})();
+/* §73c Tradução EN completa (Nuno, 27/10/2026, 18h55: «traduzir tudo já»). A auditoria de 27/10 viu, com EN escolhido, o
+   topo, o painel direito, a barra de estado e as dicas ainda em português: são textos escritos pelo app.js (minificado) e por
+   secções antigas deste ficheiro, sem dicionário. Aqui fica um dicionário PT→EN de textos exactos (nós de texto, title,
+   aria-label, placeholder) e alguns padrões com números, aplicado com um MutationObserver enquanto window.IPR_LINGUA não for
+   "pt". O original fica guardado (atributos data-tr-* nos atributos; WeakMap nos nós de texto, que não têm atributos) e é
+   reposto ao voltar a PT. Não se traduzem marcas (IPR Atlas, IPR Cloud, Terracrua Design, Intelligence, Explorer, OrtoSat,
+   Mapterhorn, DGT), nomes oficiais de camadas portuguesas nem conteúdo dos utilizadores (nomes de projectos e de locais):
+   só entra o que está no dicionário, e os títulos dos cartões de projecto e as janelas dos elementos do mapa ficam de fora.
+   Termos seguem os já usados em inglês no Atlas (Base Map, Land Reading, plot, land registry parcels). */
+(function () {
+  if (window.__ipr73c) return;
+  var D = {
+    // topo e contexto
+    "Nova Base Cartográfica": "New Base Map", "Indique o terreno no mapa": "Mark the plot on the map", "+ Nova Base Cartográfica": "+ New Base Map",
+    "Entrar": "Sign in", "Conta": "Account", "Painel": "Dashboard", "Actualizar": "Reload", "Tema": "Theme", "Mais": "More",
+    "Já é cliente? Entrar": "Already a client? Sign in", "Entrar ou criar conta": "Sign in or create an account",
+    "Plataforma em versão beta: pode encontrar falhas; use «Reportar problema».": "Beta platform: you may find faults; use «Report a problem».",
+    "Intelligence: todas as camadas e ferramentas.": "Intelligence: all layers and tools.",
+    "Camadas": "Layers", "Camadas: o que está ligado no mapa": "Layers: what is on the map", "Abrir o painel das camadas": "Open the layers panel",
+    "Tema escuro. Mudar para claro": "Dark theme. Switch to light", "Tema claro. Mudar para escuro": "Light theme. Switch to dark", "Claro ou escuro": "Light or dark",
+    "Tema claro ou escuro": "Light or dark theme",
+    "Instalar o IPR Atlas como app": "Install IPR Atlas as an app", "Instalar a app IPR Atlas": "Install the IPR Atlas app", "Instalar a app": "Install the app",
+    "Partilhar a app": "Share the app", "Partilhar vista": "Share view", "Partilhar esta vista": "Share this view", "Preferências de cookies": "Cookie preferences",
+    "O seu painel: encomendas, mapas, facturação": "Your dashboard: orders, maps, billing", "A sua conta: dados, facturação e guardados": "Your account: details, billing and saved items",
+    "Painel da equipa": "Team dashboard", "Definições": "Settings", "Definições do Atlas": "Atlas settings", "Assistente": "Assistant", "Ecrã inteiro": "Full screen",
+    "Ecrã inteiro (F)": "Full screen (F)", "Sair do ecrã inteiro": "Exit full screen", "Sair do ecrã inteiro (F)": "Exit full screen (F)",
+    "Painel da direita": "Right panel", "Painel lateral": "Side panel", "Ferramentas": "Tools", "Mapa": "Map",
+    "Sair do modo mapa": "Leave map mode", "Modo mapa: painéis e barras escondidos (Esc para sair)": "Map mode: panels and bars hidden (Esc to leave)",
+    "Converter desenhos de AutoCAD (DWG, DXF) para GeoPackage, KMZ, Shapefile e outros, gratuitamente": "Convert AutoCAD drawings (DWG, DXF) to GeoPackage, KMZ, Shapefile and more, free of charge",
+    "para SIG": "to GIS", "· grátis": "· free",
+    // ferramentas do mapa
+    "Navegar e identificar": "Navigate and identify", "Medir: caminho e distância": "Measure: path and distance", "Medir: polígono e área": "Measure: polygon and area",
+    "Desenhar o terreno": "Draw the plot", "Pedir visita": "Request a visit", "Pedir visita técnica": "Request a technical visit",
+    "Barra lateral: pesquisar, locais e camadas": "Sidebar: search, places and layers", "Adicionar marcador": "Add a marker", "Adicionar marcador (K)": "Add a marker (K)",
+    "Escolher parcelas do cadastro": "Pick land registry parcels", "Importar limite do terreno (KML, SHP…)": "Import the plot boundary (KML, SHP…)",
+    "Imagens históricas": "Historical imagery", "Sol: luz e sombra a uma hora do dia": "Sun: light and shade at a time of day", "Relevo 3D": "3D terrain",
+    "Mais ferramentas": "More tools", "Exportar prancha (PNG)": "Export sheet (PNG)", "A minha localização": "My location", "A minha localização (GPS)": "My location (GPS)",
+    "Perfil de elevação": "Elevation profile", "Aproximar": "Zoom in", "Afastar": "Zoom out", "Voltar ao norte": "Reset to north", "Orientar a norte": "Point north",
+    "Arraste a rosa para rodar o mapa. Com o rato por cima, a roda inclina a vista em 3D. Clique para orientar a norte e tirar a inclinação.": "Drag the compass to rotate the map. With the pointer over it, the wheel tilts the 3D view. Click to point north and remove the tilt.",
+    "Arraste a rosa para rodar o mapa. Clique para orientar a norte e tirar a inclinação. No mapa: botão direito ou Ctrl e arrastar.": "Drag the compass to rotate the map. Click to point north and remove the tilt. On the map: right button or Ctrl and drag.",
+    "O mapa já está orientado a norte. Arraste a rosa para o rodar.": "The map already points north. Drag the compass to rotate it.",
+    "Parcelas aqui: candidatas no centro do mapa": "Parcels here: candidates at the map centre", "Parcelas aqui": "Parcels here",
+    "Escala gráfica": "Scale bar", "Pesquisar, locais e camadas": "Search, places and layers", "Pesquisar": "Search", "Procurar": "Search",
+    "Pesquisar um lugar, uma freguesia ou um artigo do cadastro": "Search for a place, a parish or a land registry article",
+    "Local, coordenadas ou NIC": "Place, coordinates or NIC", "Sem resultados.": "No results.", "A procurar…": "Searching…",
+    "Localização indisponível": "Location unavailable", "Créditos do mapa": "Map credits",
+    // os meus locais
+    "Os meus locais": "My places", "Ponto": "Point", "Linha": "Line", "Área": "Area", "Importar": "Import", "guardados neste navegador": "saved in this browser",
+    "guardados na sua conta": "saved in your account",
+    "Ainda sem locais. Desenhe um ponto, uma linha ou uma área, ou importe um KML do Google Earth.": "No places yet. Draw a point, a line or an area, or import a KML from Google Earth.",
+    "Desenhar uma linha (caminho, vala, limite)": "Draw a line (track, swale, boundary)", "Desenhar uma área (polígono)": "Draw an area (polygon)",
+    "KML, KMZ, GPX, GeoJSON ou shapefile em zip": "KML, KMZ, GPX, GeoJSON or zipped shapefile", "Exportar para KML (Google Earth, QGIS)": "Export to KML (Google Earth, QGIS)",
+    "Ir para este local": "Go to this place", "Mudar o nome": "Rename", "Guardar em Locais": "Save to Places",
+    "Sem sessão iniciada, os locais não ficam guardados. Entre na sua conta para os guardar.": "Without signing in, places are not saved. Sign in to your account to keep them.",
+    "Para exportar os seus locais em KML, entre na sua conta.": "To export your places as KML, sign in to your account.",
+    "Clique no mapa para pôr um marcador. Fica nos seus Locais.": "Click on the map to place a marker. It goes into your Places.",
+    // camadas
+    "Mostrar todas as camadas": "Show all layers", "Mostrar só as principais": "Show only the main layers", "Filtrar camadas": "Filter layers",
+    "Cronologia": "Timeline", "Desligar": "Turn off", "Desligar todas as camadas temáticas": "Turn off all thematic layers", "Fechar a cronologia": "Close the timeline",
+    "Ano da imagem": "Image year", "Ano das ortofotos": "Orthophoto year", "Comparar o terreno em anos diferentes": "Compare the land in different years",
+    "Conjuntos de camadas prontos a usar": "Ready-made layer sets", "Temas": "Themes",
+    "Nenhuma camada com esse nome.": "No layer with that name.", "Opacidade de": "Opacity of", "Ligar ou desligar": "Turn on or off", "Camadas do mapa": "Map layers",
+    "Nenhuma camada temática ligada. Escolha uma categoria na barra à esquerda.": "No thematic layer on. Choose a category in the bar on the left.",
+    "Sem camadas nesta categoria.": "No layers in this category.", "Opções da camada": "Layer options", "Ficha da camada": "Layer record",
+    "Esta camada cobre todo o país (ou ainda está a carregar): não há uma extensão para aproximar.": "This layer covers the whole country (or is still loading): there is no extent to zoom to.",
+    "Áreas ardidas do período (ICNF)": "Burnt areas in the period (ICNF)", "As áreas ardidas são do IPR Atlas Intelligence.": "Burnt areas are part of IPR Atlas Intelligence.",
+    "As ortofotos só aparecem com o mapa aproximado (escala 1:50 000 ou maior).": "Orthophotos only appear when zoomed in (scale 1:50,000 or larger).",
+    "Antes de 1995": "Before 1995", "há fotografias aéreas de arquivo, que não são ortofotos: a": "there are archive aerial photographs, which are not orthophotos: the",
+    "fototeca da DGT": "DGT photo library",
+    "(desde 1944) e o CIGeoE (voos de 1937 a 1960, pedidos por coordenadas). Servem para documentar a antiguidade de uma construção, mas não substituem a apreciação da câmara.": "(since 1944) and CIGeoE (flights from 1937 to 1960, requested by coordinates). They help document the age of a building, but do not replace the council's assessment.",
+    "A Cronologia compara o terreno em ortofotos de 1995 a 2025 e as áreas ardidas de cada período. Faz parte do IPR Atlas Intelligence.": "The Timeline compares the land in orthophotos from 1995 to 2025 and the burnt areas of each period. It is part of IPR Atlas Intelligence.",
+    "Testar internet": "Test connection", "Verifica se a sua internet chega para carregar as camadas": "Checks whether your connection is enough to load the layers",
+    "Testar todas as camadas (só equipa)": "Test all layers (team only)", "Ligação boa": "Good connection", "Ligação razoável": "Fair connection", "Ligação fraca": "Weak connection",
+    "As camadas devem carregar normalmente.": "Layers should load normally.", "As camadas carregam, mas mais devagar. Ligue poucas de cada vez.": "Layers load, but more slowly. Turn on a few at a time.",
+    "Com esta ligação as camadas podem demorar muito ou não aparecer. Não é avaria do Atlas.": "With this connection layers may take long or not appear. It is not an Atlas fault.",
+    "Ortofotos e serviços da DGT": "DGT orthophotos and services", "Imagem de satélite (Sentinel-2)": "Satellite image (Sentinel-2)", "sem resposta": "no response",
+    // categorias
+    "Mundo": "World", "Limites": "Boundaries", "Regiões e províncias": "Regions and provinces", "Municípios e concelhos": "Municipalities", "Satélite": "Satellite",
+    "Fundo": "Background", "Relevo e terreno": "Terrain and relief", "Propriedade e limites": "Property and boundaries", "Condicionantes": "Constraints", "Fogo": "Fire",
+    "Água": "Water", "Solo, ocupação e vegetação": "Soil, land cover and vegetation", "Natureza e clima": "Nature and climate", "Ambiente e actividades": "Environment and activities",
+    "Referência (OpenStreetMap)": "Reference (OpenStreetMap)", "Água e bacias": "Water and catchments",
+    "Ligar ou desligar Relevo e terreno": "Turn Terrain and relief on or off", "Ligar ou desligar Propriedade e limites": "Turn Property and boundaries on or off",
+    "Ligar ou desligar Condicionantes": "Turn Constraints on or off", "Ligar ou desligar Água": "Turn Water on or off", "Ligar ou desligar Fogo": "Turn Fire on or off",
+    "Ligar ou desligar Solo, ocupação e vegetação": "Turn Soil, land cover and vegetation on or off", "Ligar ou desligar Natureza e clima": "Turn Nature and climate on or off",
+    "Ligar ou desligar Ambiente e actividades": "Turn Environment and activities on or off", "Ligar ou desligar Referência (OpenStreetMap)": "Turn Reference (OpenStreetMap) on or off",
+    // camadas mundiais (não são camadas oficiais portuguesas)
+    "Luzes nocturnas": "Night lights", "Povoamento e infra-estruturas vistos de noite.": "Settlements and infrastructure seen at night.", "Relevo": "Relief",
+    "Relevo a cores (altitude e sombra)": "Colour relief (altitude and shading)", "Altitude em cores, com sombra, a 30 m. Para ler serras, vales e planaltos de qualquer país.": "Altitude in colour, with shading, at 30 m. For reading mountains, valleys and plateaus in any country.",
+    "Imagem de há dois dias, a 375 m: nuvens, fumo, cheias e cor da vegetação neste momento.": "Image from two days ago, at 375 m: clouds, smoke, floods and vegetation colour right now.",
+    "Clima e tempo": "Climate and weather", "Chuva · último dia": "Rain · last day", "Intensidade média da chuva no último dia disponível (satélites GPM, cerca de 10 km).": "Mean rain intensity on the last available day (GPM satellites, about 10 km).",
+    "Temperatura do ar · último mês": "Air temperature · last month", "Média mensal a 2 m do solo, cerca de 50 km: dá o clima da região, não o do terreno.": "Monthly mean at 2 m above ground, about 50 km: it gives the regional climate, not the plot's.",
+    "Cheias · últimos 3 dias": "Floods · last 3 days", "Água fora do sítio habitual detectada por satélite (cerca de 250 m).": "Water outside its usual place detected by satellite (about 250 m).",
+    "Vegetação e floresta": "Vegetation and forest", "Vigor da vegetação · últimos 8 dias": "Vegetation vigour · last 8 days", "Índice de vegetação (EVI) a 250 m: verde mais escuro é vegetação mais activa.": "Vegetation index (EVI) at 250 m: darker green is more active vegetation.",
+    "Perda de floresta 2001 a 2024": "Forest loss 2001 to 2024", "Áreas onde o coberto arbóreo desapareceu, por ano (Landsat, 30 m).": "Areas where tree cover disappeared, by year (Landsat, 30 m).",
+    "Altura do coberto vegetal": "Canopy height", "Altura média das árvores medida por laser a partir da estação espacial (1 km; entre 52°N e 52°S).": "Mean tree height measured by laser from the space station (1 km; between 52°N and 52°S).",
+    "Biomassa aérea": "Above-ground biomass", "Toneladas de biomassa por hectare (1 km; entre 52°N e 52°S).": "Tonnes of biomass per hectare (1 km; between 52°N and 52°S).",
+    "População": "Population", "Densidade de população 2020": "Population density 2020", "Pessoas por km², a cerca de 1 km.": "People per km², at about 1 km.",
+    "Riscos naturais": "Natural hazards", "Frequência de cheias": "Flood frequency", "Cheias registadas de 1985 a 2003, em classes.": "Floods recorded from 1985 to 2003, in classes.",
+    "Frequência de secas": "Drought frequency", "Secas de 1980 a 2000, em classes.": "Droughts from 1980 to 2000, in classes.", "Perigo de deslizamentos": "Landslide hazard",
+    "Perigo de deslizamento de terras, em classes.": "Landslide hazard, in classes.", "Ocupação do solo": "Land cover", "Ocupação do solo 10 m (Sentinel-2, 2024)": "Land cover 10 m (Sentinel-2, 2024)",
+    "Classes: água, árvores, vegetação inundada, culturas, área construída, solo nu, neve, nuvens, pastagem e mato.": "Classes: water, trees, flooded vegetation, crops, built area, bare ground, snow, clouds, rangeland and scrub.",
+    "Água superficial · frequência 1984 a 2021": "Surface water · frequency 1984 to 2021", "Percentagem do tempo em que houve água em cada ponto (satélites Landsat).": "Share of the time each point had water (Landsat satellites).",
+    "Água superficial · sazonalidade": "Surface water · seasonality", "Número de meses por ano com água.": "Number of months per year with water.",
+    "Solos (0 a 5 cm)": "Soils (0 to 5 cm)", "Carbono orgânico do solo": "Soil organic carbon", "Modelo mundial a 250 m: serve para comparar zonas, não substitui análise de solo.": "Global model at 250 m: for comparing areas, not a substitute for soil analysis.",
+    "pH do solo (água)": "Soil pH (water)", "Argila": "Clay", "Areia": "Sand", "Azoto total": "Total nitrogen", "Do IPR Atlas Intelligence": "From IPR Atlas Intelligence",
+    "Fontes abertas de cobertura mundial, para qualquer país. As de clima, cheias e vegetação actualizam-se sozinhas com a última data publicada. Os fundos de satélite, o relevo, o OpenStreetMap, a biodiversidade (GBIF) e a água e clima (NASA) do Atlas também cobrem o mundo. Informação indicativa: a referência vinculativa é a dos organismos de cada país.": "Open sources with worldwide coverage, for any country. Climate, flood and vegetation layers update themselves to the latest published date. The Atlas satellite backgrounds, relief, OpenStreetMap, biodiversity (GBIF) and water and climate (NASA) also cover the world. Indicative information: the binding reference is that of each country's authorities.",
+    // separadores e painel direito
+    "Processos": "Processes", "Projectos": "Projects", "Organização": "Organisation", "Comunidade": "Community", "Acesso": "Access", "Processar": "Process",
+    "Base Cartográfica e conversão de ficheiros": "Base Map and file conversion", "Base Cartográfica": "Base Map", "Converter ficheiros": "Convert files",
+    "Terreno": "Plot", "Cobertura": "Coverage", "Dados": "Details", "Enviar": "Send",
+    "Procure a localidade ou o NIC e aproxime o mapa até ver as parcelas do cadastro.": "Search for the place or the NIC and zoom in until you see the land registry parcels.",
+    "Escolher parcelas": "Pick parcels", "Parcelas do cadastro": "Land registry parcels", "Desenhar no mapa": "Draw on the map", "Carregar ficheiro": "Upload a file",
+    "Artigo matricial ou caderneta": "Tax article or title deed", "Forma de indicar o terreno": "How to mark the plot", "Referência cadastral": "Cadastral reference",
+    "Aproxime-se do terreno e clique em cada parcela; clique de novo para a retirar. Onde não houver cadastro geométrico, desenhe o limite.": "Zoom in to the plot and click each parcel; click again to remove it. Where there is no geometric cadastre, draw the boundary.",
+    "Localizar": "Locate", "NIC · ex.: AAA000742446": "NIC · e.g. AAA000742446",
+    "Clique em cada canto do terreno. Feche no primeiro ponto ou com duplo clique. Pode desenhar várias parcelas.": "Click each corner of the plot. Close on the first point or with a double click. You can draw several parcels.",
+    "Clique em cada canto do terreno. Feche no primeiro ponto ou com duplo clique.": "Click each corner of the plot. Close on the first point or with a double click.",
+    "Desenhar parcela": "Draw a parcel", "Escolher ficheiro": "Choose file",
+    "KML, KMZ, GeoJSON, GPX ou Shapefile em .zip aparecem no mapa. GeoPackage, DXF e DWG seguem em anexo. Até 50 MB. Também pode largar o ficheiro sobre o mapa.": "KML, KMZ, GeoJSON, GPX or zipped Shapefile appear on the map. GeoPackage, DXF and DWG go as attachments. Up to 50 MB. You can also drop the file on the map.",
+    "Concelho e freguesia *": "Municipality and parish *", "Artigo matricial e secção": "Tax article and section", "Caderneta predial ou certidão": "Title deed or certificate",
+    "Basta o artigo ou a caderneta.": "The article or the deed is enough.", "Ex.: Almodôvar, Santa Clara-a-Nova": "E.g. Almodôvar, Santa Clara-a-Nova", "Ex.: artigo 20, secção FFF": "E.g. article 20, section FFF",
+    "Limpar terreno": "Clear plot", "Guardar terreno": "Save plot", "Guardar este limite nos seus terrenos": "Save this boundary to your plots", "Estimativa": "Estimate",
+    "desde 99 €": "from €99", "desde 250 €": "from €250", "Juntar a": "Add the", "Leitura Territorial": "Land Reading",
+    "): relatório PDF com condicionantes (REN, RAN, PDM, Rede Natura, água e fogo), ocupação do solo e extractos de mapas para interpretação.": "): PDF report with constraints (REN, RAN, PDM, Natura Network, water and fire), land cover and map extracts for interpretation.",
+    "Ficha do terreno": "Plot summary", "gratuita": "free", "Ficha do terreno (indicativa)": "Plot summary (indicative)", "Ver a ficha do terreno": "See the plot summary",
+    "Leitura rápida e indicativa dos serviços públicos para este terreno: REN, RAN, Rede Natura, relevo, linhas de água, perigosidade de incêndio e ocupação do solo.": "A quick, indicative reading of public services for this plot: REN, RAN, Natura Network, relief, watercourses, fire hazard and land cover.",
+    "Leitura rápida e indicativa dos serviços públicos para este terreno: REN, RAN, Rede Natura, relevo, linhas de água, perigosidade de incêndio e ocupação do solo. Não faz parte da Base Cartográfica.": "A quick, indicative reading of public services for this plot: REN, RAN, Natura Network, relief, watercourses, fire hazard and land cover. It is not part of the Base Map.",
+    "Encomendar a Base Cartográfica": "Order the Base Map", "Encomendar Base Cartográfica": "Order a Base Map", "Encomendar uma Base Cartográfica": "Order a Base Map",
+    "Encomendar a Base deste terreno": "Order the Base Map for this plot", "Processar a Base Cartográfica (equipa)": "Process the Base Map (team)",
+    "Valores sem IVA, por escalões. Com cobertura LiDAR total, a ligação de pagamento aparece logo a seguir ao pedido; sem ela, confirmamos os dados e enviamos o preço por e-mail. Acima de 5 000 ha, sob consulta; máximo 10 000 ha por pedido.": "Prices excluding VAT, by tier. With full LiDAR coverage, the payment link appears right after the request; without it, we confirm the details and send the price by e-mail. Above 5,000 ha, on request; maximum 10,000 ha per request.",
+    "Nome *": "Name *", "E-mail *": "E-mail *", "Telefone": "Phone", "NIF": "VAT number", "País de facturação": "Billing country", "Notas": "Notes",
+    "Notas para o processamento": "Notes for processing", "O que pretende fazer no terreno.": "What you plan to do on the land.",
+    "Portugal": "Portugal", "Espanha": "Spain", "França": "France", "Países Baixos": "Netherlands", "Alemanha": "Germany", "Reino Unido": "United Kingdom",
+    "Angola": "Angola", "Brasil": "Brazil", "Estados Unidos": "United States", "Outro": "Other",
+    "Li a": "I have read the", "Política de Privacidade": "Privacy Policy", "e aceito que usem estes dados para responder ao pedido. *": "and agree that these details are used to answer the request. *",
+    "Enviar pedido": "Send request", "Vale de oferta (opcional)": "Gift voucher (optional)",
+    "O código OFERTA-… que recebeu. Sem o código, reconhecemos o vale pelo seu nome.": "The OFERTA-… code you received. Without the code, we recognise the voucher by your name.",
+    "Com cobertura LiDAR total, paga logo a seguir ao pedido e a Base é processada e entregue automaticamente na sua área de cliente assim que o processamento termina (de minutos a algumas horas, conforme a área). Sem cobertura total, confirmamos os dados antes de qualquer pagamento.": "With full LiDAR coverage, you pay right after the request and the Base Map is processed and delivered automatically to your client area as soon as processing ends (from minutes to a few hours, depending on the area). Without full coverage, we confirm the details before any payment.",
+    "Falta preencher nome, e-mail e aceitar a política de privacidade.": "Please fill in name and e-mail and accept the privacy policy.",
+    "Clique nas parcelas do seu terreno. Clique de novo para retirar.": "Click the parcels of your plot. Click again to remove.",
+    "Clique em cada canto do terreno e feche no primeiro ponto.": "Click each corner of the plot and close on the first point.",
+    "Escolha o ficheiro com o limite (KML, KMZ, GeoJSON, GPX ou Shapefile .zip) ou largue-o sobre o mapa.": "Choose the file with the boundary (KML, KMZ, GeoJSON, GPX or zipped Shapefile) or drop it on the map.",
+    "Indique o concelho e a freguesia e, se tiver, o artigo matricial. Nós tratamos da delimitação.": "Give the municipality and parish and, if you have it, the tax article. We take care of the boundary.",
+    "a confirmar": "to be confirmed", "LiDAR da DGT: cobertura total (": "DGT LiDAR: full coverage (",
+    "). Pode pagar e receber a Base automaticamente, em minutos, na sua área de cliente.": "). You can pay and receive the Base Map automatically, in minutes, in your client area.",
+    "LiDAR da DGT: cobertura parcial (cerca de": "DGT LiDAR: partial coverage (about",
+    "%). Antes de qualquer pagamento, indicamos o que é possível produzir e decide se avança.": "%). Before any payment, we tell you what can be produced and you decide whether to go ahead.",
+    "Ainda não há LiDAR da DGT aqui. Envie o pedido na mesma: avaliamos alternativas.": "There is no DGT LiDAR here yet. Send the request anyway: we will look at alternatives.",
+    "Não foi possível verificar a cobertura agora. Tente de novo dentro de momentos.": "Could not check the coverage now. Try again in a moment.",
+    "Este NIF não é válido. Confirme os 9 algarismos.": "This VAT number is not valid. Check the 9 digits.", "A preparar a encomenda…": "Preparing the order…",
+    "A enviar o pedido…": "Sending the request…", "Não foi possível criar o pedido.": "Could not create the request.",
+    "Pedido enviado. Enviamos o preço e a ligação de pagamento por e-mail.": "Request sent. We will e-mail the price and the payment link.",
+    "Indique um e-mail válido.": "Enter a valid e-mail.", "Terreno sem área.": "Plot with no area.", "Terreno desenhado. Arraste os vértices para acertar.": "Plot drawn. Drag the vertices to adjust it.",
+    "Imagem recebida: segue com o pedido. Para localizar o terreno sozinho, use o PDF da caderneta.": "Image received: it goes with the request. To locate the plot yourself, use the deed PDF.",
+    "Não consegui ler este PDF aqui. Segue com o pedido e nós localizamos o terreno.": "Could not read this PDF here. It goes with the request and we will locate the plot.",
+    "Se o problema persistir, escreva para info@terracruadesign.pt ou WhatsApp +351 910 748 670.": "If the problem persists, write to info@terracruadesign.pt or WhatsApp +351 910 748 670.",
+    "Comece aqui": "Start here", "Ver o projecto exemplo": "See the example project", "Exemplo: Base Cartográfica": "Example: Base Map",
+    // converter ficheiros
+    "AutoCAD para SIG e entre formatos, sem perder cotas, layers, cores e tracejados. Desenhos em coordenadas locais são acertados pelo limite de um terreno seu.": "AutoCAD to GIS and between formats, keeping elevations, layers, colours and linetypes. Drawings in local coordinates are fitted to the boundary of one of your plots.",
+    "Entra": "In", "Sai": "Out", "QGIS, com cotas, layers e estilos do AutoCAD": "QGIS, with AutoCAD elevations, layers and styles", "web": "web",
+    "Acertar e guardar em": "Fit and save to", "Nenhum projecto (o desenho já tem coordenadas)": "No project (the drawing already has coordinates)",
+    "Sistema de coordenadas do desenho": "Drawing coordinate system", "Automático (pela posição ou pelo limite do terreno)": "Automatic (by position or plot boundary)",
+    "Sistema de coordenadas em que o desenho foi feito": "Coordinate system the drawing was made in", "Shapefile em .zip": "Zipped Shapefile",
+    "Largue aqui o ficheiro ou toque para escolher": "Drop the file here or tap to choose", "até 300 MB · DWG, DXF, KML, KMZ, GPKG, ZIP, GeoJSON, GPX": "up to 300 MB · DWG, DXF, KML, KMZ, GPKG, ZIP, GeoJSON, GPX",
+    "Entre na sua conta para converter.": "Sign in to your account to convert.", "A conversão corre nos nossos servidores e os ficheiros ficam só para si.": "Conversion runs on our servers and the files stay yours only.",
+    "Ver no mapa": "View on map", "Juntar à organização": "Add to the organisation", "Detectar sistema de coordenadas": "Detect coordinate system", "Posicionar no mapa": "Position on the map",
+    "Ainda não converteu nenhum ficheiro.": "You have not converted any file yet.", "Ligar os escolhidos a": "Link the selected to", "Aplicar posição": "Apply position",
+    "Na fila": "Queued", "Não converteu": "Not converted", "Sem posição": "No position", "Escolha primeiro os ficheiros (caixa à esquerda do nome).": "First choose the files (box to the left of the name).",
+    "Não tem projectos para ligar.": "You have no projects to link.", "Falta pelo menos mais um.": "At least one more is needed.", "Pode aplicar, ou marcar mais para afinar.": "You can apply, or mark more to refine.",
+    "A enviar a posição…": "Sending the position…", "Juntado à organização.": "Added to the organisation.", "Tirar do mapa": "Remove from map", "Não foi possível abrir no mapa.": "Could not open on the map.",
+    "Sem prévia do desenho: carregue-o outra vez para o posicionar.": "No drawing preview: upload it again to position it.",
+    "Experimenta PT-TM06, Datum 73, Datum Lisboa (coordenadas militares), UTM 29N/30N e WGS84 e fica com o que põe o desenho em cima do terreno": "Tries PT-TM06, Datum 73, Datum Lisboa (military coordinates), UTM 29N/30N and WGS84 and keeps the one that puts the drawing on the plot",
+    // projectos e organização
+    "Os seus projectos": "Your projects", "Os meus projectos": "My projects", "Ainda não tem mapas.": "You have no maps yet.", "Ainda não tem projectos": "You have no projects yet",
+    "A carregar os seus projectos…": "Loading your projects…", "Não foi possível carregar os projectos. Recarregue a página.": "Could not load the projects. Reload the page.",
+    "Área de cliente": "Client area", "A sua área abre quando a primeira encomenda estiver paga.": "Your area opens when the first order is paid.",
+    "Entretanto, pode explorar o território e preparar um novo pedido no separador": "Meanwhile, you can explore the territory and prepare a new request in the tab",
+    "Camadas da Base Cartográfica": "Base Map layers", "Abra o terreno para ver as camadas no mapa.": "Open the plot to see the layers on the map.",
+    "Para rever.": "To review.", "Para rever": "To review", "Em revisão": "Under review", "em produção": "in production",
+    "Abra o mapa e confira as camadas e os ficheiros. O cliente só vê a Base depois de entregar.": "Open the map and check the layers and files. The client only sees the Base Map once delivered.",
+    "Entregar ao cliente": "Deliver to client", "Descarregar a base cartográfica": "Download the base map", "Escolha o formato adequado à utilização que pretende.": "Choose the format that suits your intended use.",
+    "A carregar o diário e a conversa…": "Loading the journal and the conversation…", "Comparar os terrenos assinalados": "Compare the marked plots",
+    "Desenhe um terreno, guarde-o aqui e, quando quiser, peça a Leitura Territorial ou a Base Cartográfica com LiDAR.": "Draw a plot, save it here and, whenever you like, request the Land Reading or the LiDAR Base Map.",
+    "Ainda não guardou terrenos. No separador": "You have not saved any plots yet. In the tab", ", desenhe o limite e carregue em": ", draw the boundary and press",
+    "Terreno sem nome": "Unnamed plot", "Mudar o nome do projecto": "Rename the project", "Não foi possível mudar o nome.": "Could not rename.", "Nome do projecto": "Project name",
+    "Escolher este terreno para sintetizar (extrair, analisar e comparar) com outros": "Choose this plot to synthesise (extract, analyse and compare) with others",
+    "Sintetizar os terrenos escolhidos": "Synthesise the chosen plots", "Escolha pelo menos dois terrenos (até três)": "Choose at least two plots (up to three)", "Sintetizar os": "Synthesise the",
+    "Sintetizar": "Synthesise", "escolhidos": "selected", "Limpar a escolha": "Clear selection", "Escolha dois ou três terrenos para comparar.": "Choose two or three plots to compare.",
+    "Ver todas as Bases": "See all Base Maps", "Todas as Bases": "All Base Maps", "últimas 50": "last 50", "Não foi possível carregar. Tentar outra vez": "Could not load. Try again",
+    "Planta de localização": "Location plan", "Editar nome": "Edit name", "Partilhar": "Share", "Eliminar": "Delete", "Arquivar": "Archive", "Desarquivar": "Unarchive",
+    "Abrir": "Open", "Abrir no Atlas": "Open in the Atlas", "Abrir na Cloud": "Open in the Cloud", "Ir para o terreno": "Go to the plot", "Abrir a Base cartográfica": "Open the Base Map",
+    "Ainda sem ficheiros.": "No files yet.", "Ficheiros": "Files", "Retirar": "Remove", "Confirmar retirar": "Confirm removal", "Gerir na Oficina": "Manage in the Workshop",
+    "Organização activa": "Active organisation", "Ainda não há projectos nesta organização.": "There are no projects in this organisation yet.",
+    "Projecto na IPR Cloud, ainda sem camadas na organização.": "Project in IPR Cloud, no layers in the organisation yet.", "Outras camadas da organização": "Other organisation layers",
+    "Nas minhas organizações": "In my organisations", "Na organização": "In the organisation", "Está na IPR Cloud": "It is in IPR Cloud",
+    "Base cartográfica do projecto, uma só cópia partilhada": "Project base map, one shared copy", "Partilhados consigo": "Shared with you", "Sem pasta": "No folder",
+    "Carregar ficheiros: toque para escolher ou arraste para aqui": "Upload files: tap to choose or drag here",
+    "PDF, imagens, Word, Excel, AutoCAD, GeoPackage, QGIS, vídeo · até 300 MB cada": "PDF, images, Word, Excel, AutoCAD, GeoPackage, QGIS, video · up to 300 MB each",
+    "Dos GeoPackages só fica o projecto: rasters e base cartográfica saem": "Only the project is kept from GeoPackages: rasters and base map are removed",
+    "Ex.: Herdade do Vale (o nome do pedido ou do cliente)": "E.g. Herdade do Vale (the request or client name)", "Não são plantas: vão para o lixo em 24 horas": "Not plans: they go to the bin in 24 hours",
+    "Não é um GeoPackage válido.": "Not a valid GeoPackage.", "Pastas de trabalho": "Work folders", "Abrir as pastas": "Open the folders", "Ferramentas úteis": "Useful tools",
+    "Ver em 3D": "View in 3D", "3D em ecrã inteiro": "3D full screen", "Altitude média": "Mean altitude", "Declive médio": "Mean slope", "Exposição": "Aspect",
+    "Passe o rato para rodar · clique para explorar": "Hover to rotate · click to explore", "Arraste para rodar e inclinar · roda do rato para aproximar": "Drag to rotate and tilt · mouse wheel to zoom",
+    "Dois dedos para rodar e inclinar": "Two fingers to rotate and tilt", "Sem limite do terreno para mostrar em 3D.": "No plot boundary to show in 3D.", "Sem limite guardado": "No saved boundary",
+    "Este projecto não tem limite do terreno guardado.": "This project has no saved plot boundary.", "O limite deste projecto não é uma área.": "This project's boundary is not an area.",
+    "Parte do relevo ou da imagem não carregou. Tente outra vez dentro de momentos.": "Part of the relief or the image did not load. Try again in a moment.",
+    "No Intelligence vê também, sobre este terreno:": "With Intelligence you also see, for this plot:",
+    // ficha do terreno e relevo
+    "sem dados agora": "no data now", "estimativa do domínio hídrico": "water domain estimate", "Sem dados de relevo agora.": "No relief data now.", "Água e fogo": "Water and fire",
+    "Solo e ocupação": "Soil and land cover", "Sem dados de ocupação agora.": "No land cover data now.", "Encomendar a Leitura Territorial deste terreno": "Order the Land Reading for this plot",
+    "Pedir a Leitura Territorial deste terreno": "Request the Land Reading for this plot",
+    "Dados indicativos de fontes públicas: DGT (SRUP, COS 2023), ICNF, APA e Mapterhorn sobre o LiDAR da DGT e Copernicus. Não substituem a consulta às entidades.": "Indicative data from public sources: DGT (SRUP, COS 2023), ICNF, APA and Mapterhorn over DGT LiDAR and Copernicus. They do not replace consulting the authorities.",
+    "A cruzar o terreno com os dados públicos. Leva cerca de 10 segundos.": "Crossing the plot with public data. It takes about 10 seconds.",
+    "Não foi possível preparar a ficha agora. Tente de novo dentro de momentos.": "Could not prepare the summary now. Try again in a moment.",
+    "A preparar a ficha de cada terreno…": "Preparing the summary of each plot…", "Ficha indicativa a partir de dados públicos.": "Indicative summary from public data.",
+    "A ler o relevo…": "Reading the relief…", "Relevo: Mapterhorn sobre o LiDAR da DGT. Valores indicativos.": "Relief: Mapterhorn over DGT LiDAR. Indicative values.",
+    "Distribuição dos declives": "Slope distribution", "Média": "Mean", "m dentro do terreno": "m inside the plot", "· ordem de Strahler até": "· Strahler order up to",
+    "nenhuma na rede da APA": "none in the APA network", "Territórios artificializados": "Artificial surfaces", "Superfícies agroflorestais (montado)": "Agroforestry (montado)",
+    "Espaços descobertos ou com pouca vegetação": "Open spaces with little or no vegetation", "Zonas húmidas": "Wetlands", "Massas de água": "Water bodies", "Agrícola": "Agricultural",
+    "Sem dados de relevo neste percurso.": "No relief data on this route.", "Sem dados de relevo para este caminho.": "No relief data for this path.", "Mínima / máxima": "Minimum / maximum",
+    "Desnível líquido": "Net elevation change", "Troço mais inclinado (20 m)": "Steepest stretch (20 m)", "A ler o relevo ao longo do percurso…": "Reading the relief along the route…",
+    "Clique no mapa para marcar o percurso (um ou vários segmentos).": "Click on the map to mark the route (one or more segments).", "Clique no mapa para marcar o percurso.": "Click on the map to mark the route.",
+    "Distância": "Distance", "Medição terminada. Clique para começar outra.": "Measurement finished. Click to start another.",
+    "Toque para juntar pontos. Para fechar: toque no primeiro ponto ou em «Terminar».": "Tap to add points. To close: tap the first point or «Finish».",
+    "Toque para juntar pontos. Para acabar: toque no último ponto ou em «Terminar».": "Tap to add points. To end: tap the last point or «Finish».",
+    "Terminar": "Finish", "O sol está abaixo do horizonte.": "The sun is below the horizon.", "Hora do dia": "Time of day",
+    "Ortofotos da DGT. 1995 em infravermelho, com cores virtuais (a vegetação aparece a vermelho).": "DGT orthophotos. 1995 in infrared, with false colours (vegetation appears red).",
+    "Aproxime-se do terreno para ver o relevo em 3D.": "Zoom in to the plot to see the relief in 3D.", "Clique no terreno para marcar o local da visita técnica.": "Click on the plot to mark the place of the technical visit.",
+    "O limite do terreno só aparece a quem tem acesso ao projecto.": "The plot boundary only shows to those with access to the project.",
+    "Começar a desenhar": "Start drawing", "Ir para os dados": "Go to the details", "Copiar ligação": "Copy link", "Copiar a ligação": "Copy the link", "Ligação copiada": "Link copied",
+    "Não mostrar mais": "Do not show again", "(no centro; mapa inclinado)": "(at the centre; map tilted)",
+    // visita técnica e comunidade (mapa comunitário)
+    "Visita técnica": "Technical visit", "Pedir visita técnica a este terreno": "Request a technical visit to this plot",
+    "Valores sem IVA. Deslocação calculada desde Santa Clara-a-Nova, ida e volta, até ao centro do terreno. O carrinho mostra as contas finais.": "Prices excluding VAT. Travel calculated from Santa Clara-a-Nova, return trip, to the centre of the plot. The cart shows the final totals.",
+    "Visita sobre a Base deste terreno, com a deslocação calculada no carrinho": "Visit based on this plot's Base Map, with travel calculated in the cart",
+    "Publicar no mapa comunitário": "Publish on the community map", "Só no mapa geral": "Only on the general map", "Visível para todos. Não publique dados pessoais de terceiros.": "Visible to everyone. Do not publish other people's personal data.",
+    "Actividade": "Activity", "O meu perfil": "My profile", "Pessoas": "People", "Grupos": "Groups", "Avisos": "Notices", "Mostrar o": "Show the", "mapa comunitário": "community map",
+    "(locais, pedidos e ofertas)": "(places, requests and offers)", "+ Publicar no mapa": "+ Publish on the map", "Fotografia": "Photo", "Nome a mostrar": "Display name",
+    "Alcunha (@)": "Handle (@)", "Concelho": "Municipality", "Apresentação profissional": "Professional introduction", "Trabalho": "Work", "Consultoria": "Consultancy",
+    "Assessoria": "Advisory", "Acompanhamento técnico": "Technical support", "Design de propriedade": "Property design", "Paisagismo": "Landscaping", "Permacultura": "Permaculture",
+    "Agrofloresta": "Agroforestry", "Gestão da água": "Water management", "Solos": "Soils", "Pastoreio": "Grazing", "Floresta": "Forestry", "Construção em terra": "Earth building",
+    "Restauro ecológico": "Ecological restoration", "Fogo e prevenção": "Fire and prevention", "Técnicas que domina": "Techniques you master", "SIG e cartografia": "GIS and mapping",
+    "Levantamento de campo": "Field survey", "Licenciamento": "Permitting", "Charcas": "Ponds", "Valas de infiltração": "Infiltration swales", "Cobertura do solo": "Ground cover",
+    "Pastoreio rotativo": "Rotational grazing", "Rega gota-a-gota": "Drip irrigation", "Plantação de árvores": "Tree planting", "Sebes vivas": "Hedgerows", "Cultura sem mobilização": "No-till farming",
+    "Recolha de água da chuva": "Rainwater harvesting", "Regiões onde trabalha": "Regions where you work", "Serviços que presta": "Services you offer", "Cor do perfil": "Profile colour",
+    "Capa": "Cover", "Usar a vista actual do mapa como capa": "Use the current map view as cover", "Sem capa": "No cover", "Perfil": "Profile", "público": "public",
+    ": outras pessoas podem ver-me, seguir-me e encontrar-me. Pode desligar quando quiser.": ": other people can see me, follow me and find me. You can turn it off at any time.",
+    "Receber um resumo semanal por e-mail.": "Receive a weekly summary by e-mail.", "Guardar perfil": "Save profile", "Ver como os outros me vêem": "See how others see me",
+    "Comece por criar o seu perfil: é com ele que outras pessoas o encontram.": "Start by creating your profile: it is how other people find you.", "Criar o meu perfil": "Create my profile",
+    "Para participar (perfil, seguir, grupos, diário e publicar no mapa) entre na sua conta.": "To take part (profile, follow, groups, journal and publishing on the map), sign in to your account.",
+    "ver no mapa": "view on map", "Ainda não há actividade. Siga pessoas em": "No activity yet. Follow people in", "ou publique no mapa comunitário.": "or publish on the community map.",
+    "Sem avisos.": "No notices.", "A seguir": "Following", "Ninguém com perfil público encontrado.": "No one with a public profile found.", "Ainda não segue ninguém.": "You are not following anyone yet.",
+    "Grupos por bacia, concelho ou tema: vizinhos que partilham caminhos, água e prevenção de fogos, ou interesses comuns.": "Groups by catchment, municipality or topic: neighbours who share tracks, water and fire prevention, or common interests.",
+    "Ainda não há grupos.": "No groups yet.", "Criar um grupo": "Create a group", "Bacia hidrográfica": "River basin", "Grupo privado (só por convite)": "Private group (invitation only)",
+    "Técnicas": "Techniques", "Regiões": "Regions", "Serviços": "Services", "Editar o meu perfil": "Edit my profile", "Entrar para seguir": "Sign in to follow", "Ver o sítio no mapa": "See the place on the map",
+    "No mapa comunitário": "On the community map", "Diário do terreno": "Plot journal", "Sair do grupo": "Leave the group", "Entrar no grupo": "Join the group",
+    "Ver os locais do grupo no mapa": "See the group's places on the map", "Ainda sem mensagens.": "No messages yet.", "Fotografias e notas datadas para acompanhar o terreno ao longo do tempo.": "Dated photos and notes to follow the plot over time.",
+    "Associar ao centro do mapa": "Link to the map centre", "Partilhar na comunidade": "Share with the community", "Juntar ao diário": "Add to the journal", "Conversa do projecto": "Project conversation",
+    "Nome, concelho ou interesse": "Name, municipality or interest", "Nome (ex.: Bacia do Mira, Odemira)": "Name (e.g. Bacia do Mira, Odemira)", "Para quê e para quem": "What for and for whom",
+    "Escrever ao grupo": "Write to the group", "O que viu, fez ou plantou": "What you saw, did or planted", "Escrever a quem partilha este projecto (use @alcunha para avisar alguém)": "Write to those sharing this project (use @handle to notify someone)",
+    "Título": "Title", "Descrição (contacto, horários, o que procura ou oferece)": "Description (contact, hours, what you seek or offer)", "O que se passa? (opcional)": "What is happening? (optional)",
+    "Clique no mapa onde fica o local, pedido ou oferta.": "Click on the map where the place, request or offer is.", "Charca ou ponto de água": "Pond or water point", "Banco de sementes": "Seed bank",
+    "Quinta aberta a visitas": "Farm open to visits", "Ponto de interesse": "Point of interest", "Ajuda no terreno": "Help on the land", "Sementes ou plantas": "Seeds or plants",
+    "Conselho técnico": "Technical advice", "Serviço local": "Local service", "Produtos da terra": "Local produce", "a seguir": "following", "locais no mapa": "places on the map", "no diário": "in the journal",
+    "· é membro": "· member", "A carregar…": "Loading…",
+    // conta, acesso e Explorer/Intelligence
+    "A sua conta": "Your account", "Dados da conta": "Account details", "Marcar videochamada": "Book a video call", "Facturação": "Billing", "Sem documentos ainda.": "No documents yet.",
+    "Guardados": "Saved", "Os artigos que guardar aparecem aqui.": "The articles you save appear here.", "Abrir a área de cliente completa": "Open the full client area",
+    "Explorer e Intelligence": "Explorer and Intelligence", "O que inclui cada versão": "What each version includes",
+    "é aberto a todos: o mapa do país, a pesquisa por local, coordenadas ou NIC, o cadastro, a referência do OpenStreetMap, a pré-visualização do relevo, o desenho do terreno e a ficha gratuita.": "is open to everyone: the country map, search by place, coordinates or NIC, the cadastre, the OpenStreetMap reference, the relief preview, plot drawing and the free summary.",
+    "abre o resto do Atlas: condicionantes, água, solo e vegetação, as camadas da sua Base Cartográfica, as ferramentas de cartografia e as entregas.": "opens the rest of the Atlas: constraints, water, soil and vegetation, the layers of your Base Map, the mapping tools and the deliveries.",
+    "Mapa do país, pesquisa, cadastro e 3D": "Country map, search, cadastre and 3D", "Desenhar o terreno e ficha gratuita": "Plot drawing and free summary",
+    "REN, RAN, PDM, Rede Natura e domínio hídrico": "REN, RAN, PDM, Natura Network and water domain", "Água, solo, ocupação e vegetação": "Water, soil, land cover and vegetation",
+    "Projectos guardados e entregas (LiDAR DGT)": "Saved projects and deliveries (DGT LiDAR)", "Exportação de pranchas e trabalho com a equipa": "Sheet export and teamwork",
+    "O Intelligence abre com qualquer serviço contratado à Terracrua Design, começando na Base Cartográfica, ou por assinatura.": "Intelligence opens with any service ordered from Terracrua Design, starting with the Base Map, or by subscription.",
+    "Assinar o Intelligence": "Subscribe to Intelligence", "Ver serviços": "See services", "Acesso Intelligence": "Intelligence access", "Acesso conforme o plano.": "Access according to the plan.",
+    "Explorer: mapa do país, pesquisa e desenho. Carregue para ver o que abre com o Intelligence.": "Explorer: country map, search and drawing. Press to see what Intelligence opens.",
+    "Ainda não tem nenhuma Base Cartográfica.": "You do not have any Base Map yet.", "Entre na sua conta ou encomende primeiro a Base deste terreno.": "Sign in to your account or first order the Base Map for this plot.",
+    // atalhos, guias e rodapé
+    "Atalhos": "Shortcuts", "Medir distância · área": "Measure distance · area", "Parcelas · Desenhar": "Parcels · Draw", "Largar a ferramenta": "Drop the tool",
+    "Leitura rápida e indicativa dos serviços públicos para este terreno: REN, RAN, Rede Natura, relevo, linhas de água, perigosidade de incêndio e ocupação do solo. Não faz parte da Base Cartográfica; o relatório completo é a Leitura Territorial.": "A quick, indicative reading of public services for this plot: REN, RAN, Natura Network, relief, watercourses, fire hazard and land cover. It is not part of the Base Map; the full report is the Land Reading.",
+    "Informação de referência, de fontes públicas (DGT, ICNF, APA, LNEG, Copernicus). Não substitui a consulta formal junto das entidades. IPR Atlas é uma plataforma do IPR – Instituto de Planeamento Regenerativo, Lda.": "Reference information from public sources (DGT, ICNF, APA, LNEG, Copernicus). It does not replace formal consultation with the authorities. IPR Atlas is a platform of IPR – Instituto de Planeamento Regenerativo, Lda.",
+    "Informação de referência, de fontes públicas (DGT, ICNF, APA, LNEG, Copernicus). Não substitui a consulta formal junto das entidades. IPR Atlas é uma plataforma do IPR – Instituto de Planeamento Regenerativo, desenvolvida pela Terracrua Design.": "Reference information from public sources (DGT, ICNF, APA, LNEG, Copernicus). It does not replace formal consultation with the authorities. IPR Atlas is a platform of IPR – Instituto de Planeamento Regenerativo, developed by Terracrua Design.",
+    "1 · Indicar o terreno": "1 · Mark the plot", "Escolha uma forma:": "Choose a way:", "parcelas do cadastro": "land registry parcels", "(clique nas parcelas no mapa),": "(click the parcels on the map),",
+    "desenhar": "draw", "o limite,": "the boundary,", "carregar um ficheiro": "upload a file", "(KML, KMZ, GeoJSON, GPX, Shapefile .zip) ou, se não sabe os limites, o": "(KML, KMZ, GeoJSON, GPX, zipped Shapefile) or, if you do not know the boundaries, the",
+    "artigo matricial": "tax article", "Desenhar": "Draw", "Saltar": "Skip", "Anterior": "Previous", "Seguinte": "Next", "ou": "or", "e": "and",
+    "Tem a referência cadastral?": "Do you have the cadastral reference?",
+    "Escreva o NIC (ou cole vários, separados por vírgulas) e carregue em Localizar: a parcela entra logo na encomenda.": "Type the NIC (or paste several, separated by commas) and press Locate: the parcel goes straight into the order.",
+    "2 · Área, preço e cobertura": "2 · Area, price and coverage", "3 · Os seus dados": "3 · Your details",
+    "Nome, e-mail e, se quiser factura com NIF, o número de contribuinte (preenchemos o nome da empresa automaticamente).": "Name, e-mail and, if you want an invoice with a VAT number, the taxpayer number (we fill in the company name automatically).",
+    "Recebe por e-mail a confirmação. Com cobertura total aparece logo o botão de pagamento; nos outros casos confirmamos os dados e enviamos a ligação de pagamento.": "You receive confirmation by e-mail. With full coverage the payment button appears straight away; otherwise we confirm the details and send the payment link.",
+    "Bem-vindo ao IPR Atlas": "Welcome to IPR Atlas", "Encontrar o terreno": "Find the plot", "À direita fica a encomenda da Base Cartográfica": "On the right is the Base Map order",
+    ", os seus projectos e a sua conta": ", your projects and your account", "Guia da encomenda": "Order guide", "Guia da área de cliente": "Client area guide",
+    "Mostrar os guias de novo": "Show the guides again", "Exagero do relevo em 3D": "3D relief exaggeration", "Ao abrir": "On opening",
+    ": arranca em 2D e sem animações. Útil em computadores e telemóveis mais lentos ou com rede fraca.": ": starts in 2D with no animations. Useful on slower computers and phones or with a weak connection.",
+    "Automático": "Automatic", "Península (abertura)": "Peninsula (opening)", "Último local visitado": "Last place visited",
+    "Diagnóstico das camadas": "Layer diagnostics", "Copiar relatório": "Copy report", "Só os problemas": "Problems only", "Mostrar todas": "Show all", "A testar…": "Testing…",
+    "O teste pede uma amostra a cada serviço (DGT, APA, ICNF, LNEG, Copernicus, OpenStreetMap…) e mostra o que responde, o que está lento e o que falha.": "The test requests a sample from each service (DGT, APA, ICNF, LNEG, Copernicus, OpenStreetMap…) and shows what responds, what is slow and what fails.",
+    "Relatório copiado.": "Report copied.", "Não foi possível copiar; use o CSV.": "Could not copy; use the CSV.", "Sem resposta ou bloqueado pelo navegador (CORS)": "No response or blocked by the browser (CORS)",
+    "Reportar um problema": "Report a problem", "Reportar problema": "Report a problem",
+    "Diga o que tentou fazer e o que aconteceu. Juntamos automaticamente a vista do mapa, as camadas ligadas e o navegador.": "Say what you tried to do and what happened. We automatically attach the map view, the layers turned on and the browser.",
+    "Juntar uma imagem do mapa": "Attach a map image", "Ex.: cliquei em Convidar e a página ficou em branco": "E.g. I clicked Invite and the page went blank",
+    "O seu e-mail (para lhe respondermos)": "Your e-mail (so we can reply)", "O mapa não carregou. Recarregue a página.": "The map did not load. Reload the page.",
+    "e-mail de quem convida": "inviter's e-mail", "A exportação da prancha em PNG": "Exporting the sheet as PNG",
+    "Não foi possível guardar.": "Could not save.", "Não foi possível entregar.": "Could not deliver.", "Não foi possível partilhar.": "Could not share.", "Nome do terreno": "Plot name",
+    "Parcelas do cadastro:": "Land registry parcels:", "Referência": "Reference", "Pedir a Leitura Territorial ·": "Request the Land Reading ·",
+    "Projecto preparado para consulta no terreno, no telemóvel ou tablet.": "Project prepared for use in the field, on a phone or tablet.",
+    "Camadas vectoriais para consulta, edição e análise em software SIG.": "Vector layers for viewing, editing and analysis in GIS software.", "Relatório da Base · .pdf": "Base Map report · .pdf",
+    "Mapas e síntese do terreno para consultar, imprimir ou partilhar.": "Maps and plot summary to view, print or share.", "Leitura do território em PDF, para consultar, imprimir ou partilhar.": "Territorial reading in PDF, to view, print or share.",
+    "Superfície do terreno em OBJ, GLB, STL, DAE, DXF e LandXML.": "Terrain surface in OBJ, GLB, STL, DAE, DXF and LandXML.", "Limite do terreno para abrir no Google Earth.": "Plot boundary to open in Google Earth.",
+    "Documento para consultar, imprimir ou partilhar.": "Document to view, print or share.", "Ficheiro da entrega.": "Delivery file.", "Sem ficheiros nesta entrega.": "No files in this delivery.",
+    "Tudo numa só transferência: projecto QGIS pronto a abrir no computador, GeoPackage, GeoTIFF (modelo do terreno e outras camadas raster), Shapefile, KMZ e PDF.": "Everything in one download: QGIS project ready to open on the computer, GeoPackage, GeoTIFF (terrain model and other raster layers), Shapefile, KMZ and PDF.",
+    "A sua Base está a ser preparada e revista pela equipa. Avisamos por e-mail quando estiver pronta.": "Your Base Map is being prepared and reviewed by the team. We will let you know by e-mail when it is ready.",
+    // perfis, instalação, sem rede, partilha
+    "Sem perfil": "No profile", "Mais camadas do perfil": "More profile layers", "serviço do DGADR sem resposta": "DGADR service not responding", "Análise prévia da intervenção": "Preliminary intervention analysis",
+    "Investigação e candidaturas": "Research and funding bids", "Protecção Civil": "Civil Protection", "Biológico": "Organic",
+    "Este navegador não instala apps.": "This browser does not install apps.", "Abra o IPR Atlas no Safari:": "Open IPR Atlas in Safari:", "e cole-a no Safari.": "and paste it into Safari.",
+    "No Safari, toque em": "In Safari, tap", "(o quadrado com a seta para cima).": "(the square with the up arrow).",
+    "Deslize a lista para baixo e escolha «Adicionar ao ecrã principal».": "Scroll the list down and choose «Add to Home Screen».", "Confirme com «Adicionar».": "Confirm with «Add».",
+    "Se não vir «Adicionar ao ecrã principal», está noutro navegador (Brave, Chrome…): abra a ligação no Safari.": "If you do not see «Add to Home Screen», you are in another browser (Brave, Chrome…): open the link in Safari.",
+    "No menu Ficheiro do Safari, escolha «Adicionar à Dock».": "In Safari's File menu, choose «Add to Dock».", "O Firefox não instala apps de sites. Abra o IPR Atlas no Chrome, no Edge ou no Safari.": "Firefox does not install apps from websites. Open IPR Atlas in Chrome, Edge or Safari.",
+    "Toque no menu ⋮ do Chrome.": "Tap Chrome's ⋮ menu.", "Escolha «Instalar aplicação» ou «Adicionar ao ecrã principal».": "Choose «Install app» or «Add to Home screen».",
+    "Na barra de endereço do Chrome ou do Edge, clique no ícone de instalar (um ecrã com uma seta).": "In the Chrome or Edge address bar, click the install icon (a screen with an arrow).",
+    "Ou no menu ⋮ › «Transmitir, guardar e partilhar» › «Instalar página como app».": "Or in the ⋮ menu › «Cast, save and share» › «Install page as app».",
+    "Fica um ícone no ecrã principal e o Atlas abre directamente no mapa, em ecrã inteiro.": "An icon stays on the home screen and the Atlas opens straight on the map, full screen.",
+    "Sem ligação à internet": "No internet connection", "Ligue só as camadas de que precisa e desligue as outras.": "Turn on only the layers you need and turn off the others.",
+    "Use o mapa mais afastado até as imagens aparecerem.": "Keep the map zoomed out until the images appear.", "No terreno sem rede, use o QField com o projecto descarregado.": "In the field without signal, use QField with the downloaded project.",
+    "Abrir este terreno no telemóvel": "Open this plot on the phone", "Endereço do servidor": "Server address", "Sem rede no terreno:": "No signal in the field:",
+    "Apontar a câmara do telemóvel para abrir esta vista": "Point the phone camera to open this view", "Incorporar no meu site": "Embed on my website",
+    "Cole este código na sua página. Mostra só as camadas públicas (Explorer), nunca o limite do terreno nem dados dos projectos.": "Paste this code into your page. It shows only the public layers (Explorer), never the plot boundary or project data.",
+    "Copiar código": "Copy code", "Código copiado.": "Code copied.", "Copie a ligação:": "Copy the link:",
+    "IPR Atlas: o terreno, os projectos e a Base Cartográfica no telemóvel. Abra a ligação e instale a app.": "IPR Atlas: the plot, the projects and the Base Map on your phone. Open the link and install the app.",
+    "Os meus temas": "My themes", "Nome do tema": "Theme name", "Algumas camadas dos temas são do Intelligence e ficam desligadas.": "Some theme layers are part of Intelligence and stay off.",
+    "Ficha preparada pela Terracrua Design a partir do catálogo do Atlas. Confirmar sempre na fonte oficial antes de decidir.": "Record prepared by Terracrua Design from the Atlas catalogue. Always check the official source before deciding.",
+    "O que representa": "What it shows", "Para que serve": "What it is for", "Como se lê": "How to read it", "Data e actualização": "Date and update", "Escala e resolução": "Scale and resolution",
+    "Limitações": "Limitations", "disponível": "available", "Sem limite": "No limit", "Tamanho automático (conforme o ecrã)": "Automatic size (to fit the screen)",
+    // barra de estado
+    "Escala": "Scale", "Zoom": "Zoom", "Rot": "Rot.", "Rot.": "Rot.", "Incl.": "Tilt", "Elev.": "Elev.", "Alt. olho": "Eye alt.", "Imagens": "Imagery",
+    "Arraste para ajustar a largura (duplo clique repõe)": "Drag to adjust the width (double click resets)",
+    "Coordenadas geográficas (WGS84). Clique para trocar de sistema.": "Geographic coordinates (WGS84). Click to switch system.", "Coordenadas geográficas (WGS84)": "Geographic coordinates (WGS84)",
+    "Coordenadas PT-TM06 / ETRS89. Clique para trocar de sistema.": "PT-TM06 / ETRS89 coordinates. Click to switch system.",
+    "Escala do ecrã. Clique e escreva a escala que quer (ex.: 25000 ou 1:25 000).": "Screen scale. Click and type the scale you want (e.g. 25000 or 1:25 000).",
+    "Nível de aproximação do mapa: 0 é o mundo inteiro, 20 é o pormenor máximo. Clique para escrever um valor.": "Map zoom level: 0 is the whole world, 20 is maximum detail. Click to type a value.",
+    "Rotação do mapa em graus, de 0 a 360, contados a partir do norte no sentido dos ponteiros do relógio: é o rumo para onde aponta o topo do ecrã (0° norte, 90° este, 180° sul, 270° oeste). Clique para escrever; 0 volta ao norte.": "Map rotation in degrees, from 0 to 360, measured clockwise from north: the bearing the top of the screen points to (0° north, 90° east, 180° south, 270° west). Click to type; 0 returns to north.",
+    "Inclinação da vista em graus: 0° é a vista de cima, até 85° é a vista rasante. Clique para escrever.": "View tilt in degrees: 0° is the top-down view, up to 85° is a grazing view. Click to type.",
+    "Altitude do terreno debaixo do cursor (Mapterhorn, LiDAR DGT)": "Ground altitude under the cursor (Mapterhorn, DGT LiDAR)", "Altitude do ponto de vista": "Viewpoint altitude",
+    "Altitude do ponto de vista (como num globo). Clique e escreva o valor: só o número usa a unidade que está à vista (com 3 km, escrever 2 vai para 2 km); também aceita 500 m ou 2 km.": "Viewpoint altitude (as on a globe). Click and type the value: a bare number uses the unit on display (with 3 km, typing 2 goes to 2 km); 500 m or 2 km also work.",
+    "OrtoSat 2023, imagem de satélite (DGT)": "OrtoSat 2023, satellite image (DGT)"
+  };
+  // Padrões com números ou nomes no meio (o resto do texto é fixo).
+  var PADROES = [
+    [/^Encomenda #(\d+)$/, "Order #$1"],
+    [/^Guia da encomenda · (\d+) \/ (\d+)$/, "Order guide · $1 / $2"],
+    [/^Guia da área de cliente · (\d+) \/ (\d+)$/, "Client area guide · $1 / $2"],
+    [/^1 camada temática ligada$/, "1 thematic layer on"], [/^(\d+) camadas temáticas ligadas$/, "$1 thematic layers on"],
+    [/^1 ligada$/, "1 on"], [/^(\d+) ligadas$/, "$1 on"],
+    [/^Imagem de satélite do dia \(([\d\/]+)\)$/, "Satellite image of the day ($1)"],
+    [/^Não foi possível ligar «(.+)» \(módulo de curvas indisponível\)\.$/, "Could not turn on «$1» (contour module unavailable)."],
+    [/^Não foi possível carregar «(.+)»\. Tente de novo daqui a pouco\.$/, "Could not load «$1». Try again shortly."],
+    [/^Teste concluído às (.+)$/, "Test finished at $1"],
+    [/^(\d+) parcelas? candidatas?\. Toque numa parcela para a juntar ou tirar\.$/, function (m, n) { return n + (n === "1" ? " candidate parcel" : " candidate parcels") + ". Tap a parcel to add or remove it."; }],
+    [/^Mostrar arquivados \((\d+)\)$/, "Show archived ($1)"], [/^Esconder arquivados \((\d+)\)$/, "Hide archived ($1)"],
+    [/^Ligar ou desligar (.+)$/, function (m, x) { return "Turn " + (D[x] || x) + " on or off"; }],
+    [/^Opacidade de (.+)$/, function (m, x) { return "Opacity of " + (D[x] || x); }]
+  ];
+  var EXCL = ".ipe-ct strong,.ipo-pop,.maplibregl-popup,[contenteditable],script,style,textarea,.ipr-sem-traducao";
+  var ORIG = new WeakMap(), CONT = new WeakMap(), ATR = ["title", "aria-label", "placeholder"];
+  function emIngles() { return String(window.IPR_LINGUA || "pt").toLowerCase().indexOf("pt") !== 0; }
+  function traduzir(k) {
+    if (!k || k.length > 600) return null;
+    if (Object.prototype.hasOwnProperty.call(D, k)) return D[k];
+    if (!/[a-zà-ú]/i.test(k)) return null;
+    for (var i = 0; i < PADROES.length; i++) { var p = PADROES[i]; if (p[0].test(k)) return k.replace(p[0], p[1]); }
+    return null;
+  }
+  function excluido(el) { try { return !el || (el.closest && !!el.closest(EXCL)); } catch (e) { return false; } }
+  // Se outro código insiste em repor o português no mesmo elemento muitas vezes seguidas, desistimos dele (sem ping-pong).
+  function teima(el) {
+    var t = Date.now(), c = CONT.get(el) || { n: 0, t: t };
+    if (t - c.t > 3000) { c.n = 0; c.t = t; }
+    c.n++; CONT.set(el, c); return c.n > 10;
+  }
+  function texto(n) {
+    var v = n.nodeValue; if (!v || v.length > 600) return;
+    var o = ORIG.get(n); if (o && o.en === v) return;
+    var k = v.trim(), en = traduzir(k); if (en == null || en === k) return;
+    var pai = n.parentNode; if (!pai || excluido(pai) || teima(pai)) return;
+    var nv = v.replace(k, function () { return en; });
+    ORIG.set(n, { pt: v, en: nv }); n.nodeValue = nv;
+  }
+  function atributo(el, a) {
+    var v = el.getAttribute(a); if (!v) return;
+    if (el.getAttribute("data-tr-" + a + "-en") === v) return;
+    var en = traduzir(v.trim()); if (en == null || en === v) return;
+    if (excluido(el) && !(el.tagName === "TEXTAREA" && !excluido(el.parentElement))) return;
+    el.setAttribute("data-tr-" + a, v); el.setAttribute("data-tr-" + a + "-en", en); el.setAttribute(a, en);
+  }
+  function arvore(raiz) {
+    if (!raiz) return;
+    if (raiz.nodeType === 3) { texto(raiz); return; }
+    if (raiz.nodeType !== 1 && raiz.nodeType !== 9 && raiz.nodeType !== 11) return;
+    if (raiz.nodeType === 1) ATR.forEach(function (a) { if (raiz.hasAttribute(a)) atributo(raiz, a); });
+    var w = document.createTreeWalker(raiz, NodeFilter.SHOW_TEXT), n; while ((n = w.nextNode())) texto(n);
+    if (raiz.querySelectorAll) raiz.querySelectorAll("[title],[aria-label],[placeholder]").forEach(function (el) { ATR.forEach(function (a) { if (el.hasAttribute(a)) atributo(el, a); }); });
+  }
+  function repor() {
+    var w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT), n;
+    while ((n = w.nextNode())) { var o = ORIG.get(n); if (o && n.nodeValue === o.en) n.nodeValue = o.pt; ORIG.delete(n); }
+    ATR.forEach(function (a) {
+      document.querySelectorAll("[data-tr-" + a + "]").forEach(function (el) {
+        if (el.getAttribute(a) === el.getAttribute("data-tr-" + a + "-en")) el.setAttribute(a, el.getAttribute("data-tr-" + a));
+        el.removeAttribute("data-tr-" + a); el.removeAttribute("data-tr-" + a + "-en");
+      });
+    });
+  }
+  var obs = new MutationObserver(function (rs) {
+    if (!emIngles()) return;
+    for (var i = 0; i < rs.length; i++) {
+      var r = rs[i];
+      if (r.type === "characterData") texto(r.target);
+      else if (r.type === "attributes") { if (r.target.nodeType === 1) atributo(r.target, r.attributeName); }
+      else for (var j = 0; j < r.addedNodes.length; j++) arvore(r.addedNodes[j]);
+    }
+  });
+  var ligado = false;
+  function aplicar() {
+    if (!document.body) return;
+    document.documentElement.lang = emIngles() ? "en" : "pt-PT";
+    if (emIngles()) {
+      arvore(document.body);
+      if (!ligado) { obs.observe(document.body, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ATR }); ligado = true; }
+    } else {
+      if (ligado) { obs.disconnect(); ligado = false; }
+      repor();
+    }
+  }
+  // Outro código deste ficheiro compara textos com o português antes de os repor; com isto aceita também a tradução.
+  window.__iprIgual = function (actual, pt) { return actual === pt || (emIngles() && actual === traduzir(pt)); };
+  window.__ipr73c = { t: traduzir, dic: D, aplicar: aplicar };
+  document.addEventListener("ipr:lingua", function () { setTimeout(aplicar, 0); });
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", aplicar); else aplicar();
 })();
