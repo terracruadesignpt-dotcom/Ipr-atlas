@@ -42,11 +42,28 @@
     return PROTO;
   }
 
+  var INTEIROS = {};
+  function fonteInteira(url) {
+    return {
+      getKey: function () { return url; },
+      getBytes: function (o, n) {
+        if (!INTEIROS[url]) INTEIROS[url] = fetch(url, { credentials: "omit" }).then(function (r) {
+          if (!r.ok) throw new Error("HTTP " + r.status);
+          return r.arrayBuffer();
+        }).catch(function (e) { delete INTEIROS[url]; throw e; });
+        return INTEIROS[url].then(function (b) { return { data: b.slice(o, o + n) }; });
+      }
+    };
+  }
+
   function ligar(rg) {
     return function (c) {
       var url = new URL(rg.ficheiros.bacias, location.href).href, M = c.mapa, op = c.op, id = c.id;
       return protocolo().then(function (p) {
-        var pm = new window.pmtiles.PMTiles(url);
+        // O alojamento (Cloudflare) não respeita pedidos Range neste ficheiro: devolve-o inteiro (e comprimido), e o leitor
+        // do pmtiles recusa respostas maiores do que o pedido. Descarrega-se uma vez e servem-se as fatias da memória
+        // (o PMTiles do Mira tem 5,5 MB). 28/10/2026, reporte do Nuno: a camada ficava a carregar.
+        var pm = new window.pmtiles.PMTiles(fonteInteira(url));
         try { p.add(pm); } catch (e) {}
         return pm.getHeader();
       }).then(function (h) {
