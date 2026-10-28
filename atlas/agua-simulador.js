@@ -7,7 +7,7 @@
    estático não dá tempos nem caudais; cada resultado mostra o balanço de volumes. */
 (function (W) {
   "use strict";
-  if (W.IPR_AGUA_SIM) return;
+  if (W.__iprAguaCarregado) return; W.__iprAguaCarregado = true;
   var D = {
     pt: {
       botao: "Simular água", titulo: "Simular água", fechar: "Fechar", min: "Minimizar",
@@ -89,7 +89,7 @@
   function api(c, op) {
     op = op || {}; op.credentials = "same-origin"; op.headers = Object.assign({ "X-WP-Nonce": W.tcdNonce || "" }, op.headers || {});
     if (op.body && typeof op.body !== "string") { op.body = JSON.stringify(op.body); op.headers["Content-Type"] = "application/json"; }
-    return fetch(REST + c, op).then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j && j.message || ("HTTP " + r.status)); return j; }); });
+    return fetch(REST + c, op).then(function (r) { return r.json().then(function (j) { if (!r.ok) { var er = new Error(j && j.message || ("HTTP " + r.status)); er.estado = r.status; throw er; } return j; }); });
   }
   function urlF(u) { return u + (u.indexOf("?") < 0 ? "?" : "&") + "_wpnonce=" + encodeURIComponent(W.tcdNonce || ""); }
 
@@ -157,7 +157,7 @@
   function corpo() {
     if (!W.tcdNonce) return '<p class="sub">' + esc(t("semConta")) + "</p>";
     var a = actual();
-    if (!a || !a.id || (a.estado_k && a.estado_k !== "entregue")) return '<p class="sub">' + esc(t("semMapa")) + "</p>";
+    if (!a || !a.id || (a.estado_k && a.estado_k !== "completed" && a.estado_k !== "entregue")) return '<p class="sub">' + esc(t("semMapa")) + "</p>";
     var h = '<p class="faixa">' + esc(t("faixa")) + "</p>";
     if (!S.aviso) {
       return h + '<div class="avbox"><b>' + esc(t("avisoT")) + "</b><p>" + esc(t("avisoTx")) + '</p><label class="chk"><input type="checkbox" data-k="avisoChk"' + (S.avisoChk ? " checked" : "") + "> " + esc(t("avisoChk")) + '</label><div class="acc"><button class="b pri" data-as="aceitar"' + (S.avisoChk ? "" : " disabled") + ">" + esc(t("aceitar")) + "</button></div></div>" + (S.erro ? '<div class="err">' + esc(S.erro) + "</div>" : "");
@@ -354,11 +354,12 @@
   var timer = null;
   function acompanhar() {
     clearTimeout(timer);
-    var a = actual(); if (!S.job || !S.job.id || !a) return;
-    api("agua/trabalho/" + S.job.id + "?enc=" + encodeURIComponent(a.id)).then(function (r) {
-      S.job.estado = r.estado;
+    var a = actual(), job = S.job; if (!job || !job.id || !a) return;
+    api("agua/trabalho/" + job.id + "?enc=" + encodeURIComponent(a.id)).then(function (r) {
+      if (S.job !== job) return;                     // resposta de um acompanhamento antigo
+      job.estado = r.estado;
       if (r.estado === "successful") {
-        S.res = r;
+        S.res = r; S.job = null;
         var v = (r.ficheiros || []).filter(function (f) { return f.nome === "vista/vista.json"; })[0];
         if (v) return fetch(urlF(v.url), { credentials: "same-origin" }).then(function (x) { return x.json(); }).then(function (vj) {
           S.res.vista = vj; S.res.fich = {}; (r.ficheiros || []).forEach(function (f) { S.res.fich[f.nome] = f.url; });
@@ -370,7 +371,7 @@
       }
       if (r.estado === "failed" || r.estado === "dismissed") { S.erro = t("falhou") + (r.mensagem ? ": " + r.mensagem : "."); S.job = null; pintar(); return; }
       pintar(); timer = setTimeout(acompanhar, 4000);
-    }).catch(function (err) { S.erro = err.message; S.job = null; pintar(); });
+    }).catch(function (err) { if (S.job !== job) return; S.erro = err.message; S.job = null; pintar(); });
   }
   function listar() {
     var a = actual(); if (!a || !W.tcdNonce) return;
@@ -442,7 +443,19 @@
   document.addEventListener("keydown", function (e) { if (e.key === "Escape" && S.des) pararDesenho(false); });
 
   // ───────────── botão no tema «Água no terreno» (agua.js) ─────────────
+  // O botão só aparece quando o site confirma (tcd/v1/agua/estado): sessão, permissão (em testes, só administradores)
+  // e chave do motor guardada. Sem isso, nada aparece no Atlas.
+  var DISP = null;
+  function disponivel() {
+    if (DISP !== null || !W.tcdNonce) return;
+    DISP = "a ver";
+    api("agua/estado").then(function (e) {
+      DISP = !!(e && e.pode && e.ligado);
+      if (DISP) { W.IPR_AGUA_SIM = PUB; botao(); }
+    }).catch(function (e) { DISP = e.estado === 401 || e.estado === 403 || e.estado === 404 ? false : null; if (DISP === null) setTimeout(function () { DISP = null; }, 60000); });
+  }
   function botao() {
+    disponivel(); if (DISP !== true) return;
     var sec = document.querySelector("#ipr-t62 .ipr-ag-c .ipr-t62-f"); if (!sec) return;
     var b = sec.querySelector("[data-agua-sim]");
     if (!b) { css(); b = document.createElement("button"); b.type = "button"; b.setAttribute("data-agua-sim", ""); sec.appendChild(b); }
@@ -458,5 +471,6 @@
   document.addEventListener("click", function (e) { var b = e.target.closest && e.target.closest("[data-agua-sim]"); if (b) { e.preventDefault(); e.stopPropagation(); abrir(); } }, true);
   document.addEventListener("ipr:lingua", function () { botao(); pintar(); });
 
-  W.IPR_AGUA_SIM = { abrir: abrir, fechar: fechar, _estado: S };
+  var PUB = { abrir: abrir, fechar: fechar, _estado: S };
+  disponivel();
 })(window);
