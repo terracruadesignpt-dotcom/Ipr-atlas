@@ -6264,3 +6264,33 @@
   document.addEventListener("ipr:lingua", function () { setTimeout(aplicar, 0); });
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", aplicar); else aplicar();
 })();
+
+// §73d Formiga no canto de baixo, à direita, do mapa (Nuno, 28/10/2026). Antes: no telemóvel ficava por baixo do mapa e não
+// se tocava; no iPad e no computador caía em cima do botão «Legenda». Fica acima do mapa, à esquerda da atribuição (i) e dos
+// controlos do canto de baixo, sem tapar a Legenda nem as ferramentas. Com as gavetas abertas no telemóvel continua o
+// comportamento do app.js (sobe para o topo). Se a pessoa arrastar a Formiga, deixa de a mexer até recarregar a página.
+(function () {
+  if (window.__ipr73d) return; window.__ipr73d = 1;
+  var arrastada = false, x0 = 0, y0 = 0, baixo = false;
+  document.addEventListener("pointerdown", function (e) { var f = document.getElementById("tcdfmb"); if (f && f.contains(e.target)) { baixo = true; x0 = e.clientX; y0 = e.clientY; } }, true);
+  document.addEventListener("pointermove", function (e) { if (baixo && Math.abs(e.clientX - x0) + Math.abs(e.clientY - y0) > 8) arrastada = true; }, true);
+  document.addEventListener("pointerup", function () { baixo = false; }, true);
+  function por() {
+    if (arrastada || document.hidden) return;
+    var f = document.getElementById("tcdfmb"), ipe = document.getElementById("ipe"); if (!f || !ipe) return;
+    var m = ipe.querySelector(".maplibregl-map"); if (!m || getComputedStyle(f).display === "none") return;
+    var W = innerWidth, H = innerHeight, mob = W <= 900, d = ipe.querySelector(".ipe-dir");
+    if (mob && (ipe.classList.contains("esq-aberto") || (d && d.classList.contains("aberto")))) return;
+    var r = m.getBoundingClientRect(); if (r.width < 120 || r.height < 120) return;
+    var dir = Math.round(W - r.right) + 10, fundo = Math.round(H - r.bottom) + 10;
+    var c = m.querySelector(".maplibregl-ctrl-bottom-right");
+    if (c) { var rc = c.getBoundingClientRect(); if (rc.width > 0 && rc.height > 0) dir = Math.round(W - rc.left) + 6; }
+    var s = f.style, imp = "important";
+    s.setProperty("position", "fixed", imp); s.setProperty("top", "auto", imp); s.setProperty("left", "auto", imp);
+    s.setProperty("right", dir + "px", imp); s.setProperty("bottom", fundo + "px", imp); s.setProperty("z-index", "99995", imp);
+    var bt = document.querySelector("#ipe .ipe-beta");
+    if (bt && /canto de baixo, à esquerda/.test(bt.title || "")) bt.title = bt.title.replace("canto de baixo, à esquerda", "canto de baixo, à direita do mapa");
+  }
+  setInterval(por, 700); window.addEventListener("resize", function () { setTimeout(por, 60); });
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", por); else por();
+})();
