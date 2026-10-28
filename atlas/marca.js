@@ -58,6 +58,8 @@
       else if (/^https?:\/\/(www\.)?terracruadesign\.pt\/?$/i.test(h) && /regenerativo|Terracrua Design ↗/.test(e.textContent)) e.setAttribute("href", "https://regenerativo.pt");
     }
   }
+  // 28/10/2026, 17h31 (Nuno): «Os simuladores têm que ficar com botões mais discretos.» Contorno fino em vez de cheio.
+  try { var st = document.createElement("style"); st.id = "ipr-sims-discretos"; st.textContent = ".ipr-sims{gap:6px!important;margin:0 0 10px!important;padding:0!important;border:0!important;background:none!important}.ipr-sims .h{font-size:10px!important;margin-bottom:-2px}.ipr-sims .s{flex:0 1 auto!important;min-height:30px!important;padding:5px 11px!important;border-radius:6px!important;font:500 12.5px Inter,sans-serif!important;background:transparent!important;filter:none!important}.ipr-sims .s.f{border:1px solid rgba(224,122,63,.55)!important;color:#e9a37a!important}.ipr-sims .s.a{border:1px solid rgba(63,143,201,.55)!important;color:#8fc0e4!important}.ipr-sims .s:hover{background:rgba(255,255,255,.05)!important}.ipr-sims .s svg{width:14px;height:14px}"; (document.head || document.documentElement).appendChild(st); } catch (e) {}
   function arrancar() {
     no(document.body);
     new MutationObserver(function (ms) {
