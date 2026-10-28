@@ -260,7 +260,7 @@
       h += pr ? '<div class="prog det"><i style="width:' + pr + '%"></i></div>' : '<div class="prog"><i></i></div>';
       h += '<p class="nota"><b>' + esc(t("corre")) + "</b>" + (pr ? " · " + pr + " %" : "") + " · " + esc(t("haTempo").replace("{t}", dur(dt))) + (d.iniciado ? " (" + esc(t("desde").replace("{h}", hora(d.iniciado))) + ")" : "") + "</p>";
       if (TIPICO[proc]) {
-        if (dt > TIPICO[proc] * 60000 * 1.5) h += '<p class="faixa">' + esc(t("lento")) + "</p>";
+        if (dt > TIPICO[proc] * 60000) h += '<p class="faixa">' + esc(t("lento")) + "</p>";
         else h += '<p class="nota">' + esc(t("estimado").replace("{t}", "~" + TIPICO[proc] + " min")) + "</p>";
       }
       h += '<p class="nota">' + esc(t("semParar")) + "</p>";
@@ -428,14 +428,19 @@
   // Estado de cada simulação da lista (só as recentes) e, ao abrir o painel, retoma a que está em curso.
   function estadosLista() {
     var a = actual(); if (!a) return;
-    S.lista.slice(0, 6).forEach(function (j) {
+    var lista = S.lista.slice(0, 6), procTab = { ret: "retencao-rapida", "2d": "simulacao-2d", ad: "antes-depois" }[S.tab];
+    Promise.all(lista.map(function (j) {
       var e = S.estados[j.id];
-      if (e === "successful" || e === "failed" || e === "dismissed") return;
-      api("agua/detalhe?enc=" + encodeURIComponent(a.id) + "&id=" + j.id).then(function (d) {
-        S.estados[j.id] = d.estado;
-        if (!S.job && !S.res && (d.estado === "accepted" || d.estado === "running")) { S.job = { id: j.id, estado: d.estado, det: d }; acompanhar(); }
-        pintar();
-      }).catch(function () {});
+      if (e === "successful" || e === "failed" || e === "dismissed") return Promise.resolve(null);
+      return api("agua/detalhe?enc=" + encodeURIComponent(a.id) + "&id=" + j.id).then(function (d) { S.estados[j.id] = d.estado; return d; }).catch(function () { return null; });
+    })).then(function (ds) {
+      if (!S.job && !S.res) {
+        // retoma a simulação em curso deste separador (a mais recente); se não houver, a mais recente de qualquer tipo
+        var em = lista.map(function (j, i) { return { j: j, d: ds[i] }; }).filter(function (x) { return x.d && (x.d.estado === "accepted" || x.d.estado === "running"); });
+        var esc_ = em.filter(function (x) { return x.j.processo === procTab; })[0] || em[0];
+        if (esc_) { S.job = { id: esc_.j.id, estado: esc_.d.estado, det: esc_.d, processo: esc_.j.processo }; acompanhar(); }
+      }
+      pintar();
     });
   }
   function pararJob() {
