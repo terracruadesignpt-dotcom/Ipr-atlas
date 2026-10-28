@@ -1,0 +1,15 @@
+
+/* v5, 28/10/2026: marca IPR em vez da Terracrua Design (Nuno: «É tudo IPR»). Fundo escuro do logótipo IPR: #181c08. */
+:root{--ipr-escuro:#181c08;--ipr-verde:#8cc63f}
+nav.navbar.bg-primary,.navbar.bg-primary{background-color:var(--ipr-escuro)!important;border-bottom:0!important;min-height:52px}
+img.qfc-header-logo,img[src*="/staticfiles/logo_sidetext"]{display:inline-block!important;content:url(/ipr-marca/ipr-sigla.png)!important;height:26px!important;width:auto!important;margin:4px 0 4px 12px;filter:none!important}
+.qfc-logo-wrapper{text-align:center;margin:28px 0 22px}
+img.qfc-main-logo,img[src*="/staticfiles/logo_undertext"]{display:inline-block!important;content:url(/ipr-marca/ipr-logo.png)!important;width:220px!important;max-width:70%!important;height:auto!important;
+  background:var(--ipr-escuro);padding:18px 22px;border-radius:6px;box-sizing:content-box;filter:none!important}
+.brand-link .brand-image{content:url(/ipr-marca/ipr-sigla.png)!important;max-height:22px!important;background:var(--ipr-escuro);padding:3px 5px;border-radius:3px}
+/* botão «Conta IPR» do fornecedor OpenID: sem imagem partida, com a sigla */
+.provider-button img[src=""],.provider-button img:not([src]){content:url(/ipr-marca/ipr-sigla.png);height:18px!important;width:auto!important;background:var(--ipr-escuro);padding:3px 5px;border-radius:3px}
+.provider-button{display:flex;align-items:center;justify-content:center;gap:10px;border-radius:4px!important;border:1px solid var(--a-bd2)!important;padding:10px!important}
+.provider-button strong{color:var(--a-tx)!important;font-weight:600}
+ul:has(>.provider-button-parent){list-style:none;padding:0;margin:0}
+.provider-button-parent>a{text-decoration:none!important}
