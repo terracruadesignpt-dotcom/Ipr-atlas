@@ -27,7 +27,7 @@
       desH: "Clique no mapa para marcar os pontos. Termine com duplo clique ou em «Terminar». Esc cancela.", terminar: "Terminar", cancelar: "Cancelar",
       prof: "Profundidade", largura: "Largura", berma: "Altura da berma", coroa: "Cota do coroamento", desc: "Cota do descarregador", cn: "CN (II)", manning: "Rugosidade de Manning",
       nenhuma: "Ainda não desenhou nenhuma intervenção.", apagar: "Apagar",
-      simular: "Simular", aSimular: "A simular…", fila: "Na fila", corre: "A calcular", ok: "Concluído", falhou: "Não foi possível simular",
+      simular: "Simular", aSimular: "A simular…", fila: "Na fila", corre: "A calcular", filaPos: "Na fila: {p}.º lugar.", filaFrente: "À frente: {x}.", filaOutros: "Pode haver trabalhos de outros mapas à frente.", haTempo: "há {t}", desde: "desde as {h}", lento: "Está a demorar mais do que o habitual para este tipo de simulação.", semParar: "Uma simulação já a calcular não pode ser parada a meio; só as que estão na fila.", parar: "Cancelar", aParar: "A cancelar…", parado: "Simulação cancelada.", estimado: "Costuma demorar {t}.", e_accepted: "na fila", e_running: "a calcular", e_successful: "concluída", e_failed: "falhou", e_dismissed: "cancelada", ultimo: "Último resultado deste separador, enquanto a nova simulação corre.", ok: "Concluído", falhou: "Não foi possível simular",
       anteriores: "Simulações deste mapa", nenhumaSim: "Ainda não há simulações neste mapa.", ver: "Ver",
       resultados: "Resultados", camadas: "No mapa", descargas: "Ficheiros (COG, GeoPackage, CSV)", balanco: "Balanço de volumes",
       envolvente: "Os mapas de máximos são a envolvente de toda a simulação, não um instante.",
@@ -61,7 +61,7 @@
       desH: "Click on the map to add points. Finish with a double click or «Finish». Esc cancels.", terminar: "Finish", cancelar: "Cancel",
       prof: "Depth", largura: "Width", berma: "Berm height", coroa: "Crest level", desc: "Spillway level", cn: "CN (II)", manning: "Manning roughness",
       nenhuma: "No interventions drawn yet.", apagar: "Delete",
-      simular: "Simulate", aSimular: "Simulating…", fila: "Queued", corre: "Running", ok: "Done", falhou: "Could not simulate",
+      simular: "Simulate", aSimular: "Simulating…", fila: "Queued", corre: "Running", filaPos: "Queued: position {p}.", filaFrente: "Ahead: {x}.", filaOutros: "Jobs from other maps may also be ahead.", haTempo: "for {t}", desde: "since {h}", lento: "This is taking longer than usual for this kind of simulation.", semParar: "A simulation that is already running cannot be stopped midway; only queued ones can.", parar: "Cancel", aParar: "Cancelling…", parado: "Simulation cancelled.", estimado: "Usually takes {t}.", e_accepted: "queued", e_running: "running", e_successful: "done", e_failed: "failed", e_dismissed: "cancelled", ultimo: "Last result for this tab, while the new simulation runs.", ok: "Done", falhou: "Could not simulate",
       anteriores: "Simulations for this map", nenhumaSim: "No simulations for this map yet.", ver: "View",
       resultados: "Results", camadas: "On the map", descargas: "Files (COG, GeoPackage, CSV)", balanco: "Volume balance",
       envolvente: "Maximum maps are the envelope of the whole run, not a single moment.", estatico: "Static exploration: no timing, velocities or flows.",
@@ -98,7 +98,7 @@
   function lerAviso() { try { return localStorage.getItem("ipr_agua_aviso") === AVISO_VERSAO; } catch (e) { return false; } }
   var IC = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c3.5 4.2 6 7.6 6 10.5A6 6 0 0 1 6 13.5C6 10.6 8.5 7.2 12 3z"/><path d="M9 14.5a3 3 0 0 0 3 3"/></svg>';
   var S = { tab: "ret", chuva: { modo: "livre", total_mm: 50, duracao_h: 1, forma: "uniforme", T: 10, obs: "", fonte: "" },
-    aviso: lerAviso(), avisoChk: false, cenarios: "20, 50, 100", horas: 3, modoAD: "retencao-rapida", feats: [], des: null, job: null, res: null, erro: "", lista: [], camadas: {} };
+    aviso: lerAviso(), avisoChk: false, cenarios: "20, 50, 100", horas: 3, modoAD: "retencao-rapida", feats: [], des: null, job: null, res: null, erro: "", lista: [], camadas: {}, estados: {}, ultimos: {} };
 
   // ───────────── estilos ─────────────
   function css() {
@@ -124,6 +124,7 @@
       "#ipr-as .cam label{display:flex;gap:6px;align-items:center;font-size:12px;margin:0 0 4px}#ipr-as .leg{display:flex;height:8px;border-radius:4px;overflow:hidden;margin:2px 0 1px}#ipr-as .leg i{flex:1}#ipr-as .legv{display:flex;justify-content:space-between;font:500 10px 'IBM Plex Mono',monospace;color:var(--mu,#a3a690)}" +
       "#ipr-as ul.fx{margin:0;padding-left:16px;font-size:12px}#ipr-as ul.fx a{color:var(--ac,#a8b878)}" +
       "#ipr-as .prog{height:4px;border-radius:2px;background:var(--ln,#2b3024);overflow:hidden;margin:8px 0}#ipr-as .prog i{display:block;height:100%;width:30%;background:var(--ac,#a8b878);animation:ipras 1.4s ease-in-out infinite}@keyframes ipras{0%{margin-left:-30%}100%{margin-left:100%}}" +
+      "#ipr-as .prog.det i{animation:none;margin:0;transition:width .6s}#ipr-as .est{display:inline-block;margin-left:4px;padding:0 6px;border-radius:999px;font:500 10px Inter,sans-serif;border:1px solid var(--ln,#2b3024);color:var(--mu,#a3a690)}#ipr-as .est.running{border-color:var(--ac,#a8b878);color:var(--ac,#a8b878)}#ipr-as .est.failed{border-color:#d9534f;color:#d9534f}#ipr-as .acc .b.sec{margin-left:6px}" +
       "#ipr-as .des{padding:8px 10px;border:1px dashed var(--ac,#a8b878);border-radius:9px;margin:8px 0;font-size:12px}" +
       "#ipr-as .faixa{margin:0 0 10px;padding:6px 9px;border-radius:8px;background:rgba(217,164,65,.14);border:1px solid #d9a441;font-size:11.5px;line-height:1.4}" +
       "#ipr-as .avbox{border:1px solid #d9a441;border-radius:10px;padding:10px;background:var(--p2,#1d2118)}#ipr-as .avbox p{font-size:12px;margin:6px 0 10px}#ipr-as .chk{display:flex;gap:8px;align-items:flex-start;font-size:12px}" +
@@ -152,7 +153,9 @@
     var h = '<div class="as-cab">' + IC + "<b>" + esc(t("titulo")) + BETA + '</b><button class="as-ib" data-as="min" title="' + esc(t("min")) + '">–</button><button class="as-ib" data-as="x" title="' + esc(t("fechar")) + '">×</button></div>';
     h += '<div class="as-tabs" role="tablist">' + ["ret", "2d", "ad", "mira"].map(function (k) { return '<button role="tab" data-tab="' + k + '" aria-selected="' + (S.tab === k) + '">' + esc(t("tab_" + k)) + "</button>"; }).join("") + "</div>";
     h += '<div class="as-corpo">' + corpo() + "</div>";
+    var c0 = P.querySelector(".as-corpo"), sc = c0 ? c0.scrollTop : 0;   // não saltar para o topo a cada actualização
     P.innerHTML = h;
+    if (sc) { var c1 = P.querySelector(".as-corpo"); if (c1) c1.scrollTop = sc; }
   }
 
   function corpo() {
@@ -171,8 +174,9 @@
     var corre = S.job && (S.job.estado === "accepted" || S.job.estado === "running" || S.job.enviar);
     h += '<div class="acc"><button class="b pri" data-as="simular"' + (corre ? " disabled" : "") + ">" + esc(corre ? t("aSimular") : t("simular")) + "</button></div>";
     if (S.erro) h += '<div class="err">' + esc(S.erro) + "</div>";
-    if (corre) h += '<div class="prog"><i></i></div><p class="nota">' + esc(S.job.estado === "running" ? t("corre") : t("fila")) + "</p>";
+    if (corre) h += estadoJob();
     if (S.res) h += resultados();
+    else if (corre && S.ultimos[S.tab]) h += '<p class="nota">' + esc(t("ultimo")) + "</p>" + resultados(S.ultimos[S.tab]);
     h += anteriores();
     h += '<p class="av">' + esc(t("aviso")) + "</p>";
     return h;
@@ -236,8 +240,42 @@
   }
 
   // ───────────── resultados ─────────────
-  function resultados() {
-    var r = S.res, s = r.resumo || {}, h = '<span class="as-h">' + esc(t("resultados")) + "</span>";
+  // Tempo típico por processo (minutos), para avisar quando passa muito do normal. Ajustar com o histórico do motor.
+  var TIPICO = { "retencao-rapida": 2, "antes-depois": 10, "simulacao-2d": 30 };
+  function dur(ms) {
+    var s = Math.max(0, Math.round(ms / 1000)), m = Math.floor(s / 60), hh = Math.floor(m / 60);
+    if (hh) return hh + " h " + (m % 60) + " min";
+    if (m) return m + " min " + (s % 60) + " s";
+    return s + " s";
+  }
+  function hora(iso) { try { return new Date(iso).toLocaleTimeString(L() === "en" ? "en-GB" : "pt-PT", { hour: "2-digit", minute: "2-digit" }); } catch (e) { return ""; } }
+  function nomeProc(p) { return t("tab_" + ({ "retencao-rapida": "ret", "simulacao-2d": "2d", "antes-depois": "ad" }[p] || "ret")); }
+  function estadoJob() {
+    var j = S.job, d = j.det || {}, h = "";
+    if (j.enviar) return '<div class="prog"><i></i></div><p class="nota">' + esc(t("aSimular")) + "</p>";
+    var proc = d.processo || j.processo || "";
+    if (j.estado === "running") {
+      var ini = d.iniciado ? Date.parse(d.iniciado) : (j.t0 || Date.now()), dt = Date.now() - ini;
+      var pr = typeof d.progresso === "number" && d.progresso > 0 ? d.progresso : null;
+      h += pr ? '<div class="prog det"><i style="width:' + pr + '%"></i></div>' : '<div class="prog"><i></i></div>';
+      h += '<p class="nota"><b>' + esc(t("corre")) + "</b>" + (pr ? " · " + pr + " %" : "") + " · " + esc(t("haTempo").replace("{t}", dur(dt))) + (d.iniciado ? " (" + esc(t("desde").replace("{h}", hora(d.iniciado))) + ")" : "") + "</p>";
+      if (TIPICO[proc]) {
+        if (dt > TIPICO[proc] * 60000 * 1.5) h += '<p class="faixa">' + esc(t("lento")) + "</p>";
+        else h += '<p class="nota">' + esc(t("estimado").replace("{t}", "~" + TIPICO[proc] + " min")) + "</p>";
+      }
+      h += '<p class="nota">' + esc(t("semParar")) + "</p>";
+    } else {
+      h += '<div class="prog"><i></i></div>';
+      var f = d.fila;
+      h += '<p class="nota"><b>' + esc(f ? t("filaPos").replace("{p}", f.posicao) : t("fila")) + "</b>";
+      if (f && f.a_frente && f.a_frente.length) h += " " + esc(t("filaFrente").replace("{x}", f.a_frente.map(function (x) { return nomeProc(x.processo) + " (" + t("e_" + x.estado) + ", " + hora(x.criado) + ")"; }).join("; ")));
+      h += "</p><p class=\"nota\">" + esc(t("filaOutros")) + "</p>";
+      if (d.pode_parar) h += '<div class="acc"><button class="b" data-as="parar"' + (j.aParar ? " disabled" : "") + ">" + esc(j.aParar ? t("aParar") : t("parar")) + "</button></div>";
+    }
+    return h;
+  }
+  function resultados(rx) {
+    var r = rx || S.res, s = r.resumo || {}, h = '<span class="as-h">' + esc(t("resultados")) + "</span>";
     if (s.aviso_rio) h += '<p class="faixa">' + esc(s.aviso_rio) + "</p>";
     (s.rio || []).forEach(function (x) { h += '<p class="nota"><b>' + esc(L() === "en" ? "River" : "Rio") + "</b> · " + esc(x.cenario_titulo) + " · " + n(x.pico_m3s, 1) + " m³/s · " + esc(x.hipotese) + "</p>"; });
     if (s.aviso_montante) h += '<p class="faixa">' + esc(t("montSem")) + "</p>";
@@ -293,7 +331,7 @@
   function anteriores() {
     var h = '<span class="as-h">' + esc(t("anteriores")) + "</span>";
     if (!S.lista.length) return h + '<p class="nota">' + esc(t("nenhumaSim")) + "</p>";
-    return h + '<ul class="fx">' + S.lista.map(function (j) { return "<li>" + esc(t("tab_" + ({ "retencao-rapida": "ret", "simulacao-2d": "2d", "antes-depois": "ad" }[j.processo] || "ret"))) + " · " + esc(new Date(j.criado).toLocaleString(L() === "en" ? "en-GB" : "pt-PT")) + ' <a href="#" data-verjob="' + esc(j.id) + '">' + esc(t("ver")) + "</a></li>"; }).join("") + "</ul>";
+    return h + '<ul class="fx">' + S.lista.map(function (j) { return "<li>" + esc(t("tab_" + ({ "retencao-rapida": "ret", "simulacao-2d": "2d", "antes-depois": "ad" }[j.processo] || "ret"))) + " · " + esc(new Date(j.criado).toLocaleString(L() === "en" ? "en-GB" : "pt-PT")) + (S.estados[j.id] ? ' <span class="est ' + esc(S.estados[j.id]) + '">' + esc(t("e_" + S.estados[j.id])) + "</span>" : "") + ' <a href="#" data-verjob="' + esc(j.id) + '">' + esc(t("ver")) + "</a></li>"; }).join("") + "</ul>";
   }
 
   // ───────────── acções ─────────────
@@ -306,6 +344,7 @@
     if (a === "min") { P.classList.toggle("min"); return; }
     if (el.hasAttribute("data-tab")) { S.tab = el.getAttribute("data-tab"); pararDesenho(); pintar(); return; }
     if (a === "simular") return simular();
+    if (a === "parar") return pararJob();
     if (a === "aceitar") {
       api("agua/aviso", { method: "POST", body: {} }).then(function () { S.aviso = true; S.erro = ""; try { localStorage.setItem("ipr_agua_aviso", AVISO_VERSAO); } catch (e2) {} pintar(); })
         .catch(function (err) { S.erro = err.message; pintar(); });
@@ -315,7 +354,7 @@
     if (a === "terminar") return pararDesenho(true);
     if (a === "cancelar") return pararDesenho(false);
     if (el.hasAttribute("data-apagar")) { S.feats.splice(+el.getAttribute("data-apagar"), 1); desenharFeats(); pintar(); return; }
-    if (el.hasAttribute("data-verjob")) { S.job = { id: el.getAttribute("data-verjob"), estado: "running" }; acompanhar(); }
+    if (el.hasAttribute("data-verjob")) { S.res = null; S.erro = ""; limparCamadas(); S.job = { id: el.getAttribute("data-verjob"), estado: S.estados[el.getAttribute("data-verjob")] || "accepted" }; pintar(); acompanhar(); }
   }
   function mudar(e) {
     var el = e.target;
@@ -349,18 +388,25 @@
     }
     S.erro = ""; S.res = null; S.job = { enviar: true }; limparCamadas(); pintar();
     api("agua/simular", { method: "POST", body: { enc: a.id, processo: proc, entradas: ent } })
-      .then(function (r) { S.job = { id: r.trabalho.jobID, estado: r.trabalho.status }; pintar(); listar(); acompanhar(); })
+      .then(function (r) { S.job = { id: r.trabalho.jobID, estado: r.trabalho.status, processo: proc, t0: Date.now() }; S.estados[S.job.id] = S.job.estado; pintar(); listar(); acompanhar(); })
       .catch(function (err) { S.job = null; S.erro = err.message; if (/aviso/i.test(err.message)) { S.aviso = false; try { localStorage.removeItem("ipr_agua_aviso"); } catch (e2) {} } pintar(); });
   }
   var timer = null;
   function acompanhar() {
     clearTimeout(timer);
     var a = actual(), job = S.job; if (!job || !job.id || !a) return;
-    api("agua/trabalho/" + job.id + "?enc=" + encodeURIComponent(a.id)).then(function (r) {
-      if (S.job !== job) return;                     // resposta de um acompanhamento antigo
-      job.estado = r.estado;
+    var enc = encodeURIComponent(a.id);
+    api("agua/detalhe?enc=" + enc + "&id=" + job.id).catch(function () { return null; }).then(function (d) {
+      if (S.job !== job) return null;
+      if (d) { job.det = d; job.estado = d.estado; S.estados[job.id] = d.estado; }
+      if (d && d.estado !== "successful" && d.estado !== "failed" && d.estado !== "dismissed") return d;
+      return api("agua/trabalho/" + job.id + "?enc=" + enc);
+    }).then(function (r) {
+      if (!r || S.job !== job) return;               // resposta de um acompanhamento antigo
+      job.estado = r.estado; S.estados[job.id] = r.estado;
       if (r.estado === "successful") {
         S.res = r; S.job = null;
+        var tabR = { "retencao-rapida": "ret", "simulacao-2d": "2d", "antes-depois": "ad" }[r.processo]; if (tabR) S.ultimos[tabR] = r;
         var v = (r.ficheiros || []).filter(function (f) { return f.nome === "vista/vista.json"; })[0];
         if (v) return fetch(urlF(v.url), { credentials: "same-origin" }).then(function (x) { return x.json(); }).then(function (vj) {
           S.res.vista = vj; S.res.fich = {}; (r.ficheiros || []).forEach(function (f) { S.res.fich[f.nome] = f.url; });
@@ -370,14 +416,37 @@
         });
         pintar(); return;
       }
-      if (r.estado === "failed" || r.estado === "dismissed") { S.erro = t("falhou") + (r.mensagem ? ": " + r.mensagem : "."); S.job = null; pintar(); return; }
-      pintar(); timer = setTimeout(acompanhar, 4000);
+      if (r.estado === "dismissed") { S.erro = t("parado"); S.job = null; pintar(); listar(); return; }
+      if (r.estado === "failed") { S.erro = t("falhou") + (r.mensagem ? ": " + r.mensagem : "."); S.job = null; pintar(); return; }
+      pintar(); timer = setTimeout(acompanhar, r.estado === "running" ? 4000 : 6000);
     }).catch(function (err) { if (S.job !== job) return; S.erro = err.message; S.job = null; pintar(); });
   }
   function listar() {
     var a = actual(); if (!a || !W.tcdNonce) return;
-    api("agua/trabalhos?enc=" + encodeURIComponent(a.id)).then(function (r) { S.lista = r.trabalhos || []; pintar(); }).catch(function () {});
+    api("agua/trabalhos?enc=" + encodeURIComponent(a.id)).then(function (r) { S.lista = r.trabalhos || []; pintar(); estadosLista(); }).catch(function () {});
   }
+  // Estado de cada simulação da lista (só as recentes) e, ao abrir o painel, retoma a que está em curso.
+  function estadosLista() {
+    var a = actual(); if (!a) return;
+    S.lista.slice(0, 6).forEach(function (j) {
+      var e = S.estados[j.id];
+      if (e === "successful" || e === "failed" || e === "dismissed") return;
+      api("agua/detalhe?enc=" + encodeURIComponent(a.id) + "&id=" + j.id).then(function (d) {
+        S.estados[j.id] = d.estado;
+        if (!S.job && !S.res && (d.estado === "accepted" || d.estado === "running")) { S.job = { id: j.id, estado: d.estado, det: d }; acompanhar(); }
+        pintar();
+      }).catch(function () {});
+    });
+  }
+  function pararJob() {
+    var a = actual(), job = S.job; if (!a || !job || !job.id) return;
+    job.aParar = true; pintar();
+    api("agua/parar", { method: "POST", body: { enc: a.id, id: job.id } }).then(function () {
+      S.estados[job.id] = "dismissed"; if (S.job === job) { S.job = null; S.erro = t("parado"); } pintar(); listar();
+    }).catch(function (err) { job.aParar = false; S.erro = err.message; pintar(); });
+  }
+  // Relógio do estado: actualiza o tempo decorrido a cada segundo enquanto há trabalho e o painel está aberto.
+  setInterval(function () { if (P && !P.hidden && S.job && S.job.estado === "running" && !document.hidden && !P.contains(document.activeElement)) pintar(); }, 1000);
 
   // ───────────── camadas no mapa ─────────────
   function alternarCamada(id, ligar) {
