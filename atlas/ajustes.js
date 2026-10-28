@@ -6294,3 +6294,35 @@
   setInterval(por, 700); window.addEventListener("resize", function () { setTimeout(por, 60); });
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", por); else por();
 })();
+
+// §73e Botão «KML» de «Os meus locais» sem locais (Nuno, 28/10/2026): continua cinzento, mas ao tocar explica porquê, em vez
+// de não fazer nada. Quando já há locais, o app.js tira o «disabled» e o botão exporta como antes.
+(function () {
+  if (window.__ipr73e) return; window.__ipr73e = 1;
+  function en() { return String(window.IPR_LINGUA || "pt").toLowerCase().indexOf("pt") !== 0; }
+  function msg() { return en() ? "Draw or import a place first; then you can export it to KML." : "Desenhe ou importe um local primeiro; depois pode exportá-lo para KML."; }
+  function marcar() {
+    var bs = document.querySelectorAll('#ipe button[data-loc="exportar"]');
+    for (var i = 0; i < bs.length; i++) {
+      var b = bs[i];
+      if (b.disabled) { b.disabled = false; b.setAttribute("aria-disabled", "true"); b.classList.add("ipr-73e-off"); b.title = msg(); }
+    }
+  }
+  function bolha(b) {
+    var v = document.getElementById("ipr-73e-b"); if (v) v.remove();
+    v = document.createElement("div"); v.id = "ipr-73e-b"; v.setAttribute("role", "status"); v.textContent = msg();
+    document.body.appendChild(v);
+    var r = b.getBoundingClientRect(), w = Math.min(260, innerWidth - 16);
+    v.style.cssText = "position:fixed;z-index:99996;max-width:" + w + "px;left:" + Math.max(8, Math.min(r.left, innerWidth - w - 8)) + "px;top:" + Math.round(r.bottom + 6) + "px";
+    clearTimeout(bolha.t); bolha.t = setTimeout(function () { if (v.parentNode) v.remove(); }, 3500);
+  }
+  document.addEventListener("click", function (e) {
+    var b = e.target.closest && e.target.closest('#ipe button[data-loc="exportar"][aria-disabled="true"]'); if (!b) return;
+    e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation(); bolha(b);
+  }, true);
+  var st = document.createElement("style"); st.id = "ipr-73e-css";
+  st.textContent = "#ipe .ipr-73e-off{opacity:.45;cursor:help}#ipr-73e-b{background:var(--p3,#252a1f);color:var(--tx,#ebe7d8);border:1px solid var(--ln2,#3b4232);border-radius:6px;padding:8px 10px;font:13px/1.4 Inter,system-ui,sans-serif;box-shadow:0 6px 20px rgba(0,0,0,.35)}";
+  (document.head || document.documentElement).appendChild(st);
+  try { new MutationObserver(function () { clearTimeout(marcar.t); marcar.t = setTimeout(marcar, 40); }).observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ["disabled"] }); } catch (e) {}
+  marcar();
+})();
