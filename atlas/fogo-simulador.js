@@ -89,6 +89,7 @@
   function mapa() { return ipe().mapa; }
   function actual() { var e = ipe().estado; return e && e.actual; }
   var REST = "/wp-json/tcd/v1/";
+  var BETA = '<span class="ipr-beta" style="margin-left:7px;padding:1px 7px;border-radius:999px;border:1px solid currentColor;font:600 10px Inter,sans-serif;letter-spacing:.06em;text-transform:uppercase;opacity:.85;vertical-align:middle">Beta</span>';
   function api(c, op) {
     op = op || {}; op.credentials = "same-origin"; op.headers = Object.assign({ "X-WP-Nonce": W.tcdNonce || "" }, op.headers || {});
     if (op.body && typeof op.body !== "string") { op.body = JSON.stringify(op.body); op.headers["Content-Type"] = "application/json"; }
@@ -176,7 +177,7 @@
 
   function pintar() {
     if (!P || P.hidden) return;
-    var h = '<div class="fs-cab">' + IC + "<b>" + esc(t("titulo")) + '</b><button class="fs-ib" data-fs="min" title="' + esc(t("min")) + '">–</button><button class="fs-ib" data-fs="x" title="' + esc(t("fechar")) + '">×</button></div>';
+    var h = '<div class="fs-cab">' + IC + "<b>" + esc(t("titulo")) + BETA + '</b><button class="fs-ib" data-fs="min" title="' + esc(t("min")) + '">–</button><button class="fs-ib" data-fs="x" title="' + esc(t("fechar")) + '">×</button></div>';
     h += '<div class="fs-tabs" role="tablist">' + Object.keys(PROC).map(function (k) { return '<button role="tab" data-tab="' + k + '" aria-selected="' + (S.tab === k) + '">' + esc(t("tab_" + k)) + "</button>"; }).join("") + "</div>";
     h += '<div class="fs-corpo">' + corpo() + "</div>";
     P.innerHTML = h;
@@ -483,7 +484,7 @@
     if (!sec) return;
     var b = sec.querySelector("[data-fogo-sim]");
     if (!b) { css(); b = document.createElement("button"); b.type = "button"; b.setAttribute("data-fogo-sim", ""); sec.appendChild(b); }
-    if (b.getAttribute("data-l") !== L()) { b.innerHTML = IC + "<span>" + esc(t("botao")) + "</span>"; b.setAttribute("data-l", L()); }
+    if (b.getAttribute("data-l") !== L()) { b.innerHTML = IC + "<span>" + esc(t("botao")) + "</span>" + BETA; b.setAttribute("data-l", L()); }
   }
   // Destaque (Nuno, 28/10/2026: «os simuladores merecem mais destaque no Atlas»): faixa «Simuladores» no topo do painel
   // de temas, com o mapa entregue aberto. O botão da água usa o atributo do painel da água (agua-simulador.js), se existir.
@@ -500,8 +501,8 @@
     d.setAttribute("data-k", chave);
     var IA = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c3 5 6 8 6 11a6 6 0 0 1-12 0c0-3 3-6 6-11z"/></svg>';
     d.innerHTML = '<span class="h">' + esc(t("sims")) + "</span>" +
-      (fogo ? '<button type="button" class="s f" data-fogo-sim>' + IC.replace(/16/g, "18") + "<span>" + esc(t("botao")) + "</span></button>" : "") +
-      (agua ? '<button type="button" class="s a" data-agua-sim>' + IA + "<span>" + esc(t("botaoAgua")) + "</span></button>" : "");
+      (fogo ? '<button type="button" class="s f" data-fogo-sim>' + IC.replace(/16/g, "18") + "<span>" + esc(t("botao")) + "</span>" + BETA + "</button>" : "") +
+      (agua ? '<button type="button" class="s a" data-agua-sim>' + IA + "<span>" + esc(t("botaoAgua")) + "</span>" + BETA + "</button>" : "");
     if (d !== w.firstElementChild) w.insertBefore(d, w.firstChild);
   }
   var obsEl = null, obsT = null;
