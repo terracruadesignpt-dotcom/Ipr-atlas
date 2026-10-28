@@ -12,7 +12,7 @@
   if (W.IPR_FOGO_SIM) return;
   var D = {
     pt: {
-      botao: "Simular fogo", titulo: "Simular fogo", fechar: "Fechar", min: "Minimizar",
+      botao: "Simular fogo", botaoAgua: "Simular água", sims: "Simuladores", titulo: "Simular fogo", fechar: "Fechar", min: "Minimizar",
       semMapa: "Para simular, abra um dos seus mapas com a Base Cartográfica entregue.",
       semConta: "O simulador está disponível para clientes com Base Cartográfica. Entre na sua conta.",
       tab_tempo: "Cenário no tempo", tab_ad: "Antes e depois", tab_muitas: "Muitas ignições", tab_chuva: "Fogo e primeira chuva",
@@ -47,7 +47,7 @@
       notaFim: "Cenário hipotético de modelo. Uma faixa, um caminho ou uma charca nunca são barreiras garantidas: o modelo não tem projecções nem fogo de copas."
     },
     en: {
-      botao: "Fire simulator", titulo: "Fire simulator", fechar: "Close", min: "Minimise",
+      botao: "Fire simulator", botaoAgua: "Water simulator", sims: "Simulators", titulo: "Fire simulator", fechar: "Close", min: "Minimise",
       semMapa: "To simulate, open one of your maps with a delivered Base Map.", semConta: "The simulator is available to Base Map clients. Please sign in.",
       tab_tempo: "Scenario over time", tab_ad: "Before and after", tab_muitas: "Many ignitions", tab_chuva: "Fire and first rain",
       d_tempo: "One ignition, one wind and one fuel moisture: the front advances over time. Shows arrival time and isochrones.",
@@ -146,6 +146,11 @@
       "#ipr-fs .faixa{margin:0 0 10px;padding:6px 9px;border-radius:8px;background:rgba(217,83,79,.16);border:1px solid #d9534f;font-size:12.5px;line-height:1.4;font-weight:500}" +
       "#ipr-fs .avbox{border:1px solid #d9534f;border-radius:10px;padding:10px;background:var(--p2,#1d2118)}#ipr-fs .avbox p{font-size:13px;margin:6px 0 10px}#ipr-fs .chk{display:flex;gap:8px;align-items:flex-start;font-size:13px}" +
       "[data-fogo-sim]{border-color:#e07a3f!important;display:inline-flex;align-items:center;gap:5px}" +
+      "#ipr-t62>.ipr-sims{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px;padding:10px;border:1px solid var(--ln2,#3b4232);border-radius:12px;background:var(--p2,#1d2118)}" +
+      "#ipr-t62>.ipr-sims .h{flex-basis:100%;font:600 11px Inter,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--mu,#a3a690)}" +
+      "#ipr-t62>.ipr-sims .s{flex:1 1 140px;display:flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:8px 12px;border-radius:10px;font:600 14px Inter,sans-serif;cursor:pointer}" +
+      "#ipr-t62>.ipr-sims .s.f{background:#e07a3f;border:1px solid #e07a3f!important;color:#141814}#ipr-t62>.ipr-sims .s.f:hover{filter:brightness(1.08)}" +
+      "#ipr-t62>.ipr-sims .s.a{background:#3f8fc9;border:1px solid #3f8fc9;color:#0f1620}#ipr-t62>.ipr-sims .s.a:hover{filter:brightness(1.08)}" +
       "@media (max-width:1024px) and (min-width:601px){#ipr-fs{width:min(460px,calc(100% - 24px))}}" +
       "@media (max-width:600px){#ipr-fs{left:8px!important;right:8px;top:auto!important;bottom:60px;width:auto;max-width:none;max-height:min(72vh,calc(100% - 76px))}}";
     document.head.appendChild(st);
@@ -360,9 +365,10 @@
   var timer = null;
   function acompanhar() {
     clearTimeout(timer);
-    var a = actual(); if (!S.job || !S.job.id || !a) return;
-    api("fogo/trabalho/" + S.job.id + "?enc=" + encodeURIComponent(a.id)).then(function (r) {
-      S.job.estado = r.estado;
+    var a = actual(), job = S.job; if (!job || !job.id || !a) return;
+    api("fogo/trabalho/" + job.id + "?enc=" + encodeURIComponent(a.id)).then(function (r) {
+      if (S.job !== job) return;                     // resposta de um acompanhamento antigo (outra simulação ou «Ver»)
+      job.estado = r.estado;
       if (r.estado === "successful") {
         S.res = r; S.job = null;
         var v = (r.ficheiros || []).filter(function (f) { return f.nome === "vista/vista.json"; })[0];
@@ -375,7 +381,7 @@
       }
       if (r.estado === "failed" || r.estado === "dismissed") { S.erro = t("falhou") + (r.mensagem ? ": " + r.mensagem : "."); S.job = null; pintar(); return; }
       pintar(); timer = setTimeout(acompanhar, 4000);
-    }).catch(function (err) { S.erro = err.message; S.job = null; pintar(); });
+    }).catch(function (err) { if (S.job !== job) return; S.erro = err.message; S.job = null; pintar(); });
   }
   function listar() {
     var a = actual(); if (!a || !W.tcdNonce) return;
@@ -470,6 +476,7 @@
   function botao() {
     var w = document.getElementById("ipr-t62"); if (!w) return;
     disponivel();
+    destaque();
     if (DISP !== true) return;
     var ligado = w.querySelector('[data-t62="fogo"][aria-pressed="true"]');
     var sec = ligado && w.querySelector(".ipr-t62-c:not(.ipr-ag-c) .ipr-t62-f");
@@ -478,12 +485,31 @@
     if (!b) { css(); b = document.createElement("button"); b.type = "button"; b.setAttribute("data-fogo-sim", ""); sec.appendChild(b); }
     if (b.getAttribute("data-l") !== L()) { b.innerHTML = IC + "<span>" + esc(t("botao")) + "</span>"; b.setAttribute("data-l", L()); }
   }
+  // Destaque (Nuno, 28/10/2026: «os simuladores merecem mais destaque no Atlas»): faixa «Simuladores» no topo do painel
+  // de temas, com o mapa entregue aberto. O botão da água usa o atributo do painel da água (agua-simulador.js), se existir.
+  function destaque() {
+    var w = document.getElementById("ipr-t62"); if (!w) return;
+    var a = actual(), entregue = a && a.id && (!a.estado_k || a.estado_k === "completed" || a.estado_k === "entregue");
+    var fogo = DISP === true && entregue, agua = !!W.IPR_AGUA_SIM && entregue;
+    var d = w.querySelector(":scope > .ipr-sims");
+    if (!fogo && !agua) { if (d) d.remove(); return; }
+    var chave = L() + (fogo ? "f" : "") + (agua ? "a" : "");
+    if (d && d.getAttribute("data-k") === chave && d === w.firstElementChild) return;
+    css();
+    if (!d) { d = document.createElement("div"); d.className = "ipr-sims"; }
+    d.setAttribute("data-k", chave);
+    var IA = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c3 5 6 8 6 11a6 6 0 0 1-12 0c0-3 3-6 6-11z"/></svg>';
+    d.innerHTML = '<span class="h">' + esc(t("sims")) + "</span>" +
+      (fogo ? '<button type="button" class="s f" data-fogo-sim>' + IC.replace(/16/g, "18") + "<span>" + esc(t("botao")) + "</span></button>" : "") +
+      (agua ? '<button type="button" class="s a" data-agua-sim>' + IA + "<span>" + esc(t("botaoAgua")) + "</span></button>" : "");
+    if (d !== w.firstElementChild) w.insertBefore(d, w.firstChild);
+  }
   var obsEl = null, obsT = null;
   function observar() {
     var w = document.getElementById("ipr-t62");
     if (w && w !== obsEl) { if (obsT) obsT.disconnect(); obsEl = w; obsT = new MutationObserver(botao); obsT.observe(w, { childList: true, subtree: true }); botao(); }
   }
-  setInterval(function () { if (!document.hidden) observar(); }, 1000);
+  setInterval(function () { if (!document.hidden) { observar(); destaque(); } }, 1000);
   observar();
   document.addEventListener("click", function (e) { var b = e.target.closest && e.target.closest("[data-fogo-sim]"); if (b) { e.preventDefault(); e.stopPropagation(); abrir(); } }, true);
   document.addEventListener("ipr:lingua", function () { botao(); pintar(); });
