@@ -86,6 +86,7 @@
   function mapa() { return ipe().mapa; }
   function actual() { var e = ipe().estado; return e && e.actual; }
   var REST = "/wp-json/tcd/v1/";
+  var BETA = '<span class="ipr-beta" style="margin-left:7px;padding:1px 7px;border-radius:999px;border:1px solid currentColor;font:600 10px Inter,sans-serif;letter-spacing:.06em;text-transform:uppercase;opacity:.85;vertical-align:middle">Beta</span>';
   function api(c, op) {
     op = op || {}; op.credentials = "same-origin"; op.headers = Object.assign({ "X-WP-Nonce": W.tcdNonce || "" }, op.headers || {});
     if (op.body && typeof op.body !== "string") { op.body = JSON.stringify(op.body); op.headers["Content-Type"] = "application/json"; }
@@ -148,7 +149,7 @@
 
   function pintar() {
     if (!P || P.hidden) return;
-    var h = '<div class="as-cab">' + IC + "<b>" + esc(t("titulo")) + '</b><button class="as-ib" data-as="min" title="' + esc(t("min")) + '">–</button><button class="as-ib" data-as="x" title="' + esc(t("fechar")) + '">×</button></div>';
+    var h = '<div class="as-cab">' + IC + "<b>" + esc(t("titulo")) + BETA + '</b><button class="as-ib" data-as="min" title="' + esc(t("min")) + '">–</button><button class="as-ib" data-as="x" title="' + esc(t("fechar")) + '">×</button></div>';
     h += '<div class="as-tabs" role="tablist">' + ["ret", "2d", "ad", "mira"].map(function (k) { return '<button role="tab" data-tab="' + k + '" aria-selected="' + (S.tab === k) + '">' + esc(t("tab_" + k)) + "</button>"; }).join("") + "</div>";
     h += '<div class="as-corpo">' + corpo() + "</div>";
     P.innerHTML = h;
@@ -459,7 +460,7 @@
     var sec = document.querySelector("#ipr-t62 .ipr-ag-c .ipr-t62-f"); if (!sec) return;
     var b = sec.querySelector("[data-agua-sim]");
     if (!b) { css(); b = document.createElement("button"); b.type = "button"; b.setAttribute("data-agua-sim", ""); sec.appendChild(b); }
-    if (b.getAttribute("data-l") !== L()) { b.innerHTML = IC + "<span>" + esc(t("botao")) + "</span>"; b.setAttribute("data-l", L()); }
+    if (b.getAttribute("data-l") !== L()) { b.innerHTML = IC + "<span>" + esc(t("botao")) + "</span>" + BETA; b.setAttribute("data-l", L()); }
   }
   var obsEl = null, obsT = null;
   function observar() {
