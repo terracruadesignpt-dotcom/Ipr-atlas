@@ -114,11 +114,31 @@
   // ───────────── Base escolhida por simulador ─────────────
   var ESC = { agua: null, fogo: null };   // {id, aberto}
 
+  // Resultado anterior que fica no mapa (agua-simulador.js 4039016 e fogo-simulador.js ce758a0): ao simular outra vez, ou
+  // em «Ver», o painel faz S.res = null antes de limparCamadas(), e alternarCamada(id, false) sai logo sem S.res; as
+  // camadas da primeira simulação ficam no mapa e S.camadas continua cheio, e o resultado novo não se desenha
+  // (alternarCamada(id, true) vê a fonte antiga e não faz nada). Aqui tiram-se essas camadas órfãs antes do pedido novo.
+  function limparOrfas(tipo) {
+    var s = sim(tipo), S = s && s._estado, Mp = ipe().mapa;
+    if (!S || S.res || !S.camadas || !Object.keys(S.camadas).length || !Mp) return;
+    var pre = "ipr-" + (tipo === "agua" ? "as" : "fs") + "-";
+    Object.keys(S.camadas).forEach(function (id) {
+      var sid = pre + id;
+      try {
+        [sid + "-l", sid + "-c", sid + "-t"].forEach(function (l) { if (Mp.getLayer(l)) Mp.removeLayer(l); });
+        if (Mp.getSource(sid)) Mp.removeSource(sid);
+      } catch (x) {}
+    });
+    S.camadas = {};
+  }
+
   // Guarda: nenhum POST a agua/simular ou fogo/simular sai sem Base escolhida; o pedido leva sempre «base».
   if (FETCH) {
     W.fetch = function (input, init) {
       try {
         var u = typeof input === "string" ? input : (input && input.url) || "";
+        var mo = /\/wp-json\/tcd\/v1\/(agua|fogo)\/(simular|trabalho\/|detalhe)/.exec(u);
+        if (mo) limparOrfas(mo[1]);
         var m = /\/wp-json\/tcd\/v1\/(agua|fogo)\/simular(?:[?#]|$)/.exec(u);
         var met = String((init && init.method) || (input && input.method) || "GET").toUpperCase();
         if (m && met === "POST" && PODE[m[1]]) {
@@ -661,7 +681,7 @@
     if ((e.key === "Escape" || e.key === "Esc") && M && !M.hidden && !M.contains(e.target)) { e.preventDefault(); e.stopPropagation(); cancelar(); }
   }, true);
   setInterval(function () { if (!document.hidden) observar(); }, 1000);
-  setInterval(function () { if (!document.hidden) vigiarPaineis(); }, 300);
+  setInterval(function () { if (!document.hidden) { vigiarPaineis(); limparOrfas("agua"); limparOrfas("fogo"); } }, 300);
   // «Trocar» na etiqueta da Base do painel: volta à escolha (sem repetir o aviso já aceite).
   document.addEventListener("click", function (e) {
     var b = e.target && e.target.closest ? e.target.closest("[data-ipr-sb-trocar]") : null; if (!b) return;
