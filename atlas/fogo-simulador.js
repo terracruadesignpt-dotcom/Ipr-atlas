@@ -44,6 +44,9 @@
       avisoT: "Aviso importante", avisoErro: "Não foi possível ler o aviso do simulador. Tente mais tarde.",
       avisoChk: "Li e compreendo: nunca usarei estes resultados para decidir ficar ou sair, nem para agir num incêndio real.", aceitar: "Aceitar e continuar",
       faixaT: "Em testes · só informativo e para aprendizagem · nunca usar para decidir ficar ou sair num incêndio real. Emergência: 112.",
+      inc: "Incerteza do vento e da humidade (conjunto de cenários)", incN: "Cenários", incSd: "Desvio da direcção",
+      incNota: "Corre o mesmo cenário várias vezes com o vento e a humidade a variar à volta dos valores dados. Mostra a fracção dos cenários em que cada célula arde: não é a probabilidade real de arder. Demora mais.",
+      conjN: "Cenários", conjArea: "Área (10 % a 90 % dos cenários)", conjP50: "Arde em pelo menos metade dos cenários",
       notaFim: "Cenário hipotético de modelo. Uma faixa, um caminho ou uma charca nunca são barreiras garantidas: o modelo não tem projecções nem fogo de copas."
     },
     en: {
@@ -78,6 +81,9 @@
       avisoT: "Important notice", avisoErro: "Could not read the simulator notice. Please try later.",
       avisoChk: "I have read and understand: I will never use these results to decide whether to stay or leave, or to act in a real fire.", aceitar: "Accept and continue",
       faixaT: "In testing · information and learning only · never use to decide whether to stay or leave in a real fire. Emergency: 112.",
+      inc: "Wind and moisture uncertainty (scenario ensemble)", incN: "Scenarios", incSd: "Direction spread",
+      incNota: "Runs the same scenario several times with the wind and moisture varying around the given values. Shows the fraction of scenarios in which each cell burns: it is not the real probability of burning. Takes longer.",
+      conjN: "Scenarios", conjArea: "Area (10 % to 90 % of scenarios)", conjP50: "Burns in at least half of the scenarios",
       notaFim: "Hypothetical model scenario. A fuel break, a track or a pond is never a guaranteed barrier: the model has no spotting or crown fire."
     }
   };
@@ -115,7 +121,7 @@
   var PROC = { tempo: "cenario-tempo", ad: "antes-depois", muitas: "muitas-ignicoes", chuva: "fogo-chuva" };
 
   var IC = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c3 4 6 6 6 10a6 6 0 0 1-12 0c0-3 2-5 3-7 1 2 2 3 3 3 0-2-1-4 0-6z"/></svg>';
-  var S = { tab: "tempo", aviso: null, avisoTx: null, avisoChk: false, ign: [], zona: null, feats: [], des: null,
+  var S = { inc: { on: false, n: 20, sd: 15 }, tab: "tempo", aviso: null, avisoTx: null, avisoChk: false, ign: [], zona: null, feats: [], des: null,
     vento: { kmh: 20, de: 315, campo: "uniforme" }, hum: { modo: "cenario", cenario: "D2L3", m1h: 6, m10h: 7, m100h: 8, mherb: 90, mwoody: 120 },
     dur: 2, passo: 30, limite: false, nIgn: 50, semente: 1, job: null, res: null, erro: "", bloq: false, lista: [], camadas: {} };
 
@@ -198,6 +204,10 @@
     h += formVento() + formHum();
     h += '<div class="g2">' + campo("dur", "dur", S.dur, "h", 0.1, 12, 0.1) + (S.tab === "muitas" ? "" : campo("passo", "passo", S.passo, "min", 5, 120, 5)) + "</div>";
     h += '<label class="chk"><input type="checkbox" data-k="limite"' + (S.limite ? " checked" : "") + "> " + esc(t("limite")) + "</label>";
+    if (S.tab === "tempo") {
+      h += '<label class="chk"><input type="checkbox" data-k="incOn"' + (S.inc.on ? " checked" : "") + "> " + esc(t("inc")) + "</label>";
+      if (S.inc.on) h += '<div class="g2">' + campo("incN", "incN", S.inc.n, "", 5, 40, 1) + campo("incSd", "incSd", S.inc.sd, "°", 0, 45, 5) + '</div><p class="nota">' + esc(t("incNota")) + "</p>";
+    }
     if (S.tab === "ad") h += formAD();
     var corre = S.job && (S.job.estado === "accepted" || S.job.estado === "running" || S.job.enviar);
     h += '<div class="acc"><button class="b pri" data-fs="simular"' + (corre || S.des ? " disabled" : "") + ">" + esc(corre ? t("aSimular") : t("simular")) + "</button></div>";
@@ -274,6 +284,11 @@
       if (s.nota) h += '<p class="nota">' + esc(s.nota) + "</p>";
     } else {
       h += kvCenario(s);
+      if (s.conjunto) {
+        var cj = s.conjunto;
+        h += '<div class="kv"><span>' + esc(t("conjN")) + "</span><span>" + n(cj.n, 0) + "</span><span>" + esc(t("conjArea")) + "</span><span>" + n(cj.area_ha.p10, 0) + "–" + n(cj.area_ha.p90, 0) + " ha</span><span>" + esc(t("conjP50")) + "</span><span>" + n(cj.area_prob_50_ha, 0) + " ha</span></div>";
+        if (cj.nota) h += '<p class="nota">' + esc(cj.nota) + "</p>";
+      }
       if (r.processo === "fogo-chuva") h += '<p class="nota">' + esc(t("chuvaAg")) + "</p>";
     }
     var base = s.antes || s;
@@ -333,6 +348,9 @@
     var k = el.getAttribute("data-k"); if (!k) return;
     if (k === "avisoChk") { S.avisoChk = el.checked; pintar(); return; }
     if (k === "limite") { S.limite = el.checked; return; }
+    if (k === "incOn") { S.inc.on = el.checked; pintar(); return; }
+    if (k === "incN") { S.inc.n = Math.max(5, Math.min(40, Math.round(+el.value) || 20)); return; }
+    if (k === "incSd") { S.inc.sd = Math.max(0, Math.min(45, +el.value || 0)); return; }
     if (k === "kmh" || k === "de") { S.vento[k] = +el.value; return; }
     if (k === "campoV") { S.vento.campo = el.value; return; }
     if (k === "hmodo") { S.hum.modo = el.value; pintar(); return; }
@@ -347,6 +365,8 @@
     if (S.tab === "muitas") { ent.n = S.nIgn; ent.semente = S.semente; if (S.zona) ent.zona_ignicao = S.zona; return ent; }
     ent.passo_isocronas_min = S.passo;
     ent.ignicoes = S.ign.map(function (g) { return g.type === "Point" ? { tipo: "ponto", x: g.coordinates[0], y: g.coordinates[1] } : { tipo: "linha", pontos: g.coordinates }; });
+    // dentro do vento: o site (m90422) só passa ao motor os campos que conhece, e «vento» é um deles
+    if (S.tab === "tempo" && S.inc.on) ent.vento.incerteza = { n: S.inc.n, sigma_direccao_graus: S.inc.sd };
     if (S.tab === "ad") ent.intervencoes = { type: "FeatureCollection", epsg: 4326, features: S.feats.map(function (f) { return { type: "Feature", geometry: f.geometry, properties: { tipo: TIPO_MOTOR[f.properties._k], combustivel: f.properties.combustivel } }; }) };
     return ent;
   }
@@ -375,7 +395,8 @@
         var v = (r.ficheiros || []).filter(function (f) { return f.nome === "vista/vista.json"; })[0];
         if (v) return fetch(urlF(v.url), { credentials: "same-origin" }).then(function (x) { return x.json(); }).then(function (vj) {
           S.res.vista = vj; S.res.fich = {}; (r.ficheiros || []).forEach(function (f) { S.res.fich[f.nome] = f.url; });
-          vj.camadas.filter(function (c) { return /^(chegada_h|depois__chegada_h|frequencia|isocronas|depois__isocronas)$/.test(c.id); }).forEach(function (c) { alternarCamada(c.id, true); });
+          var conj = vj.camadas.some(function (c) { return c.id === "probabilidade"; });
+          vj.camadas.filter(function (c) { return conj ? /^(probabilidade|probabilidade_contornos)$/.test(c.id) : /^(chegada_h|depois__chegada_h|frequencia|isocronas|depois__isocronas)$/.test(c.id); }).forEach(function (c) { alternarCamada(c.id, true); });
           pintar();
         });
         pintar(); return;
@@ -403,6 +424,12 @@
     } else if (c.geojson) {
       var g = r.fich["vista/" + c.geojson]; if (!g) return;
       M.addSource(sid, { type: "geojson", data: urlF(g) });
+      if (id === "probabilidade_contornos") {
+        M.addLayer({ id: sid + "-l", type: "line", source: sid, paint: { "line-color": ["interpolate", ["linear"], ["get", "probabilidade"], 0.1, "#f8c471", 0.5, "#e67e22", 0.9, "#922b21"], "line-width": 1.8, "line-dasharray": [3, 1.5] } });
+        M.addLayer({ id: sid + "-t", type: "symbol", source: sid, layout: { "symbol-placement": "line", "text-field": ["get", "rotulo"], "text-size": 10 },
+          paint: { "text-color": "#fff", "text-halo-color": "#141814", "text-halo-width": 1.2 } });
+        S.camadas[id] = true; return;
+      }
       M.addLayer({ id: sid + "-l", type: "line", source: sid, paint: { "line-color": ["interpolate", ["linear"], ["get", "t_min"], 0, "#fff3b0", 60, "#f4a259", 180, "#bc4b51", 720, "#5b2333"], "line-width": 1.6 } });
       M.addLayer({ id: sid + "-t", type: "symbol", source: sid, layout: { "symbol-placement": "line", "text-field": ["concat", ["to-string", ["get", "t_min"]], " min"], "text-size": 10 },
         paint: { "text-color": "#fff", "text-halo-color": "#141814", "text-halo-width": 1.2 } });
