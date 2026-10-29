@@ -1,16 +1,16 @@
-/* IPR Atlas · Simuladores de água e de fogo: aviso, escolha da Base e acesso Intelligence (módulo m90502, provisório).
+/* IPR Atlas · Simuladores de água e de fogo: aviso, escolha da Base e acesso Intelligence (módulo m90504).
    Pedidos do Nuno a 29/10/2026 (15h11, 15h12 e 15h18): «eu carrego o simulador de fogo, abro o disclaimer, aprovo e depois
    tenho que me dar em que parcela é que quero simular. Tanto para a água como para o fogo. [...] Sem estragar nada.»
    Ordem, nos dois simuladores: botão, aviso, aceitar, escolher a Base. Ao escolher uma Base na lista, o mapa abre essa Base
    (se ainda não estiver aberta, pelo cartão do próprio Atlas) e enquadra o limite do terreno, antes de carregar em «Simular».
    «Simular» abre o painel do simulador sobre essa Base. Nada corre nem fica na fila antes disso: um POST a agua/simular ou
    fogo/simular sem Base escolhida é travado aqui, e o pedido leva sempre «base» (id da encomenda, o de ?mapa=), que o site
-   verifica (m90502). Cancelar fecha tudo sem enviar nada.
+   verifica (m90504). Cancelar fecha tudo sem enviar nada.
    Quem não é Intelligence (nem administrador nem convidado) vê os botões pequenos marcados «Versão Intelligence» e, ao
    carregar, um aviso curto com a ligação para os planos; sem sessão, também a ligação para entrar ou registar-se.
    Os botões dos simuladores ficam com um só estilo (tamanho, forma, ícone, etiqueta de estado), só nesses botões.
    Não edita agua-simulador.js, fogo-simulador.js, simuladores-convite.js nem o Atlas: liga-se pelo DOM e por window
-   (__ipe, IPR_AGUA_SIM, IPR_FOGO_SIM, tcdNonce, IPR_LINGUA). Sem window.IPR_SIM_BASE (m90502 desligado) não faz nada. */
+   (__ipe, IPR_AGUA_SIM, IPR_FOGO_SIM, tcdNonce, IPR_LINGUA). Sem window.IPR_SIM_BASE (m90504 desligado) não faz nada. */
 (function (W) {
   "use strict";
   if (W.__iprSimBase) return;
