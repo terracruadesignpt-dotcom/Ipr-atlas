@@ -10,8 +10,9 @@
       transparente de 1 × 1 quando estão ocupados ou a origem falha, e a planta aceitava-o como imagem: saía um mapa em
       branco sem aviso. Durante a geração de uma planta, e só para os pedidos do código da planta, este ficheiro:
       - limita os pedidos em simultâneo (3 para /viz/px, 1 para /wms/, o que o m90379 aceita);
-      - repete uma vez, passados cerca de 2 s e com um parâmetro novo, uma imagem com menos de 100 bytes (ou um 503 do
-        travão m90190);
+      - repete uma vez, passados cerca de 2 s e com um parâmetro novo, uma imagem vazia (PNG ou GIF de 1 × 1, lido do
+        cabeçalho IHDR / do ecrã lógico, ou corpo vazio) ou um 502/503/504 (503 é o travão m90190); durante a espera a vaga
+        na fila fica livre para as outras folhas;
       - se voltar a vir vazia, devolve 503, e o ajustes.js mostra «Serviço indisponível no momento» na folha e no diálogo;
       - conta os mosaicos da planta de condicionantes do PDM que falharam e acrescenta uma nota à linha de estado.
    Âmbito: só entre o clique em «Gerar PDF» e o fim da geração (o botão volta a ficar activo; tecto de 10 min), só para
@@ -54,7 +55,7 @@
     return new Promise(function (ok, ko) {
       if (sinal && sinal.aborted) return ko(abortado());
       var it = { ok: ok };
-      if (sinal) sinal.addEventListener("abort", function () { var i = f.q.indexOf(it); if (i >= 0) { f.q.splice(i, 1); ko(abortado()); } });
+      if (sinal) sinal.addEventListener("abort", function () { var i = f.q.indexOf(it); if (i >= 0) { f.q.splice(i, 1); ko(abortado()); } }, { once: true });
       if (f.n < f.max) { f.n++; ok(); } else f.q.push(it);
     });
   };
@@ -64,37 +65,53 @@
 
   function esperar(ms, sinal) {
     return new Promise(function (ok, ko) {
+      if (sinal && sinal.aborted) return ko(abortado());
       var t = setTimeout(ok, ms);
-      if (sinal) sinal.addEventListener("abort", function () { clearTimeout(t); ko(abortado()); });
+      if (sinal) sinal.addEventListener("abort", function () { clearTimeout(t); ko(abortado()); }, { once: true });
     });
   }
   function comR(u) { return u + (u.indexOf("?") < 0 ? "?" : "&") + "_r=" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
   function indisponivel(motivo) {
     return new Response("Serviço indisponível no momento (" + motivo + ").", { status: 503, statusText: "Service Unavailable", headers: { "Content-Type": "text/plain; charset=utf-8", "X-IPR-Planta": motivo } });
   }
-  // Uma resposta «vazia»: imagem com menos de 100 bytes (o PNG de 1 × 1 dos proxies) ou 503 do travão.
+  // Imagem vazia: corpo sem bytes, ou PNG/GIF cujas dimensões (lidas do cabeçalho) não passam de 1 × 1.
+  function imagemVazia(buf) {
+    var n = buf.byteLength, v = new DataView(buf);
+    if (n === 0) return true;
+    if (n >= 24 && v.getUint32(0) === 0x89504e47 && v.getUint32(4) === 0x0d0a1a0a && v.getUint32(12) === 0x49484452)
+      return v.getUint32(16) <= 1 && v.getUint32(20) <= 1;
+    if (n >= 10 && v.getUint32(0) === 0x47494638) return v.getUint16(6, true) <= 1 && v.getUint16(8, true) <= 1;
+    return false;
+  }
+  // Uma resposta «vazia»: imagem vazia (o PNG de 1 × 1 dos proxies) ou 502/503/504 (503 é o travão m90190).
   function lerResp(r) {
-    if (r.status === 503) return Promise.resolve({ vazio: true, r: r });
+    if (r.status === 502 || r.status === 503 || r.status === 504) return Promise.resolve({ vazio: true, r: r });
     var ct = r.headers.get("content-type") || "";
     if (!r.ok || ct.indexOf("image") < 0) return Promise.resolve({ vazio: false, r: r });
-    return r.blob().then(function (b) {
-      var nova = new Response(b, { status: r.status, statusText: r.statusText, headers: r.headers });
-      return { vazio: b.size < 100, r: nova };
+    return r.arrayBuffer().then(function (buf) {
+      var nova = new Response(buf, { status: r.status, statusText: r.statusText, headers: r.headers });
+      return { vazio: imagemVazia(buf), r: nova };
     });
   }
 
   // ---------- pedidos da planta ----------
+  // Cada tentativa ocupa uma vaga da fila só enquanto o pedido e a leitura do corpo duram; a espera antes da repetição
+  // é feita fora da fila.
   function pedidoPlanta(u, init, fila, tipo) {
     var sinal = init && init.signal;
-    return fila.entrar(sinal).then(function () {
-      function tentar(url) { return nativo(url, init).then(lerResp); }
-      return tentar(u).then(function (a) {
-        if (!a.vazio || tipo === "json") return a.r;
-        G.repetidos++;
-        return esperar(1800 + Math.round(Math.random() * 400), sinal).then(function () { return tentar(comR(u)); }).then(function (b) {
-          return b.vazio ? indisponivel("vazio") : b.r;
-        });
-      }).then(function (r) { fila.sair(); return r; }, function (x) { fila.sair(); throw x; });
+    function tentar(url) {
+      return fila.entrar(sinal).then(function () {
+        var saiu = false;
+        function sair() { if (!saiu) { saiu = true; fila.sair(); } }
+        return nativo(url, init).then(lerResp).then(function (a) { sair(); return a; }, function (x) { sair(); throw x; });
+      });
+    }
+    return tentar(u).then(function (a) {
+      if (!a.vazio || tipo === "json") return a.r;
+      G.repetidos++;
+      return esperar(1800 + Math.round(Math.random() * 400), sinal).then(function () { return tentar(comR(u)); }).then(function (b) {
+        return b.vazio ? indisponivel("vazio") : b.r;
+      });
     });
   }
   function contarPdm(u, p) {
