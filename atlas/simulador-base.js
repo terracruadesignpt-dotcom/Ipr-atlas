@@ -19,10 +19,34 @@
   W.__iprSimBase = true;
   W.__iprSimConvite = true;   // o aviso «Versão experimental» (m90487) dá lugar ao aviso Intelligence deste ficheiro
   var PODE = { agua: !!C.pode.agua, fogo: !!C.pode.fogo };
-  function url(u, def) { return typeof u === "string" && /^(https?:\/\/[^\s"<>]+|\/[^\s"<>]*)$/.test(u) ? u : def; }
+  function url(u, def) { return typeof u === "string" && /^(https?:\/\/[^\s"<>]+|\/(?!\/)[^\s"<>]*)$/.test(u) ? u : def; }
   var U = { planos: url(C.planos, "/ipr-cloud/"), encomenda: url(C.encomenda, "/atlas/?modo=encomenda"), entrar: url(C.entrar, "/conta/") };
   var REST = "/wp-json/tcd/v1/";
-  var AVISO_AGUA = "2026-10-27";   // = AVISO_VERSAO do agua-simulador.js e TCD_AGUA_AVISO_VERSAO do m90416
+  // ───────────── avisos legais: um só sítio ─────────────
+  // Decisão do Nuno (29/10/2026, 16h25): o aviso dos dois simuladores termina com a frase de AVISO.fecho.
+  // As versões têm de ser iguais às do site e dos motores (TCD_AGUA_AVISO_VERSAO no m90416 e AVISO_VERSAO de ipr_agua;
+  // TCD_FOGO_AVISO_VERSAO no m90422 e AVISO_VERSAO de ipr_fogo): é o site que grava a aceitação e o motor que a confere.
+  // Mudar o texto sem mudar essas versões não volta a pedir a aceitação a quem já aceitou.
+  // Água: o texto é o deste ficheiro. Fogo: o texto vem do motor (fogo/aviso, uma só fonte para o que se aceita) e a última
+  // frase, a da responsabilidade, passa a ser sempre a de AVISO.fecho.
+  var AVISO = {
+    versao: { agua: "2026-10-27", fogo: "2026-10-27" },
+    fecho: {
+      pt: "O IPR – Instituto de Planeamento Regenerativo, Lda. não se responsabiliza por decisões tomadas com base nestes resultados.",
+      en: "IPR – Instituto de Planeamento Regenerativo, Lda. accepts no liability for decisions made on the basis of these results."
+    },
+    agua: {
+      pt: "O Simulador de Água do IPR Atlas está em testes e serve apenas para informação e aprendizagem. Os resultados são estimativas de um modelo, com as incertezas do terreno (LiDAR), da chuva, dos solos e do próprio modelo, e podem estar errados. Não servem para decisões sobre a segurança de pessoas e bens, protecção civil, evacuação, dimensionamento de obras ou licenciamento, e não substituem estudos de hidrologia e hidráulica assinados por técnico habilitado nem a informação oficial (APA, ANEPC, IPMA, câmara municipal). Em situação de cheia ou de perigo, siga as indicações da Protecção Civil e, em emergência, ligue 112.",
+      en: "The IPR Atlas Water Simulator is in testing and is for information and learning only. Results are model estimates, subject to uncertainty in the terrain (LiDAR), rainfall, soils and the model itself, and may be wrong. They must not be used for decisions on the safety of people or property, civil protection, evacuation, structural design or permitting, and they do not replace hydrological and hydraulic studies signed by a qualified professional or official information (APA, ANEPC, IPMA, local council). In a flood or any danger, follow Civil Protection instructions and call 112 in an emergency."
+    }
+  };
+  function textoAviso(tipo, motor) {
+    var l = L(), corpo = tipo === "agua" ? AVISO.agua[l] : String((motor && (motor[l] || motor.pt)) || "");
+    if (!corpo) return "";
+    // tira a frase final de responsabilidade que o texto já tenha (qualquer marca) e põe a do IPR, Lda.
+    corpo = corpo.replace(/\s*((A |O )?(Terracrua Design|IPR)( – Instituto de Planeamento Regenerativo, Lda\.)?)\s+(não se responsabiliza|accepts no liability)[^.]*\.\s*$/i, "").replace(/\s+$/, "");
+    return corpo + " " + AVISO.fecho[l];
+  }
   var ULTIMA = "ipr_sim_base_ultima";
 
   var D = {
@@ -34,7 +58,6 @@
       avisoErro: "Não foi possível ler o aviso do simulador. Tente mais tarde.",
       chk_agua: "Li e compreendo: os resultados são informativos, estão em testes e não servem para decisões de segurança.",
       chk_fogo: "Li e compreendo: nunca usarei estes resultados para decidir ficar ou sair, nem para agir num incêndio real.",
-      aviso_agua: "O Simulador de Água do IPR Atlas está em testes e serve apenas para informação e aprendizagem. Os resultados são estimativas de um modelo, com as incertezas do terreno (LiDAR), da chuva, dos solos e do próprio modelo, e podem estar errados. Não servem para decisões sobre a segurança de pessoas e bens, protecção civil, evacuação, dimensionamento de obras ou licenciamento, e não substituem estudos de hidrologia e hidráulica assinados por técnico habilitado nem a informação oficial (APA, ANEPC, IPMA, câmara municipal). Em situação de cheia ou de perigo, siga as indicações da Protecção Civil e, em emergência, ligue 112. O IPR não se responsabiliza por decisões tomadas com base nestes resultados.",
       escT: "Onde quer simular?", escSub: "Escolha a Base Cartográfica (terreno e MDT) para o simulador de {n}. O mapa mostra o terreno escolhido.",
       partilhada: "Partilhada consigo", aberta: "Aberta no mapa", num: "N.º",
       semBaseT: "Ainda não tem uma Base Cartográfica", semBase: "O simulador de {n} corre sobre o MDT LiDAR de uma Base Cartográfica entregue. Quando a sua Base estiver entregue, aparece aqui.",
@@ -56,7 +79,6 @@
       avisoErro: "Could not read the simulator notice. Please try later.",
       chk_agua: "I have read and understand: results are for information only, in testing, and not for safety decisions.",
       chk_fogo: "I have read and understand: I will never use these results to decide whether to stay or leave, or to act in a real fire.",
-      aviso_agua: "The IPR Atlas Water Simulator is in testing and is for information and learning only. Results are model estimates, subject to uncertainty in the terrain (LiDAR), rainfall, soils and the model itself, and may be wrong. They must not be used for decisions on the safety of people or property, civil protection, evacuation, structural design or permitting, and they do not replace hydrological and hydraulic studies signed by a qualified professional or official information (APA, ANEPC, IPMA, local council). In a flood or any danger, follow Civil Protection instructions and call 112 in an emergency. IPR accepts no liability for decisions made on the basis of these results.",
       escT: "Where do you want to simulate?", escSub: "Choose the Base Map (land and DTM) for the {n} simulator. The map shows the chosen land.",
       partilhada: "Shared with you", aberta: "Open on the map", num: "No.",
       semBaseT: "You do not have a Base Map yet", semBase: "The {n} simulator runs on the LiDAR DTM of a delivered Base Map. Once your Base Map is delivered, it appears here.",
@@ -101,7 +123,7 @@
         var met = String((init && init.method) || (input && input.method) || "GET").toUpperCase();
         if (m && met === "POST" && PODE[m[1]]) {
           var tipo = m[1], e = ESC[tipo];
-          if (!e) { setTimeout(function () { iniciar(tipo); }, 0); return Promise.resolve(resposta(428, t("escolhaPrimeiro"))); }
+          if (!e) { setTimeout(function () { iniciar(tipo); }, 0); return Promise.resolve(resposta(409, t("escolhaPrimeiro"))); }
           var corpo = {};
           try { corpo = init && typeof init.body === "string" ? JSON.parse(init.body) : {}; } catch (x) { corpo = {}; }
           if (corpo.enc != null && String(corpo.enc) !== String(e.id)) { ESC[tipo] = null; return Promise.resolve(resposta(400, t("mudou"))); }
@@ -302,9 +324,9 @@
     F = { tipo: tipo, passo: "aviso", texto: null, chk: false };
     var f = F;
     if (tipo === "agua") {
-      var ok = false; try { ok = localStorage.getItem("ipr_agua_aviso") === AVISO_AGUA; } catch (x) {}
+      var ok = false; try { ok = localStorage.getItem("ipr_agua_aviso") === AVISO.versao.agua; } catch (x) {}
       if (ok) return irEscolha(f);
-      f.texto = t("aviso_agua"); mostrar(); return;
+      f.texto = textoAviso("agua"); mostrar(); return;
     }
     mostrar();
     api("fogo/aviso").then(function (a) {
@@ -312,7 +334,7 @@
       if (!a || !(a[L()] || a.pt)) throw new Error(t("avisoErro"));
       f.av = a;
       if (a.aceite) { var S = sim("fogo") && sim("fogo")._estado; if (S) { S.avisoTx = a; S.aviso = true; } return irEscolha(f); }
-      f.texto = a[L()] || a.pt; pintar();
+      f.texto = textoAviso("fogo", a); pintar();
     }).catch(function (er) { if (F !== f) return; f.erro = er && er.message || t("avisoErro"); pintar(); });
   }
   function irEscolha(f) {
@@ -327,7 +349,7 @@
     p.then(function () {
       if (F !== f) return;
       var s = sim(f.tipo), S = s && s._estado;
-      if (f.tipo === "agua") { try { localStorage.setItem("ipr_agua_aviso", AVISO_AGUA); } catch (x) {} if (S) S.aviso = true; }
+      if (f.tipo === "agua") { try { localStorage.setItem("ipr_agua_aviso", AVISO.versao.agua); } catch (x) {} if (S) S.aviso = true; }
       else if (S) { S.avisoTx = Object.assign({}, f.av, { aceite: true }); S.aviso = true; }
       irEscolha(f);
     }).catch(function (er) { if (F !== f) return; f.ocupado = false; f.erro = er && er.message || t("avisoErro"); pintar(); });
