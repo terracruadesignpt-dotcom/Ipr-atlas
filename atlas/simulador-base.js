@@ -138,13 +138,16 @@
       "#ipr-t62 [data-sim-convite]{display:none!important}" +
       // botões nas ferramentas dos temas: um só estilo
       "#ipr-t62 .ipr-t62-f [data-ipr-sim]{display:inline-flex!important;align-items:center;gap:6px;min-height:32px;padding:5px 9px 5px 8px;border-radius:2px;" +
-      "border:1px solid var(--ln2,#3C4B32)!important;background:transparent;color:var(--tx,#E4E2D8);font:500 12px/1.2 Inter,system-ui,sans-serif;letter-spacing:0;text-transform:none;cursor:pointer;white-space:nowrap}" +
+      "border:1px solid var(--ln2,#3C4B32)!important;background:transparent;color:var(--tx,#E4E2D8);font:500 12px/1.2 Inter,system-ui,sans-serif;letter-spacing:0;text-transform:none;cursor:pointer;flex-wrap:wrap;row-gap:3px;max-width:100%;text-align:left}" +
       "#ipr-t62 .ipr-t62-f [data-ipr-sim]>svg{flex:0 0 auto;width:14px;height:14px}" +
       "#ipr-t62 .ipr-t62-f [data-ipr-sim=agua]>svg{color:var(--sim-agua)}#ipr-t62 .ipr-t62-f [data-ipr-sim=fogo]>svg{color:var(--sim-fogo)}" +
       "#ipr-t62 .ipr-t62-f [data-ipr-sim=agua]:hover{border-color:var(--sim-agua)!important}#ipr-t62 .ipr-t62-f [data-ipr-sim=fogo]:hover{border-color:var(--sim-fogo)!important}" +
       // faixa «Simuladores» (fogo-simulador.js, com o estilo discreto do marca.js): os botões trancados usam as mesmas classes
       "#ipr-t62>.ipr-sims [data-ipr-sim]{display:inline-flex;flex-wrap:wrap;align-items:center;gap:2px 6px;text-transform:none;letter-spacing:0}" +
       "#ipr-t62 [data-ipr-sim]>span:not(.ipr-sim-tag){white-space:nowrap}" +
+      // cores da faixa pelas variáveis do tema (o marca.js usa tons fixos, pouco legíveis no tema claro)
+      ".ipe #ipr-t62>.ipr-sims [data-ipr-sim=fogo]{color:var(--sim-fogo)!important;border-color:var(--sim-fogo)!important}" +
+      ".ipe #ipr-t62>.ipr-sims [data-ipr-sim=agua]{color:var(--sim-agua)!important;border-color:var(--sim-agua)!important}" +
       // etiqueta de estado
       ".ipr-sim-tag{display:inline-flex;align-items:center;gap:3px;margin-left:2px;padding:1px 5px;border-radius:2px;border:1px solid currentColor;font:500 9.5px/1.4 'IBM Plex Mono',ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase;opacity:.9;white-space:nowrap}" +
       "[data-ipr-estado=ok] .ipr-sim-tag{color:inherit;opacity:.7}" +
