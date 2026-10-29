@@ -356,3 +356,84 @@
   ciclo();
   document.addEventListener("ipr:lingua", function () { try { var s = document.getElementById("ipr-pd"); if (s) desenhar(s); } catch (e) {} });
 })();
+
+/* IPR Atlas · Projectos compactos no painel da direita (pedido do Nuno, 29/10/2026, 20h35: «Minimiza os projectos na barra
+   da direita»). Cada cartão do separador Projectos mostra só o nome, o número e a área, o estado e «Ver no mapa»; as acções
+   secundárias (Planta de localização, Editar nome, Partilhar, Arquivar, Juntar à organização e «Ficheiros do projecto»)
+   ficam atrás de «Mais» em cada cartão (aria-expanded). O estado de cada cartão fica lembrado neste navegador; sem escolha
+   feita, o projecto aberto no mapa começa aberto. Só CSS e um botão por cartão, reposto quando o app.js redesenha a lista
+   (MutationObserver). O clique em «Mais» é tratado antes dos outros guiões, para não abrir a ficha nem mudar de Base.
+   Desligar: window.IPR_PROJ_COMPACTO_OFF = true, ou ?proj_compacto=0 no endereço. */
+(function () {
+  "use strict";
+  if (window.__iprProjCompacto || window.IPR_PROJ_COMPACTO_OFF) return;
+  window.__iprProjCompacto = 1;
+  try { if (new URLSearchParams(location.search).get("proj_compacto") === "0") return; } catch (e) {}
+
+  var CHAVE = "ipr_proj_compacto_v1";
+  var TX = { pt: { mais: "Mais", menos: "Menos", t: "Mais acções deste projecto" }, en: { mais: "More", menos: "Less", t: "More actions for this project" } };
+  function t(k) { var l = (window.IPR_LINGUA || "pt") === "en" ? "en" : "pt"; return TX[l][k]; }
+  var MEM = {};
+  try { MEM = JSON.parse(localStorage.getItem(CHAVE) || "null") || {}; } catch (e) { MEM = {}; }
+  if (typeof MEM !== "object" || Array.isArray(MEM)) MEM = {};
+  function gravar() { try { localStorage.setItem(CHAVE, JSON.stringify(MEM)); } catch (e) {} }
+
+  // o que fica atrás de «Mais» (filhos directos do bloco do título do cartão)
+  var SEC = ":scope > .ipr-ca, :scope > details.ipr-pf73";
+  var ESTILO =
+    "#ipe-proj .ipe-card.ipr-pc:not(.ipr-pc-ab) .ipe-ct>.ipr-ca,#ipe-proj .ipe-card.ipr-pc:not(.ipr-pc-ab) .ipe-ct>details.ipr-pf73{display:none!important}" +
+    "#ipe-proj .ipr-pc-t{display:inline-flex;align-items:center;gap:5px;margin:4px 0 0 6px;padding:4px 8px;border:1px solid var(--ln);border-radius:7px;background:transparent;color:var(--mu);font:600 11.5px/1.2 Inter,system-ui,sans-serif;cursor:pointer;vertical-align:middle}" +
+    "#ipe-proj .ipr-pc-t:hover{color:var(--tx);border-color:var(--ln2)}" +
+    "#ipe-proj .ipr-pc-t:focus-visible{outline:2px solid var(--ac);outline-offset:1px}" +
+    "#ipe-proj .ipr-pc-t i{width:0;height:0;border-top:5px solid currentColor;border-left:4px solid transparent;border-right:4px solid transparent;transition:transform .12s}" +
+    "#ipe-proj .ipr-pc-t[aria-expanded=true] i{transform:rotate(180deg)}" +
+    "#ipe-proj .ipe-card.ipr-pc .ipe-ct>.ipr-ver-mapa{vertical-align:middle}" +
+    "@media (max-width:600px){#ipe-proj .ipr-pc-t{padding:8px 11px;font-size:12.5px}}";
+
+  function idDe(c) { var m = /#\s*([0-9A-Za-z-]+)/.exec((c.querySelector(".ipe-ct .mono") || {}).textContent || ""); return m ? m[1] : ""; }
+  function aberto(c, id) { return Object.prototype.hasOwnProperty.call(MEM, id) ? MEM[id] === 1 : c.classList.contains("ipr-actual"); }
+  var n = 0;
+  function aplicar() {
+    var raiz = document.getElementById("ipe-proj"); if (!raiz) return;
+    if (!document.getElementById("ipr-pc-css")) { var s = document.createElement("style"); s.id = "ipr-pc-css"; s.textContent = ESTILO; document.head.appendChild(s); }
+    [].forEach.call(raiz.querySelectorAll(".ipe-card[data-i]"), function (c) {
+      var ct = c.querySelector(":scope > .ipe-cc > .ipe-ct"), id = idDe(c);
+      if (!ct || !id || !ct.querySelector(SEC)) { if (c.classList.contains("ipr-pc")) c.classList.remove("ipr-pc"); return; }
+      if (!c.classList.contains("ipr-pc")) c.classList.add("ipr-pc");
+      var ab = aberto(c, id);
+      if (c.classList.contains("ipr-pc-ab") !== ab) c.classList.toggle("ipr-pc-ab", ab);
+      var b = ct.querySelector(":scope > .ipr-pc-t");
+      if (!b) {
+        b = document.createElement("button"); b.type = "button"; b.className = "ipr-pc-t";
+        b.appendChild(document.createElement("span")); b.appendChild(document.createElement("i"));
+        var vm = ct.querySelector(":scope > .ipr-ver-mapa"), alvo = ct.querySelector(SEC);
+        ct.insertBefore(b, vm ? vm.nextSibling : alvo);
+      }
+      var ids = [].map.call(ct.querySelectorAll(SEC), function (x) { if (!x.id) x.id = "ipr-pc-s" + (++n); return x.id; }).join(" ");
+      var txt = ab ? t("menos") : t("mais");
+      if (b.firstChild.textContent !== txt) b.firstChild.textContent = txt;
+      if (b.getAttribute("aria-expanded") !== String(ab)) b.setAttribute("aria-expanded", String(ab));
+      if (ids && b.getAttribute("aria-controls") !== ids) b.setAttribute("aria-controls", ids);
+      if (b.title !== t("t")) b.title = t("t");
+    });
+  }
+  // Antes de qualquer outro guião (captura no documento): «Mais» não abre a ficha (§33) nem muda a Base aberta (app.js).
+  document.addEventListener("click", function (e) {
+    var b = e.target && e.target.closest && e.target.closest("#ipe-proj .ipr-pc-t"); if (!b) return;
+    e.stopPropagation(); e.preventDefault();
+    try {
+      var c = b.closest(".ipe-card"), id = idDe(c); if (!id) return;
+      MEM[id] = c.classList.contains("ipr-pc-ab") ? 0 : 1; gravar(); aplicar();
+    } catch (x) {}
+  }, true);
+  var obs = null;
+  function ligar() {
+    var raiz = document.getElementById("ipe-proj"); if (!raiz) { setTimeout(ligar, 400); return; }
+    try { aplicar(); } catch (e) {}
+    if (obs) return;
+    obs = new MutationObserver(function () { clearTimeout(ligar.t); ligar.t = setTimeout(function () { try { aplicar(); } catch (e) {} }, 60); });
+    obs.observe(raiz, { childList: true, subtree: true });
+  }
+  ligar();
+  document.addEventListener("ipr:lingua", function () { try { aplicar(); } catch (e) {} });
+})();
