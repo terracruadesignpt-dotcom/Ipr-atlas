@@ -179,7 +179,7 @@
       ps_falta: "Completar as respostas em falta e repetir a análise.",
       ps_nd: "Repetir a análise mais tarde ou confirmar directamente com as entidades as fontes que não responderam.",
       ps_cmp: "Comparar com outra localização dentro da propriedade.",
-      ps_leitura: "Para uma leitura técnica completa, pedir a Leitura do Terreno à Terracrua Design."
+      ps_leitura: "Para uma leitura técnica completa, pedir a Leitura do Terreno ao IPR."
     },
     en: {
       botao: "Preliminary intervention check", titulo: "Preliminary intervention check",
@@ -332,7 +332,7 @@
       ps_falta: "Fill in the missing answers and run the check again.",
       ps_nd: "Run the check again later, or confirm directly with the authorities for the sources that did not answer.",
       ps_cmp: "Compare with another location within the property.",
-      ps_leitura: "For a full technical reading, order the Land Reading from Terracrua Design."
+      ps_leitura: "For a full technical reading, order the Land Reading from IPR."
     }
   };
   function t(l, k, v) {
@@ -677,7 +677,7 @@
     o.push("", (meta && meta.l === "en" ? "Authorities to consult:" : "Entidades a consultar:")); T.entidades.forEach(function (e) { o.push("- " + e.nome + (e.porque ? " (" + e.porque + ")" : "")); });
     if (T.falta.length) { o.push("", (meta && meta.l === "en" ? "Missing information:" : "Informação em falta:")); T.falta.forEach(function (s) { o.push("- " + s); }); }
     o.push("", (meta && meta.l === "en" ? "Next steps:" : "Próximos passos:")); T.passos.forEach(function (s, i) { o.push((i + 1) + ". " + s); });
-    o.push("", T.aviso, "", "IPR Atlas · Terracrua Design");
+    o.push("", T.aviso, "", "IPR Atlas · IPR – Instituto de Planeamento Regenerativo, Lda.");
     return o.join("\n");
   }
 
@@ -1290,7 +1290,7 @@
       if (vazio(resp.area) && resp.area !== "ns") resp.area = Math.round(area);
       var ficha = classificar({ tipo: S.tipo, resp: resp, brutos: brutos, area_m2: area, geometria: true });
       var agora = new Date().toISOString();
-      var an = { versao: 1, ferramenta: "IPR Atlas · " + t("pt", "titulo"), autor: "Terracrua Design", criado: agora, lingua: L(), tipo: S.tipo, respostas: resp, area_m2: Math.round(area), centro: c,
+      var an = { versao: 1, ferramenta: "IPR Atlas · " + t("pt", "titulo"), autor: "IPR", criado: agora, lingua: L(), tipo: S.tipo, respostas: resp, area_m2: Math.round(area), centro: c,
         geometria: { type: "Polygon", coordinates: [anel] }, origemGeometria: S.origemGeo, brutos: limparBrutos(brutos), ficha: ficha, textos: { pt: textos(ficha, "pt", { data: agora }), en: textos(ficha, "en", { data: agora }) } };
       S.ficha = an; S.vendo = null; S.prog = null; S.passo = 4; S.min = false;
       W.IPR_INTERVENCAO.ultima = an;
@@ -1337,7 +1337,7 @@
     h += "<h2>" + e2(t(l, "entidades")) + "</h2><ul>" + Tx.entidades.map(function (x) { return "<li>" + e2(x.nome) + (x.porque ? " <small>(" + e2(x.porque) + ")</small>" : "") + "</li>"; }).join("") + "</ul>";
     if (Tx.falta.length) h += "<h2>" + e2(t(l, "falta")) + "</h2><ul>" + Tx.falta.map(function (s) { return "<li>" + e2(s) + "</li>"; }).join("") + "</ul>";
     h += "<h2>" + e2(t(l, "passos")) + "</h2><ol>" + Tx.passos.map(function (s) { return "<li>" + e2(s) + "</li>"; }).join("") + "</ol>";
-    h += '<p class="av">' + e2(Tx.aviso) + "</p><p><small>IPR Atlas · Terracrua Design</small></p></body></html>";
+    h += '<p class="av">' + e2(Tx.aviso) + "</p><p><small>IPR Atlas · IPR – Instituto de Planeamento Regenerativo, Lda.</small></p></body></html>";
     return h;
   }
 
