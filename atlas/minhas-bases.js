@@ -3,7 +3,9 @@
       pessoa (suas e partilhadas consigo), cada uma recolhida numa linha. Ao abrir a linha aparecem as camadas dessa Base, com
       a caixa de ligar, a cor e a opacidade, como na árvore das camadas (a legenda fica no painel «Legenda» do mapa).
    2. Ao abrir o Atlas a partir da ficha do projecto (/atlas/?mapa=N), ou na primeira vez que a pessoa entra com uma só Base,
-      essa Base aparece já aberta, com todas as camadas ligadas, e o mapa enquadra-a. Com ?mapa=, o enquadramento continua a
+      essa Base aparece já aberta, com o limite, o MDT, o sombreamento, as curvas de nível e as linhas de água ligados (decisão
+      do Nuno, 29/10, 15h05; as outras ficam na lista, desligadas), e o mapa enquadra-a. Nunca com ?modo=encomenda, nem fora
+      do modo cliente, nem mudando de Base ou de endereço sozinho. Com ?mapa=, o enquadramento continua a
       ser feito pelo enquadrar.js; aqui só se enquadra na primeira visita, depois da abertura animada e se a pessoa não mexeu.
    3. Não há camadas repetidas: as fichas «Camadas da Base Cartográfica» do cartão do projecto (painel da direita) saem, e
       os grupos «A minha Base Cartográfica» e «O meu terreno» da árvore continuam escondidos (§47 do ajustes.js). Ligar,
@@ -36,7 +38,7 @@
   function t(k) { var l = (window.IPR_LINGUA || "pt") === "en" ? "en" : "pt"; return TX[l][k] || TX.pt[k]; }
 
   function ler() { try { return JSON.parse(localStorage.getItem(CHAVE) || "null") || {}; } catch (e) { return {}; } }
-  function gravar(o) { try { localStorage.setItem(CHAVE, JSON.stringify(o)); } catch (e) {} }
+  function gravar(o) { try { var v = JSON.stringify(o); localStorage.setItem(CHAVE, v); return localStorage.getItem(CHAVE) === v; } catch (e) { return false; } }
   var MEM = ler(); if (!MEM.ab || typeof MEM.ab !== "object") MEM.ab = {};
 
   function I() { return window.__ipe || null; }
@@ -61,19 +63,19 @@
   function camadasDe(m) {
     var C = catalogo(); if (!C) return [];
     var out = [], ent = [], n = 0;
-    (m.downloads || []).forEach(function (d) {
+    (Array.isArray(m.downloads) ? m.downloads : []).forEach(function (d) {
       var f = String(d && d.nome || "").split("/").pop(), a = f.match(/^(.+)\.(geojson|json|pmtiles)$/i);
       if (!a || /^visualizador\.json$/i.test(f)) return;
       var id = "l_" + a[1].toLowerCase();
       if (C.por[id]) { if (!out.some(function (x) { return x.id === id; })) out.push(id); }
-      else if (/geojson/i.test(a[2])) ent.push({ id: "ent" + (n++), nome: f.replace(/\.geojson$/i, "").replace(/[-_]+/g, " "), sub: t("entrega"), cor: ["#e07b39", "#4f8edc", "#7bb661", "#c74b50", "#9b6bc3", "#d9a521"][(n - 1) % 6] });
+      else if (/geojson/i.test(a[2])) ent.push({ id: "ent" + (n++), chave: a[1].toLowerCase(), nome: f.replace(/\.geojson$/i, "").replace(/[-_]+/g, " "), sub: t("entrega"), cor: ["#e07b39", "#4f8edc", "#7bb661", "#c74b50", "#9b6bc3", "#d9a521"][(n - 1) % 6] });
     });
     out.sort(function (a, b) { return C.ordem[a] - C.ordem[b]; });
     var lista = [];
-    if (m.geojson) lista.push({ id: "aoi", nome: t("limite"), sub: "", cor: "#ff9a3c", fixo: 1 });
+    if (m.geojson) lista.push({ id: "aoi", chave: "aoi", nome: t("limite"), sub: "", cor: "#ff9a3c", fixo: 1 });
     out.forEach(function (id) {
       var e = C.por[id];
-      lista.push({ id: id, nome: e.n, sub: String(e.sub || "").replace(/^Base Cartogr[aá]fica\s*·\s*/, ""), cor: e.cor, leg: e.leg, raster: e.forma === "raster" });
+      lista.push({ id: id, chave: id.slice(2), nome: e.n, sub: String(e.sub || "").replace(/^Base Cartogr[aá]fica\s*·\s*/, ""), cor: e.cor, leg: e.leg, raster: e.forma === "raster" });
     });
     return lista.concat(ent);
   }
@@ -105,6 +107,8 @@
       if (p) { try { M.setPaintProperty(l.id, p, v / 100); } catch (e) {} }
     });
   }
+  // Para ligar: sem linha na árvore não se sabe se a camada está trancada, por isso trata-se como trancada.
+  function travada(id) { var li = linhaArvore(id); return !li || li.classList.contains("bl"); }
   function bloqueio(id) { var li = linhaArvore(id); if (!li || !li.classList.contains("bl")) return ""; var s = li.querySelector(".ipr-cad"); return (s && s.textContent) || "Intelligence"; }
   function enquadrar(m, dur) {
     var M = mapa(), b = m && caixa(m.geojson); if (!M || !b) return;
@@ -115,8 +119,9 @@
     return i < 0 ? null : document.querySelector('#ipe-proj .ipe-card[data-i="' + i + '"]');
   }
   // Abrir uma Base no mapa pelo mesmo caminho do cartão do separador Projectos (o Atlas refaz o mapa e põe ?mapa= no endereço).
-  function abrir(m) {
+  function abrir(m, auto) {
     if (actual(m)) return true;
+    if (auto) return false; // na abertura automática nunca se muda de Base nem de endereço (?modo=, vale e o resto ficam)
     var c = cartao(m);
     if (c) { c.click(); return true; }
     location.href = "/atlas/?mapa=" + encodeURIComponent(m.id);
@@ -143,14 +148,26 @@
     var act = activas();
     camadasDe(m).forEach(function (c) {
       if (c.fixo && !on) return; // o limite do terreno fica, como no «Desligar» da árvore
-      if (on && bloqueio(c.id)) return;
+      if (on && travada(c.id)) return;
       if ((act.indexOf(c.id) >= 0) !== on) ligar(c.id, on);
     });
     pintar();
   }
+  // Abertura automática (decisão do Nuno, 29/10, 15h05): só o limite, o MDT, o sombreamento, as curvas de nível e as linhas
+  // de água ficam ligados; as outras camadas da Base ficam na lista, desligadas. «Ligar todas» continua a ligar tudo.
+  var INICIAIS = ["aoi", "mdt", "somb_bw", "curvas1", "curvas5", "curvas025", "streams"];
+  function ligarIniciais(m) {
+    var act = activas();
+    camadasDe(m).forEach(function (c) {
+      var quer = INICIAIS.indexOf(c.chave) >= 0, esta = act.indexOf(c.id) >= 0;
+      if (quer && !esta && !travada(c.id)) ligar(c.id, true);
+      else if (!quer && esta && !c.fixo) ligar(c.id, false);
+    });
+    pintar(true);
+  }
 
   // ---------- desenho ----------
-  var CSS = "#ipr-mb{border-bottom:1px solid var(--ln);max-height:52vh;overflow-y:auto;overscroll-behavior:contain}" +
+  var ESTILO = "#ipr-mb{border-bottom:1px solid var(--ln);max-height:52vh;overflow-y:auto;overscroll-behavior:contain}" +
     ".ipe-sb.fechado #ipr-mb{display:none}" +
     "#ipr-mb .ipr-mb-cab{display:flex;align-items:baseline;gap:6px;padding:9px 12px 4px;font:600 11px/1.2 var(--mono,monospace);letter-spacing:.1em;text-transform:uppercase;color:var(--mu)}" +
     "#ipr-mb .ipr-mb-cab em{font-style:normal;color:var(--ac2)}" +
@@ -186,12 +203,13 @@
     "#ipr-mb .ipr-mb-it.fora label{opacity:.6}" +
     "#ipr-mb .ipr-mb-op{display:block;width:calc(100% - 36px);margin:0 0 4px 30px;height:14px;accent-color:var(--ac)}" +
     // As camadas da Base vivem agora à esquerda: as fichas repetidas do cartão do projecto (direita) saem.
-    "#ipe-proj .ipe-basecam{display:none!important}";
+    // Só quando o bloco da esquerda está à vista (classe ipr-mb-on em #ipe, posta em marcar()).
+    "#ipe.ipr-mb-on #ipe-proj .ipe-basecam{display:none!important}";
 
   function caixaMontar() {
     var sec = document.querySelector('#ipe-esq .ipe-sb[data-sb="locais"]'), loc = document.getElementById("ipe-locais");
     if (!sec || !loc) return null;
-    if (!document.getElementById("ipr-mb-css")) { var s = el("style"); s.id = "ipr-mb-css"; s.textContent = CSS; document.head.appendChild(s); }
+    if (!document.getElementById("ipr-mb-css")) { var s = el("style"); s.id = "ipr-mb-css"; s.textContent = ESTILO; document.head.appendChild(s); }
     var box = document.getElementById("ipr-mb");
     if (!box) {
       box = el("div"); box.id = "ipr-mb"; box.setAttribute("role", "group"); box.hidden = true;
@@ -201,11 +219,18 @@
     return box;
   }
 
+  function marcar() {
+    var raiz = document.getElementById("ipe"), box = document.getElementById("ipr-mb"); if (!raiz) return;
+    var sec = box && box.closest(".ipe-sb");
+    raiz.classList.toggle("ipr-mb-on", !!(box && !box.hidden && sec && !sec.classList.contains("fechado")));
+  }
+  document.addEventListener("click", function (e) { try { if (e.target.closest && e.target.closest('.ipe-sb[data-sb="locais"] .ipe-sbh')) setTimeout(marcar, 0); } catch (x) {} });
+
   var ULT = "";
   function assinatura(bs) {
     var P = est() || {}, v = viz();
     if (v && !v.__mbN) v.__mbN = ++assinatura.n;
-    return [v ? v.__mbN : 0, P.modo, P.actual && P.actual.id, (bs || []).map(function (m) { return m.id + ":" + (m.downloads || []).length + ":" + (MEM.ab[m.id] ? 1 : 0); }).join(","),
+    return [v ? v.__mbN : 0, P.modo, P.actual && P.actual.id, (bs || []).map(function (m) { return m.id + ":" + (Array.isArray(m.downloads) ? m.downloads.length : 0) + ":" + (MEM.ab[m.id] ? 1 : 0); }).join(","),
       activas().join(","), window.IPR_LINGUA || "pt", !!document.querySelector("#ipe-cam .ipr-it")].join("|");
   }
   assinatura.n = 0;
@@ -213,7 +238,7 @@
   function pintar(forca) {
     var box = caixaMontar(); if (!box) return;
     var bs = bases();
-    if (!bs || !bs.length) { box.hidden = true; box.textContent = ""; ULT = ""; return; }
+    if (!bs || !bs.length) { box.hidden = true; box.textContent = ""; ULT = ""; marcar(); return; }
     var a = assinatura(bs);
     if (!forca && a === ULT) return;
     var foco = document.activeElement;
@@ -245,6 +270,7 @@
       ul.appendChild(li);
     });
     box.appendChild(ul);
+    marcar();
     if (focoId) { var f = box.querySelector('[data-mb-foco="' + sel(focoId) + '"]'); if (f) try { f.focus({ preventScroll: true }); } catch (e) {} }
   }
 
@@ -287,7 +313,8 @@
     for (var i = 0; i < bs.length; i++) if (String(bs[i].id) === id) return bs[i];
     return null;
   }
-  function aoClicar(e) {
+  function aoClicar(e) { try { aoClicar2(e); } catch (x) {} }
+  function aoClicar2(e) {
     var b = e.target.closest && e.target.closest("[data-mb-acc]"); if (!b) return;
     var m = baseDe(b); if (!m) return;
     var a = b.getAttribute("data-mb-acc");
@@ -298,18 +325,20 @@
     else if (a === "nenhuma") ligarTodas(m, false);
     else if (a === "ficha") verFicha(m);
   }
-  function aoMudar(e) {
+  function aoMudar(e) { try { aoMudar2(e); } catch (x) {} }
+  function aoMudar2(e) {
     var ck = e.target; if (!ck || ck.type !== "checkbox") return;
     var li = ck.closest("[data-mb-c]"), m = baseDe(ck); if (!li || !m) return;
     var id = li.getAttribute("data-mb-c"), on = ck.checked;
-    if (actual(m)) { ligar(id, on); pintar(true); return; }
+    if (actual(m)) { if (!on || !travada(id)) ligar(id, on); pintar(true); return; }
     // Camada de uma Base que não está no mapa: abre-se a Base e liga-se a camada quando o mapa estiver pronto.
     PEND = { m: m, ids: on ? [id] : [] };
     so(m); gravar(MEM);
     abrir(m);
-    quando(m, function () { if (PEND && PEND.m === m) { PEND.ids.forEach(function (x) { if (!bloqueio(x)) ligar(x, true); }); PEND = null; } pintar(true); });
+    quando(m, function () { if (PEND && PEND.m === m) { PEND.ids.forEach(function (x) { if (!travada(x)) ligar(x, true); }); PEND = null; } pintar(true); });
   }
-  function aoDeslizar(e) {
+  function aoDeslizar(e) { try { aoDeslizar2(e); } catch (x) {} }
+  function aoDeslizar2(e) {
     var r = e.target; if (!r || r.type !== "range") return;
     var li = r.closest("[data-mb-c]"); if (!li) return;
     mudarOpacidade(li.getAttribute("data-mb-c"), +r.value);
@@ -326,21 +355,33 @@
     sec.classList.remove("fechado"); // sem gravar: a preferência da pessoa (ipe_sb_v1) fica como estava
     var h = sec.querySelector(".ipe-sbh"); if (h) h.setAttribute("aria-expanded", "true");
   }
+  function sessaoFeita() { try { return sessionStorage.getItem("ipr_mb_auto") === "1"; } catch (e) { return false; } }
+  function sessaoMarcar() { try { sessionStorage.setItem("ipr_mb_auto", "1"); } catch (e) {} }
   function arranque() {
+    // Nunca tomar conta da encomenda: com ?modo=encomenda, ou com o Atlas fora do modo cliente, não há abertura automática.
+    if (Q.get("modo") === "encomenda") return true;
+    var P = est();
+    if (P && P.modo && P.modo !== "cliente") return true;
     var bs = bases(); if (!bs) return false;
+    if (window.__iprMbAuto) return true;
+    window.__iprMbAuto = 1; // uma vez por página
     var alvo = null, origem = "";
     var pedido = Q.get("mapa");
     var comCamadas = bs.filter(function (m) { return nCamadas(camadasDe(m)) > 0; });
     if (pedido) { alvo = comCamadas.filter(function (m) { return String(m.id) === String(pedido); })[0] || null; origem = "ficha"; }
-    else if (!MEM.visto && comCamadas.length === 1 && bs.filter(function (m) { return !m.rever; }).length === 1) { alvo = comCamadas[0]; origem = "primeira"; }
-    if (bs.length) { MEM.visto = 1; gravar(MEM); }
+    else if (!MEM.visto && !sessaoFeita() && comCamadas.length === 1 && bs.filter(function (m) { return !m.rever; }).length === 1) {
+      // primeira visita: só se o registo de «já visto» ficar guardado (sem isso repetir-se-ia a cada entrada)
+      MEM.visto = 1;
+      if (gravar(MEM)) { alvo = comCamadas[0]; origem = "primeira"; sessaoMarcar(); }
+    }
+    if (bs.length && !MEM.visto) { MEM.visto = 1; gravar(MEM); }
     if (!alvo) return true;
+    if (!actual(alvo) && !abrir(alvo, true)) return true; // a Base aberta é outra: não se muda nada sozinho
     so(alvo); gravar(MEM);
     abrirSeccao();
-    if (!actual(alvo)) abrir(alvo);
     quando(alvo, function () {
       vigiar();
-      ligarTodas(alvo, true);
+      ligarIniciais(alvo);
       pintar(true);
       var sec = document.querySelector('#ipe-esq .ipe-sb[data-sb="locais"]');
       if (sec && sec.scrollIntoView) try { sec.scrollIntoView({ block: "nearest" }); } catch (e) {}
@@ -368,9 +409,14 @@
       if (!arrancou) arrancou = arranque() || false;
       if (!arrancou && n > 80) arrancou = true; // 40 s sem os mapas da conta: segue sem a abertura automática
       pintar();
+      marcar();
+      // Dados carregados e nada para mostrar (sem Bases ou área fechada): pára.
+      var P = est();
+      if (P && P.dados && (P.dados.bloqueado || !(bases() || []).length)) return;
     } catch (e) {}
+    setTimeout(ciclo, arrancou ? 2000 : 500);
   }
-  setInterval(ciclo, 500);
+  setTimeout(ciclo, 500);
   function observar() {
     var cam = document.getElementById("ipe-cam"); if (!cam) { setTimeout(observar, 500); return; }
     try { new MutationObserver(function () { clearTimeout(observar.t); observar.t = setTimeout(function () { try { pintar(); } catch (e) {} }, 120); }).observe(cam, { childList: true, subtree: true }); } catch (e) {}
