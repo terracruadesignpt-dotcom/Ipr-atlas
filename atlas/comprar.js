@@ -13,8 +13,11 @@
    Decisões do Nuno (30/10/2026, 18h22): a Leitura Territorial leva sempre a Base, e o preço mostrado é o das duas (com o
    pacote −10 % quando o site o diz); o cartão abre também ao escolher parcelas do cadastro (#ipe-plist), uma vez por
    conjunto; a Planta de Localização passa a 19 € quando o m90551 estiver ligado (window.IPR_PRECOS.planta.preco e .rota):
-   compra-se para um terreno novo pela rota do m90551, que cria a encomenda e devolve o pagamento do WooCommerce. Quem já
-   tem Bases continua a fazer a planta delas como hoje. Sem o m90551, fica «incluída na Base».
+   compra-se para um terreno novo: o limite fica guardado no site e a pessoa segue para o carrinho e o checkout normais
+   do WooCommerce. Depois de pagar, «As minhas Plantas» (lista à parte) ou /atlas/?planta=ID abrem o diálogo da Planta
+   do Atlas para esse terreno (cookie ipr_planta só enquanto o diálogo está aberto). Quem já tem Bases continua a fazer a
+   planta delas como hoje. Sem o m90551, fica «incluída na Base». O total da Leitura + Base usa a tabela do site
+   (IPR_PRECOS.tabela) e as regras de arredondamento do m90430; sem ela, soma o que o formulário mostra.
    Preços: window.IPR_PRECOS (módulo m90550, só leitura dos produtos WooCommerce e da tabela do m14473). Sem ele, o «desde»
    vem do formulário de encomenda e os planos levam à página /ipr-cloud/. Nada é inventado: o que não se sabe não aparece.
    Não edita app.js, ajustes.js nem outros add-ons: só DOM, window.__ipe e eventos. Texto escapado (textContent).
@@ -47,7 +50,8 @@
       plantaVende: "Desenhe o terreno ou escolha as parcelas. Paga a planta e faz o PDF logo a seguir, aqui no Atlas. Se encomendar a Base, a planta vem incluída.",
       plantaOutro: "Planta para outro terreno", plantaDesenhar: "Desenhar o terreno", plantaComprar: "Comprar a Planta",
       plantaOu: "ou incluída na Base", plantaEntrar: "Para comprar a planta precisa de conta. Entre ou crie a conta e volte a este passo.",
-      plantaAEnviar: "A preparar o pagamento…", plantaErro: "Não foi possível preparar o pagamento. Tente outra vez ou escreva-nos.",
+      plantaAEnviar: "A pôr a Planta no carrinho…", plantaErro: "Não foi possível pôr a Planta no carrinho. Tente outra vez ou escreva-nos.",
+      minhas: "As minhas Plantas", fazerPdf: "Fazer o PDF",
       plantaSemTerreno: "Não encontrei o limite do terreno no mapa. Desenhe-o outra vez.",
       semNome: "Terreno sem nome", aCarregar: "A carregar os seus projectos…",
       cTitulo: "O seu terreno", cArea: "Área", cRodape: "Preços sem IVA. O pagamento é no passo seguinte.",
@@ -84,7 +88,8 @@
       plantaVende: "Draw your plot or pick the parcels. Pay for the plan and make the PDF straight away, here in the Atlas. If you order the Base, the plan is included.",
       plantaOutro: "Plan for another plot", plantaDesenhar: "Draw the plot", plantaComprar: "Buy the Plan",
       plantaOu: "or included with the Base", plantaEntrar: "You need an account to buy the plan. Sign in or create one, then come back to this step.",
-      plantaAEnviar: "Preparing the payment…", plantaErro: "The payment could not be prepared. Try again or write to us.",
+      plantaAEnviar: "Adding the Plan to your cart…", plantaErro: "The Plan could not be added to your cart. Try again or write to us.",
+      minhas: "My Location Plans", fazerPdf: "Make the PDF",
       plantaSemTerreno: "The plot boundary was not found on the map. Please draw it again.",
       semNome: "Unnamed site", aCarregar: "Loading your projects…",
       cTitulo: "Your plot", cArea: "Area", cRodape: "Prices exclude VAT. You pay in the next step.",
@@ -192,13 +197,36 @@
     var v = parseFloat(x); return isFinite(v) && v > 0 ? v : null;
   }
   function r2(v) { return Math.round(v * 100) / 100; }
+  // Conta do terreno como o servidor: tabela do m14473 (window.IPR_PRECOS.tabela, do m90550), interpolação igual ao
+  // tcd_preco() e ao c() do app.js, arredondada ao euro; Leitura a metade ao cêntimo como o m90430, enquanto a promoção durar.
+  function tabelaPreco(ha, col) {
+    var p = PR(), tb = p && Array.isArray(p.tabela) ? p.tabela : null;
+    if (!tb || !tb.length || !(ha > 0)) return null;
+    if (ha <= tb[0][0]) return tb[0][col];
+    for (var i = 1; i < tb.length; i++) if (ha <= tb[i][0]) return Math.round(tb[i - 1][col] + (ha - tb[i - 1][0]) * (tb[i][col] - tb[i - 1][col]) / (tb[i][0] - tb[i - 1][0]));
+    return null; // acima do último escalão: sob consulta
+  }
+  function leituraMeia() { var p = PR(); return !!(p && p.leitura_meia && promoValida(p.leitura && p.leitura.promo_ate)); }
+  function totalLeituraBase(ha) {
+    var b = tabelaPreco(ha, 1), l = tabelaPreco(ha, 2);
+    if (!num(b) || !num(l)) return null;
+    if (leituraMeia()) l = r2(l / 2);
+    return somaPacote(b, l);
+  }
+  // «12,5 ha», «1 234,56 ha», «12.5 ha» -> número
+  function haNum(s) {
+    var m = /([0-9][0-9.,\s\u00a0\u202f]*)\s*ha/.exec(String(s || "")); if (!m) return null;
+    var x = m[1].replace(/[\s\u00a0\u202f]/g, "");
+    x = /,/.test(x) ? x.replace(/\./g, "").replace(",", ".") : x;
+    var v = parseFloat(x); return isFinite(v) && v > 0 ? v : null;
+  }
   // Base + Leitura: o m90430 tira 10 % a cada linha quando vão juntas (pacote ligado); sem essa informação, soma simples
   function somaPacote(b, l) { var p = PR(); return p && p.pacote10 ? r2(r2(b * 0.9) + r2(l * 0.9)) : r2(b + l); }
   // Planta à venda (m90551 ligado): preço e rota de encomenda vêm do site; senão, null e fica «incluída na Base»
   function plantaVendida() {
     var p = PR(), pl = p && p.planta;
     if (!pl || !num(pl.preco) || !urlSegura(pl.rota, "")) return null;
-    return { preco: pl.preco, rota: pl.rota };
+    return { preco: pl.preco, rota: pl.rota, minhas: urlSegura(pl.minhas, "") };
   }
   function urlPlanos() {
     var p = PR(), s = window.IPR_SIM_BASE;
@@ -405,6 +433,7 @@
       if (k === "planta-id") { var id = a.getAttribute("data-v"); fecharPainel(); if (typeof window.__iprPlanta === "function") { fecharEsquerdaMovel(); window.__iprPlanta(id); } return; }
       if (k === "planta-base") { fecharPainel(); comecar("planta"); return; }
       if (k === "planta-nova") { fecharPainel(); comecar("planta"); return; }
+      if (k === "planta-paga") { abrirPlantaPaga(a.getAttribute("data-v")); return; }
     } catch (x) {}
   }
   // Planta: com projectos, o diálogo do Atlas (window.__iprPlanta, ajustes.js); sem projectos, vem com a Base.
@@ -437,7 +466,42 @@
       d.appendChild(botao("ipr-cp-a pri", t("plantaDesenhar"), "planta-nova"));
     } else d.appendChild(el("p", "", t("plantaSem")));
     if (!ms.length || !pv) d.appendChild(botao("ipr-cp-a" + (pv ? "" : " pri"), t("encBase"), "planta-base"));
+    if (pv && pv.minhas && sessao()) minhasPlantas(d, pv.minhas);
     try { d.scrollIntoView({ block: "nearest" }); } catch (e) {}
+  }
+  // «As minhas Plantas»: as compradas, numa lista à parte (não entram nos projectos do Atlas)
+  function minhasPlantas(d, url) {
+    fetch(url, { credentials: "same-origin", headers: { "X-WP-Nonce": window.tcdNonce || "" } }).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
+      var l = j && Array.isArray(j.plantas) ? j.plantas : [];
+      if (!l.length || !d.isConnected) return;
+      var w = el("div"); w.appendChild(el("p", "", t("minhas")));
+      l.slice(0, 12).forEach(function (x) {
+        var id = String(x.id || "").replace(/\D/g, ""); if (!id) return;
+        var b = botao("ipr-cp-a", (x.local || t("semNome")) + " · " + t("fazerPdf"), "planta-paga"); b.setAttribute("data-v", id);
+        if (num(x.area_ha)) b.appendChild(el("small", "", (+x.area_ha).toLocaleString(lg() === "en" ? "en-GB" : "pt-PT", { maximumFractionDigits: 2 }) + " ha · #" + (x.numero || id)));
+        w.appendChild(b);
+      });
+      d.insertBefore(w, d.firstChild);
+    }).catch(function () {});
+  }
+  // Abre o diálogo da Planta do Atlas para uma Planta paga: o cookie ipr_planta diz ao m90551 para o /meus-mapas devolver
+  // esse terreno enquanto o diálogo estiver aberto; apaga-se quando o diálogo fecha (ou ao fim de 15 minutos).
+  function limparCookiePlanta() { try { document.cookie = "ipr_planta=; path=/; max-age=0; SameSite=Lax"; } catch (e) {} }
+  function abrirPlantaPaga(id) {
+    id = String(id || "").replace(/\D/g, "");
+    if (!id || typeof window.__iprPlanta !== "function") return false;
+    try { document.cookie = "ipr_planta=" + id + "; path=/; max-age=900; SameSite=Lax" + (location.protocol === "https:" ? "; Secure" : ""); } catch (e) {}
+    fecharPainel(); fecharEsquerdaMovel();
+    window.__iprPlanta(id);
+    var n = 0;
+    (function v() { if ($("ipr-pl") || n++ < 5) { setTimeout(v, 1000); return; } limparCookiePlanta(); })();
+    return true;
+  }
+  // Volta do pagamento: /atlas/?planta=ID abre o diálogo dessa Planta quando o Atlas estiver pronto
+  function plantaDoEndereco() {
+    var id = null; try { id = new URLSearchParams(location.search).get("planta"); } catch (e) {}
+    if (!id || !/^\d{1,12}$/.test(id) || !plantaVendida()) return;
+    esperarPor(function () { var P = est(); return sessao() && typeof window.__iprPlanta === "function" && P && P.dados; }, 20000, function () { abrirPlantaPaga(id); });
   }
 
   // passo 2: desenhar o terreno com a ferramenta do Atlas
@@ -475,9 +539,8 @@
       var ids = ((ev && ev.features) || []).map(function (f) { return f && f.id; }).filter(Boolean);
       var novo = ids.filter(function (id) { return !VISTOS[id]; });
       if (ids.length && !novo.length) return;
-      novo.forEach(function (id) { VISTOS[id] = 1; });
       // o Atlas recalcula a área e o preço neste mesmo evento; o promo.js corrige a Leitura logo a seguir
-      setTimeout(function () { try { abrirCartao(false); } catch (e) {} }, 120);
+      setTimeout(function () { try { if (abrirCartao(false)) novo.forEach(function (id) { VISTOS[id] = 1; }); } catch (e) {} }, 250);
     } catch (e) {}
   }
   function linha(k, nome, valor, rot, acc) {
@@ -489,9 +552,9 @@
     return r;
   }
   function abrirCartao(forcar) {
-    var area = areaTexto(); if (!area) return;
+    var area = areaTexto(); if (!area) return false;
     var vb = txt("ipe-preco"), vl = txt("ipe-preco-l");
-    if (!vb || /^desde\s/i.test(vb)) { if (!forcar) return; }
+    if (!vb || /^desde\s/i.test(vb)) { if (!forcar) return false; }
     css(); fecharCartao();
     var c = el("div", "ipr-cp ipr-cp-ct"); c.id = "ipr-cp-ct"; c.setAttribute("role", "dialog"); c.setAttribute("aria-label", t("cTitulo")); c.lang = lg();
     var x = botao("ipr-cp-x", "×", "fechar"); x.setAttribute("aria-label", t("fechar")); x.title = t("fechar"); c.appendChild(x);
@@ -502,8 +565,10 @@
     var consulta = !/\d\s*€|€\s*\d/.test(vb);
     c.appendChild(linha("base", t("base"), vb, consulta ? t("orcamento") : t("cBase"), "c-base"));
     // Leitura: leva sempre a Base; mostra-se o total das duas para esta área (pacote −10 % quando o site o diz)
-    var nb = euros(vb), nl = euros(vl);
-    if (vl) c.appendChild(linha("leitura", t("leituraC"), consulta || !nb || !nl ? vl : eur(somaPacote(nb, nl)), consulta ? t("orcamento") : t("cLeit"), "c-leitura"));
+    // com a tabela do site faz-se a conta exacta (cêntimos como o servidor); sem ela, soma-se o que o formulário mostra
+    var nb = euros(vb), nl = euros(vl), tot = totalLeituraBase(haNum(area));
+    if (tot == null && nb && nl) tot = somaPacote(nb, nl);
+    if (vl) c.appendChild(linha("leitura", t("leituraC"), consulta || tot == null ? vl : eur(tot), consulta ? t("orcamento") : t("cLeit"), "c-leitura"));
     var pv = plantaVendida();
     if (pv) { var lp = linha("planta", t("planta"), eur(pv.preco), t("plantaComprar"), "c-planta-comprar"); lp.querySelector(".ipr-cp-p").appendChild(el("small", "", t("plantaOu"))); c.appendChild(lp); }
     else c.appendChild(linha("planta", t("planta"), t("incluida"), t("cPlanta"), "c-planta"));
@@ -523,6 +588,7 @@
     });
     casa().appendChild(c);
     try { c.querySelector(".ipr-cp-a.pri").focus({ preventScroll: true }); } catch (e) {}
+    return true;
   }
   function fecharCartao() { var c = $("ipr-cp-ct"); if (c) c.remove(); }
 
@@ -562,7 +628,8 @@
     return fs.length ? { type: "FeatureCollection", features: fs } : null;
   }
   function msgCartao(s) { var m = $("ipr-cp-msg"); if (m) { m.textContent = s; m.hidden = !s; } }
-  // Compra da Planta (m90551): cria a encomenda pendente com o terreno e segue para o pagamento do WooCommerce.
+  // Compra da Planta (m90551): guarda o limite do terreno no site e segue para o carrinho e o checkout normais do
+  // WooCommerce (NIF, morada, termos e livre resolução), com a Planta já no carrinho.
   function comprarPlanta(b) {
     var pv = plantaVendida(); if (!pv) return;
     if (!sessao()) { msgCartao(t("plantaEntrar")); var a = el("a", "ipr-cp-a pri", t("entrar")); a.href = entrarUrl(); var m = $("ipr-cp-msg"); if (m) m.appendChild(a); return; }
@@ -573,7 +640,7 @@
       headers: { "Content-Type": "application/json", "X-WP-Nonce": window.tcdNonce || "" },
       body: JSON.stringify({ geojson: gj, local: String(($("ipe-local") || {}).value || "").slice(0, 80) })
     }).then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { return { ok: r.ok, j: j }; }); }).then(function (x) {
-      var u = x.ok && x.j && x.j.pagar;
+      var u = x.ok && x.j && (x.j.carrinho || x.j.pagar);
       // só para o próprio site
       if (typeof u === "string" && (u.indexOf(location.origin + "/") === 0 || /^\/(?!\/)/.test(u))) { location.href = u; return; }
       if (b) b.disabled = false; msgCartao((x.j && x.j.message) || t("plantaErro"));
@@ -587,21 +654,24 @@
     var l = $("ipe-plist"); if (!l) return "";
     return [].map.call(l.querySelectorAll("tbody tr"), function (tr) { var td = tr.querySelector("td"); return td ? td.textContent.trim() : ""; }).filter(Boolean).sort().join("|");
   }
+  // volta a ligar-se se o Atlas substituir o #ipe-plist (chamado também pelo ciclo)
+  var OBS_P = null, OBS_EL = null, TM_P = null;
   function vigiarParcelas() {
-    var l = $("ipe-plist"); if (!l) { setTimeout(vigiarParcelas, 600); return; }
-    if (l.__iprCp) return; l.__iprCp = 1;
-    var tm = null;
-    new MutationObserver(function () {
-      clearTimeout(tm);
-      tm = setTimeout(function () {
+    var l = $("ipe-plist");
+    if (!l || l === OBS_EL) return;
+    if (OBS_P) try { OBS_P.disconnect(); } catch (e) {}
+    OBS_EL = l;
+    OBS_P = new MutationObserver(function () {
+      clearTimeout(TM_P);
+      TM_P = setTimeout(function () {
         try {
           if (window.tcdEquipa) return;
           var k = conjuntoParcelas(); if (!k || VISTOS_P[k]) return;
-          VISTOS_P[k] = 1;
-          abrirCartao(false);
+          if (abrirCartao(false)) VISTOS_P[k] = 1; // só fica visto se o cartão abriu
         } catch (e) {}
       }, 1200);
-    }).observe(l, { childList: true, subtree: true });
+    });
+    OBS_P.observe(l, { childList: true, subtree: true, characterData: true });
   }
 
   function ligarMapa() {
@@ -745,10 +815,10 @@
   };
 
   function ciclo() {
-    try { montarBotao(); lerDesdeDom(); } catch (e) {}
-    setTimeout(ciclo, $("ipr-cp-b") ? 2000 : 300);
+    try { montarBotao(); lerDesdeDom(); vigiarParcelas(); } catch (e) {}
+    setTimeout(ciclo, $("ipr-cp-b") && OBS_EL ? 2000 : 300);
   }
   ciclo();
   ligarMapa();
-  vigiarParcelas();
+  plantaDoEndereco();
 })();
