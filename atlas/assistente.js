@@ -249,7 +249,7 @@
     "#ipr-as-b{position:absolute;z-index:40;left:50%;bottom:calc(46px + env(safe-area-inset-bottom));transform:translateX(-50%);display:flex;align-items:center;gap:10px;padding:9px 18px 9px 12px;border-radius:2px;border:1px solid #94BE39;background:#14200F;color:#E4E2D8;cursor:pointer;box-shadow:0 10px 30px rgba(0,0,0,.45);font:600 14px/1.2 " + F + ";animation:iprAsP 2.6s ease-in-out 3}" +
     "#ipr-as-b small{display:block;font:500 11px/1.3 " + M + ";color:#9AA088;text-transform:uppercase;letter-spacing:.06em}#ipr-as-b .ic{display:grid;place-items:center;width:30px;height:30px;border-radius:2px;background:#94BE39;color:#0F170B}" +
     "#ipr-as-b:hover{background:#1B2816}@keyframes iprAsP{0%,100%{box-shadow:0 10px 30px rgba(0,0,0,.45),0 0 0 0 rgba(148,190,57,.55)}50%{box-shadow:0 10px 30px rgba(0,0,0,.45),0 0 0 10px rgba(148,190,57,0)}}" +
-    "@media (min-width:901px){body:has(#ipr-as-pn) #tcdfmb{transform:translateX(410px)}}@media (max-width:900px){body:has(#ipr-as-pn) #tcdfmb{display:none!important}}" +
+    "@media (max-width:900px){body:has(#ipr-as-pn) #tcdfmb{display:none!important}}" +
     ".ipr-as-on #ipr-as-b{display:none}.ipr-as-on #ipr-cp-ct,.ipr-as-on #ipr-cp-gu{display:none!important}" +
     "#ipr-as-pn{position:absolute;z-index:1001;left:12px;top:12px;bottom:40px;width:392px;max-width:calc(100% - 24px);display:flex;flex-direction:column;background:rgba(15,23,11,.97);border:1px solid #2E3A26;border-radius:2px;box-shadow:0 18px 50px rgba(0,0,0,.5);overflow:hidden;animation:iprAsIn .28s ease-out}" +
     "@keyframes iprAsIn{from{opacity:0;transform:translateX(-14px)}to{opacity:1;transform:none}}" +
@@ -312,6 +312,8 @@
     "#ipe .ipr-t62-g>*{min-height:0!important;height:auto!important;padding:5px 9px!important;font-size:12.5px!important;line-height:1.25!important}" +
     "#ipe .ipr-t62-g>*:last-child:nth-child(odd){grid-column:1/3}" +
     "#ipe .ipr-pd-g{gap:5px!important}#ipe .ipr-pd-b{min-height:0!important;padding:7px 10px!important}#ipe #ipe-esq .ipe-sb.ipc-movido #ipr-mb:not([hidden]){display:block!important}#ipe #ipe-esq .ipe-sb.ipc-movido:has(#ipr-mb:not([hidden])){display:block!important;height:auto!important;overflow:visible!important;border-top:1px solid rgba(148,190,57,.45)!important;padding-top:6px}#ipe #ipe-esq .ipe-sb.ipc-movido:has(#ipr-mb:not([hidden]))>.ipe-sbh{display:none!important}#ipe #ipr-mb .ipr-mb-b.ipr-as-aqui>.ipr-mb-bc{box-shadow:inset 3px 0 0 #94BE39}" +
+    "#ipe .ipe-rosa,#ipe .ipe-rosa.rod{background:transparent!important;box-shadow:none!important;border:0!important}" +
+    "html body #ipe .ipe-tools>.ipr-nav .ipe-rosa,html body #ipe .ipe-tools>.ipr-nav .ipe-rosa svg,html body #ipe .ipr-nav .ipe-rosa,html body #ipe .ipr-nav .ipe-rosa svg{width:34px!important;height:34px!important;min-width:0!important}" +
     "#ipe .ipr-pd-b span{font-size:13px!important;line-height:1.25!important;word-break:normal!important;overflow-wrap:normal!important;hyphens:manual!important}";
   function estilos() { if ($("ipr-as-css")) return; var s = el("style"); s.id = "ipr-as-css"; s.textContent = CSS; document.head.appendChild(s); }
 
@@ -851,6 +853,36 @@
     var tm = 0; M0.on("moveend", function () { clearTimeout(tm); tm = setTimeout(function () { try { aoMover(); } catch (e) {} }, 350); });
   }
 
+  // 3c. Formiga parada (Nuno, 30/10, 19h11: «o formiga continua a saltar»). O app.js (fm) e o ajustes.js (formigaSitio) põem-na
+  // em sítios diferentes, um a seguir ao outro. No computador fica um só sítio: canto inferior direito do mapa, encostada à barra
+  // de ferramentas. Qualquer outra mudança ao estilo é reposta antes de o ecrã ser desenhado (MutationObserver).
+  var FM = { alvo: null, obs: null, aplicar: false };
+  function formigaAlvo() {
+    if (movel()) return null;
+    var M0 = mapa(), cv = M0 && M0.getContainer ? M0.getContainer() : null; if (!cv) return null;
+    var rc = cv.getBoundingClientRect(); if (rc.width < 200) return null;
+    var tb = document.querySelector("#ipe .ipe-tools"), rt = tb && tb.getBoundingClientRect();
+    var dir = rt && rt.width ? Math.round(window.innerWidth - rt.left + 10) : Math.round(window.innerWidth - rc.right + 12);
+    return { right: Math.max(8, dir) + "px", bottom: Math.max(12, Math.round(window.innerHeight - rc.bottom + 12)) + "px" };
+  }
+  function formigaPor() {
+    var b = $("tcdfmb"); if (!b) return;
+    var a = formigaAlvo(); FM.alvo = a;
+    if (!a) { if (FM.obs) { FM.obs.disconnect(); FM.obs = null; } return; }
+    function pos() {
+      if (!FM.alvo || FM.aplicar) return;
+      var st = b.style, A = FM.alvo;
+      if (st.getPropertyValue("right") === A.right && st.getPropertyValue("bottom") === A.bottom && st.getPropertyValue("top") === "auto" && st.getPropertyValue("left") === "auto" && st.getPropertyValue("position") === "fixed") return;
+      FM.aplicar = true;
+      st.setProperty("position", "fixed", "important"); st.setProperty("right", A.right, "important"); st.setProperty("bottom", A.bottom, "important");
+      st.setProperty("top", "auto", "important"); st.setProperty("left", "auto", "important"); st.setProperty("transform", "none", "important");
+      FM.aplicar = false;
+    }
+    pos();
+    if (!FM.obs) { FM.obs = new MutationObserver(pos); FM.obs.observe(b, { attributes: true, attributeFilter: ["style"] }); }
+  }
+  window.addEventListener("resize", function () { clearTimeout(formigaPor.t); formigaPor.t = setTimeout(formigaPor, 150); });
+
   // ---------------------------------------------------------------- 4. conversor
   function conversor() {
     var d = $("ipe-dir"); if (!d) return;
@@ -858,8 +890,30 @@
     while ((x = w.nextNode())) { if (/^\s*Failed to fetch\s*$|^\s*NetworkError when attempting to fetch resource\.?\s*$|^\s*Load failed\s*$/.test(x.nodeValue)) x.nodeValue = t("conv"); }
   }
 
+  // ---------------------------------------------------------------- 5. CAOP pelo servidor (PDM na planta de localização)
+  // O diálogo da planta (ajustes.js §55/§61) procura o concelho na OGC API da DGT a partir do navegador; quando essa consulta
+  // falha ou vem vazia, a caixa do PDM fica em «concelho por confirmar» e a folha não entra. Aqui a mesma consulta passa a ter
+  // recurso pelo servidor (m90590, tcd/v1/pedido-produto/caop), com a mesma forma de resposta.
+  (function () {
+    var orig = window.fetch; if (!orig || orig.__iprCaop) return;
+    var RX = /^https:\/\/ogcapi\.dgterritorio\.gov\.pt\/collections\/cont_freguesias\/items\?[^#]*bbox=([-0-9.,]+)/;
+    function servidor(bbox) {
+      return orig.call(window, "/wp-json/tcd/v1/pedido-produto/caop?bbox=" + encodeURIComponent(bbox), { credentials: "same-origin" });
+    }
+    var novo = function (u, o) {
+      var url = typeof u === "string" ? u : (u && u.url) || "", m = RX.exec(url);
+      if (!m) return orig.apply(this, arguments);
+      var bbox = m[1], self = this, args = arguments;
+      return orig.apply(self, args).then(function (r) {
+        if (!r.ok) return servidor(bbox);
+        return r.clone().json().then(function (j) { return j && j.features && j.features.length ? r : servidor(bbox).then(function (r2) { return r2.ok ? r2 : r; }); }, function () { return servidor(bbox); });
+      }, function () { return servidor(bbox); });
+    };
+    novo.__iprCaop = 1; window.fetch = novo;
+  })();
+
   // ---------------------------------------------------------------- arranque
-  function tudo() { try { topo(); } catch (e) {} try { botaoFixo(); } catch (e) {} try { esquerda(); } catch (e) {} try { conversor(); } catch (e) {} }
+  function tudo() { try { formigaPor(); } catch (e) {} try { topo(); } catch (e) {} try { botaoFixo(); } catch (e) {} try { esquerda(); } catch (e) {} try { conversor(); } catch (e) {} }
   function arrancar() {
     if (!raiz() || !$("ipe-ctx-t")) { setTimeout(arrancar, 300); return; }
     estilos(); tudo(); ligarMover(); sondarRota();
