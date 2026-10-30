@@ -83,22 +83,25 @@
   function legenda() {
     var c = document.querySelector("#ipr-lgd .c");
     if (!c) return;
-    var uns = Array.prototype.slice.call(c.querySelectorAll(":scope>.one"));
+    var uns = Array.prototype.slice.call(c.querySelectorAll(":scope>.one, :scope>.l"));
     if (!uns.length) return;
     var assin = function () { return uns.map(function (o) { return o.textContent; }).join("|") + (en() ? "#en" : ""); };
     if (c.getAttribute("data-b5") === assin() && c.querySelector(":scope>.gh")) return;
     var grupos = {}, ordem = GR.map(function (g) { return g[0]; }).concat(["out"]);
     uns.forEach(function (o) {
-      var sp = o.querySelector("span"), t = sp ? sp.textContent : o.textContent, g = "out";
+      var multi = o.classList.contains("l"), sp = multi ? o.querySelector(":scope>b") : o.querySelector("span"), t = sp ? sp.textContent : o.textContent, g = "out";
       for (var i = 0; i < GR.length; i++) if (GR[i][3].test(t)) { g = GR[i][0]; break; }
       (grupos[g] = grupos[g] || []).push(o);
       // Detalhe entre parênteses alinhado à direita, em mono: «Curvas de nível (LiDAR DGT, 1 a 50 m)»
       if (sp && !o.querySelector("small.d")) {
         var m = /^(.*?)\s*\(([^()]+)\)\s*$/.exec(sp.textContent);
-        if (m && m[1]) { sp.textContent = m[1]; var d = document.createElement("small"); d.className = "d"; d.textContent = m[2]; o.appendChild(d); }
+        if (m && m[1]) { sp.textContent = m[1]; var d = document.createElement("small"); d.className = "d"; d.textContent = m[2]; (multi ? sp : o).appendChild(d); }
       }
       var s = o.querySelector("s");
-      if (LINHA.test(t)) { o.classList.add("ln"); if (s) o.style.setProperty("--b-cor", s.style.background || s.style.backgroundColor || "#fff"); if (/\b1 m\b/.test(t)) o.classList.add("fino"); }
+      if (multi) {
+        // bloco com várias entradas (ex.: linhas de água por ordem de Strahler): cada linha com o seu traço
+        if (LINHA.test(t)) { o.classList.add("ln"); Array.prototype.forEach.call(o.querySelectorAll(".r"), function (r) { var x = r.querySelector("s"); if (x) r.style.setProperty("--b-cor", x.style.background || x.style.backgroundColor || "#fff"); }); }
+      } else if (LINHA.test(t)) { o.classList.add("ln"); if (s) o.style.setProperty("--b-cor", s.style.background || s.style.backgroundColor || "#fff"); if (/\b1 m\b/.test(t)) o.classList.add("fino"); }
       if (/hipsom|hypsom/i.test(t)) o.classList.add("rampa");
     });
     Array.prototype.slice.call(c.querySelectorAll(":scope>.gh")).forEach(function (h) { h.remove(); });
