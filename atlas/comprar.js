@@ -40,8 +40,8 @@
       plantaSem: "A Planta de Localização vem com a Base Cartográfica. Desenhe o terreno e encomende a Base.",
       semNome: "Terreno sem nome", aCarregar: "A carregar os seus projectos…",
       cTitulo: "O seu terreno", cArea: "Área", cRodape: "Preços sem IVA. O pagamento é no passo seguinte.",
-      cBase: "Encomendar", cLeit: "Base + Leitura", cPlanta: "Com a Base",
-      escolhido: "escolhido", pacote: "Base e Leitura juntas: mais 10 % de desconto nas duas.",
+      cBase: "Encomendar", cLeit: "Base + Leitura", cPlanta: "Com a Base", orcamento: "Pedir orçamento",
+      escolhido: "escolhido", pacote: "Base e Leitura juntas: mais 10 % de desconto nas duas. Se a encomenda tiver um plano IPR Cloud, a Base já tem esse desconto e os 10 % ficam só na Leitura.",
       sTitulo: "Planos do IPR Atlas",
       exp: "Explorer", expL: ["Mapa do país, ortofotomapa e cadastro", "Pesquisar e desenhar o terreno", "Ficha gratuita do terreno"],
       expB: "Continuar grátis",
@@ -71,8 +71,8 @@
       plantaSem: "The Location Plan comes with the Base Map. Draw your plot and order the Base.",
       semNome: "Unnamed site", aCarregar: "Loading your projects…",
       cTitulo: "Your plot", cArea: "Area", cRodape: "Prices exclude VAT. You pay in the next step.",
-      cBase: "Order", cLeit: "Base + Reading", cPlanta: "With the Base",
-      escolhido: "chosen", pacote: "Base and Reading together: a further 10% off both.",
+      cBase: "Order", cLeit: "Base + Reading", cPlanta: "With the Base", orcamento: "Request a quote",
+      escolhido: "chosen", pacote: "Base and Reading together: a further 10% off both. If the order includes an IPR Cloud plan, the Base already has that discount and the 10% applies to the Reading only.",
       sTitulo: "IPR Atlas plans",
       exp: "Explorer", expL: ["Map of the country, orthophoto and cadastre", "Search and draw your plot", "Free plot summary"],
       expB: "Keep using it free",
@@ -99,7 +99,22 @@
   function visivel(e) { return !!(e && e.getClientRects().length && getComputedStyle(e).display !== "none"); }
   function sel(v) { return window.CSS && CSS.escape ? CSS.escape(String(v)) : String(v).replace(/["\\]/g, ""); }
   function txt(id) { var e = $(id); return e ? (e.textContent || "").trim() : ""; }
-  function num(v) { return typeof v === "number" && isFinite(v) && v >= 0; }
+  function num(v) { return typeof v === "number" && isFinite(v) && v > 0; } // nunca «0 €»
+  // promoção com data de fim (AAAA-MM-DD, último dia incluído, hora de Lisboa): passada a data, vale o preço normal
+  function promoValida(ate) {
+    if (!ate) return true;
+    var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(ate)); if (!m) return false;
+    return Date.now() < Date.UTC(+m[1], +m[2] - 1, +m[3] + 1, 0, 0, 0); // Lisboa no Inverno = UTC; margem de uma hora no Verão
+  }
+  // {preco, tabela} já com a promoção resolvida; null se não houver preço válido
+  function resolver(o) {
+    if (!o || typeof o !== "object") return null;
+    var promo = num(o.tabela) && num(o.desde != null ? o.desde : o.preco) && promoValida(o.promo_ate);
+    var v = o.desde != null ? o.desde : o.preco;
+    if (num(o.tabela) && !promoValida(o.promo_ate)) return { preco: o.tabela, tabela: null };
+    if (!num(v)) return null;
+    return { preco: v, tabela: promo && o.tabela > v ? o.tabela : null };
+  }
   function eur(v) {
     var s = Number(v).toLocaleString(lg() === "en" ? "en-GB" : "pt-PT", { minimumFractionDigits: v % 1 ? 2 : 0, maximumFractionDigits: 2 });
     return lg() === "en" ? "€" + s : s + " €";
@@ -129,16 +144,16 @@
   function desde(k) {
     var p = PR();
     if (k === "base") {
-      if (p && p.base && num(p.base.desde)) return { v: eur(p.base.desde) };
+      var rb = p && resolver(p.base); if (rb) return { v: eur(rb.preco) };
       lerDesdeDom(); return DOM_DESDE.base ? { v: DOM_DESDE.base } : null;
     }
     if (k === "leitura") {
-      if (p && p.leitura && num(p.leitura.desde)) return { v: eur(p.leitura.desde), riscado: num(p.leitura.tabela) ? eur(p.leitura.tabela) : "" };
+      var rl = p && resolver(p.leitura); if (rl) return { v: eur(rl.preco), riscado: rl.tabela ? eur(rl.tabela) : "" };
       lerDesdeDom(); return DOM_DESDE.leitura ? { v: DOM_DESDE.leitura } : null;
     }
     if (k === "intel") {
-      var m = p && p.intel && p.intel.mes;
-      if (m && num(m.preco)) return { v: eur(m.preco) + t("mes"), riscado: num(m.tabela) ? eur(m.tabela) : "" };
+      var m = p && p.intel && resolver(p.intel.mes);
+      if (m) return { v: eur(m.preco) + t("mes"), riscado: m.tabela ? eur(m.tabela) : "" };
       return null;
     }
     return null;
@@ -171,8 +186,7 @@
     "#ipr-cp-b:hover{filter:brightness(1.07)}" +
     "#ipr-cp-b:focus-visible,.ipr-cp :focus-visible{outline:2px solid var(--ac2,#cdd6a8);outline-offset:2px}" +
     "#ipr-cp-b[aria-expanded=true]{filter:brightness(.92)}" +
-    "@media (max-width:600px){#ipr-cp-b{padding:0 10px;gap:4px;font-size:13px;min-width:40px}}" +
-    "@media (max-width:360px){#ipr-cp-b span{display:none}}" +
+    "@media (max-width:480px){#ipr-cp-b{width:40px;padding:0;justify-content:center;margin:0 0 0 2px}#ipr-cp-b span{display:none}}" +
     ".ipr-cp{font:14px/1.45 " + F + ";color:var(--tx,#ebe7d8);box-sizing:border-box}" +
     ".ipr-cp *{box-sizing:border-box}" +
     ".ipr-cp-pn{position:fixed;z-index:60;top:calc(52px + env(safe-area-inset-top));right:calc(10px + env(safe-area-inset-right));width:360px;max-width:calc(100vw - 20px);max-height:calc(100vh - 70px);overflow:auto;overscroll-behavior:contain;background:var(--p1,#171a13);border:1px solid var(--ln2,#3b4232);border-radius:14px;box-shadow:0 18px 50px rgba(0,0,0,.4);padding:14px}" +
@@ -285,9 +299,8 @@
     }
     var sp = b.querySelector("span"); if (sp.textContent !== t("comprar")) sp.textContent = t("comprar");
     if (b.title !== t("comprarT")) { b.title = t("comprarT"); b.setAttribute("aria-label", t("comprarT")); }
-    var conta = $("ipe-user") || $("ipe-entrar");
-    var antes = conta && conta.parentNode === tr ? conta : ($("ipe-mais") && $("ipe-mais").parentNode === tr ? $("ipe-mais") : null);
-    if (b.parentNode !== tr || (antes && b.nextSibling !== antes)) tr.insertBefore(b, antes);
+    // uma vez, no fim do grupo (depois do último botão que já lá está): não muda a ordem dos outros nem é reposicionado
+    if (!b.isConnected) tr.appendChild(b);
   }
 
   function passos(n) {
@@ -322,8 +335,7 @@
     var l = el("div", "ipr-cp-l");
     l.appendChild(item("base", t("base"), t("baseT"), desde("base"), t("precoDesenho")));
     var dl = desde("leitura"); l.appendChild(item("leitura", t("leitura"), t("leituraT"), dl, t("precoDesenho")));
-    var pp = PR() && PR().planta, dp = pp && num(pp.preco) ? { v: eur(pp.preco) } : null;
-    l.appendChild(item("planta", t("planta"), t("plantaT"), dp, t("incluida")));
+    l.appendChild(item("planta", t("planta"), t("plantaT"), null, t("incluida")));
     var di = desde("intel"); l.appendChild(item("planos", t("planos"), t("planosT"), di, di ? "" : t("gratis")));
     pn.appendChild(l);
     var d = el("div", "ipr-cp-d"); d.id = "ipr-cp-pd"; d.hidden = true; pn.appendChild(d);
@@ -437,12 +449,13 @@
     c.appendChild(el("h2", "", t("cTitulo")));
     c.appendChild(passos(3));
     var ar = el("p", "ipr-cp-ar"); ar.appendChild(el("span", "", t("cArea"))); ar.appendChild(el("strong", "", area)); c.appendChild(ar);
-    c.appendChild(linha("base", t("base"), vb, t("cBase"), "c-base"));
-    if (vl) c.appendChild(linha("leitura", t("leitura"), vl, t("cLeit"), "c-leitura"));
-    var pp = PR() && PR().planta;
-    c.appendChild(linha("planta", t("planta"), pp && num(pp.preco) ? eur(pp.preco) : t("incluida"), t("cPlanta"), "c-planta"));
+    // acima de 5000 ha o Atlas escreve «sob consulta» (sem €): pede-se orçamento pelo mesmo formulário
+    var consulta = !/\d\s*€|€\s*\d/.test(vb);
+    c.appendChild(linha("base", t("base"), vb, consulta ? t("orcamento") : t("cBase"), "c-base"));
+    if (vl) c.appendChild(linha("leitura", t("leitura"), vl, consulta ? t("orcamento") : t("cLeit"), "c-leitura"));
+    c.appendChild(linha("planta", t("planta"), t("incluida"), t("cPlanta"), "c-planta"));
     var p = PR();
-    if (p && p.pacote10 && vl) c.appendChild(el("p", "ipr-cp-n", t("pacote")));
+    if (p && p.pacote10 && vl && !consulta) c.appendChild(el("p", "ipr-cp-n", t("pacote")));
     c.appendChild(el("p", "ipr-cp-n", t("cRodape")));
     c.addEventListener("click", function (e) {
       try {
@@ -468,7 +481,7 @@
         try {
           var c = f.querySelector('input[name="leitura"]');
           if (c && comLeitura && !c.checked) { c.click(); LT_MINHA = true; }
-          else if (c && !comLeitura && c.checked && LT_MINHA) { c.click(); LT_MINHA = false; }
+          else if (c && !comLeitura && c.checked) { c.click(); LT_MINHA = false; } // o total bate com o cartão
           var kpi = $("ipe-preco"); kpi = kpi && (kpi.closest(".ipe-kpi") || kpi);
           luz(kpi);
         } catch (e) {}
@@ -504,15 +517,15 @@
     var i = el("div", "ipr-cp-pl on");
     if (nivel === "intelligence") i.appendChild(el("span", "ipr-cp-et", t("jaTem")));
     i.appendChild(el("h3", "", t("intel")));
-    var p = PR(), im = p && p.intel && p.intel.mes, ia = p && p.intel && p.intel.ano;
-    if (im && num(im.preco)) {
-      var v = el("p", "ipr-cp-v"); if (num(im.tabela)) v.appendChild(el("s", "", eur(im.tabela))); v.appendChild(document.createTextNode(eur(im.preco) + t("mes"))); i.appendChild(v);
-      if (ia && num(ia.preco)) { var v2 = el("p", "ipr-cp-v2", t("ou") + " "); if (num(ia.tabela)) v2.appendChild(el("s", "", eur(ia.tabela))); v2.appendChild(document.createTextNode(" " + eur(ia.preco) + t("ano"))); i.appendChild(v2); }
+    var p = PR(), im0 = p && p.intel && p.intel.mes, ia0 = p && p.intel && p.intel.ano, im = resolver(im0), ia = resolver(ia0);
+    if (im) {
+      var v = el("p", "ipr-cp-v"); if (im.tabela) v.appendChild(el("s", "", eur(im.tabela))); v.appendChild(document.createTextNode(eur(im.preco) + t("mes"))); i.appendChild(v);
+      if (ia) { var v2 = el("p", "ipr-cp-v2", t("ou") + " "); if (ia.tabela) v2.appendChild(el("s", "", eur(ia.tabela))); v2.appendChild(document.createTextNode(" " + eur(ia.preco) + t("ano"))); i.appendChild(v2); }
     }
     var ui = el("ul"); t("intelL").forEach(function (s) { ui.appendChild(el("li", "", s)); }); i.appendChild(ui);
     if (nivel === "intelligence") i.appendChild(el("p", "ipr-cp-v2", t("jaTemTxt")));
     else {
-      var um = im && urlSegura(im.url, ""), ua = ia && urlSegura(ia.url, "");
+      var um = im && urlSegura(im0.url, ""), ua = ia && urlSegura(ia0.url, "");
       if (um) { var a1 = el("a", "ipr-cp-a pri", t("assMes")); a1.href = um; i.appendChild(a1); }
       if (ua) { var a2 = el("a", "ipr-cp-a" + (um ? "" : " pri"), t("assAno")); a2.href = ua; i.appendChild(a2); }
       if (!um && !ua) { var a3 = el("a", "ipr-cp-a pri", t("verPrecos")); a3.href = urlPlanos(); i.appendChild(a3); }
