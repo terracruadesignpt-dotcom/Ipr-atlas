@@ -1,0 +1,110 @@
+/* IPR Atlas · Ajustes do sistema de design propostos pelo Pedro Bolito (regenerativo.pt/interface/ajustes-atlas e
+   /logotipos-do-ipr), escolhidos pelo Nuno a 30/10/2026: painel de projectos «opção 3 · barra de ícones», legenda
+   «opção 2 · agrupada», formulário de encomenda, painel da Base Cartográfica e logótipo IPR Atlas com pulso de 4 s.
+   Só aspecto: nenhuma acção, botão ou dado desaparece. Desligar: <html data-bolito-off> ou window.IPR_BOLITO_OFF.
+   Propriedade de IPR – Instituto de Planeamento Regenerativo, Lda. */
+html:not([data-bolito-off]) #ipe{--b-ac:#94BE39;--b-ou:#B8A83A;--b-ol:#404632;--b-ol2:#64703F;--b-np:#060B04;--b-vn:#14200F}
+
+/* ── Cabeçalho: logótipo IPR Atlas (SVG com pulso de 4 s no triângulo do I) ── */
+html:not([data-bolito-off]) #ipe .ipe-marca.ipr-bolito-logo{display:flex;align-items:center;padding:0;line-height:0}
+html:not([data-bolito-off]) #ipe .ipe-marca.ipr-bolito-logo svg{display:block;height:30px;width:auto}
+@media (max-width:520px){html:not([data-bolito-off]) #ipe .ipe-marca.ipr-bolito-logo svg{height:26px}}
+
+/* ── Painel de projectos · opção 3, barra de ícones ── */
+html:not([data-bolito-off]) #ipe .ipr-ca,
+html:not([data-bolito-off]) #ipe .ipr-tma{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(46px,1fr));gap:0!important;margin-top:9px;padding:0;border:1px solid var(--ln);border-radius:4px;overflow:hidden;flex:1 0 100%}
+html:not([data-bolito-off]) #ipe .ipr-ca>button,
+html:not([data-bolito-off]) #ipe .ipr-tma>button{all:unset;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:7px 2px 6px;min-width:0;border-right:1px solid var(--ln);font:500 10.5px/1.1 Inter,sans-serif;color:var(--mu);text-align:center;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html:not([data-bolito-off]) #ipe .ipr-ca>button:last-child,
+html:not([data-bolito-off]) #ipe .ipr-tma>button:last-child{border-right:0}
+html:not([data-bolito-off]) #ipe .ipr-ca>button svg,
+html:not([data-bolito-off]) #ipe .ipr-tma>button svg{width:17px;height:17px;flex:none;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;color:var(--tx)}
+html:not([data-bolito-off]) #ipe .ipr-ca>button:hover,
+html:not([data-bolito-off]) #ipe .ipr-tma>button:hover{background:var(--p2);color:var(--b-ac)}
+html:not([data-bolito-off]) #ipe .ipr-ca>button:focus-visible,
+html:not([data-bolito-off]) #ipe .ipr-tma>button:focus-visible{outline:2px solid var(--b-ac);outline-offset:-2px}
+html:not([data-bolito-off]) #ipe .ipr-ca>button.ipr-del:hover,
+html:not([data-bolito-off]) #ipe .ipr-tma>button.del:hover{color:#d9725b}
+html:not([data-bolito-off]) #ipe .ipr-ca>button.ipr-del svg,
+html:not([data-bolito-off]) #ipe .ipr-tma>button.del svg{color:#d9725b}
+html:not([data-bolito-off]) #ipe .ipr-tma>.f{grid-column:1/-1;padding:6px}
+/* Acção principal em destaque: Ver em 3D / Ver no mapa */
+html:not([data-bolito-off]) #ipe .ipr-tma>button[data-a=v3d]{grid-column:1/-1;flex-direction:row;gap:6px;padding:6px 11px;border-right:0;border-bottom:1px solid var(--ln);background:var(--b-ac);color:#16160F;font:600 12.5px/1.2 Inter,sans-serif}
+html:not([data-bolito-off]) #ipe .ipr-tma>button[data-a=v3d] svg{color:#16160F;width:15px;height:15px}
+html:not([data-bolito-off]) #ipe .ipr-ver-mapa,
+html:not([data-bolito-off]) #ipe .tme-b[data-tme=ver]{display:inline-flex;align-items:center;gap:6px;background:var(--b-ac)!important;border-color:var(--b-ac)!important;color:#16160F!important;font:600 12.5px/1.2 Inter,sans-serif!important;border-radius:3px!important;padding:5px 11px!important}
+html:not([data-bolito-off]) #ipe .ipr-ver-mapa svg,
+html:not([data-bolito-off]) #ipe .tme-b[data-tme=ver] svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linejoin:round}
+/* Dados do cartão em mono de 11 px; estado e acção principal na mesma linha */
+html:not([data-bolito-off]) #ipe .ipe-ct>.mono{font:400 11px/1.35 'IBM Plex Mono',monospace;color:var(--mu)}
+html:not([data-bolito-off]) #ipe .ipe-ct>.ipe-pill{font:500 10.5px/1 'IBM Plex Mono',monospace;letter-spacing:.08em;text-transform:uppercase}
+html:not([data-bolito-off]) #ipe .tme-t>small{font:400 11px/1.35 'IBM Plex Mono',monospace}
+
+/* ── Legenda do mapa · opção 2, agrupada ── */
+html:not([data-bolito-off]) #ipr-lgd{background:var(--b-ol,#404632)!important;border:1px solid #545B42!important;border-radius:4px!important;color:#E9E7DD!important;font:12px/1.25 Inter,sans-serif!important}
+html:not([data-bolito-off]) #ipr-lgd>.h{font:400 14px/1.2 Outfit,sans-serif!important;letter-spacing:0!important;text-transform:none!important;color:#F4F2EB!important}
+html:not([data-bolito-off]) #ipr-lgd>.h i{font-style:normal;color:#B8A83A;font-weight:600}
+html:not([data-bolito-off]) #ipr-lgd:not(.min)>.h{border-bottom:1px solid #5A6147}
+html:not([data-bolito-off]) #ipr-lgd .gh{font:500 10px/1.2 'IBM Plex Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:#B8A83A;margin:8px 0 3px}
+html:not([data-bolito-off]) #ipr-lgd .gh:first-child{margin-top:2px}
+html:not([data-bolito-off]) #ipr-lgd .c .one{display:flex;gap:8px;align-items:center;padding:3px 0;font-size:12px;line-height:1.25;color:#E9E7DD}
+html:not([data-bolito-off]) #ipr-lgd .c .one>s{flex:none;width:14px;height:10px;margin:0;border-radius:2px;border:1px solid rgba(255,255,255,.25)}
+html:not([data-bolito-off]) #ipr-lgd .c .one.ln>s{height:0;border:0;border-top:2px solid var(--b-cor,#fff);border-radius:0;background:none!important}
+html:not([data-bolito-off]) #ipr-lgd .c .one.ln.fino>s{border-top-width:1px}
+html:not([data-bolito-off]) #ipr-lgd .c .one.rampa>s{background:linear-gradient(90deg,#3D6B3A,#CFE07A,#E9C452,#8A4A22)!important}
+html:not([data-bolito-off]) #ipr-lgd .c .one small.d{margin-left:auto;padding-left:8px;font:400 10px/1.2 'IBM Plex Mono',monospace;color:#A9B88A;white-space:nowrap}
+
+/* ── Formulário de encomenda · Terreno e estimativa ── */
+html:not([data-bolito-off]) #ipe .ipe-met{gap:0!important;border:1px solid var(--ln2);border-radius:3px;overflow:hidden}
+html:not([data-bolito-off]) #ipe .ipe-met .ipe-mb{border:0!important;border-radius:0!important;background:transparent!important;font:500 12px/1.25 Inter,sans-serif!important;color:#A9B88A}
+html:not([data-bolito-off]) #ipe .ipe-met .ipe-mb:nth-child(even){border-left:1px solid var(--ln2)!important}
+html:not([data-bolito-off]) #ipe .ipe-met .ipe-mb:nth-child(n+3){border-top:1px solid var(--ln2)!important}
+html:not([data-bolito-off]) #ipe .ipe-met .ipe-mb span{color:inherit;font:inherit}
+html:not([data-bolito-off]) #ipe .ipe-met .ipe-mb svg{color:currentColor}
+html:not([data-bolito-off]) #ipe .ipe-met .ipe-mb[aria-pressed=true]{background:#000!important;color:var(--b-ac)!important;box-shadow:inset 3px 0 0 var(--b-ou)}
+html:not([data-bolito-off]) #ipe .ipe-met .ipe-mb[aria-pressed=true] svg{color:var(--b-ac)}
+html:not([data-bolito-off]) #ipe-form .ipe-lbl{font:500 10px/1.2 'IBM Plex Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:#A9B88A}
+html:not([data-bolito-off]) #ipe-form .ipr-ou{display:flex;align-items:center;gap:10px;margin:2px 0 12px;font:500 10px 'IBM Plex Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--mu2)}
+html:not([data-bolito-off]) #ipe-form .ipr-ou:before,
+html:not([data-bolito-off]) #ipe-form .ipr-ou:after{content:"";flex:1;height:1px;background:var(--ln2)}
+html:not([data-bolito-off]) #ipe-form .ipr-drop{display:flex;align-items:center;gap:10px;padding:12px;margin:0 0 8px;border:1px dashed var(--b-ol2);border-radius:3px;color:#A9B88A;font-size:12px;line-height:1.35;cursor:pointer}
+html:not([data-bolito-off]) #ipe-form .ipr-drop b{color:var(--tx);font-weight:600}
+html:not([data-bolito-off]) #ipe-form .ipr-drop.sobre,
+html:not([data-bolito-off]) #ipe-form .ipr-drop:hover{border-color:var(--b-ac);background:rgba(148,190,57,.06)}
+html:not([data-bolito-off]) #ipe-form .ipr-drop svg{flex:none;width:18px;height:18px;fill:none;stroke:var(--b-ac);stroke-width:1.6}
+html:not([data-bolito-off]) #ipe-form .ipr-drop .n{display:block;color:var(--b-ac);font:500 11px 'IBM Plex Mono',monospace;margin-top:2px}
+html:not([data-bolito-off]) #ipe-form input.ipr-drop-in{position:absolute!important;width:1px!important;height:1px!important;opacity:0!important;overflow:hidden!important;margin:0!important;padding:0!important;border:0!important}
+html:not([data-bolito-off]) #ipe-form #ipe-limpar{all:unset;cursor:pointer;font:500 11px Inter,sans-serif;color:#A9B88A;text-decoration:underline;text-underline-offset:3px}
+html:not([data-bolito-off]) #ipe-form #ipe-limpar:disabled{opacity:.45;cursor:default}
+html:not([data-bolito-off]) #ipe-form #ipe-limpar:not(:disabled):hover{color:var(--b-ac)}
+html:not([data-bolito-off]) #ipe-form .ipe-h{align-items:baseline;gap:10px;font:400 17px/1.2 Outfit,sans-serif;padding:0 0 8px;border-bottom:1px solid var(--ln2)}
+html:not([data-bolito-off]) #ipe-form .ipe-h:after{display:none}
+html:not([data-bolito-off]) #ipe-form .ipe-h>b{font:600 12px/1 'IBM Plex Mono',monospace;color:var(--b-ac)}
+html:not([data-bolito-off]) #ipe .ipe-kpi{border-radius:3px}
+html:not([data-bolito-off]) #ipe .ipe-kpi div{background:transparent}
+html:not([data-bolito-off]) #ipe .ipe-kpi span{font:500 10px 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#A9B88A}
+html:not([data-bolito-off]) #ipe .ipe-kpi #ipe-area{font:400 15px/1.3 Outfit,sans-serif;color:var(--tx)}
+html:not([data-bolito-off]) #ipe .ipe-kpi #ipe-preco{font:500 22px/1.15 Outfit,sans-serif;color:var(--b-ac)}
+html:not([data-bolito-off]) #ipe-form label.ipe-chk:has(#ipe-preco-l){padding:12px;border:1px solid var(--ln2);border-radius:3px;background:rgba(0,0,0,.18);font-size:12px;color:#A9B88A}
+html:not([data-bolito-off]) #ipe-form #ipe-preco-l{display:inline-block;margin:0 2px;padding:2px 6px;border-radius:2px;background:var(--b-ou);color:#202319;font:500 11px 'IBM Plex Mono',monospace}
+html:not([data-bolito-off]) #ipe-form .ipr-nt{display:block;position:relative;padding-left:12px;margin:0 0 4px}
+html:not([data-bolito-off]) #ipe-form .ipr-nt:before{content:"";position:absolute;left:0;top:5px;width:5px;height:5px;background:var(--b-ol2);clip-path:polygon(100% 0,100% 100%,0 100%)}
+
+/* ── Painel da Base Cartográfica · camadas escolhidas, texto corrido ── */
+html:not([data-bolito-off]) #ipe .ipe-basecam{background:var(--b-ol);border:1px solid #545B42;border-radius:4px;padding:12px}
+html:not([data-bolito-off]) #ipe .ipe-basecam .ipe-h{border:0;padding:0;margin:0 0 10px!important;font:400 15px/1.2 Outfit,sans-serif!important;color:#F4F2EB}
+html:not([data-bolito-off]) #ipe .ipe-basecam .ipe-h>b{font:600 15px/1 Outfit,sans-serif;color:var(--b-ou)}
+html:not([data-bolito-off]) #ipe .ipe-basecam .ipe-h:after{content:"";display:block;flex:1;height:1px;background:#5A6147;align-self:center}
+html:not([data-bolito-off]) #ipe .ipe-basecam .ipe-chips{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px}
+html:not([data-bolito-off]) #ipe .ipe-basecam .ipe-chip{all:unset;box-sizing:border-box;cursor:pointer;padding:7px 6px 7px 9px;border:1px solid var(--b-ol2);border-left:3px solid var(--b-ol2);border-radius:2px;font:400 11.5px/1 Inter,sans-serif;color:#A9B88A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html:not([data-bolito-off]) #ipe .ipe-basecam .ipe-chip.on{background:#000;color:var(--b-ac);border-color:#000;border-left-color:var(--b-ou);font-weight:600}
+html:not([data-bolito-off]) #ipe .ipe-basecam .ipe-chip:focus-visible{outline:2px solid var(--b-ac);outline-offset:1px}
+html:not([data-bolito-off]) #ipe .ipe-fl2 li{flex-direction:column;align-items:stretch;gap:10px}
+html:not([data-bolito-off]) #ipe .ipe-fl2 li .ipe-fl-t small{font-size:12.5px;line-height:1.45}
+html:not([data-bolito-off]) #ipe .ipe-fl2 li>a.ipe-b{display:block;text-align:center}
+html:not([data-bolito-off]) #ipe .ipe-fl2 li.ipe-fl-tudo{border-radius:4px;padding:14px 16px}
+
+/* Movimento reduzido: o pulso do logótipo fica parado */
+#ipe .ipr-bolito-logo .ipr-b5-p{animation:ipr-b5-p 4s ease-in-out infinite}
+@keyframes ipr-b5-p{0%,100%{opacity:0}50%{opacity:.85}}
+@media (prefers-reduced-motion:reduce){#ipe .ipr-bolito-logo .ipr-b5-p{animation:none!important;opacity:0}}
