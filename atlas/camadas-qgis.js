@@ -4,16 +4,21 @@
    Desliga-se com ?camadas-qgis=0 ou localStorage ipr_camadas-qgis_off=1. Cada parte falha em silêncio.
 
    1. Secção nova e recolhível «Camadas ligadas» na barra da esquerda, logo acima da secção «Camadas». Ordem de desenho
-      como no QGIS: a de cima desenha por cima. Arrasta-se pela pega (rato, toque e caneta; também setas do teclado na pega).
+      como no QGIS: a de cima desenha por cima. Arrasta-se pela pega (rato, toque e caneta; também setas do teclado na pega);
+      a linha agarrada segue o ponteiro e um marcador mostra onde vai ficar; cancelar ou perder a captura desfaz.
       As camadas MapLibre de cada entrada do catálogo são as do viz.js: «iprv-<id>-<sufixo>» (-r, -lzr, -f, -l, -c, -t,
-      -q ...), fonte «iprv-<id>». A ordem só é imposta depois de o utilizador arrastar pela primeira vez (até lá fica a ordem
-      do viz.js, por categoria); é guardada neste navegador e reaplicada quando o viz.js volta a criar as camadas.
-      Deslizador de transparência (opacidade) por camada, com a mesma regra por tipo do mudarOpacidade do viz.js; quando a
-      linha da camada está aberta na árvore, o deslizador da árvore acompanha (e vice-versa). Guardado neste navegador.
-      Menu de clique direito (toque longo no iPad; também botão «...»): Ir para, Propriedades, Exportar.
-      Exportar sem servidor: GeoJSON dos elementos visíveis (camadas vectoriais; fontes GeoJSON com a geometria completa,
-      mosaicos vectoriais com a geometria desenhada); camadas raster e WMS: o endereço do serviço para abrir no QGIS.
-      Camadas «só consulta» (licença) e ficheiros privados (Base Cartográfica, entregas) não mostram endereço.
+      -q ...), fonte «iprv-<id>». A ordem só é imposta depois do primeiro arrasto e só dentro das faixas do viz.js (entre os
+      sentinelas iprv-s-raster, -fill, -line, -point, -aoi, -label): imagens nunca passam por cima de linhas e uma camada
+      ligada depois entra na faixa do seu tipo. Terreno (aoi) e etiquetas (o_nomes, camadas só de texto) e os fundos ficam
+      fixos, sem pega. A ordem guarda-se neste navegador por mapa (?mapa= ou o terreno aberto).
+      Deslizador de opacidade (10 a 100 %, como o da árvore) com a mesma regra por tipo do mudarOpacidade do viz.js; passa
+      pelo deslizador da árvore quando a linha dela está aberta. Só se grava o que é mexido neste painel; mexer na árvore
+      só actualiza o valor mostrado aqui (e anula o que este painel tinha guardado para essa camada). Linhas bloqueadas
+      (.bl) não têm deslizador.
+      Menu de clique direito (toque longo no iPad; também botão «...»): Ir para, Propriedades e, só em camadas de licença
+      aberta («v») que não sejam produtos IPR (Base Cartográfica, camadas do IPR, entregas, escorrência), Exportar:
+      GeoJSON dos elementos visíveis (fontes GeoJSON com a geometria completa, mosaicos vectoriais com a desenhada);
+      raster e WMS: o endereço do serviço para abrir no QGIS.
    2. Reportes do técnico Bernardo:
       17048 Contador do número de camadas ligadas sempre visível ao fazer scroll (barra fixa no topo da zona que rola;
             repete o texto do rodapé da árvore, que fica onde está).
@@ -22,8 +27,9 @@
             se vier em linhas, linha azul-escura e mais grossa.
       16462 Bacias diferentes com a mesma cor: a correcção d542d64 colore pelo rótulo (A1, A2 ... B1) com 4 cores em ciclo
             ((letra x 10 + número) mod 4), por isso A1, A5, A9 ou A3 e B1 repetem cor, e bacias vizinhas podem ficar iguais.
-            Aqui, ao ligar «Bacias hidrográficas» da Base, lêem-se as bacias, calcula-se quem toca em quem e pinta-se com 8
-            cores de modo que vizinhas nunca fiquem iguais (fill-color por rótulo). */
+            Aqui, ao ligar «Bacias hidrográficas» da Base, lêem-se as bacias, calcula-se quem toca em quem e pinta-se de modo
+            que vizinhas nunca fiquem iguais (8 cores e mais, se forem precisas; fill-color por rótulo). Em PMTiles há um só
+            ouvinte «idle» por mapa, com espera, que só recalcula quando muda o conjunto de rótulos carregados. */
 (function () {
   "use strict";
   var W = window, D = document, NOME = "camadas-qgis";
@@ -90,8 +96,8 @@
     } catch (e) { return null; }
   }
   function opLida(M, id) {
-    var g = lerJ(K_OP, {}); if (typeof g[id] === "number") return g[id];
     var s = opDaArvore(id); if (s) return (+s.value || 100) / 100;
+    var g = lerJ(K_OP, {}); if (typeof g[id] === "number") return g[id];
     var L = estiloCamadas(M), ls = camadasDe(id, L);
     for (var i = 0; i < ls.length; i++) {
       try {
@@ -104,16 +110,24 @@
     }
     var e = entrada(id); return e && typeof e.op === "number" ? e.op : 1;
   }
-  function temOpacidade(id) { var e = entrada(id); return !(e && (e.fundo || e.t === "aoi")) && id !== "aoi"; }
-  function mudarOp(id, o, deArvore) {
+  function bloqueada(id) {
+    try { var li = D.querySelector('#ipe-cam .ipr-it[data-id="' + (W.CSS && CSS.escape ? CSS.escape(id) : id) + '"]'); return !!(li && li.classList.contains("bl")); } catch (e) { return false; }
+  }
+  function temOpacidade(id) { var e = entrada(id); return !(e && (e.fundo || e.t === "aoi")) && id !== "aoi" && !bloqueada(id); }
+  // Pela árvore do viz.js quando a linha dela está aberta (o viz.js guarda S[id].op e usa-o ao recriar a camada); sempre
+  // também directamente no mapa, com a mesma regra. Só se grava o que foi mexido neste painel.
+  function opPelaArvore(id, o) {
+    var s = opDaArvore(id); if (!s) return false;
+    B.emitir = 1;
+    try { s.value = String(Math.max(+s.min || 10, Math.round(o * 100))); s.dispatchEvent(new Event("input", { bubbles: true })); } catch (e) {}
+    B.emitir = 0; return true;
+  }
+  function mudarOp(id, o) {
     var M = mapa(); if (!M) return;
+    o = Math.max(0.1, Math.min(1, o));
     var g = lerJ(K_OP, {}); g[id] = Math.round(o * 100) / 100; gravar(K_OP, JSON.stringify(g));
-    if (!deArvore) {
-      // A árvore do viz.js guarda a opacidade dela (S[id].op), que usa ao recriar a camada: acompanha-se pelo próprio deslizador.
-      var s = opDaArvore(id);
-      if (s) { B.emitir = 1; try { s.value = String(Math.max(+s.min || 10, Math.round(o * 100))); s.dispatchEvent(new Event("input", { bubbles: true })); } catch (e) {} B.emitir = 0; }
-      aplicarOp(M, id, o);
-    }
+    opPelaArvore(id, o);
+    aplicarOp(M, id, o);
   }
 
   // ---------- 16456 acumulação ----------
@@ -123,6 +137,8 @@
       var r = M.getLayer(lid); if (!r) return;
       var g = lerJ(K_OP, {}), op = typeof g.l_acumulacao === "number" ? g.l_acumulacao : 0.9;
       if (r.type === "raster") {
+        // na árvore (quando a linha está aberta) para o deslizador dela mostrar o valor aplicado e o viz.js o guardar
+        if (/^iprv-l_acumulacao-/.test(lid)) opPelaArvore("l_acumulacao", op);
         M.setPaintProperty(lid, "raster-opacity", op);
         M.setPaintProperty(lid, "raster-brightness-max", 0.72);
         M.setPaintProperty(lid, "raster-contrast", 0.25);
@@ -138,15 +154,20 @@
   // ---------- 16462 bacias com cores distintas entre vizinhas ----------
   var RE_BAC = /^(iprv-l_bacias_l|ipe-am-bacias_l)-f$/;
   var CORES_BAC = ["#E8A4C8", "#7ECFC0", "#B5D46A", "#9B8EC4", "#F2B37A", "#7FA8D9", "#E3CF6A", "#D98C8C"];
+  function corBacia(i) {
+    if (i < CORES_BAC.length) return CORES_BAC[i];
+    var h = Math.round((i * 137.508) % 360); return "hsl(" + h + ",55%,68%)"; // cores extra (ângulo de ouro), nunca repetidas
+  }
   function rotulo(p) { p = p || {}; var v = p.label != null ? p.label : (p.LABEL != null ? p.LABEL : p.rotulo); return v == null ? null : String(v); }
+  var MAX_VERT = 250000; // limite de vértices lidos por cálculo (o resto das bacias fica com a cor do rótulo)
   function coresBacias(feats) {
-    var CEL = 0.0002, cel = {}, lista = {};
+    var CEL = 0.0002, cel = {}, lista = {}, n = 0;
     feats.forEach(function (f) {
       var lb = rotulo(f && f.properties); if (lb == null || !f.geometry) return;
       lista[lb] = 1;
       (function andar(c) {
-        if (!c || !c.length) return;
-        if (typeof c[0] === "number") { var k = Math.round(c[0] / CEL) + ":" + Math.round(c[1] / CEL); (cel[k] = cel[k] || {})[lb] = 1; return; }
+        if (!c || !c.length || n > MAX_VERT) return;
+        if (typeof c[0] === "number") { n++; var k = Math.round(c[0] / CEL) + ":" + Math.round(c[1] / CEL); (cel[k] = cel[k] || {})[lb] = 1; return; }
         for (var i = 0; i < c.length; i++) andar(c[i]);
       })(f.geometry.coordinates);
     });
@@ -177,33 +198,45 @@
     }
     return Promise.resolve(null);
   }
+  function pintarBacias(M, lid, feats) {
+    if (!feats || !feats.length || !M.getLayer(lid)) return false;
+    var c = coresBacias(feats), k = Object.keys(c.cor); if (k.length < 2) return false;
+    var ex = ["match", ["to-string", ["coalesce", ["get", "label"], ["get", "LABEL"], ["get", "rotulo"], ""]]];
+    k.forEach(function (r) { ex.push(r, corBacia(c.cor[r])); });
+    ex.push(CORES_BAC[0]);
+    M.setPaintProperty(lid, "fill-color", ex);
+    W.__iprCqBacias = c; // para diagnóstico
+    return true;
+  }
+  // Mosaicos vectoriais (PMTiles): só se conhecem as bacias já carregadas. Um só ouvinte «idle» por mapa, com espera, que só
+  // recalcula quando muda o conjunto de rótulos carregados (não a contagem por vista).
+  function vigiarBacias(M) {
+    if (M.__iprCqBac) return;
+    M.__iprCqBac = 1;
+    var t = 0;
+    M.on("idle", function () {
+      clearTimeout(t);
+      t = setTimeout(function () {
+        try {
+          var a = B.bac; if (!a || a.M !== M || !M.getLayer(a.lid)) return;
+          var f = M.querySourceFeatures(a.src, a.sl ? { sourceLayer: a.sl } : {});
+          var r = {}; f.forEach(function (x) { var l = rotulo(x && x.properties); if (l != null) r[l] = 1; });
+          var ass = Object.keys(r).sort().join("|");
+          if (ass === a.ass) return;
+          a.ass = ass; pintarBacias(M, a.lid, f);
+        } catch (e) {}
+      }, 400);
+    });
+  }
   function corrigirBacias(M, lid) {
     try {
       var r = M.getLayer(lid); if (!r) return;
       var src = r.source, sl = r.sourceLayer || r["source-layer"];
-      var pintar = function (feats) {
-        if (!feats || !feats.length) return false;
-        var c = coresBacias(feats), k = Object.keys(c.cor); if (k.length < 2) return false;
-        var ex = ["match", ["to-string", ["coalesce", ["get", "label"], ["get", "LABEL"], ["get", "rotulo"], ""]]];
-        k.forEach(function (r) { ex.push(r, CORES_BAC[c.cor[r] % CORES_BAC.length]); });
-        ex.push(CORES_BAC[0]);
-        if (!M.getLayer(lid)) return false;
-        M.setPaintProperty(lid, "fill-color", ex);
-        W.__iprCqBacias = c; // para diagnóstico
-        return true;
-      };
+      B.bac = null;
       lerDados(M, src).then(function (d) {
-        if (d && d.features) { pintar(d.features); return; }
-        // Mosaicos vectoriais (PMTiles): só se conhecem as bacias já carregadas; volta a pintar quando chegam mais.
-        var t = null, ultimo = -1;
-        var tentar = function () {
-          try {
-            if (!M.getLayer(lid)) { M.off("idle", tentar); return; }
-            var f = M.querySourceFeatures(src, sl ? { sourceLayer: sl } : {});
-            if (f.length !== ultimo) { ultimo = f.length; pintar(f); }
-          } catch (e) {}
-        };
-        M.on("idle", tentar); tentar();
+        if (d && d.features) { pintarBacias(M, lid, d.features); return; }
+        B.bac = { M: M, lid: lid, src: src, sl: sl, ass: "" };
+        vigiarBacias(M);
       }).catch(function () {});
     } catch (e) {}
   }
@@ -211,16 +244,33 @@
   // ---------- estado ----------
   var B = { emitir: 0, M: null, vistos: {}, sec: null, lista: null, cont: null, menu: null, dlg: null, arrastar: null, assin: "", tRef: 0 };
 
+  // A ordem guarda-se por mapa (?mapa=<id> ou o terreno aberto); sem mapa, a da conta.
+  function chaveOrdem() {
+    var m = "";
+    try { m = new URLSearchParams(location.search).get("mapa") || ""; } catch (e) {}
+    if (!m) { try { var a = ipe().estado.actual; if (a && a.id != null) m = String(a.id); } catch (e) {} }
+    return K_ORDEM + (m ? "_" + m.replace(/[^\w-]/g, "_").slice(0, 60) : "");
+  }
+  // Fora do arrasto: o limite do terreno e as etiquetas (só camadas de texto), que o viz.js mantém sempre por cima.
+  function fixa(id, L) {
+    if (id === "aoi" || id === "o_nomes") return true;
+    var e = entrada(id); if (e && e.t === "aoi") return true;
+    var ls = camadasDe(id, L); if (!ls.length) return false;
+    return ls.every(function (l) { var x = null; try { x = mapa().getLayer(l); } catch (err) {} return x && x.type === "symbol"; });
+  }
   function activasOrdenadas(M, V) {
     var act = []; try { act = (V.activas() || []).slice(); } catch (e) {}
     act = act.filter(function (id) { return !ehFundo(id); });
     var L = estiloCamadas(M), qual = dono(act), topo = {};
     for (var i = 0; i < L.length; i++) { var d = qual(L[i].id); if (d) topo[d] = i; }
+    var porTopo = function (a, b) { return (topo[b] == null ? 1e9 : topo[b]) - (topo[a] == null ? 1e9 : topo[a]); };
+    var fixas = act.filter(function (id) { return fixa(id, L); }).sort(porTopo);
+    var mov = act.filter(function (id) { return fixas.indexOf(id) < 0; });
     // ordem actual de desenho, de cima para baixo; as que ainda não têm camadas (a carregar) ficam no topo
-    var ordem = act.slice().sort(function (a, b) { return (topo[b] == null ? 1e9 : topo[b]) - (topo[a] == null ? 1e9 : topo[a]); });
-    var g = lerJ(K_ORDEM, null);
+    var ordem = mov.slice().sort(porTopo);
+    var g = lerJ(chaveOrdem(), null);
     if (g && g.length) {
-      var dentro = g.filter(function (id) { return act.indexOf(id) >= 0; });
+      var dentro = g.filter(function (id) { return mov.indexOf(id) >= 0; });
       ordem.forEach(function (id, i) {
         if (dentro.indexOf(id) >= 0) return;
         // camada nova: entra junto da vizinha de cima na ordem actual, ou no topo
@@ -228,22 +278,39 @@
         for (var j = i - 1; j >= 0; j--) { var k = dentro.indexOf(ordem[j]); if (k >= 0) { pos = k + 1; break; } }
         dentro.splice(pos, 0, id);
       });
-      return { ordem: dentro, imposta: true, act: act };
+      return { ordem: dentro, fixas: fixas, imposta: true, act: act };
     }
-    return { ordem: ordem, imposta: false, act: act };
+    return { ordem: ordem, fixas: fixas, imposta: false, act: act };
   }
 
+  // Respeita as faixas do viz.js: cada camada fica entre os mesmos sentinelas (iprv-s-raster, -fill, -line, -point, -aoi,
+  // -label) e só se reordena dentro da sua faixa. Uma raster nunca passa por cima das linhas, e uma camada ligada depois
+  // entra na faixa do seu tipo (nunca fica escondida por baixo das imagens). Sem sentinelas no mapa, não se mexe em nada.
   function impor(M, ordem) {
-    var L = estiloCamadas(M), qual = dono(ordem), seq = [], geridas = [];
-    for (var i = 0; i < L.length; i++) { var d = qual(L[i].id); if (d) { geridas.push(L[i].id); if (seq[seq.length - 1] !== d) seq.push(d); } }
-    var desejada = ordem.slice().reverse().filter(function (id) { return seq.indexOf(id) >= 0; });
-    if (seq.join("\n") === desejada.join("\n")) return;
-    var ultima = geridas[geridas.length - 1], idx = -1, ancora;
-    for (i = 0; i < L.length; i++) if (L[i].id === ultima) idx = i;
-    var conj = {}; geridas.forEach(function (g) { conj[g] = 1; });
-    for (i = idx + 1; i < L.length; i++) if (!conj[L[i].id]) { ancora = L[i].id; break; }
-    desejada.forEach(function (id) {
-      camadasDe(id, L).forEach(function (lid) { try { M.moveLayer(lid, ancora); } catch (e) {} });
+    var L = estiloCamadas(M), qual = dono(ordem), faixas = [], cur = [], tem = false;
+    for (var i = 0; i < L.length; i++) {
+      var id = L[i].id;
+      if (id.indexOf("iprv-s-") === 0) { tem = true; faixas.push({ ancora: id, ls: cur }); cur = []; continue; }
+      if (qual(id)) cur.push(id);
+    }
+    if (!tem) return;
+    if (cur.length) {
+      // por cima do último sentinela: âncora é a primeira camada não gerida acima da mais alta gerida
+      var conj = {}; cur.forEach(function (x) { conj[x] = 1; });
+      var idx = -1; for (i = 0; i < L.length; i++) if (L[i].id === cur[cur.length - 1]) idx = i;
+      var anc; for (i = idx + 1; i < L.length; i++) if (!conj[L[i].id]) { anc = L[i].id; break; }
+      faixas.push({ ancora: anc, ls: cur });
+    }
+    var baixoCima = ordem.slice().reverse();
+    faixas.forEach(function (f) {
+      if (!f.ls.length) return;
+      var seq = [];
+      f.ls.forEach(function (lid) { var d = qual(lid); if (seq[seq.length - 1] !== d) seq.push(d); });
+      var desejada = baixoCima.filter(function (id) { return seq.indexOf(id) >= 0; });
+      if (seq.join("\n") === desejada.join("\n")) return;
+      desejada.forEach(function (id) {
+        f.ls.forEach(function (lid) { if (qual(lid) === id) { try { M.moveLayer(lid, f.ancora); } catch (e) {} } });
+      });
     });
   }
 
@@ -275,7 +342,7 @@
     "#ipr-cq .ipr-cq-l{list-style:none;margin:0;padding:4px 0}" +
     "#ipr-cq .ipr-cq-it{display:grid;grid-template-columns:40px minmax(0,1fr) 40px;align-items:center;padding:0 4px 2px 0;border-top:1px solid transparent;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;background:var(--p1,#fff)}" +
     "#ipr-cq .ipr-cq-it.arr{background:var(--acs,rgba(117,131,74,.14));box-shadow:0 2px 10px rgba(0,0,0,.18);position:relative;z-index:2}" +
-    "#ipr-cq .ipr-cq-it.fixa .ipr-cq-pega{visibility:hidden}" +
+    "#ipr-cq .ipr-cq-it.fixa .ipr-cq-pega{visibility:hidden}#ipr-cq .ipr-cq-ph{height:4px;margin:2px 8px;border-radius:2px;background:var(--ac,#75834a)}" +
     "#ipr-cq .ipr-cq-pega{width:40px;height:40px;border:0;background:none;color:var(--mu,#6b6f5c);cursor:grab;touch-action:none;display:flex;align-items:center;justify-content:center;padding:0}" +
     "#ipr-cq .ipr-cq-pega:active{cursor:grabbing}#ipr-cq .ipr-cq-pega svg{width:16px;height:16px}" +
     "#ipr-cq .ipr-cq-n{min-width:0;font-size:13px;line-height:1.25;padding:4px 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}" +
@@ -285,7 +352,7 @@
     "#ipr-cq .ipr-cq-op{grid-column:2/4;display:flex;align-items:center;gap:8px;font:11px var(--mono,monospace);color:var(--mu2,#737761);padding-right:8px}" +
     "#ipr-cq .ipr-cq-op input{flex:1;min-width:0;height:28px;accent-color:var(--ac,#75834a)}#ipr-cq .ipr-cq-op output{width:38px;text-align:right}" +
     "#ipr-cq .ipr-cq-vazio{padding:10px 12px;font-size:12px;opacity:.75}" +
-    "#ipr-cq .ipr-cq-rod{display:flex;justify-content:flex-end;padding:0 8px 6px}" +
+    "#ipr-cq .ipr-cq-rod{display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:center;gap:4px;padding:0 8px 6px 12px}#ipr-cq .ipr-cq-nota{flex:1 1 100%;margin:0;font-size:11px;line-height:1.35;opacity:.7}" +
     "#ipr-cq .ipr-cq-rod button{border:0;background:none;color:var(--ac2,#5f6b3a);font-size:12px;text-decoration:underline;min-height:40px;padding:0 6px;cursor:pointer}" +
     "#ipr-cq-cont{position:sticky;top:0;z-index:5;flex:none;padding:6px 12px;font:600 11px/1.3 var(--mono,monospace);letter-spacing:.04em;background:var(--p2,#fff);color:var(--ac2,#5f6b3a);border-bottom:1px solid var(--ln,#e3dfcc)}" +
     ".ipr-cq-menu{position:fixed;z-index:100000;min-width:190px;background:var(--p1,#fff);color:var(--tx,#222);border:1px solid var(--ln2,#cfc9b4);border-radius:6px;box-shadow:0 8px 28px rgba(0,0,0,.25);padding:4px;font-family:inherit}" +
@@ -311,14 +378,14 @@
     var s = D.createElement("section"); s.id = "ipr-cq"; s.setAttribute("aria-label", "Camadas ligadas");
     if (ler(K_ABERTO) === "0") s.className = "fech";
     s.innerHTML = '<button type="button" class="ipr-cq-h" aria-expanded="' + (ler(K_ABERTO) === "0" ? "false" : "true") + '"><span class="ipr-cq-car"></span><span class="ipr-cq-ht"></span><em></em></button>' +
-      '<div class="ipr-cq-c"><ul class="ipr-cq-l" role="list"></ul><div class="ipr-cq-rod"><button type="button" class="ipr-cq-repor" hidden></button></div></div>';
+      '<div class="ipr-cq-c"><ul class="ipr-cq-l" role="list"></ul><div class="ipr-cq-rod"><p class="ipr-cq-nota"></p><button type="button" class="ipr-cq-repor" hidden></button></div></div>';
     esq.insertBefore(s, cam);
     B.sec = s; B.lista = s.querySelector(".ipr-cq-l");
     s.querySelector(".ipr-cq-h").addEventListener("click", function () {
       var f = s.classList.toggle("fech"); this.setAttribute("aria-expanded", String(!f)); gravar(K_ABERTO, f ? "0" : "1");
     });
     s.querySelector(".ipr-cq-repor").addEventListener("click", function () {
-      gravar(K_ORDEM, null); B.assin = ""; refrescar();
+      gravar(chaveOrdem(), null); B.assin = ""; refrescar();
       aviso(T("A ordem própria foi retirada. As camadas voltam à ordem do Atlas quando forem ligadas de novo.", "Custom order removed. Layers return to the Atlas order when switched on again."));
     });
     ligarLista();
@@ -332,7 +399,9 @@
     B.sec.setAttribute("aria-label", T("Camadas ligadas", "Active layers"));
     var rp = B.sec.querySelector(".ipr-cq-repor");
     rp.textContent = T("Repor a ordem do Atlas", "Reset to Atlas order");
-    rp.hidden = !(lerJ(K_ORDEM, null) || []).length;
+    rp.hidden = !(lerJ(chaveOrdem(), null) || []).length;
+    var nt = B.sec.querySelector(".ipr-cq-nota");
+    if (nt) nt.textContent = T("A ordem aplica-se entre camadas do mesmo tipo (imagens, áreas, linhas, pontos). Linhas e pontos ficam sempre por cima das imagens, e as etiquetas e o terreno por cima de tudo.", "Order applies among layers of the same kind (images, areas, lines, points). Lines and points always stay above images, and labels and the site above everything.");
   }
 
   function linha(id, fixa) {
@@ -343,13 +412,15 @@
       '<button type="button" class="ipr-cq-pega" aria-label="' + esc(T("Arrastar para mudar a ordem: ", "Drag to reorder: ") + nomeDe(e, id)) + '"' + (fixa ? ' tabindex="-1" disabled' : "") + ">" + PEGA + "</button>" +
       '<span class="ipr-cq-n" title="' + esc(nomeDe(e, id)) + '">' + esc(nomeDe(e, id)) + (sub ? "<small>" + esc(sub) + "</small>" : "") + "</span>" +
       '<button type="button" class="ipr-cq-mais" aria-haspopup="menu" aria-label="' + esc(T("Opções de ", "Options for ") + nomeDe(e, id)) + '">&#8943;</button>' +
-      (op != null ? '<label class="ipr-cq-op"><span>' + esc(T("Opacidade", "Opacity")) + '</span><input type="range" min="0" max="100" step="1" value="' + Math.round(op * 100) + '" aria-label="' + esc(T("Opacidade de ", "Opacity of ") + nomeDe(e, id)) + '"><output>' + Math.round(op * 100) + " %</output></label>" : "") +
+      (op != null ? '<label class="ipr-cq-op"><span>' + esc(T("Opacidade", "Opacity")) + '</span><input type="range" min="10" max="100" step="1" value="' + Math.max(10, Math.round(op * 100)) + '" aria-label="' + esc(T("Opacidade de ", "Opacity of ") + nomeDe(e, id)) + '"><output>' + Math.max(10, Math.round(op * 100)) + " %</output></label>" : "") +
       "</li>";
   }
 
-  function desenharLista(ordem, fundos) {
+  function desenharLista(ordem, fixas) {
     if (!B.lista) return;
-    var h = ordem.map(function (id) { return linha(id, false); }).join("") + fundos.map(function (id) { return linha(id, true); }).join("");
+    // fixas = etiquetas e terreno (sempre por cima), "--", fundos (sempre por baixo)
+    var k = fixas.indexOf("--"), cima = fixas.slice(0, k), baixo = fixas.slice(k + 1);
+    var h = cima.map(function (id) { return linha(id, true); }).join("") + ordem.map(function (id) { return linha(id, false); }).join("") + baixo.map(function (id) { return linha(id, true); }).join("");
     B.lista.innerHTML = h || '<li class="ipr-cq-vazio">' + esc(T("Nenhuma camada ligada.", "No layers switched on.")) + "</li>";
   }
 
@@ -393,8 +464,8 @@
       novasCamadas(M, r.act);
       if (r.imposta && !B.arrastar) impor(M, r.ordem);
       var fundos = []; try { fundos = (V.activas() || []).filter(ehFundo); } catch (e) {}
-      var assin = r.ordem.join("|") + "#" + fundos.join("|") + "#" + (en() ? "en" : "pt");
-      if (assin !== B.assin && !B.arrastar) { B.assin = assin; desenharLista(r.ordem, fundos); }
+      var assin = r.fixas.join("|") + "#" + r.ordem.join("|") + "#" + fundos.join("|") + "#" + (en() ? "en" : "pt");
+      if (assin !== B.assin && !B.arrastar) { B.assin = assin; desenharLista(r.ordem, r.fixas.concat(["--"]).concat(fundos)); }
       textoCabecalho(r.ordem.length);
       contador(r.act.filter(function (id) { return id !== "aoi"; }).length);
     } catch (e) {}
@@ -405,9 +476,20 @@
   function idDe(el) { var li = el && el.closest && el.closest(".ipr-cq-it"); return li ? li.getAttribute("data-id") : null; }
   function gravarOrdemDoDom() {
     var ids = [].map.call(B.lista.querySelectorAll(".ipr-cq-it:not(.fixa)"), function (li) { return li.getAttribute("data-id"); });
-    gravar(K_ORDEM, JSON.stringify(ids));
+    gravar(chaveOrdem(), JSON.stringify(ids));
     var M = mapa(); if (M) impor(M, ids);
     textoCabecalho(ids.length);
+  }
+  // Arrastar: a linha agarrada não sai do sítio no DOM (fica com a captura do ponteiro); segue o dedo com transform e é um
+  // marcador que muda de lugar. Ao largar, a linha vai para o lugar do marcador. Cancelar ou perder a captura desfaz.
+  function acabarArrasto(confirmar) {
+    var a = B.arrastar; if (!a) return;
+    B.arrastar = null;
+    try { a.li.classList.remove("arr"); a.li.style.transform = ""; } catch (e) {}
+    if (confirmar && a.mexeu && a.ph.parentNode) { try { a.ph.parentNode.insertBefore(a.li, a.ph); } catch (e) {} }
+    try { a.ph.remove(); } catch (e) {}
+    if (confirmar && a.mexeu) gravarOrdemDoDom();
+    B.assin = ""; agendar();
   }
   function ligarLista() {
     var L = B.lista, sup = 0;
@@ -417,8 +499,11 @@
       if (!li) return;
       if (pega && !li.classList.contains("fixa")) {
         ev.preventDefault();
+        if (B.arrastar) acabarArrasto(false);
         try { pega.setPointerCapture(ev.pointerId); } catch (e) {}
-        B.arrastar = { li: li, y: ev.clientY, pid: ev.pointerId, mexeu: false };
+        var ph = D.createElement("li"); ph.className = "ipr-cq-ph"; ph.setAttribute("aria-hidden", "true");
+        li.parentNode.insertBefore(ph, li.nextSibling);
+        B.arrastar = { li: li, pega: pega, ph: ph, y0: ev.clientY, pid: ev.pointerId, mexeu: false, top0: li.getBoundingClientRect().top };
         li.classList.add("arr");
         return;
       }
@@ -435,27 +520,25 @@
     L.addEventListener("pointermove", function (ev) {
       var a = B.arrastar; if (!a || ev.pointerId !== a.pid) return;
       ev.preventDefault();
-      a.mexeu = true;
-      var irmaos = [].slice.call(L.querySelectorAll(".ipr-cq-it:not(.fixa)"));
-      var i = irmaos.indexOf(a.li);
-      var acima = irmaos[i - 1], abaixo = irmaos[i + 1];
-      if (acima) { var ra = acima.getBoundingClientRect(); if (ev.clientY < ra.top + ra.height / 2) { L.insertBefore(a.li, acima); } }
-      if (abaixo) { var rb = abaixo.getBoundingClientRect(); if (ev.clientY > rb.top + rb.height / 2) { L.insertBefore(a.li, abaixo.nextSibling); } }
+      if (Math.abs(ev.clientY - a.y0) > 3) a.mexeu = true;
+      a.li.style.transform = "translateY(" + (ev.clientY - a.y0) + "px)";
+      // lugar do marcador: antes da primeira linha móvel (sem contar a agarrada) cujo meio fica abaixo do ponteiro
+      var outras = [].slice.call(L.querySelectorAll(".ipr-cq-it:not(.fixa)")).filter(function (x) { return x !== a.li; });
+      var antes = null;
+      for (var i = 0; i < outras.length; i++) { var r = outras[i].getBoundingClientRect(); if (ev.clientY < r.top + r.height / 2) { antes = outras[i]; break; } }
+      if (!antes) { var ult = outras[outras.length - 1]; antes = ult ? ult.nextSibling : a.ph; }
+      if (antes !== a.ph && a.ph.nextSibling !== antes) { try { L.insertBefore(a.ph, antes); } catch (e) {} }
       var C = B.sec.querySelector(".ipr-cq-c"), rc = C.getBoundingClientRect();
       if (ev.clientY < rc.top + 24) C.scrollTop -= 12; else if (ev.clientY > rc.bottom - 24) C.scrollTop += 12;
     });
-    var fim = function (ev) {
-      var a = B.arrastar; if (!a || ev.pointerId !== a.pid) return;
-      a.li.classList.remove("arr"); B.arrastar = null;
-      if (a.mexeu) gravarOrdemDoDom();
-      B.assin = ""; agendar();
-    };
-    L.addEventListener("pointerup", fim); L.addEventListener("pointercancel", fim);
+    L.addEventListener("pointerup", function (ev) { var a = B.arrastar; if (a && ev.pointerId === a.pid) acabarArrasto(true); });
+    L.addEventListener("pointercancel", function (ev) { var a = B.arrastar; if (a && ev.pointerId === a.pid) acabarArrasto(false); });
+    L.addEventListener("lostpointercapture", function (ev) { var a = B.arrastar; if (a && ev.pointerId === a.pid) acabarArrasto(false); });
     L.addEventListener("keydown", function (ev) {
       var pega = ev.target.closest(".ipr-cq-pega"); if (!pega) return;
-      var li = pega.closest(".ipr-cq-it");
-      if (ev.key === "ArrowUp" && li.previousElementSibling) { L.insertBefore(li, li.previousElementSibling); }
-      else if (ev.key === "ArrowDown" && li.nextElementSibling && !li.nextElementSibling.classList.contains("fixa")) { L.insertBefore(li.nextElementSibling, li); }
+      var li = pega.closest(".ipr-cq-it"), ac = li.previousElementSibling, ab = li.nextElementSibling;
+      if (ev.key === "ArrowUp" && ac && !ac.classList.contains("fixa")) { L.insertBefore(li, ac); }
+      else if (ev.key === "ArrowDown" && ab && !ab.classList.contains("fixa")) { L.insertBefore(ab, li); }
       else return;
       ev.preventDefault(); pega.focus(); gravarOrdemDoDom(); B.assin = "";
     });
@@ -467,29 +550,38 @@
     });
     L.addEventListener("input", function (ev) {
       var s = ev.target; if (!s.matches || !s.matches(".ipr-cq-op input")) return;
-      var id = idDe(s), v = (+s.value || 0) / 100; var o = s.parentNode.querySelector("output"); if (o) o.textContent = s.value + " %";
-      mudarOp(id, v, false);
+      var id = idDe(s), v = (+s.value || 10) / 100; var o = s.parentNode.querySelector("output"); if (o) o.textContent = s.value + " %";
+      mudarOp(id, v);
     });
   }
-  // deslizador da árvore do viz.js -> esta lista
+  // Deslizador da árvore do viz.js -> esta lista: só se mostra o mesmo valor. Não se grava; e o valor que este painel tinha
+  // guardado para essa camada deixa de valer (a última escolha passa a ser a da árvore, que o viz.js guarda).
   D.addEventListener("input", function (ev) {
     try {
       var s = ev.target; if (!s || !s.classList || !s.classList.contains("ipr-op") || !s.closest("#ipe-cam")) return;
       if (B.emitir) return; // o próprio eco desta lista
       var li = s.closest(".ipr-it"), id = li && li.getAttribute("data-id"); if (!id) return;
-      mudarOp(id, (+s.value || 0) / 100, true);
+      var g = lerJ(K_OP, {}); if (id in g) { delete g[id]; gravar(K_OP, JSON.stringify(g)); }
       var m = B.lista && B.lista.querySelector('.ipr-cq-it[data-id="' + (W.CSS && CSS.escape ? CSS.escape(id) : id) + '"] .ipr-cq-op');
       if (m) { m.querySelector("input").value = s.value; m.querySelector("output").textContent = s.value + " %"; }
     } catch (e) {}
   }, true);
 
   function fecharMenu() { if (B.menu) { try { B.menu.remove(); } catch (e) {} B.menu = null; } }
+  // Exportar só para camadas de licença aberta («v») que não sejam produtos IPR (Base Cartográfica, camadas do IPR, entregas,
+  // terreno); as restantes só têm Ir para e Propriedades.
+  var PRODUTO_IPR = { lidar: 1, ext: 1, ent: 1, aoi: 1 };
+  function exportavel(id) {
+    var e = entrada(id); if (!e || e.lic !== "v") return false;
+    if (PRODUTO_IPR[e.t] || /^l_/.test(id) || /escorrencia/.test(id) || e.g === "base" || e.g === "meus") return false;
+    return true;
+  }
   function abrirMenu(id, x, y) {
     fecharMenu(); if (!id) return;
     var m = D.createElement("div"); m.className = "ipr-cq-menu"; m.setAttribute("role", "menu");
     m.innerHTML = '<button type="button" role="menuitem" data-a="ir">' + esc(T("Ir para", "Zoom to")) + "</button>" +
       '<button type="button" role="menuitem" data-a="prop">' + esc(T("Propriedades", "Properties")) + "</button>" +
-      '<button type="button" role="menuitem" data-a="exp">' + esc(T("Exportar", "Export")) + "</button>";
+      (exportavel(id) ? '<button type="button" role="menuitem" data-a="exp">' + esc(T("Exportar", "Export")) + "</button>" : "");
     D.body.appendChild(m); B.menu = m;
     var w = m.offsetWidth || 200, h = m.offsetHeight || 130;
     m.style.left = Math.max(8, Math.min(x, innerWidth - w - 8)) + "px";
@@ -569,7 +661,7 @@
   };
   var SEM_URL = { lidar: 1, ent: 1, wmsp: 1, ext: 1, aoi: 1 };
   function urlServico(e) {
-    if (!e || SEM_URL[e.t] || e.lic === "r") return null;
+    if (!e || SEM_URL[e.t] || e.lic !== "v") return null;
     var u = /^https?:\/\//.test(e.url || "") ? e.url : null;
     if (!u) {
       try { var f = (W.IPRViz.fontes() || []).filter(function (x) { return x.id === e.id; })[0]; if (f && /^https?:\/\//.test(f.u || "")) u = f.u; } catch (x) {}
@@ -636,6 +728,7 @@
     }
   }
   function exportar(id) {
+    if (!exportavel(id)) return;
     var e = entrada(id) || { id: id }, M = mapa(), nome = nomeDe(e, id);
     if (e.lic === "r") {
       dialogo(T("Exportar", "Export") + " · " + nome, "<p>" + esc(T("Esta camada é só de consulta: a licença da fonte não permite exportar.", "This layer is view-only: the source licence does not allow export.")) + "</p>");
@@ -684,7 +777,11 @@
   }
   var voltas = 0;
   (function esperar() {
-    try { ligarMapa(); if (B.M) refrescar(); } catch (e) {}
+    try {
+      ligarMapa();
+      // a verificação periódica só corre com o separador visível e a secção aberta (o resto vem dos eventos do mapa)
+      if (B.M && !D.hidden && !(B.sec && B.sec.classList.contains("fech"))) refrescar();
+    } catch (e) {}
     voltas++;
     setTimeout(esperar, voltas < 120 ? 500 : 3000); // o Atlas pode recriar o mapa (troca de terreno): verifica-se de vez em quando
   })();
