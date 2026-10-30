@@ -12,6 +12,10 @@
       (window.IPR_SIM_BASE). Os botões são os mesmos do simulador-base.js (aviso, aceitar, escolher a Base). A faixa que o
       fogo-simulador.js já põe nos Temas fica como está. Keyline: botão para a equipa, marcado «em preparação» até o motor e o
       desenho assistido estarem publicados.
+   2b. Larguras que valem sempre, também quando o ajustes.js §65/§67 as fixa (ecrãs grandes, zoom do ecrã).
+   3b. Simuladores só em Processos (Nuno, 18h07): os botões dos simuladores nos Temas deixam de se ver.
+   4. Perfis fora (Nuno, 18h07): o selector «Perfil» por cima dos Temas deixa de se ver; o perfil guardado no navegador
+      esquece-se uma vez. 5. Organização com o aspecto dos cartões de Projectos (só CSS).
    Desligar: localStorage ipr_extra_off = 1 (ou ?extra=0). */
 (function () {
   "use strict";
@@ -42,7 +46,14 @@
     ".ipr-x-s button{flex:1 1 9em;min-height:44px;font-size:13.5px;display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:10px;border-width:1.5px}" +
     ".ipr-x-s button svg{width:20px;height:20px}" +
     // 2. larguras: os dois puxadores à vista no computador
-    "@media (min-width:901px){.ipe:not(.sem-esq) .ipr-px.ipr-px-wl,.ipe:not(.sem-dir) .ipr-px.ipr-px-wr{display:block!important;z-index:40}}";
+    "@media (min-width:901px){.ipe:not(.sem-esq) .ipr-px.ipr-px-wl,.ipe:not(.sem-dir) .ipr-px.ipr-px-wr{display:block!important;z-index:40}}" +
+    // 5. Organização com o aspecto dos cartões de Projectos (estudio.css .ipe-card e bolito.css): só aspecto
+    "#ipr-orgv details.ov-p{border:1px solid var(--ln2);background:var(--p2);border-radius:6px;margin:0 0 4px;transition:border-color .15s}" +
+    "#ipr-orgv details.ov-p:hover{border-color:var(--mu2)}#ipr-orgv details.ov-p[open]{border-color:var(--ac);box-shadow:0 0 0 1px var(--ac) inset}" +
+    "#ipr-orgv details.ov-p>summary{background:transparent;padding:6px 8px;gap:9px}" +
+    "#ipr-orgv details.ov-p>summary em{font-weight:600;font-size:13px;line-height:1.25}" +
+    "#ipr-orgv details.ov-p>summary small{font:12px var(--mono,IBM Plex Mono,monospace);color:var(--mu)}" +
+    "#ipr-orgv details.ov-p>summary b{font:600 12px var(--mono,IBM Plex Mono,monospace);color:var(--mu)}";
   (D.head || D.documentElement).appendChild(st);
 
   // ───────── 1. Temas guardados ─────────
@@ -150,6 +161,38 @@
     }
   }, true);
   D.addEventListener("ipr:lingua", function () { var s = D.querySelector(".ipr-x-s"); if (s) s.removeAttribute("data-k"); pintarPresets(); montar(); });
-  setInterval(function () { if (!D.hidden) try { montar(); } catch (e) {} }, 1000);
+  // ───────── 2b. Larguras que valem sempre (Nuno, 18h07: «os blocos laterais têm de ser mexíveis») ─────────
+  // O ajustes.js §65/§67 (ecrãs grandes e zoom do ecrã) fixa --wl/--wr com !important numa folha de estilo, e aí os
+  // puxadores mexiam no --ipr-wl/--ipr-wr sem efeito. Quando a pessoa arrastou (há --ipr-wl/--ipr-wr no #ipe), essa
+  // largura passa também para --wl/--wr em linha com !important, que ganha à folha. Duplo clique repõe: tira as duas.
+  function larguras() {
+    var ipe = D.getElementById("ipe"); if (!ipe) return;
+    ["wl", "wr"].forEach(function (k) {
+      var v = ipe.style.getPropertyValue("--ipr-" + k).trim(), act = ipe.style.getPropertyValue("--" + k).trim();
+      if (v && act !== v) ipe.style.setProperty("--" + k, v, "important");
+      else if (!v && act) ipe.style.removeProperty("--" + k);
+    });
+  }
+  (function vigiarLarguras(n) {
+    var ipe = D.getElementById("ipe"); if (!ipe) { if (n < 120) setTimeout(function () { vigiarLarguras(n + 1); }, 500); return; }
+    larguras();
+    new MutationObserver(function () { try { larguras(); } catch (e) {} var M = W.__ipe && W.__ipe.mapa; if (M && M.resize) { clearTimeout(vigiarLarguras.t); vigiarLarguras.t = setTimeout(function () { try { M.resize(); } catch (e) {} }, 60); } }).observe(ipe, { attributes: true, attributeFilter: ["style"] });
+  })(0);
+
+  // ───────── 3b. Simuladores só em Processos (Nuno, 18h07: «os simuladores estão em processos e saem definitivamente do
+  // bloco da esquerda») ─────────
+  // Os botões dos simuladores que o fogo-simulador.js, o agua-simulador.js e o simulador-base.js põem nos Temas (faixa
+  // .ipr-sims e botões nos cartões dos temas) deixam de se ver. Continuam a existir e os da faixa de Processos são os mesmos.
+  (D.head || D.documentElement).appendChild(Object.assign(D.createElement("style"), { id: "ipr-extra-sims-css", textContent:
+    "#ipe #ipr-t62 .ipr-sims,#ipe #ipr-t62 [data-fogo-sim],#ipe #ipr-t62 [data-agua-sim],#ipe #ipr-t62 [data-ipr-sim],#ipe #ipr-t62 [data-ipr-sim-lock]{display:none!important}" }));
+
+  // ───────── 4. Perfis fora (Nuno, 30/10/2026, 18h07: «os perfis saem, já temos temas e isso é redundância») ─────────
+  // O selector «Perfil» do arrumar.js (§80, #ipr-79) deixa de se ver. O perfil guardado neste navegador (ipr_perfil) é
+  // esquecido uma vez, para não voltar a ligar camadas sozinho ao abrir o Atlas sem forma de o mudar. Os perfis municipais
+  // (§68) não são tocados.
+  try { if (ler("ipr_perfis_fora") !== "1") { gravar("ipr_perfil", null); gravar("ipr_perfis_fora", "1"); } } catch (e) {}
+  function semPerfis() { var w = D.getElementById("ipr-79"); if (w && w.style.getPropertyValue("display") !== "none") w.style.setProperty("display", "none", "important"); }
+  setInterval(function () { if (!D.hidden) try { montar(); } catch (e) {} try { semPerfis(); } catch (e) {} }, 1000);
+  try { new MutationObserver(function () { try { semPerfis(); } catch (e) {} }).observe(D.documentElement, { childList: true, subtree: true }); } catch (e) {}
   if (D.readyState === "loading") D.addEventListener("DOMContentLoaded", montar); else montar();
 })();
