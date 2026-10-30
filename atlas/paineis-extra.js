@@ -16,6 +16,7 @@
    3b. Simuladores só em Processos (Nuno, 18h07): os botões dos simuladores nos Temas deixam de se ver.
    4. Perfis fora (Nuno, 18h07): o selector «Perfil» por cima dos Temas deixa de se ver; o perfil guardado no navegador
       esquece-se uma vez. 5. Organização com o aspecto dos cartões de Projectos (só CSS).
+   6. Trocar para o separador Projectos não abre o mapa do projecto sozinho (Nuno, 18h45): só ao carregar num projecto.
    Desligar: localStorage ipr_extra_off = 1 (ou ?extra=0). */
 (function () {
   "use strict";
@@ -187,6 +188,20 @@
   // .ipr-sims e botões nos cartões dos temas) deixam de se ver. Continuam a existir e os da faixa de Processos são os mesmos.
   (D.head || D.documentElement).appendChild(Object.assign(D.createElement("style"), { id: "ipr-extra-sims-css", textContent:
     "#ipe #ipr-t62 .ipr-sims,#ipe #ipr-t62 [data-fogo-sim],#ipe #ipr-t62 [data-agua-sim],#ipe #ipr-t62 [data-ipr-sim],#ipe #ipr-t62 [data-ipr-sim-lock]{display:none!important}" }));
+
+  // ───────── 6. Trocar de separador não muda o mapa (Nuno, 30/10/2026, 18h42-18h45: «porque é que quando mudo de processos
+  // para projectos, o bloco lateral esquerdo muda?»; escolheu «mudar só ao abrir») ─────────
+  // O app.js, ao abrir o separador Projectos com o mapa de encomenda, abre logo o mapa do primeiro projecto (destrói e refaz o
+  // mapa e a barra da esquerda). Aqui, nesse clique, a lista de mapas fica vazia só durante o tratamento do clique, para o
+  // app.js não trocar de mapa; o mapa do projecto abre quando a pessoa carrega num projecto, como sempre. O regresso a
+  // Processos continua a voltar ao mapa de encomenda, que o formulário precisa.
+  D.addEventListener("click", function (e) {
+    var t = e.target && e.target.closest && e.target.closest('.ipe-tab[data-tab="proj"]'); if (!t) return;
+    var P = W.__ipe && W.__ipe.estado; if (!P || P.modo !== "encomenda" || !P.mapas || !P.mapas.length) return;
+    if (t.getAttribute("aria-selected") === "true") return;
+    var guarda = P.mapas; P.mapas = [];
+    setTimeout(function () { if (P.mapas && !P.mapas.length) P.mapas = guarda; }, 0);
+  }, true);
 
   // ───────── 4. Perfis fora (Nuno, 30/10/2026, 18h07: «os perfis saem, já temos temas e isso é redundância») ─────────
   // O selector «Perfil» do arrumar.js (§80, #ipr-79) e o do agua.js (.ipr-ag-pf) deixam de se ver. O perfil guardado neste navegador (ipr_perfil) é
