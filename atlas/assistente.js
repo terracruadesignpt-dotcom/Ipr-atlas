@@ -99,9 +99,9 @@
       conta: "Criar conta com este e-mail: encomendas e ficheiros guardados, IPR Atlas e descontos nas compras seguintes.",
       contaSessao: "A encomenda fica na sua conta.",
       consent: "Li a Política de Privacidade e aceito que usem estes dados para responder ao pedido.",
-      pagar: "Encomendar e pagar", aEnviar: "A registar…",
+      pagar: "Encomendar e pagar", pedirMail: "Enviar o pedido", aEnviar: "A registar…",
       faltam: "Falta: ", fNome: "o nome", fEmail: "um e-mail válido", fConsent: "aceitar a Política de Privacidade", fTerreno: "o terreno no mapa",
-      okT: "Pedido registado", okP: "Enviámos a confirmação para {e}. Referência {r}.",
+      okT: "Pedido registado", okTMail: "Pedido pronto a enviar", okP: "Enviámos a confirmação para {e}. Referência {r}.",
       okPagar: "Pagar agora", okContaC: "Criámos a sua conta: vai receber um e-mail para definir a palavra-passe.",
       okContaE: "Este e-mail já tem conta: entre para ver a encomenda na sua área.",
       erro: "Não foi possível registar o pedido: {m}",
@@ -109,6 +109,7 @@
       entrar: "Entrar ou criar conta",
       baseForm: "Preencha os seus dados no formulário à direita e carregue em «Enviar pedido». Com cobertura LiDAR total, paga logo a seguir; sem ela, confirmamos antes de qualquer pagamento.",
       baseIr: "Ir para o formulário",
+      okMail: "Abrimos o seu e-mail com o pedido já escrito para info@regenerativo.pt. Envie-o e respondemos com a ligação de pagamento, normalmente no mesmo dia útil.",
       locaisN: "{n} locais", mini: "À espera do terreno no mapa · tocar para abrir o assistente",
       conv: "Sem ligação ao serviço de conversão. Verifique a internet e tente de novo daqui a pouco."
     },
@@ -183,9 +184,9 @@
       conta: "Create an account with this e-mail: saved orders and files, IPR Atlas and discounts on later purchases.",
       contaSessao: "The order goes to your account.",
       consent: "I have read the Privacy Policy and agree to these details being used to answer the request.",
-      pagar: "Order and pay", aEnviar: "Registering…",
+      pagar: "Order and pay", pedirMail: "Send the order", aEnviar: "Registering…",
       faltam: "Missing: ", fNome: "your name", fEmail: "a valid e-mail", fConsent: "accepting the Privacy Policy", fTerreno: "the land on the map",
-      okT: "Order registered", okP: "We sent the confirmation to {e}. Reference {r}.",
+      okT: "Order registered", okTMail: "Order ready to send", okP: "We sent the confirmation to {e}. Reference {r}.",
       okPagar: "Pay now", okContaC: "We created your account: you will get an e-mail to set your password.",
       okContaE: "This e-mail already has an account: sign in to see the order.",
       erro: "The order could not be registered: {m}",
@@ -193,6 +194,7 @@
       entrar: "Sign in or create an account",
       baseForm: "Fill in your details in the form on the right and press «Send request». With full LiDAR coverage you pay straight away; otherwise we confirm before any payment.",
       baseIr: "Go to the form",
+      okMail: "We opened your e-mail with the order already written to info@regenerativo.pt. Send it and we reply with the payment link, usually the same working day.",
       locaisN: "{n} places", mini: "Waiting for the land on the map · tap to open the assistant",
       conv: "No connection to the conversion service. Check the internet and try again shortly."
     }
@@ -720,7 +722,7 @@
     var erro = el("p", "erro"); erro.setAttribute("role", "alert"); form.appendChild(erro);
     c.appendChild(form);
     var T0 = Date.now();
-    var s = rodape(rod, function () { ir(3); }, t("pagar"));
+    var s = rodape(rod, function () { ir(3); }, ROTA === false ? t("pedirMail") : t("pagar"));
     function ver() {
       var f = [];
       if (!nome.value.trim()) f.push(t("fNome"));
@@ -741,6 +743,7 @@
         pais: pais.value, notas: notas.value.trim(), finalidade: fin ? fin.value : "", consentimento: 1, conta: conta && conta.checked ? 1 : 0,
         website: hp.value, t: String(Math.min(T0, Date.now() - 9000)), lingua: lg()
       };
+      if (ROTA === false) { porEmail(k, corpo); S.enviado = { pedido: "", email: corpo.email, total: (k === "planta" ? PLANTA : (lerEuros(txt("ipe-preco-l")) || 0)) * (1 + IVA), area_ha: areaHa(), porEmail: true }; desenhar(); return; }
       s.disabled = true; s.textContent = t("aEnviar");
       fetch("/wp-json/tcd/v1/pedido-produto", { method: "POST", credentials: "same-origin", headers: Object.assign({ "Content-Type": "application/json" }, window.tcdNonce ? { "X-WP-Nonce": window.tcdNonce } : {}), body: JSON.stringify(corpo) })
         .then(function (r) { return r.text().then(function (x) { var j = null; try { j = JSON.parse(x); } catch (e) {} return { ok: r.ok, s: r.status, j: j }; }); })
@@ -756,10 +759,25 @@
     form.addEventListener("submit", enviar);
     if (s) s.addEventListener("click", enviar);
   }
+  var ROTA = null; // null = por saber; true = m90590 activo; false = sem rota (pedido por e-mail)
+  function sondarRota() {
+    if (ROTA !== null) return;
+    fetch("/wp-json/tcd/v1/pedido-produto/preco?ha=1", { credentials: "same-origin" }).then(function (r) { ROTA = r.ok; }).catch(function () { ROTA = false; });
+  }
+  function centro(fc) {
+    var x = 0, y = 0, n = 0;
+    try { (function per(c) { if (typeof c[0] === "number") { x += c[0]; y += c[1]; n++; } else c.forEach(per); })(fc.features.map(function (f) { return f.geometry.coordinates; })); } catch (e) {}
+    return n ? [y / n, x / n] : null;
+  }
+  function porEmail(k, dados) {
+    var fc = terrenoFC(), c = fc && centro(fc), nomeP = t("prod")[k][0];
+    var corpo = [nomeP, t("achadoArea") + ": " + (areaTexto() || "—"), c ? "Lat/Lon: " + c[0].toFixed(6) + ", " + c[1].toFixed(6) : "", t("nome") + ": " + dados.nome, t("email") + ": " + dados.email, dados.telefone ? t("tel") + ": " + dados.telefone : "", dados.nif ? "NIF: " + dados.nif : "", dados.finalidade ? t("finalidade") + " " + dados.finalidade : "", dados.notas || "", "", fc ? JSON.stringify(fc).slice(0, 1500) : ""].filter(function (x, i) { return x || i === 9; }).join("\n");
+    location.href = "mailto:info@regenerativo.pt?subject=" + encodeURIComponent(nomeP + " · IPR Atlas") + "&body=" + encodeURIComponent(corpo);
+  }
   function feito(c, r) {
     var d = el("div", "ach"), ok = el("span", "ok"); ok.appendChild(icone("ok", 18)); d.appendChild(ok);
-    var tx = el("div"); tx.appendChild(el("b", "", t("okT"))); tx.appendChild(el("small", "", euros(r.total || 0) + " · " + (+r.area_ha || 0).toLocaleString(lg() === "en" ? "en-GB" : "pt-PT", { maximumFractionDigits: 2 }) + " ha")); d.appendChild(tx); c.appendChild(d);
-    c.appendChild(el("p", "nota", tf("okP", { e: r.email || "", r: r.pedido || "" })));
+    var tx = el("div"); tx.appendChild(el("b", "", r.porEmail ? t("okTMail") : t("okT"))); tx.appendChild(el("small", "", euros(r.total || 0) + " · " + (+r.area_ha || 0).toLocaleString(lg() === "en" ? "en-GB" : "pt-PT", { maximumFractionDigits: 2 }) + " ha")); d.appendChild(tx); c.appendChild(d);
+    c.appendChild(el("p", "nota", r.porEmail ? t("okMail") : tf("okP", { e: r.email || "", r: r.pedido || "" })));
     if (r.conta === "criada") c.appendChild(el("p", "nota", t("okContaC")));
     if (r.conta === "existe") c.appendChild(el("p", "nota", t("okContaE")));
     if (r.pagar) { var a = el("a", "bt w", t("okPagar")); a.href = r.pagar; a.style.marginTop = "14px"; c.appendChild(a); }
@@ -844,7 +862,7 @@
   function tudo() { try { topo(); } catch (e) {} try { botaoFixo(); } catch (e) {} try { esquerda(); } catch (e) {} try { conversor(); } catch (e) {} }
   function arrancar() {
     if (!raiz() || !$("ipe-ctx-t")) { setTimeout(arrancar, 300); return; }
-    estilos(); tudo(); ligarMover();
+    estilos(); tudo(); ligarMover(); sondarRota();
     var pend = 0;
     try { new MutationObserver(function () { if (pend) return; pend = setTimeout(function () { pend = 0; tudo(); }, 250); }).observe(raiz(), { childList: true, subtree: true, characterData: true }); } catch (e) {}
     var q = ""; try { q = new URLSearchParams(location.search).get("assistente") || ""; } catch (e) {}
