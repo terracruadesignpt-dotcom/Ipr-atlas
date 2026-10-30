@@ -5,7 +5,7 @@
    Só acrescenta; não esconde nem tira nada do que existe.
    1. Temas guardados: no cabeçalho dos Temas, «Os meus: 1 2 3 · Guardar». «Guardar» e depois um número guarda as camadas
       ligadas agora (e o fundo); um número já guardado repõe essas camadas. Guardar outra vez no mesmo número substitui.
-      Fica guardado neste navegador (cada pessoa no seu).
+      Com sessão fica na conta (módulo m90559, window.IPR_TEMAS) e segue a pessoa; sem sessão, neste navegador.
    2. Larguras: os puxadores do ajustes.js (§2, .ipr-px) ficam visíveis nos dois lados no computador, o da esquerda incluído.
    3. Simuladores e Keyline em Processos (Nuno, 17h45: «os simuladores e o keyline vão para processos, e essa barra deve
       estar bem visível»): faixa destacada no topo do separador Processos, para quem tem os simuladores no site
@@ -21,8 +21,8 @@
 
   function en() { return W.IPR_LINGUA ? W.IPR_LINGUA !== "pt" : !/^pt/.test(D.documentElement.lang || "pt"); }
   var TX = {
-    pt: { meus: "Os meus", guardar: "Guardar", escolha: "Escolha 1, 2 ou 3", vazio: "Vazio: carregue em «Guardar» e depois aqui", repor: "Repor as camadas guardadas", guardado: "Guardado no {n}", reposto: "Reposto o {n}", sims: "Simuladores", agua: "Simular água", fogo: "Simular fogo", keyline: "Keyline", klT: "Keyline: em preparação (motor e desenho assistido por publicar)", prep: "em preparação" },
-    en: { meus: "Mine", guardar: "Save", escolha: "Choose 1, 2 or 3", vazio: "Empty: press «Save» and then here", repor: "Restore the saved layers", guardado: "Saved to {n}", reposto: "Restored {n}", sims: "Simulators", agua: "Simulate water", fogo: "Simulate fire", keyline: "Keyline", klT: "Keyline: in preparation (engine and assisted design not yet published)", prep: "in preparation" }
+    pt: { meus: "Os meus", guardar: "Guardar", escolha: "Escolha 1, 2 ou 3", vazio: "Vazio: carregue em «Guardar» e depois aqui", repor: "Repor as camadas guardadas", guardado: "Guardado no {n}", reposto: "Reposto o {n}", semConta: "Ficou guardado neste navegador, mas não na conta. Tente de novo.", sims: "Simuladores", agua: "Simular água", fogo: "Simular fogo", keyline: "Keyline", klT: "Keyline: em preparação (motor e desenho assistido por publicar)", prep: "em preparação" },
+    en: { meus: "Mine", guardar: "Save", escolha: "Choose 1, 2 or 3", vazio: "Empty: press «Save» and then here", repor: "Restore the saved layers", guardado: "Saved to {n}", reposto: "Restored {n}", semConta: "Saved in this browser but not in your account. Please try again.", sims: "Simulators", agua: "Simulate water", fogo: "Simulate fire", keyline: "Keyline", klT: "Keyline: in preparation (engine and assisted design not yet published)", prep: "in preparation" }
   };
   function tx(k, n) { return String(TX[en() ? "en" : "pt"][k]).replace("{n}", n == null ? "" : n); }
   function viz() { return W.__ipe && W.__ipe.viz; }
@@ -46,15 +46,27 @@
   (D.head || D.documentElement).appendChild(st);
 
   // ───────── 1. Temas guardados ─────────
-  function chave() { return "ipr_temas_presets"; } // por navegador: cada pessoa no seu (o site não dá o id da conta ao Atlas)
-  function presets() { try { var o = JSON.parse(ler(chave()) || "{}"); return o && typeof o === "object" ? o : {}; } catch (e) { return {}; } }
+  function chave() { return "ipr_temas_presets"; } // cópia neste navegador (sem sessão, é a única)
+  function conta() { var T = W.IPR_TEMAS; return T && typeof T === "object" && T.u && T.n && T.p && typeof T.p === "object" ? T : null; } // m90559: na conta
+  function local() { try { var o = JSON.parse(ler(chave()) || "{}"); return o && typeof o === "object" ? o : {}; } catch (e) { return {}; } }
+  function presets() { var T = conta(); return T ? JSON.parse(JSON.stringify(T.p)) : local(); }
+  function enviar(P) {
+    var T = conta(); if (!T || !W.fetch) return;
+    var f = new URLSearchParams(); f.set("action", "tcd_m90559_gravar"); f.set("nonce", T.n); f.set("p", JSON.stringify(P));
+    fetch(T.u, { method: "POST", credentials: "same-origin", body: f }).then(function (r) { return r.json(); }).then(function (j) {
+      if (j && j.success && j.data && j.data.p) T.p = j.data.p; else msg(tx("semConta"));
+    }).catch(function () { msg(tx("semConta")); });
+  }
+  function gravarPresets(P) { gravar(chave(), JSON.stringify(P)); var T = conta(); if (T) { T.p = P; enviar(P); } }
+  // primeira vez com sessão: o que estava só neste navegador passa para a conta
+  (function () { var T = conta(); if (!T || Object.keys(T.p).length) return; var L = local(); if (Object.keys(L).length) { T.p = L; enviar(L); } })();
   function catIdx() { var m = {}; try { ((W.IPRViz && W.IPRViz.catalogo) || (viz() && viz().catalogo) || []).forEach(function (e) { m[e.id] = e; }); } catch (e) {} return m; }
   var modoGuardar = false, msgT = null;
   function msg(t) { var m = D.querySelector(".ipr-x-p .ms"); if (!m) return; m.textContent = t; clearTimeout(msgT); msgT = setTimeout(function () { m.textContent = ""; }, 3500); }
   function guardarSlot(n) {
     var R = viz(); if (!R) return;
     var on = []; try { on = R.activas(); } catch (e) {}
-    var P = presets(); P[n] = { c: on, t: Date.now() }; gravar(chave(), JSON.stringify(P));
+    var P = presets(); P[n] = { c: on, t: Date.now() }; gravarPresets(P);
     modoGuardar = false; pintarPresets(); msg(tx("guardado", n));
   }
   function reporSlot(n) {
