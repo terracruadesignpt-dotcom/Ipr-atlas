@@ -25,7 +25,7 @@
     docs: [['Planta de Localização', '19 €'], ['Leitura do Terreno', 'grátis'], ['Leitura Territorial', PROMO ? 'desde 125 € · −50 %' : 'desde 250 €'], ['Base Cartográfica', 'desde 99 €']],
     adv: 'Explorar o mapa completo', advs: 'Já trabalho com mapas: mais de 100 camadas, 3D, medições e ferramentas. Fica lembrado para a próxima vez.'
   };
-  var css = '#ipr-ini{position:fixed;inset:0;z-index:2147481000;background:rgba(15,23,11,.86);color:#E4E2D8;font:15px/1.5 Inter,system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;overflow:auto;padding:max(48px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(24px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}'
+  var css = '#ipr-ini{position:fixed;inset:0;z-index:2147481000;background:#0F170B;color:#E4E2D8;font:15px/1.5 Inter,system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;overflow:auto;padding:max(48px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(24px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}'
     + '#ipr-ini .w{width:100%;max-width:760px;display:flex;flex-direction:column;gap:18px;margin:auto 0}'
     + '#ipr-ini h1{margin:0;font:600 clamp(30px,5vw,44px)/1.1 Outfit,sans-serif;color:#E4E2D8}#ipr-ini p{margin:0}#ipr-ini .ld{font-size:17px;color:#C9C8BC}'
     + '#ipr-ini form{background:#14200F;border:1px solid #2E3A26;border-radius:2px;padding:16px;display:flex;flex-direction:column;gap:10px}#ipr-ini label{font-weight:600}'
@@ -38,6 +38,7 @@
   function el(tag, attrs, txt) { var n = document.createElement(tag); for (var k in attrs) { n.setAttribute(k, attrs[k]); } if (txt) { n.textContent = txt; } return n; }
   function fecha(lembra) {
     var o = document.getElementById('ipr-ini'); if (o) { o.remove(); }
+    document.documentElement.classList.remove('ipr-ini-on');
     if (lembra) { try { localStorage.setItem(K, '1'); } catch (e) { /* ignora */ } }
   }
   function procura(v) {
@@ -69,7 +70,11 @@
     f.addEventListener('submit', function (e) { e.preventDefault(); var v = inp.value.trim(); if (!v) { inp.focus(); return; } fecha(false); procura(v); });
     w.appendChild(f);
     var g = el('div', { class: 'g' });
-    T.docs.forEach(function (d) { var a = el('a', { href: '/atlas/?modo=encomenda' }); a.appendChild(el('b', {}, d[0])); a.appendChild(el('span', {}, d[1])); g.appendChild(a); });
+    var PROD = ['planta', '', 'leitura', 'base'];
+    T.docs.forEach(function (d, i) {
+      var a = el('a', { href: '/atlas/?modo=encomenda' }); a.appendChild(el('b', {}, d[0])); a.appendChild(el('span', {}, d[1])); g.appendChild(a);
+      if (PROD[i]) a.addEventListener('click', function (e) { if (typeof window.iprAssistenteComprar !== 'function') return; e.preventDefault(); fecha(false); try { window.iprAssistenteComprar(PROD[i]); } catch (x) {} });
+    });
     w.appendChild(g);
     var adv = el('div', { class: 'adv' });
     var b = el('button', { type: 'button' }, T.adv + ' →');
@@ -78,6 +83,10 @@
     w.appendChild(adv);
     o.appendChild(w);
     document.body.appendChild(o);
+    // 30/10/2026, 23h40 (bateria de ecrãs): a entrada é opaca e fica sozinha; a triagem não abre por baixo e o aviso de
+    // cookies fica por cima dela, no fundo do ecrã
+    document.documentElement.classList.add('ipr-ini-on');
+    try { var cs = document.createElement('style'); cs.textContent = 'html.ipr-ini-on #ipr-tri{display:none!important}html.ipr-ini-on #tcdck{z-index:2147481500!important}html.ipr-ini-on #ipr-as-pn,html.ipr-ini-on #ipr-as-fundo,html.ipr-ini-on #ipr-as-b{display:none!important}'; document.head.appendChild(cs); } catch (e) {}
     document.addEventListener('keydown', function esc(e) { if (e.key === 'Escape' && document.getElementById('ipr-ini')) { fecha(false); document.removeEventListener('keydown', esc); } });
     setTimeout(function () { inp.focus(); }, 50);
   }

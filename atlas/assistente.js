@@ -34,6 +34,9 @@
    v4 (30/10, 23h18 a 23h19): «quando é para encomendar [...] é só ortofoto, cadastro e toponímia»: o modo simples deixa
       estradas e fronteiras de fora e fica exposto (window.iprModoSimples) para o cartão do comprar.js; no passo dos dados
       da Planta há sempre a caixa do pedido expresso de entrega imediata (registada no servidor pelo m90594).
+   v5 (30/10, 23h32 a 23h33): mapa de compra «como o Google Maps»: ortofoto, estradas, localidades, nomes das ruas, números
+      de porta e sítios (OpenStreetMap, mesma fonte do Atlas) e cadastro; o painel tem pega para arrastar e regulador de
+      transparência, lembrados no navegador (duplo toque na pega repõe).
    Só acrescenta: não edita app.js, ajustes.js nem outros add-ons. Texto escapado (textContent). Cada parte falha em silêncio.
    Desligar: ?assistente=0 no endereço, localStorage ipr_assistente_off = 1, ou window.IPR_ASSISTENTE_OFF = true. */
 (function () {
@@ -66,7 +69,7 @@
       passos: ["Produto", "Terreno", "Preço", "Dados"],
       p1T: "O que precisa?", p1S: "Escolha um produto. Mostramos o caminho até ao fim, passo a passo.",
       prod: {
-        base: ["Base Cartográfica", "O relevo do terreno em mapas e ficheiros (LiDAR da DGT): curvas de nível, declives, linhas de água, modelo 3D.", "Precisa de conta"],
+        base: ["Base Cartográfica", "O relevo do terreno em mapas e ficheiros (LiDAR da DGT): curvas de nível, declives, linhas de água, modelo 3D.", "Sem conta: só nome e e-mail"],
         leitura: ["Leitura Territorial", "Relatório PDF: REN, RAN, PDM, Rede Natura, água, fogo e ocupação do solo do seu terreno.", "Sem conta"],
         planta: ["Planta de Localização", "PDF à escala sobre o ortofotomapa, com o limite do terreno, para a câmara ou o banco.", "Sem conta"]
       },
@@ -151,7 +154,7 @@
       passos: ["Product", "Land", "Price", "Details"],
       p1T: "What do you need?", p1S: "Choose a product. We guide you all the way, step by step.",
       prod: {
-        base: ["Base Map", "Your land's relief as maps and files (DGT LiDAR): contours, slopes, water lines, 3D model.", "Account needed"],
+        base: ["Base Map", "Your land's relief as maps and files (DGT LiDAR): contours, slopes, water lines, 3D model.", "No account: just name and e-mail"],
         leitura: ["Territorial Reading", "PDF report: REN, RAN, PDM, Natura 2000, water, fire and land cover for your land.", "No account"],
         planta: ["Location Plan", "Scaled PDF on the orthophoto, with the land boundary, for the town hall or the bank.", "No account"]
       },
@@ -270,6 +273,7 @@
     ".ipr-as-on #ipr-as-b{display:none}.ipr-as-on #ipr-cp-ct,.ipr-as-on #ipr-cp-gu{display:none!important}" +
     "#ipr-as-pn{position:absolute;z-index:1001;left:12px;top:12px;bottom:40px;width:392px;max-width:calc(100% - 24px);display:flex;flex-direction:column;background:rgba(15,23,11,.97);border:1px solid #2E3A26;border-radius:2px;box-shadow:0 18px 50px rgba(0,0,0,.5);overflow:hidden;animation:iprAsIn .28s ease-out}" +
     "@keyframes iprAsIn{from{opacity:0;transform:translateX(-14px)}to{opacity:1;transform:none}}" +
+    "#ipr-as-pn .cab .lin{display:flex;align-items:center;gap:6px}" +
     "#ipr-as-pn .cab{padding:14px 16px 10px;border-bottom:1px solid #2E3A26;background:#14200F}" +
     "#ipr-as-pn .cab .lin{display:flex;align-items:center;gap:8px}#ipr-as-pn .cab b{flex:1;font:600 12px/1.3 " + M + ";text-transform:uppercase;letter-spacing:.08em;color:#9AA088}" +
     "#ipr-as-pn .x{all:unset;cursor:pointer;display:grid;place-items:center;width:28px;height:28px;color:#9AA088;border-radius:2px}#ipr-as-pn .x:hover{color:#E4E2D8;background:#1B2816}" +
@@ -322,7 +326,7 @@
     "#ipr-as-fundo{position:fixed;inset:0;z-index:2147482000;background:rgba(8,12,6,.55);animation:iprAsF .25s ease-out}" +
     "#ipr-as-pn.centro{background:#0F170B;position:fixed!important;z-index:2147482001;left:50%!important;top:50%!important;bottom:auto!important;transform:translate(-50%,-50%);width:min(540px,calc(100vw - 24px));max-width:none;max-height:calc(100vh - 32px);animation:none!important;opacity:1!important}" +
     "@keyframes iprAsC{from{opacity:0;transform:translate(-50%,-46%)}to{opacity:1;transform:translate(-50%,-50%)}}" +
-    "#ipr-as-pn.lado{z-index:1001;animation:none!important;opacity:1!important;transform:none!important}#ipr-as-pn.lado .corpo,#ipr-as-pn.lado .ach{animation:none!important}@media (min-width:901px){#ipr-as-pn.lado{top:auto!important;width:auto;max-width:1120px;max-height:min(232px,42vh)!important;flex-direction:row;align-items:stretch}#ipr-as-pn.lado .cab{flex:0 0 228px;display:flex;flex-direction:column;justify-content:center;border-bottom:0;border-right:1px solid #2E3A26}#ipr-as-pn.lado .corpo{flex:1 1 auto;min-width:0;padding:12px 16px;display:grid;grid-template-columns:minmax(190px,.85fr) minmax(250px,1.15fr);grid-auto-flow:row dense;column-gap:18px;row-gap:8px;align-content:center}#ipr-as-pn.lado .corpo>h2{grid-column:1;margin:0;font-size:18px}#ipr-as-pn.lado .corpo>.sub{grid-column:1;margin:0}#ipr-as-pn.lado .corpo>:not(h2):not(.sub){grid-column:2;margin-top:0!important;margin-bottom:0!important}#ipr-as-pn.lado .corpo>div:empty{display:none}#ipr-as-pn.lado .corpo>.ops{grid-column:1/-1}#ipr-as-pn.lado .ops{grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:6px}#ipr-as-pn.lado .op{padding:9px 10px}#ipr-as-pn.lado .op .tx b{font-size:14px}#ipr-as-pn.lado .rod{flex:0 0 auto;flex-direction:column;justify-content:center;gap:6px;border-top:0;border-left:1px solid #2E3A26}}@media (min-width:901px){#ipe.ipr-as-on{--wl:0px!important;--wr:0px!important;grid-template-columns:0 minmax(0,1fr) 0!important}#ipe.ipr-as-on .ipe-esq,#ipe.ipr-as-on .ipe-dir{visibility:hidden!important;border:0!important}#ipe.ipr-as-on .ipr-px-wl,#ipe.ipr-as-on .ipr-px-wr{display:none!important}}html:has(#ipe.ipr-as-on) #ipr-lgd{display:none!important}" +
+    "#ipr-as-pn.lado{z-index:1001;animation:none!important;opacity:1!important;transform:none!important}#ipr-as-pn.lado .corpo,#ipr-as-pn.lado .ach{animation:none!important}@media (min-width:901px){#ipr-as-pn.lado{top:auto!important;width:auto;max-width:1180px;max-height:min(250px,46vh)!important;flex-direction:row;align-items:stretch}#ipr-as-pn.lado .cab{flex:0 0 196px;display:flex;flex-direction:column;justify-content:center;border-bottom:0;border-right:1px solid #2E3A26}#ipr-as-pn.lado .corpo{flex:1 1 auto;min-width:0;padding:10px 14px;display:grid;grid-template-columns:minmax(150px,.6fr) minmax(260px,1.4fr);grid-auto-flow:row dense;column-gap:18px;row-gap:8px;align-content:center}#ipr-as-pn.lado .corpo>h2{grid-column:1;margin:0;font-size:18px}#ipr-as-pn.lado .corpo>.sub{grid-column:1;margin:0}#ipr-as-pn.lado .corpo>:not(h2):not(.sub){grid-column:2;margin-top:0!important;margin-bottom:0!important}#ipr-as-pn.lado .corpo>div:empty{display:none}#ipr-as-pn.lado .corpo>.ops{grid-column:1/-1}#ipr-as-pn.lado .ops{grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:6px}#ipr-as-pn.lado .op{padding:8px 10px;gap:8px}#ipr-as-pn.lado .op .tx b{font-size:14px;line-height:1.25}#ipr-as-pn.lado .op .tx small:not(.pr){display:none}#ipr-as-pn.lado .op .i{width:26px;height:26px}#ipr-as-pn.lado .op .se{display:none}#ipr-as-pn.lado .ach{padding:8px 10px}#ipr-as-pn.lado .corpo>h2{font-size:17px}#ipr-as-pn.lado .rod{flex:0 0 auto;flex-direction:column;justify-content:center;gap:6px;border-top:0;border-left:1px solid #2E3A26}}@media (min-width:901px){#ipe.ipr-as-on{--wl:0px!important;--wr:0px!important;grid-template-columns:0 minmax(0,1fr) 0!important}#ipe.ipr-as-on .ipe-esq,#ipe.ipr-as-on .ipe-dir{visibility:hidden!important;border:0!important}#ipe.ipr-as-on .ipr-px-wl,#ipe.ipr-as-on .ipr-px-wr{display:none!important}}html:has(#ipe.ipr-as-on) #ipr-lgd{display:none!important}" +
     "#ipr-as-pn .cab .lin .x:first-child{margin-left:-6px}#ipr-as-pn .np{flex:none;font:500 11px/1 " + M + ";color:#94BE39;letter-spacing:.04em;white-space:nowrap}" +
     "#ipr-as-pn .ops{display:grid;gap:7px}" +
     "#ipr-as-pn .op{all:unset;box-sizing:border-box;cursor:pointer;display:flex;align-items:center;gap:12px;padding:12px 12px 12px 12px;border:1px solid #2E3A26;border-left:3px solid #2E3A26;border-radius:2px;background:#14200F;transition:border-color .15s,background .15s,transform .15s}" +
@@ -337,6 +341,7 @@
     "#ipr-as-pn ul.van{margin:0 0 14px}#ipr-as-pn .chips+label.l,#ipr-as-pn .lin2+div{margin-top:10px}#ipr-as-pn .lin2+div .ops{margin-top:10px}" +
     "@media (max-width:900px){#ipr-as-pn.centro{left:0!important;right:0!important;top:auto!important;bottom:0!important;transform:none;width:100%;max-height:88vh;border-left:0;border-right:0;animation:none!important;opacity:1!important}@keyframes iprAsS{from{transform:translateY(30px);opacity:0}to{transform:none;opacity:1}}#ipr-as-pn.centro .rod{padding-bottom:calc(12px + env(safe-area-inset-bottom))}#ipr-as-pn .op{padding:11px 10px}#ipr-as-pn .op .tx b{font-size:14.5px}}" +
     "#ipr-as-pn .mn{display:none}#ipr-as-pn.mini{max-height:none!important;top:auto!important}#ipr-as-pn.mini .corpo,#ipr-as-pn.mini .rod,#ipr-as-pn.mini ol.pp{display:none}#ipr-as-pn.mini .mn{all:unset;display:block;margin-top:8px;cursor:pointer;font-size:13px;color:#94BE39}" +
+    "@media (max-width:900px){#ipr-as-pn.lado{max-height:46vh!important}#ipr-as-pn.lado .corpo{padding:10px 12px}#ipr-as-pn.lado .corpo>.sub{display:none}#ipr-as-pn.lado h2{font-size:17px;margin:0 0 6px}#ipr-as-pn.lado .op{padding:7px 9px}#ipr-as-pn.lado .op .tx small:not(.pr){display:none}#ipr-as-pn.lado .op .se{display:none}#ipr-as-pn.lado .ach{padding:6px 10px;margin-bottom:6px}#ipr-as-pn.lado ol.pp{display:none}}" +
     "@media (max-width:900px){#ipr-as-pn{left:8px;right:8px;top:auto;bottom:8px;width:auto;max-width:none;max-height:72vh}#ipr-as-b{bottom:calc(64px + env(safe-area-inset-bottom))}}" +
     "@media (max-width:560px){#ipr-as-eco .g{grid-template-columns:1fr}#ipr-as-pn .formas{grid-template-columns:1fr 1fr}#ipr-as-pn h2{font-size:19px}#ipr-as-b{padding:8px 14px 8px 10px;font-size:13px}}" +
     // 3. bloco da esquerda
@@ -350,7 +355,7 @@
     "#ipe .ipe-rosa,#ipe .ipe-rosa.rod{background:transparent!important;box-shadow:none!important;border:0!important}" +
     "html body #ipe .ipe-tools>.ipr-nav .ipe-rosa,html body #ipe .ipe-tools>.ipr-nav .ipe-rosa svg,html body #ipe .ipr-nav .ipe-rosa,html body #ipe .ipr-nav .ipe-rosa svg{width:34px!important;height:34px!important;min-width:0!important}" +
     "#ipe .ipr-pd-b span{font-size:13px!important;line-height:1.25!important;word-break:normal!important;overflow-wrap:normal!important;hyphens:manual!important}";
-  function estilos() { if ($("ipr-as-css")) return; var s = el("style"); s.id = "ipr-as-css"; s.textContent = CSS; document.head.appendChild(s); }
+  function estilos() { if ($("ipr-as-css")) return; var s = el("style"); s.id = "ipr-as-css"; s.textContent = CSS + JAN_CSS; document.head.appendChild(s); }
 
   // ---------------------------------------------------------------- 1. topo e ecossistema
   var TOPO_ORIG = /^(Nova Base Cartográfica|New Base Map)$/;
@@ -620,6 +625,60 @@
     var tri = $("ipr-tri"); if (tri && !tri.hidden) { var x = tri.querySelector('[data-a63="fechar"]'); if (x) try { x.click(); } catch (e) {} }
     document.documentElement.classList.add("ipr-sem-guia");
   }
+  // Janela móvel (Nuno, 30/10/2026, 23h33: «sempre que aparece um pop-up, tem que dar para fechar, voltar atrás, mover no
+  // ecrã [...] e um regulador de transparência»). Acrescenta ao cabeçalho uma pega para arrastar e um regulador de
+  // transparência; a posição e a transparência ficam lembradas neste navegador (localStorage, falha em silêncio).
+  function janela(p, chave, onde, antes) {
+    if (!p || !onde || p.querySelector(".ipr-jan")) return;
+    var K = "ipr_jan_" + chave, G = {}; try { G = JSON.parse(localStorage.getItem(K) || "{}") || {}; } catch (e) { G = {}; }
+    var w = document.createElement("span"); w.className = "ipr-jan";
+    var pg = document.createElement("button"); pg.type = "button"; pg.className = "ipr-jan-m"; pg.title = pg.ariaLabel = JAN_T().mover;
+    pg.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M12 2l3 3h-2v4h4V7l3 3-3 3v-2h-4v4h2l-3 3-3-3h2v-4H7v2l-3-3 3-3v2h4V5H9z"/></svg>';
+    var op = document.createElement("input"); op.type = "range"; op.min = "35"; op.max = "100"; op.step = "5"; op.className = "ipr-jan-o";
+    op.title = op.ariaLabel = JAN_T().transp; op.value = String(G.o || 100);
+    w.appendChild(pg); w.appendChild(op);
+    if (antes && antes.parentNode === onde) onde.insertBefore(w, antes); else onde.appendChild(w);
+    function aplicarO() { p.style.opacity = String(Math.max(35, Math.min(100, +op.value || 100)) / 100); }
+    function guardar() { try { localStorage.setItem(K, JSON.stringify(G)); } catch (e) {} }
+    op.addEventListener("input", function () { G.o = +op.value; aplicarO(); guardar(); });
+    ["pointerdown", "mousedown", "touchstart", "keydown", "click", "wheel"].forEach(function (ev) { op.addEventListener(ev, function (e) { e.stopPropagation(); }, { passive: true }); });
+    aplicarO();
+    function por(x, y) {
+      var par = p.offsetParent || document.body, pr = par === document.body ? { left: 0, top: 0 } : par.getBoundingClientRect();
+      var b = p.getBoundingClientRect(), vw = window.innerWidth, vh = window.innerHeight;
+      x = Math.max(4 - b.width + 80, Math.min(vw - 80, x)); y = Math.max(0, Math.min(vh - 48, y));
+      var st = p.style;
+      st.setProperty("left", Math.round(x - pr.left) + "px", "important"); st.setProperty("top", Math.round(y - pr.top) + "px", "important");
+      st.setProperty("right", "auto", "important"); st.setProperty("bottom", "auto", "important"); st.setProperty("transform", "none", "important");
+      st.setProperty("width", Math.round(b.width) + "px", "important"); st.setProperty("max-width", "none", "important");
+      p.__iprMovido = 1;
+    }
+    if (G.x != null && G.y != null && !(window.innerWidth <= 900)) setTimeout(function () { try { por(G.x, G.y); } catch (e) {} }, 0);
+    var A = null;
+    pg.addEventListener("pointerdown", function (e) {
+      e.preventDefault(); e.stopPropagation();
+      var b = p.getBoundingClientRect(); A = { dx: e.clientX - b.left, dy: e.clientY - b.top };
+      try { pg.setPointerCapture(e.pointerId); } catch (x) {}
+    });
+    pg.addEventListener("pointermove", function (e) { if (!A) return; e.preventDefault(); por(e.clientX - A.dx, e.clientY - A.dy); });
+    function fim(e) { if (!A) return; A = null; var b = p.getBoundingClientRect(); G.x = Math.round(b.left); G.y = Math.round(b.top); guardar(); try { pg.releasePointerCapture(e.pointerId); } catch (x) {} }
+    pg.addEventListener("pointerup", fim); pg.addEventListener("pointercancel", fim);
+    // com o teclado: setas movem 20 px
+    pg.addEventListener("keydown", function (e) {
+      var d = { ArrowLeft: [-20, 0], ArrowRight: [20, 0], ArrowUp: [0, -20], ArrowDown: [0, 20] }[e.key]; if (!d) return;
+      e.preventDefault(); var b = p.getBoundingClientRect(); por(b.left + d[0], b.top + d[1]); G.x = Math.round(b.left + d[0]); G.y = Math.round(b.top + d[1]); guardar();
+    });
+    // duplo toque na pega: volta ao sítio de origem
+    pg.addEventListener("dblclick", function () { G = { o: G.o }; guardar(); ["left", "top", "right", "bottom", "transform", "width", "max-width"].forEach(function (k) { p.style.removeProperty(k); }); p.__iprMovido = 0; if (typeof window.__iprJanReposta === "function") try { window.__iprJanReposta(p); } catch (x) {} });
+  }
+  function JAN_T() { return (document.documentElement.lang || "").indexOf("en") === 0 || (window.IPR_LINGUA === "en") ? { mover: "Move (double-tap to reset)", transp: "Transparency" } : { mover: "Mover (duplo toque repõe)", transp: "Transparência" }; }
+  var JAN_CSS = ".ipr-jan{display:inline-flex;align-items:center;gap:6px;margin-left:auto;margin-right:4px;flex:none}" +
+    ".ipr-jan-m{all:unset;box-sizing:border-box;cursor:grab;touch-action:none;display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:6px;color:#9AA088;border:1px solid transparent}" +
+    ".ipr-jan-m:hover,.ipr-jan-m:focus-visible{color:#E4E2D8;border-color:#2E3A26;outline:none}.ipr-jan-m:active{cursor:grabbing}" +
+    ".ipr-jan-o{width:64px;height:20px;accent-color:#94BE39;cursor:pointer;margin:0;touch-action:pan-x}" +
+    "@media (max-width:560px){.ipr-jan-o{width:48px}}";
+
+  window.__iprJanReposta = function (p) { try { posicionar(p); } catch (e) {} };
   function redim() { [60, 320].forEach(function (ms) { setTimeout(function () { try { var m = mapa(); if (m) m.resize(); var p = pn(); if (p) posicionar(p); } catch (e) {} }, ms); }); }
   // entrada para o cartão do comprar.js: o terreno já está marcado, segue para o preço do produto
   window.iprAssistenteComprar = function (k, extra) {
@@ -650,6 +709,7 @@
     var x = el("button", "x"); x.type = "button"; x.setAttribute("aria-label", t("fechar")); x.title = t("fechar"); x.appendChild(icone("x", 18)); x.addEventListener("click", fechar);
     lin.appendChild(x); cab.appendChild(lin);
     var np = passoN(); var pn0 = el("small", "np", qf("passoDe", { i: np[0], n: np[1] })); lin.insertBefore(pn0, x);
+    try { janela(p, "assistente", lin, x); } catch (e) {}
     var fz = FASE[S.q] || 1, ol = el("ol", "pp");
     t("passos").forEach(function (n, i) { ol.appendChild(el("li", i + 1 < fz ? "feito" : i + 1 === fz ? "agora" : "", n)); });
     cab.appendChild(ol); p.appendChild(cab);
@@ -680,6 +740,7 @@
   }
   function posicionar(p) {
     try {
+      if (p.__iprMovido && !movel()) return;
       if (p.classList.contains("centro") || movel()) { p.style.left = ""; p.style.top = ""; p.style.bottom = ""; return; }
       var m = $("ipe-mapa"); if (!m) return;
       var hr = p.parentNode.getBoundingClientRect(), mr = m.getBoundingClientRect();
@@ -771,8 +832,36 @@
   // Modo simples do mapa enquanto se identifica o terreno (Nuno, 30/10, 20h59: «só tem que mostrar um ortofoto, a
   // toponímia, estradas, localizações e o cadastro [...] o mais simples e ligeira possível»). Desliga as outras camadas do
   // Atlas (viz) e as dos add-ons, põe o fundo no ortofotomapa e repõe tudo ao fechar o assistente.
-  var SIMPLES = null, SIMPLES_EXT = false, MANTER = { f_ortosat: 1, f_sub: 1, o_nomes: 1 };
-  var CAMADA_OK = /^(iprv-f_ortosat|iprv-f_sub|iprv-o_nomes|iprv-bg|ipe-cad|ipe-loc|ipe-med|gl-draw)/;
+  var SIMPLES = null, SIMPLES_EXT = false, MANTER = { f_ortosat: 1, f_sub: 1, o_nomes: 1, o_estradas: 1 };
+  var CAMADA_OK = /^(iprv-f_ortosat|iprv-f_sub|iprv-o_nomes|iprv-o_estradas|iprv-bg|ipr-compra-|ipe-cad|ipe-loc|ipe-med|gl-draw)/;
+  // Mapa de compra (Nuno, 30/10/2026, 23h32: «as pessoas precisam de um mapa normal [...] igual ao Google Maps: a ortofoto,
+  // a toponímia, com as estradas, o número das localizações, dos sítios»). Por cima da ortofoto: estradas e localidades do
+  // Atlas (o_estradas, o_nomes) e, da mesma fonte OpenStreetMap (iprv-omt, OpenFreeMap), nomes das ruas, números de porta
+  // e nomes dos sítios; o cadastro continua por cima quando se aproxima.
+  var ETQ = ["ipr-compra-ruas", "ipr-compra-poi", "ipr-compra-num"];
+  function etiquetasCompra(on) {
+    var m = mapa(); if (!m || !m.getStyle) return;
+    try {
+      if (!on) { ETQ.forEach(function (id) { if (m.getLayer(id)) m.setLayoutProperty(id, "visibility", "none"); }); return; }
+      if (!m.getSource("iprv-omt")) m.addSource("iprv-omt", { type: "vector", url: "https://tiles.openfreemap.org/planet", attribution: "© OpenStreetMap · OpenFreeMap" });
+      var F = ["Noto Sans Regular"], N = ["coalesce", ["get", "name:pt"], ["get", "name"]];
+      var halo = { "text-color": "#ffffff", "text-halo-color": "rgba(10,14,8,.88)", "text-halo-width": 1.6 };
+      var defs = [
+        { id: "ipr-compra-ruas", type: "symbol", source: "iprv-omt", "source-layer": "transportation_name", minzoom: 13,
+          layout: { "symbol-placement": "line", "text-field": N, "text-font": F, "text-size": ["interpolate", ["linear"], ["zoom"], 13, 11, 17, 14], "text-max-angle": 30, "text-padding": 2 }, paint: halo },
+        { id: "ipr-compra-poi", type: "symbol", source: "iprv-omt", "source-layer": "poi", minzoom: 15,
+          layout: { "text-field": N, "text-font": F, "text-size": 11.5, "text-optional": true, "text-max-width": 9, "text-padding": 4 },
+          paint: { "text-color": "#ffe9a8", "text-halo-color": "rgba(10,14,8,.88)", "text-halo-width": 1.5 } },
+        { id: "ipr-compra-num", type: "symbol", source: "iprv-omt", "source-layer": "housenumber", minzoom: 17,
+          layout: { "text-field": ["get", "housenumber"], "text-font": F, "text-size": 11, "text-padding": 1 }, paint: halo }
+      ];
+      defs.forEach(function (d) {
+        if (m.getLayer(d.id)) { m.setLayoutProperty(d.id, "visibility", "visible"); try { m.moveLayer(d.id); } catch (e) {} }
+        else m.addLayer(d);
+      });
+    } catch (e) {}
+  }
+
   // o cartão do comprar.js liga e desliga o mesmo modo (o assistente fechado não o desliga enquanto o cartão o pedir)
   window.iprModoSimples = function (on) { SIMPLES_EXT = !!on; try { if (on) modoSimples(true); else if (!pn()) modoSimples(false); } catch (e) {} };
   function modoSimples(on) {
@@ -784,7 +873,7 @@
           if (V && V.activas) {
             V.activas().forEach(function (id) { if (!MANTER[id]) { SIMPLES.viz.push(id); try { V.ligar(id, false); } catch (e) {} } });
             if (V.activas().indexOf("f_ortosat") < 0 && V.fundo) { SIMPLES.fundoLigado = 1; V.fundo("f_ortosat"); }
-            ["o_nomes"].forEach(function (id) { if (V.activas().indexOf(id) < 0) { (SIMPLES.ligadas = SIMPLES.ligadas || []).push(id); try { V.ligar(id, true); } catch (e) {} } });
+            ["o_nomes", "o_estradas"].forEach(function (id) { if (V.activas().indexOf(id) < 0) { (SIMPLES.ligadas = SIMPLES.ligadas || []).push(id); try { V.ligar(id, true); } catch (e) {} } });
           }
         } catch (e) {}
       }
@@ -796,11 +885,12 @@
           SIMPLES.cam.push(l.id); m.setLayoutProperty(l.id, "visibility", "none");
         });
       } catch (e) {}
+      etiquetasCompra(true);
       if (!SIMPLES.ouvir) { SIMPLES.ouvir = function () { if (SIMPLES && (pn() || SIMPLES_EXT)) modoSimples(true); }; try { m.on("styledata", SIMPLES.ouvir); } catch (e) {} }
       return;
     }
     if (!SIMPLES) return;
-    var X = SIMPLES; SIMPLES = null;
+    var X = SIMPLES; SIMPLES = null; etiquetasCompra(false);
     try { if (X.ouvir) m.off("styledata", X.ouvir); } catch (e) {}
     try {
       X.cam.forEach(function (id) { if (m.getLayer(id)) m.setLayoutProperty(id, "visibility", "visible"); });
@@ -849,7 +939,7 @@
     opcoes(c, [
       { ico: "planta", t: d.planta[0], s: d.planta[1], pr: euros(pl) + " " + t("mais") + " · " + euros(pl * (1 + IVA)) + " " + t("comIva"), tag: q("semConta"), fn: function () { S.produto = "planta"; vai("sabe"); } },
       { ico: "leitura", t: d.leitura[0], s: d.leitura[1], pr: t("desde") + " " + euros(precoDesde("leitura")) + " " + t("mais") + " · " + euros(precoDesde("leitura") * (1 + IVA)) + " " + t("comIva"), tag: q("semConta"), fn: function () { S.produto = "leitura"; preCarregarPrecos(); vai("sabe"); } },
-      { ico: "base", t: d.base[0], s: d.base[1], pr: t("desde") + " " + euros(precoDesde("base")) + " " + t("mais") + " · " + euros(precoDesde("base") * (1 + IVA)) + " " + t("comIva"), tag: q("comConta"), tagC: "c2", fn: function () { S.produto = "base"; vai("sabe"); } },
+      { ico: "base", t: d.base[0], s: d.base[1], pr: t("desde") + " " + euros(precoDesde("base")) + " " + t("mais") + " · " + euros(precoDesde("base") * (1 + IVA)) + " " + t("comIva"), tag: q("semConta"), tagC: "c2", fn: function () { S.produto = "base"; vai("sabe"); } },
       { ico: "eco", t: q("naoSei"), s: q("naoSeiS"), fn: function () { vai("ajuda"); } }
     ]);
     var ex = el("button", "lk", q("explorar")); ex.type = "button"; ex.addEventListener("click", fechar); c.appendChild(ex);

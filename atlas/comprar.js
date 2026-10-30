@@ -33,6 +33,7 @@
    d) v5 (23h18 a 23h19): os passos «1 Escolher» e «2 Desenhar o terreno» passam a botões para voltar atrás; o cartão não
          faz scroll; a legenda esconde-se com o cartão aberto; ao encomendar o mapa fica só com ortofoto, cadastro e
          toponímia (window.iprModoSimples do assistente.js).
+   e) v6 (23h33): o cartão tem pega para arrastar e regulador de transparência (como todos os pop-ups de compra).
    c) No computador o cartão é uma faixa horizontal no fundo do mapa, com os três produtos lado a lado; o botão
       «Comprar passo a passo» esconde-se enquanto o cartão ou a pílula estão abertos. */
 (function () {
@@ -71,7 +72,7 @@
       semNome: "Terreno sem nome", aCarregar: "A carregar os seus projectos…",
       cTitulo: "O seu terreno", cArea: "Área", cRodape: "Preços sem IVA. O pagamento é no passo seguinte.",
       cBase: "Encomendar", cLeit: "Base + Leitura", cPlanta: "Com a Base", orcamento: "Pedir orçamento",
-      escolhido: "escolhido", pacote: "Base e Leitura juntas: mais 10 % de desconto nas duas. Se a encomenda tiver um plano IPR Cloud, a Base já tem esse desconto e os 10 % ficam só na Leitura.",
+      escolhido: "escolhido", pacote: "Base e Leitura juntas: −10 % (com plano IPR Cloud, os 10 % ficam só na Leitura).",
       sTitulo: "Planos do IPR Atlas",
       exp: "Explorer", expL: ["Mapa do país, ortofotomapa e cadastro", "Pesquisar e desenhar o terreno", "Ficha gratuita do terreno"],
       expB: "Continuar grátis",
@@ -111,7 +112,7 @@
       semNome: "Unnamed site", aCarregar: "Loading your projects…",
       cTitulo: "Your plot", cArea: "Area", cRodape: "Prices exclude VAT. You pay in the next step.",
       cBase: "Order", cLeit: "Base + Reading", cPlanta: "With the Base", orcamento: "Request a quote",
-      escolhido: "chosen", pacote: "Base and Reading together: a further 10% off both. If the order includes an IPR Cloud plan, the Base already has that discount and the 10% applies to the Reading only.",
+      escolhido: "chosen", pacote: "Base and Reading together: −10% (with an IPR Cloud plan, the 10% applies to the Reading only).",
       sTitulo: "IPR Atlas plans",
       exp: "Explorer", expL: ["Map of the country, orthophoto and cadastre", "Search and draw your plot", "Free plot summary"],
       expB: "Keep using it free",
@@ -339,20 +340,22 @@
     ".ipr-cp-a:disabled{opacity:.6;cursor:default}" +
     ".ipr-cp-luz{outline:2px solid var(--ac,#a8b878)!important;outline-offset:3px;border-radius:6px}" +
     ".ipr-cp-ps li.vai{cursor:pointer;border-radius:6px}.ipr-cp-ps li.vai:hover,.ipr-cp-ps li.vai:focus-visible{background:rgba(148,190,57,.14);outline:none}.ipr-cp-ps li.vai span{text-decoration:underline;text-underline-offset:3px}" +
+    "html:has(#ipr-cp-ct) #tcdfmb,html:has(#ipr-cp-ct) #ipr-as-b{display:none!important}@media (max-width:900px){html:has(#ipr-cp-ct) #ipe .ipe-dir{visibility:hidden!important}.ipr-cp-ct{max-height:calc(100dvh - 70px)!important;overflow-y:auto}}" +
     "html:has(#ipr-cp-ct) #ipr-lgd,html:has(#ipr-cp-vt) #ipr-lgd{display:none!important}" +
+    ".ipr-cp-ct>.ipr-jan{position:absolute;top:8px;right:50px;margin:0}.ipr-cp-ct>h2{padding-right:150px}" +
     ".ipr-cp-nv{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 8px}.ipr-cp-nv .ipr-cp-a{width:auto;min-height:36px;margin:0;padding:6px 12px;font-size:12.5px}" +
     ".ipr-cp-vt{position:fixed;z-index:57;left:50%;transform:translateX(-50%);top:calc(58px + env(safe-area-inset-top));display:flex;align-items:center;gap:10px;max-width:calc(100vw - 20px);padding:8px 8px 8px 14px;border:1px solid var(--ac,#94BE39);border-radius:10px;background:var(--p1,#171a13);box-shadow:0 10px 30px rgba(0,0,0,.45);font:13px/1.35 " + F + ";color:var(--tx,#ebe7d8)}" +
     ".ipr-cp-vt .ipr-cp-a{width:auto;margin:0;flex:none;min-height:38px}.ipr-cp-vt .ipr-cp-x{position:static;flex:none;width:34px;height:34px}" +
     "body:has(#ipr-cp-ct) #ipr-as-b,body:has(#ipr-cp-vt) #ipr-as-b{display:none!important}" +
     "@media (min-width:901px){#ipe.ipr-cp-foco{--wl:0px!important;--wr:0px!important;grid-template-columns:0 minmax(0,1fr) 0!important}#ipe.ipr-cp-foco .ipe-esq,#ipe.ipr-cp-foco .ipe-dir{visibility:hidden!important;border:0!important}#ipe.ipr-cp-foco .ipr-px-wl,#ipe.ipr-cp-foco .ipr-px-wr{display:none!important}" +
     ".ipr-cp-ct{left:calc(var(--wl,0px) + 14px);right:calc(var(--wr,0px) + 196px);width:auto;max-width:1120px;max-height:min(46vh,430px);display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-auto-flow:row dense;column-gap:18px;padding:12px 16px}" +
-    ".ipr-cp-ct{max-height:calc(100vh - 130px)!important}.ipr-cp-ct>*{grid-column:1/-1}.ipr-cp-ct>h2{grid-column:1;margin:0;align-self:center}.ipr-cp-ct>.ipr-cp-ar{grid-column:2/-1;justify-self:end;align-self:center;margin:0 44px 0 0}" +
+    ".ipr-cp-ct{max-height:calc(100vh - 130px)!important}.ipr-cp-ct>*{grid-column:1/-1}.ipr-cp-ct>h2{grid-column:1;margin:0;align-self:center}.ipr-cp-ct>.ipr-cp-ar{grid-column:2/-1;justify-self:end;align-self:center;margin:0 150px 0 0}" +
     ".ipr-cp-ct>.ipr-cp-r{grid-column:auto;align-self:stretch;padding:10px 0;min-width:0;grid-template-columns:minmax(0,1fr);align-content:start}.ipr-cp-ct>.ipr-cp-r>b,.ipr-cp-ct>.ipr-cp-r>.ipr-cp-p{grid-column:1;min-width:0}.ipr-cp-ct>.ipr-cp-r .ipr-cp-a{grid-column:1;grid-row:3;width:100%;min-width:0;margin-top:6px}.ipr-cp-ct>.ipr-cp-n,.ipr-cp-ct>.ipr-cp-c1{margin-top:8px}}" +
     "@media (max-width:900px){.ipr-cp-ct{left:10px;right:10px;width:auto;max-width:none;bottom:calc(10px + env(safe-area-inset-bottom))}}" +
     "@media (max-width:600px){.ipr-cp-pn{left:10px;right:10px;width:auto}.ipr-cp-g{grid-template-columns:1fr}.ipr-cp-sb{padding:14px}.ipr-cp-fu{padding:10px;align-items:flex-start}.ipr-cp-ps{font-size:11px}}";
   function css() {
     if ($("ipr-cp-css")) return;
-    var s = el("style"); s.id = "ipr-cp-css"; s.textContent = ESTILO; document.head.appendChild(s);
+    var s = el("style"); s.id = "ipr-cp-css"; s.textContent = ESTILO + JAN_CSS; document.head.appendChild(s);
   }
   // as camadas de cima ficam dentro do #ipe, para herdar as cores do tema claro ou escuro
   function casa() { return raiz() || document.body; }
@@ -612,10 +615,14 @@
     var pv = plantaVendida();
     if (pv) {
       var lp = linha("planta", t("planta"), eur(pv.preco), t("plantaComprar"), "c-planta-comprar"); lp.querySelector(".ipr-cp-p").appendChild(el("small", "", t("plantaOu"))); c.appendChild(lp);
-      // livre resolução: pedido expresso de entrega imediata (conteúdo digital); sem ele, a Planta espera os 14 dias
-      var ck = el("label", "ipr-cp-c1"), ci = el("input"); ci.type = "checkbox"; ci.id = "ipr-cp-c1";
-      ck.appendChild(ci); ck.appendChild(el("span", "", t("c1"))); c.appendChild(ck);
-      c.appendChild(el("p", "ipr-cp-n", t("c1Sem")));
+      // livre resolução: pedido expresso de entrega imediata (conteúdo digital); sem ele, a Planta espera os 14 dias.
+      // Sem sessão a compra segue pelo assistente, que pergunta isto no passo dos dados (bateria de ecrãs, 30/10 23h45:
+      // no telemóvel o cartão saía do ecrã); com sessão segue pelo carrinho (m90551) e a caixa fica aqui.
+      if (sessao() || typeof window.iprAssistenteComprar !== "function") {
+        var ck = el("label", "ipr-cp-c1"), ci = el("input"); ci.type = "checkbox"; ci.id = "ipr-cp-c1";
+        ck.appendChild(ci); ck.appendChild(el("span", "", t("c1"))); c.appendChild(ck);
+        c.appendChild(el("p", "ipr-cp-n", t("c1Sem")));
+      }
     }
     else c.appendChild(linha("planta", t("planta"), t("incluida"), t("cPlanta"), "c-planta"));
     var msg = el("p", "ipr-cp-n"); msg.id = "ipr-cp-msg"; msg.setAttribute("aria-live", "polite"); msg.hidden = true; c.appendChild(msg);
@@ -635,9 +642,63 @@
       } catch (x) {}
     });
     casa().appendChild(c); foco(true); simples(true);
+    try { janela(c, "cartao", c, null); } catch (e) {}
     try { c.querySelector(".ipr-cp-a.pri").focus({ preventScroll: true }); } catch (e) {}
     return true;
   }
+  // Janela móvel (Nuno, 30/10/2026, 23h33: «sempre que aparece um pop-up, tem que dar para fechar, voltar atrás, mover no
+  // ecrã [...] e um regulador de transparência»). Acrescenta ao cabeçalho uma pega para arrastar e um regulador de
+  // transparência; a posição e a transparência ficam lembradas neste navegador (localStorage, falha em silêncio).
+  function janela(p, chave, onde, antes) {
+    if (!p || !onde || p.querySelector(".ipr-jan")) return;
+    var K = "ipr_jan_" + chave, G = {}; try { G = JSON.parse(localStorage.getItem(K) || "{}") || {}; } catch (e) { G = {}; }
+    var w = document.createElement("span"); w.className = "ipr-jan";
+    var pg = document.createElement("button"); pg.type = "button"; pg.className = "ipr-jan-m"; pg.title = pg.ariaLabel = JAN_T().mover;
+    pg.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M12 2l3 3h-2v4h4V7l3 3-3 3v-2h-4v4h2l-3 3-3-3h2v-4H7v2l-3-3 3-3v2h4V5H9z"/></svg>';
+    var op = document.createElement("input"); op.type = "range"; op.min = "35"; op.max = "100"; op.step = "5"; op.className = "ipr-jan-o";
+    op.title = op.ariaLabel = JAN_T().transp; op.value = String(G.o || 100);
+    w.appendChild(pg); w.appendChild(op);
+    if (antes && antes.parentNode === onde) onde.insertBefore(w, antes); else onde.appendChild(w);
+    function aplicarO() { p.style.opacity = String(Math.max(35, Math.min(100, +op.value || 100)) / 100); }
+    function guardar() { try { localStorage.setItem(K, JSON.stringify(G)); } catch (e) {} }
+    op.addEventListener("input", function () { G.o = +op.value; aplicarO(); guardar(); });
+    ["pointerdown", "mousedown", "touchstart", "keydown", "click", "wheel"].forEach(function (ev) { op.addEventListener(ev, function (e) { e.stopPropagation(); }, { passive: true }); });
+    aplicarO();
+    function por(x, y) {
+      var par = p.offsetParent || document.body, pr = par === document.body ? { left: 0, top: 0 } : par.getBoundingClientRect();
+      var b = p.getBoundingClientRect(), vw = window.innerWidth, vh = window.innerHeight;
+      x = Math.max(4 - b.width + 80, Math.min(vw - 80, x)); y = Math.max(0, Math.min(vh - 48, y));
+      var st = p.style;
+      st.setProperty("left", Math.round(x - pr.left) + "px", "important"); st.setProperty("top", Math.round(y - pr.top) + "px", "important");
+      st.setProperty("right", "auto", "important"); st.setProperty("bottom", "auto", "important"); st.setProperty("transform", "none", "important");
+      st.setProperty("width", Math.round(b.width) + "px", "important"); st.setProperty("max-width", "none", "important");
+      p.__iprMovido = 1;
+    }
+    if (G.x != null && G.y != null && !(window.innerWidth <= 900)) setTimeout(function () { try { por(G.x, G.y); } catch (e) {} }, 0);
+    var A = null;
+    pg.addEventListener("pointerdown", function (e) {
+      e.preventDefault(); e.stopPropagation();
+      var b = p.getBoundingClientRect(); A = { dx: e.clientX - b.left, dy: e.clientY - b.top };
+      try { pg.setPointerCapture(e.pointerId); } catch (x) {}
+    });
+    pg.addEventListener("pointermove", function (e) { if (!A) return; e.preventDefault(); por(e.clientX - A.dx, e.clientY - A.dy); });
+    function fim(e) { if (!A) return; A = null; var b = p.getBoundingClientRect(); G.x = Math.round(b.left); G.y = Math.round(b.top); guardar(); try { pg.releasePointerCapture(e.pointerId); } catch (x) {} }
+    pg.addEventListener("pointerup", fim); pg.addEventListener("pointercancel", fim);
+    // com o teclado: setas movem 20 px
+    pg.addEventListener("keydown", function (e) {
+      var d = { ArrowLeft: [-20, 0], ArrowRight: [20, 0], ArrowUp: [0, -20], ArrowDown: [0, 20] }[e.key]; if (!d) return;
+      e.preventDefault(); var b = p.getBoundingClientRect(); por(b.left + d[0], b.top + d[1]); G.x = Math.round(b.left + d[0]); G.y = Math.round(b.top + d[1]); guardar();
+    });
+    // duplo toque na pega: volta ao sítio de origem
+    pg.addEventListener("dblclick", function () { G = { o: G.o }; guardar(); ["left", "top", "right", "bottom", "transform", "width", "max-width"].forEach(function (k) { p.style.removeProperty(k); }); p.__iprMovido = 0; if (typeof window.__iprJanReposta === "function") try { window.__iprJanReposta(p); } catch (x) {} });
+  }
+  function JAN_T() { return (document.documentElement.lang || "").indexOf("en") === 0 || (window.IPR_LINGUA === "en") ? { mover: "Move (double-tap to reset)", transp: "Transparency" } : { mover: "Mover (duplo toque repõe)", transp: "Transparência" }; }
+  var JAN_CSS = ".ipr-jan{display:inline-flex;align-items:center;gap:6px;margin-left:auto;margin-right:4px;flex:none}" +
+    ".ipr-jan-m{all:unset;box-sizing:border-box;cursor:grab;touch-action:none;display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:6px;color:#9AA088;border:1px solid transparent}" +
+    ".ipr-jan-m:hover,.ipr-jan-m:focus-visible{color:#E4E2D8;border-color:#2E3A26;outline:none}.ipr-jan-m:active{cursor:grabbing}" +
+    ".ipr-jan-o{width:64px;height:20px;accent-color:#94BE39;cursor:pointer;margin:0;touch-action:pan-x}" +
+    "@media (max-width:560px){.ipr-jan-o{width:48px}}";
+
   function fecharCartao(manter) { var c = $("ipr-cp-ct"); if (c) c.remove(); foco(false); if (!manter && !$("ipr-cp-vt")) simples(false); }
   // só ortofoto, cadastro e toponímia enquanto se escolhe o terreno e o produto (Nuno, 30/10, 23h19)
   function simples(on) { try { if (typeof window.iprModoSimples === "function") window.iprModoSimples(!!on); } catch (e) {} }
