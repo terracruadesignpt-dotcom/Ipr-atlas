@@ -10,6 +10,11 @@
    3. Ecrã dos planos: Explorer e Intelligence lado a lado, com o preço e os botões de compra. Ao tocar numa camada ou
       ferramenta fechada (.ipr-it.bl, .ipr-t62-l.tranc, [data-ipr-sim-lock]) aparece, além do que já acontece, um aviso
       pequeno com «Ver planos».
+   Decisões do Nuno (30/10/2026, 18h22): a Leitura Territorial leva sempre a Base, e o preço mostrado é o das duas (com o
+   pacote −10 % quando o site o diz); o cartão abre também ao escolher parcelas do cadastro (#ipe-plist), uma vez por
+   conjunto; a Planta de Localização passa a 19 € quando o m90551 estiver ligado (window.IPR_PRECOS.planta.preco e .rota):
+   compra-se para um terreno novo pela rota do m90551, que cria a encomenda e devolve o pagamento do WooCommerce. Quem já
+   tem Bases continua a fazer a planta delas como hoje. Sem o m90551, fica «incluída na Base».
    Preços: window.IPR_PRECOS (módulo m90550, só leitura dos produtos WooCommerce e da tabela do m14473). Sem ele, o «desde»
    vem do formulário de encomenda e os planos levam à página /ipr-cloud/. Nada é inventado: o que não se sabe não aparece.
    Não edita app.js, ajustes.js nem outros add-ons: só DOM, window.__ipe e eventos. Texto escapado (textContent).
@@ -27,7 +32,8 @@
       titulo: "O que quer comprar?",
       passos: ["Escolher", "Desenhar o terreno", "Ver o preço e pagar"],
       base: "Base Cartográfica", baseT: "Mapas do relevo do seu terreno (LiDAR da DGT), no Atlas e em ficheiros.",
-      leitura: "Leitura Territorial", leituraT: "Relatório PDF: o que o terreno permite e o que o condiciona.",
+      leitura: "Leitura Territorial", leituraT: "Relatório PDF do terreno. Leva sempre a Base Cartográfica: o preço é o das duas.",
+      leituraC: "Leitura Territorial + Base", leituraSoma: "Base + Leitura",
       planta: "Planta de Localização", plantaT: "PDF à escala sobre o ortofotomapa, para a câmara ou o banco.",
       planos: "Explorer e Intelligence", planosT: "Explorer é grátis. Intelligence abre todas as camadas.",
       desde: "desde", gratis: "Grátis", mes: "/mês", ano: "/ano", ou: "ou",
@@ -38,6 +44,11 @@
       guiaJa: "Já tem um terreno desenhado. Veja o preço no cartão.",
       plantaComo: "A Planta de Localização faz-se a partir de um projecto seu. Escolha o projecto:",
       plantaSem: "A Planta de Localização vem com a Base Cartográfica. Desenhe o terreno e encomende a Base.",
+      plantaVende: "Desenhe o terreno ou escolha as parcelas. Paga a planta e faz o PDF logo a seguir, aqui no Atlas. Se encomendar a Base, a planta vem incluída.",
+      plantaOutro: "Planta para outro terreno", plantaDesenhar: "Desenhar o terreno", plantaComprar: "Comprar a Planta",
+      plantaOu: "ou incluída na Base", plantaEntrar: "Para comprar a planta precisa de conta. Entre ou crie a conta e volte a este passo.",
+      plantaAEnviar: "A preparar o pagamento…", plantaErro: "Não foi possível preparar o pagamento. Tente outra vez ou escreva-nos.",
+      plantaSemTerreno: "Não encontrei o limite do terreno no mapa. Desenhe-o outra vez.",
       semNome: "Terreno sem nome", aCarregar: "A carregar os seus projectos…",
       cTitulo: "O seu terreno", cArea: "Área", cRodape: "Preços sem IVA. O pagamento é no passo seguinte.",
       cBase: "Encomendar", cLeit: "Base + Leitura", cPlanta: "Com a Base", orcamento: "Pedir orçamento",
@@ -58,7 +69,8 @@
       titulo: "What would you like to buy?",
       passos: ["Choose", "Draw your plot", "See the price and pay"],
       base: "Base Map", baseT: "Terrain maps of your plot (DGT LiDAR), in the Atlas and as files.",
-      leitura: "Land Reading", leituraT: "PDF report: what the plot allows and what constrains it.",
+      leitura: "Land Reading", leituraT: "PDF report on the plot. It always includes the Base Map: the price is for both.",
+      leituraC: "Land Reading + Base", leituraSoma: "Base + Reading",
       planta: "Location Plan", plantaT: "Scaled PDF on the orthophoto, for the town hall or the bank.",
       planos: "Explorer and Intelligence", planosT: "Explorer is free. Intelligence opens every layer.",
       desde: "from", gratis: "Free", mes: "/month", ano: "/year", ou: "or",
@@ -69,6 +81,11 @@
       guiaJa: "You already have a plot drawn. See the price on the card.",
       plantaComo: "The Location Plan is made from one of your projects. Choose the project:",
       plantaSem: "The Location Plan comes with the Base Map. Draw your plot and order the Base.",
+      plantaVende: "Draw your plot or pick the parcels. Pay for the plan and make the PDF straight away, here in the Atlas. If you order the Base, the plan is included.",
+      plantaOutro: "Plan for another plot", plantaDesenhar: "Draw the plot", plantaComprar: "Buy the Plan",
+      plantaOu: "or included with the Base", plantaEntrar: "You need an account to buy the plan. Sign in or create one, then come back to this step.",
+      plantaAEnviar: "Preparing the payment…", plantaErro: "The payment could not be prepared. Try again or write to us.",
+      plantaSemTerreno: "The plot boundary was not found on the map. Please draw it again.",
       semNome: "Unnamed site", aCarregar: "Loading your projects…",
       cTitulo: "Your plot", cArea: "Area", cRodape: "Prices exclude VAT. You pay in the next step.",
       cBase: "Order", cLeit: "Base + Reading", cPlanta: "With the Base", orcamento: "Request a quote",
@@ -148,8 +165,15 @@
       lerDesdeDom(); return DOM_DESDE.base ? { v: DOM_DESDE.base } : null;
     }
     if (k === "leitura") {
-      var rl = p && resolver(p.leitura); if (rl) return { v: eur(rl.preco), riscado: rl.tabela ? eur(rl.tabela) : "" };
-      lerDesdeDom(); return DOM_DESDE.leitura ? { v: DOM_DESDE.leitura } : null;
+      // a Leitura leva sempre a Base: o «desde» é o das duas juntas (com o pacote −10 % quando o site o diz)
+      var rl = p && resolver(p.leitura), rb2 = p && resolver(p.base);
+      if (rl && rb2) return { v: eur(somaPacote(rb2.preco, rl.preco)) };
+      lerDesdeDom();
+      var nb = euros(DOM_DESDE.base), nl = euros(DOM_DESDE.leitura);
+      return nb && nl ? { v: eur(somaPacote(nb, nl)) } : null;
+    }
+    if (k === "planta") {
+      var pv = plantaVendida(); return pv ? { v: eur(pv.preco), fixo: 1 } : null;
     }
     if (k === "intel") {
       var m = p && p.intel && resolver(p.intel.mes);
@@ -157,6 +181,24 @@
       return null;
     }
     return null;
+  }
+  // «1 099 €», «153 € · −50 % até 31/12», «€1,099» -> número; null se não houver valor em euros
+  function euros(s) {
+    s = String(s || "");
+    var m = /([0-9][0-9.,\s\u00a0\u202f]*)\s*€/.exec(s) || /€\s*([0-9][0-9.,\s\u00a0\u202f]*)/.exec(s); if (!m) return null;
+    var x = m[1].replace(/[\s\u00a0\u202f]/g, "");
+    if (/,\d{1,2}$/.test(x)) x = x.replace(/\./g, "").replace(",", "."); // 1.099,50
+    else x = x.replace(/[.,](?=\d{3}(\D|$))/g, "");                       // 1.099 ou 1,099
+    var v = parseFloat(x); return isFinite(v) && v > 0 ? v : null;
+  }
+  function r2(v) { return Math.round(v * 100) / 100; }
+  // Base + Leitura: o m90430 tira 10 % a cada linha quando vão juntas (pacote ligado); sem essa informação, soma simples
+  function somaPacote(b, l) { var p = PR(); return p && p.pacote10 ? r2(r2(b * 0.9) + r2(l * 0.9)) : r2(b + l); }
+  // Planta à venda (m90551 ligado): preço e rota de encomenda vêm do site; senão, null e fica «incluída na Base»
+  function plantaVendida() {
+    var p = PR(), pl = p && p.planta;
+    if (!pl || !num(pl.preco) || !urlSegura(pl.rota, "")) return null;
+    return { preco: pl.preco, rota: pl.rota };
   }
   function urlPlanos() {
     var p = PR(), s = window.IPR_SIM_BASE;
@@ -311,7 +353,7 @@
   function preco(d, alt) {
     var p = el("span", "ipr-cp-p");
     if (d) {
-      p.appendChild(el("small", "", t("desde")));
+      if (!d.fixo) p.appendChild(el("small", "", t("desde")));
       if (d.riscado) p.appendChild(el("s", "", d.riscado));
       p.appendChild(document.createTextNode(d.v));
     } else p.appendChild(el("small", "", alt || ""));
@@ -335,7 +377,7 @@
     var l = el("div", "ipr-cp-l");
     l.appendChild(item("base", t("base"), t("baseT"), desde("base"), t("precoDesenho")));
     var dl = desde("leitura"); l.appendChild(item("leitura", t("leitura"), t("leituraT"), dl, t("precoDesenho")));
-    l.appendChild(item("planta", t("planta"), t("plantaT"), null, t("incluida")));
+    l.appendChild(item("planta", t("planta"), t("plantaT"), desde("planta"), t("incluida")));
     var di = desde("intel"); l.appendChild(item("planos", t("planos"), t("planosT"), di, di ? "" : t("gratis")));
     pn.appendChild(l);
     var d = el("div", "ipr-cp-d"); d.id = "ipr-cp-pd"; d.hidden = true; pn.appendChild(d);
@@ -362,6 +404,7 @@
       if (k === "p-planta") { planta(); return; }
       if (k === "planta-id") { var id = a.getAttribute("data-v"); fecharPainel(); if (typeof window.__iprPlanta === "function") { fecharEsquerdaMovel(); window.__iprPlanta(id); } return; }
       if (k === "planta-base") { fecharPainel(); comecar("planta"); return; }
+      if (k === "planta-nova") { fecharPainel(); comecar("planta"); return; }
     } catch (x) {}
   }
   // Planta: com projectos, o diálogo do Atlas (window.__iprPlanta, ajustes.js); sem projectos, vem com a Base.
@@ -378,16 +421,22 @@
     d.textContent = ""; d.hidden = false;
     var ms = sessao() && typeof window.__iprPlanta === "function" ? mapasDaPessoa() : [];
     if (ms === null) { d.appendChild(el("p", "", t("aCarregar"))); return; }
-    if (ms.length === 1) { fecharPainel(); fecharEsquerdaMovel(); window.__iprPlanta(ms[0].encomenda || ms[0].id); return; }
-    if (ms.length > 1) {
+    var pv = plantaVendida();
+    // quem já tem Bases continua a fazer a planta delas como hoje (incluída); a compra é só para outro terreno
+    if (ms.length === 1 && !pv) { fecharPainel(); fecharEsquerdaMovel(); window.__iprPlanta(ms[0].encomenda || ms[0].id); return; }
+    if (ms.length > 1 || (ms.length === 1 && pv)) {
       d.appendChild(el("p", "", t("plantaComo")));
       ms.slice(0, 12).forEach(function (m) {
         var b = botao("ipr-cp-a", m.local || t("semNome"), "planta-id"); b.setAttribute("data-v", String(m.encomenda || m.id));
         if (m.area_ha) b.appendChild(el("small", "", (+m.area_ha).toLocaleString(lg() === "en" ? "en-GB" : "pt-PT", { maximumFractionDigits: 2 }) + " ha"));
         d.appendChild(b);
       });
+      if (pv) d.appendChild(botao("ipr-cp-a pri", t("plantaOutro") + " · " + eur(pv.preco), "planta-nova"));
+    } else if (pv) {
+      d.appendChild(el("p", "", t("plantaVende")));
+      d.appendChild(botao("ipr-cp-a pri", t("plantaDesenhar"), "planta-nova"));
     } else d.appendChild(el("p", "", t("plantaSem")));
-    d.appendChild(botao("ipr-cp-a pri", t("encBase"), "planta-base"));
+    if (!ms.length || !pv) d.appendChild(botao("ipr-cp-a" + (pv ? "" : " pri"), t("encBase"), "planta-base"));
     try { d.scrollIntoView({ block: "nearest" }); } catch (e) {}
   }
 
@@ -452,8 +501,13 @@
     // acima de 5000 ha o Atlas escreve «sob consulta» (sem €): pede-se orçamento pelo mesmo formulário
     var consulta = !/\d\s*€|€\s*\d/.test(vb);
     c.appendChild(linha("base", t("base"), vb, consulta ? t("orcamento") : t("cBase"), "c-base"));
-    if (vl) c.appendChild(linha("leitura", t("leitura"), vl, consulta ? t("orcamento") : t("cLeit"), "c-leitura"));
-    c.appendChild(linha("planta", t("planta"), t("incluida"), t("cPlanta"), "c-planta"));
+    // Leitura: leva sempre a Base; mostra-se o total das duas para esta área (pacote −10 % quando o site o diz)
+    var nb = euros(vb), nl = euros(vl);
+    if (vl) c.appendChild(linha("leitura", t("leituraC"), consulta || !nb || !nl ? vl : eur(somaPacote(nb, nl)), consulta ? t("orcamento") : t("cLeit"), "c-leitura"));
+    var pv = plantaVendida();
+    if (pv) { var lp = linha("planta", t("planta"), eur(pv.preco), t("plantaComprar"), "c-planta-comprar"); lp.querySelector(".ipr-cp-p").appendChild(el("small", "", t("plantaOu"))); c.appendChild(lp); }
+    else c.appendChild(linha("planta", t("planta"), t("incluida"), t("cPlanta"), "c-planta"));
+    var msg = el("p", "ipr-cp-n"); msg.id = "ipr-cp-msg"; msg.setAttribute("aria-live", "polite"); msg.hidden = true; c.appendChild(msg);
     var p = PR();
     if (p && p.pacote10 && vl && !consulta) c.appendChild(el("p", "ipr-cp-n", t("pacote")));
     c.appendChild(el("p", "ipr-cp-n", t("cRodape")));
@@ -462,6 +516,7 @@
         var a = e.target.closest("[data-cp]"); if (!a) return;
         var k = a.getAttribute("data-cp");
         if (k === "fechar") { fecharCartao(); return; }
+        if (k === "c-planta-comprar") { comprarPlanta(a); return; }
         if (k === "c-base" || k === "c-planta") encomendar(false);
         else if (k === "c-leitura") encomendar(true);
       } catch (x) {}
@@ -487,6 +542,66 @@
         } catch (e) {}
       });
     }, 150);
+  }
+
+  // Limite do terreno tal como está no mapa (desenhado ou parcelas do cadastro): os polígonos da fonte do desenho
+  function terreno() {
+    var m = window.__ipe && window.__ipe.mapa, st = null;
+    try { st = m && m.getStyle && m.getStyle(); } catch (e) {}
+    var fs = [];
+    ["mapbox-gl-draw-cold", "mapbox-gl-draw-hot"].forEach(function (k) {
+      var src = st && st.sources && st.sources[k], d = src && src.data;
+      ((d && d.features) || []).forEach(function (f) {
+        var g = f && f.geometry; if (!g || (g.type !== "Polygon" && g.type !== "MultiPolygon")) return;
+        if (f.properties && f.properties.meta && f.properties.meta !== "feature") return;
+        var id = f.properties && f.properties.id;
+        if (id && fs.some(function (x) { return x.properties.id === id; })) return; // o mesmo polígono nas duas fontes
+        fs.push({ type: "Feature", properties: { id: id || null }, geometry: g });
+      });
+    });
+    return fs.length ? { type: "FeatureCollection", features: fs } : null;
+  }
+  function msgCartao(s) { var m = $("ipr-cp-msg"); if (m) { m.textContent = s; m.hidden = !s; } }
+  // Compra da Planta (m90551): cria a encomenda pendente com o terreno e segue para o pagamento do WooCommerce.
+  function comprarPlanta(b) {
+    var pv = plantaVendida(); if (!pv) return;
+    if (!sessao()) { msgCartao(t("plantaEntrar")); var a = el("a", "ipr-cp-a pri", t("entrar")); a.href = entrarUrl(); var m = $("ipr-cp-msg"); if (m) m.appendChild(a); return; }
+    var gj = terreno(); if (!gj) { msgCartao(t("plantaSemTerreno")); return; }
+    if (b) b.disabled = true; msgCartao(t("plantaAEnviar"));
+    fetch(pv.rota, {
+      method: "POST", credentials: "same-origin",
+      headers: { "Content-Type": "application/json", "X-WP-Nonce": window.tcdNonce || "" },
+      body: JSON.stringify({ geojson: gj, local: String(($("ipe-local") || {}).value || "").slice(0, 80) })
+    }).then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { return { ok: r.ok, j: j }; }); }).then(function (x) {
+      var u = x.ok && x.j && x.j.pagar;
+      // só para o próprio site
+      if (typeof u === "string" && (u.indexOf(location.origin + "/") === 0 || /^\/(?!\/)/.test(u))) { location.href = u; return; }
+      if (b) b.disabled = false; msgCartao((x.j && x.j.message) || t("plantaErro"));
+    }).catch(function () { if (b) b.disabled = false; msgCartao(t("plantaErro")); });
+  }
+
+  // Parcelas do cadastro: o Atlas junta-as ao terreno sem «draw.create» e lista-as em #ipe-plist (NIC). O cartão abre uma
+  // vez por conjunto de parcelas, quando a escolha pára (a pessoa vai clicando parcela a parcela).
+  var VISTOS_P = {};
+  function conjuntoParcelas() {
+    var l = $("ipe-plist"); if (!l) return "";
+    return [].map.call(l.querySelectorAll("tbody tr"), function (tr) { var td = tr.querySelector("td"); return td ? td.textContent.trim() : ""; }).filter(Boolean).sort().join("|");
+  }
+  function vigiarParcelas() {
+    var l = $("ipe-plist"); if (!l) { setTimeout(vigiarParcelas, 600); return; }
+    if (l.__iprCp) return; l.__iprCp = 1;
+    var tm = null;
+    new MutationObserver(function () {
+      clearTimeout(tm);
+      tm = setTimeout(function () {
+        try {
+          if (window.tcdEquipa) return;
+          var k = conjuntoParcelas(); if (!k || VISTOS_P[k]) return;
+          VISTOS_P[k] = 1;
+          abrirCartao(false);
+        } catch (e) {}
+      }, 1200);
+    }).observe(l, { childList: true, subtree: true });
   }
 
   function ligarMapa() {
@@ -635,4 +750,5 @@
   }
   ciclo();
   ligarMapa();
+  vigiarParcelas();
 })();
