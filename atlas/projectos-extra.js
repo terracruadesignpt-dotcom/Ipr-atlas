@@ -35,7 +35,7 @@
       dono: "Projectos", dTodos: "Dono: todos", dMeus: "Só os meus", dPart: "Partilhados comigo",
       impl: "Implementação", iTodos: "Implementação: todas", iSem: "Sem estado",
       mostrar: function (a, b) { return "A mostrar " + a + " de " + b; }, nenhum: "Nenhum projecto corresponde à pesquisa.", limpar: "Limpar",
-      implT: "Estado de implementação do projecto (só a equipa vê)", gravado: "Guardado", erroG: "Não foi possível guardar",
+      implT: "Estado de implementação do projecto (só a equipa vê)", implSo: "Só leitura: o estado é mudado pela equipa.", gravado: "Guardado", erroG: "Não foi possível guardar",
       por: function (q, d) { return "Mudado" + (q ? " por " + q : "") + (d ? " em " + d : ""); },
       locBotao: "Usar um dos meus locais", locT: "Escolha uma área guardada em «Os meus locais» para terreno desta encomenda.",
       locVazio: "Ainda não há áreas em «Os meus locais». Desenhe uma área nesse bloco, à esquerda, ou importe um KML.",
@@ -48,6 +48,8 @@
       fila: function (n) { return n === 1 ? "1 terreno à espera de encomenda neste navegador" : n + " terrenos à espera de encomenda neste navegador"; },
       seguinte: "Carregar o seguinte", esquecer: "Esquecer", esquecerT: "Tirar os terrenos à espera deste navegador",
       guardados: function (n) { return n === 1 ? "O outro terreno ficou à espera: depois de enviar este pedido, carregue-o aqui." : "Os outros " + n + " terrenos ficaram à espera: depois de enviar este pedido, carregue-os aqui."; },
+      substituir: "Substituir o terreno que está indicado nesta encomenda?",
+      metodoDes: "O terreno foi corrigido no mapa: a encomenda segue com o limite desenhado (método «Desenhar no mapa»), não com o ficheiro original.",
       limTit: "Limite da encomenda #", limSem: "Encomenda #", limSemTxt: " sem limite desenhado (indicado por artigo matricial ou caderneta).", enquadrar: "Enquadrar", fechar: "Fechar"
     },
     en: {
@@ -56,7 +58,7 @@
       dono: "Projects", dTodos: "Owner: all", dMeus: "Mine only", dPart: "Shared with me",
       impl: "Implementation", iTodos: "Implementation: all", iSem: "No status",
       mostrar: function (a, b) { return "Showing " + a + " of " + b; }, nenhum: "No project matches the search.", limpar: "Clear",
-      implT: "Project implementation status (team only)", gravado: "Saved", erroG: "Could not save",
+      implT: "Project implementation status (team only)", implSo: "Read only: the status is changed by the team.", gravado: "Saved", erroG: "Could not save",
       por: function (q, d) { return "Changed" + (q ? " by " + q : "") + (d ? " on " + d : ""); },
       locBotao: "Use one of my places", locT: "Choose an area saved in «My places» as the plot for this order.",
       locVazio: "There are no areas in «My places» yet. Draw an area in that block, on the left, or import a KML.",
@@ -69,6 +71,8 @@
       fila: function (n) { return n === 1 ? "1 plot waiting to be ordered in this browser" : n + " plots waiting to be ordered in this browser"; },
       seguinte: "Load the next one", esquecer: "Forget", esquecerT: "Remove the waiting plots from this browser",
       guardados: function (n) { return n === 1 ? "The other plot is waiting: after sending this order, load it here." : "The other " + n + " plots are waiting: after sending this order, load them here."; },
+      substituir: "Replace the plot currently set for this order?",
+      metodoDes: "The plot was corrected on the map: the order goes with the drawn boundary («Draw on the map»), not with the original file.",
       limTit: "Boundary of order #", limSem: "Order #", limSemTxt: " has no drawn boundary (given by land registry article or document).", enquadrar: "Fit", fechar: "Close"
     }
   };
@@ -156,7 +160,7 @@
 
   // ===================== 1 e 2. Pesquisa, filtros e estado de implementação (17040, 17046) =====================
   var F = { q: "", e: "", d: "", i: "" };
-  var IMPL = {}, IMPL_LISTA = null, IMPL_OFF = false, IMPL_IDS = "", IMPL_PEDIDO = false;
+  var IMPL = {}, IMPL_MUDAR = true, IMPL_LISTA = null, IMPL_OFF = false, IMPL_IDS = "", IMPL_PEDIDO = false;
 
   function estadoDe(m) {
     if (!m) return "";
@@ -169,8 +173,8 @@
   function mapaDoCartao(c) {
     var P = est(), i = c.getAttribute("data-i"); if (!P || !P.mapas || i == null || !/^\d+$/.test(i)) return null;
     var m = P.mapas[+i]; if (!m) return null;
-    var mono = c.querySelector(".ipe-ct .mono"), txt = mono ? mono.textContent : "";
-    return (txt.indexOf("#" + m.encomenda) >= 0 || txt.indexOf("#" + m.id) >= 0) ? m : null;
+    var mono = c.querySelector(".ipe-ct .mono"), r = /#\s*([0-9A-Za-z-]+)/.exec(mono ? mono.textContent : ""), n = r ? r[1] : "";
+    return n && (n === String(m.encomenda) || n === String(m.id)) ? m : null;
   }
   function filtroActivo() { return !!(F.q || F.e || F.d || F.i); }
   function corresponde(c, m) {
@@ -179,7 +183,8 @@
       if (q.split(/\s+/).some(function (p) { return p && h.indexOf(p) < 0; })) return false;
     }
     if (F.e) { var e = m ? estadoDe(m) : ""; if (e !== F.e) return false; }
-    if (F.d) { if (!m) return false; var meu = m.dono !== false && !m.rever; if ((F.d === "meus") !== meu) return false; }
+    // Os mesmos grupos do app.js: os seus (dono), partilhados consigo (não dono e não «para rever»); os «para rever» só em «todos».
+    if (F.d) { if (!m) return false; var g = m.rever ? "rev" : (m.dono !== false ? "meus" : "part"); if (g !== F.d) return false; }
     if (F.i) { if (!m) return false; var k = (IMPL[String(m.id)] || {}).k || "sem"; if (k !== F.i) return false; }
     return true;
   }
@@ -223,7 +228,7 @@
     var P = est(), n = P && P.mapas ? P.mapas.length : 0;
     var pode = sessao() && P && P.dados && !P.dados.bloqueado && n >= 2;
     var bar = document.getElementById("ipr-px-f");
-    if (!pode) { if (bar) bar.hidden = true; return null; }
+    if (!pode) { if (bar) bar.hidden = true; if (filtroActivo()) { F = { q: "", e: "", d: "", i: "" }; BAR_LG = ""; aplicarFiltro(); } return null; }
     css();
     if (!bar) {
       bar = el("div"); bar.id = "ipr-px-f"; bar.setAttribute("role", "search");
@@ -275,9 +280,10 @@
     api("m90553/impl?ids=" + encodeURIComponent(ids.join(","))).then(function (j) {
       IMPL_PEDIDO = false; IMPL_IDS = chave;
       if (j && Array.isArray(j.lista) && j.lista.length) IMPL_LISTA = j.lista;
+      IMPL_MUDAR = !(j && j.mudar === false);
       var e = (j && j.estados) || {}; Object.keys(e).forEach(function (k) { IMPL[k] = e[k] || {}; });
       pintarImpl(true); barra(); aplicarFiltro();
-    }).catch(function (x) { IMPL_PEDIDO = false; if (x && (x.status === 403 || x.status === 404 || x.status === 401)) { IMPL_OFF = true; tirarImpl(); barra(); } else IMPL_IDS = chave; });
+    }).catch(function (x) { IMPL_PEDIDO = false; if (x && (x.status === 403 || x.status === 404 || x.status === 401)) { IMPL_OFF = true; F.i = ""; BAR_LG = ""; tirarImpl(); barra(); aplicarFiltro(); } else IMPL_IDS = chave; });
   }
   function tirarImpl() { [].forEach.call(document.querySelectorAll("#ipe-proj .ipr-px-im"), function (x) { x.remove(); }); }
   function dataTxt(s) { if (!s) return ""; try { return new Date(s * 1000).toLocaleDateString(lg() === "en" ? "en-GB" : "pt-PT"); } catch (e) { return ""; } }
@@ -302,6 +308,7 @@
       var s = el("select"); s.id = sid; s.title = t("implT");
       opcoes(s, [["", "—"]].concat(implLista().map(function (o) { return [o[0], lg() === "en" ? o[2] : o[1]]; })), d.k || "");
       if (d.k) s.classList.add("tem");
+      if (!IMPL_MUDAR) { s.disabled = true; s.title = t("implSo"); }
       w.appendChild(s);
       if (d.k && (d.por || d.em)) { var sm = el("small", "", t("por")(d.por, dataTxt(d.em))); w.appendChild(sm); }
     });
@@ -344,7 +351,14 @@
     catch (e) { var b = new Blob([txt], { type: "application/geo+json" }); b.name = base + ".geojson"; b.lastModified = Date.now(); return b; }
   }
   // Pelo caminho do próprio Atlas: o mesmo que escolher o ficheiro em «Carregar ficheiro» (ou largá-lo sobre o mapa).
-  function porNoTerreno(f) {
+  // Há terreno indicado e ainda não enviado (desenho, parcelas do cadastro ou ficheiro)?
+  function haTerreno() {
+    if (document.querySelector('#ipe-guia [data-guia="novo"]')) return false; // o pedido já seguiu
+    var D = desenho(); if (D && terrenos(D).length) return true;
+    var l = document.getElementById("ipe-limpar"); return !!(l && !l.disabled);
+  }
+  function porNoTerreno(f, semPerguntar) {
+    if (!semPerguntar && haTerreno() && !window.confirm(t("substituir"))) return null;
     var novo = document.querySelector('#ipe-guia [data-guia="novo"]'); if (novo) novo.click(); // depois de um pedido enviado
     var limpar = document.getElementById("ipe-limpar"); if (limpar && !limpar.disabled) limpar.click();
     var inp = document.getElementById("ipe-file");
@@ -405,6 +419,7 @@
     if (!x) return;
     var nome = x.nome || t("locSem");
     var ok = porNoTerreno(ficheiroDe(nome, [{ type: "Polygon", coordinates: x.c }]));
+    if (ok === null) return; // a pessoa preferiu manter o terreno que tinha
     LOC_AB = false; desenharLocais(b, ok ? t("locFeito")(nome) : t("locFalhou"), !ok);
   }
 
@@ -471,9 +486,10 @@
   }
   function carregarSeguinte() {
     var fila = lerFila(); if (!fila.length) return;
+    if (haTerreno() && !window.confirm(t("substituir"))) return;
     var x = fila.shift(); gravarFila(fila);
     ED = null;
-    var ok = porNoTerreno(ficheiroDe(x.nome, [x.g]));
+    var ok = porNoTerreno(ficheiroDe(x.nome, [x.g]), true);
     if (!ok) { fila.unshift(x); gravarFila(fila); MSG = t("locFalhou"); }
     else MSG = "";
   }
@@ -543,17 +559,37 @@
     else if (!D) return;
     else if (k === "editar") { if (ED === id) concluir(D); else editar(D, id); }
     else if (k === "concluir") concluir(D);
-    else if (k === "ponto") { try { D.trash(); } catch (x) {} }
+    else if (k === "ponto") { if (modo(D) === "direct_select" && pontosEscolhidos(D) > 0) try { D.trash(); } catch (x) {} }
     else if (k === "separar") separar(D, id);
     else if (k === "so") soEste(D, id);
     else if (k === "apagar") apagar(D, [id]);
     POL_ASS = ""; blocoTerrenos();
   }
+  // O app.js envia o ficheiro carregado (campo «limite») quando o método é «Carregar ficheiro». Depois de o terreno ser
+  // corrigido no mapa (pontos, «Só este», «Separar», «Apagar»), o ficheiro original já não é o terreno: passa-se para
+  // «Desenhar no mapa» pelos botões do próprio Atlas, e o pedido segue só com o limite desenhado (campo geojson).
+  var SINC = false;
+  function metodoParaDesenho() {
+    if (SINC) return;
+    var P = est(), f = document.querySelector('#ipe-form [data-metodo="ficheiro"][aria-pressed="true"]');
+    var des = document.querySelector('#ipe-form [data-metodo="desenhar"]'), nav = document.querySelector('#ipe .ipe-t[data-tool="nav"]');
+    var D = desenho(); if (!P || P.modo !== "encomenda" || !f || !des || !nav || !D || !terrenos(D).length) return;
+    SINC = true;
+    try {
+      var ed = ED;
+      des.click();  // método «Desenhar no mapa» (o Atlas abre o modo de desenho)
+      nav.click();  // e volta logo à navegação: nada de novo para desenhar
+      try { if (modo(D) === "draw_polygon") D.changeMode("simple_select"); } catch (e) {}
+      if (ed && terrenos(D).some(function (x) { return x.id === ed; })) { try { D.changeMode("direct_select", { featureId: ed }); ED = ed; } catch (e) {} }
+      MSG = (MSG && MSG !== t("metodoDes") ? MSG + " " : "") + t("metodoDes"); POL_ASS = "";
+    } catch (e) {}
+    SINC = false;
+  }
   var MAPA_OUVIDO = null;
   function ouvirMapa() {
     var M = mapa(); if (!M || M === MAPA_OUVIDO || !M.on) return; MAPA_OUVIDO = M;
     ["draw.create", "draw.update", "draw.delete", "draw.modechange", "draw.selectionchange"].forEach(function (v) {
-      M.on(v, function () { setTimeout(function () { try { blocoTerrenos(); } catch (x) {} }, 0); });
+      M.on(v, function () { setTimeout(function () { try { if (v === "draw.update" || v === "draw.delete") metodoParaDesenho(); blocoTerrenos(); } catch (x) {} }, 0); });
     });
   }
 
