@@ -37,7 +37,7 @@
   };
   // [selector, ícone, curto pt, curto en]
   var ACC = [
-    ["[data-a=v3d]", "cubo", null, null],
+    ["[data-a=v3d]", "cubo", "3D", "3D"],
     ["[data-ppl],[data-a=planta]", "pino", "Planta", "Plan"],
     ["[data-pnome],[data-a=nome]", "lapis", "Nome", "Name"],
     ["[data-psh],[data-a=partilhar]", "part", "Partilhar", "Share"],

@@ -12,9 +12,9 @@ html:not([data-bolito-off]) #ipe .ipe-marca.ipr-bolito-logo svg{display:block;he
 
 /* ── Painel de projectos · opção 3, barra de ícones ── */
 html:not([data-bolito-off]) #ipe .ipr-ca,
-html:not([data-bolito-off]) #ipe .ipr-tma{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(46px,1fr));gap:0!important;margin-top:9px;padding:0;border:1px solid var(--ln);border-radius:4px;overflow:hidden;flex:1 0 100%}
+html:not([data-bolito-off]) #ipe .ipr-tma{display:flex!important;flex-wrap:nowrap;gap:0!important;margin-top:9px;padding:0;border:1px solid var(--ln);border-radius:4px;overflow:hidden;flex:1 0 100%}
 html:not([data-bolito-off]) #ipe .ipr-ca>button,
-html:not([data-bolito-off]) #ipe .ipr-tma>button{all:unset;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:7px 2px 6px;min-width:0;border-right:1px solid var(--ln);font:500 10.5px/1.1 Inter,sans-serif;color:var(--mu);text-align:center;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html:not([data-bolito-off]) #ipe .ipr-tma>button{all:unset;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;flex:1 1 0;padding:7px 3px 6px;min-width:0;border-right:1px solid var(--ln);font:500 10.5px/1.1 Inter,sans-serif;letter-spacing:0;text-transform:none;color:var(--mu);text-align:center;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 html:not([data-bolito-off]) #ipe .ipr-ca>button:last-child,
 html:not([data-bolito-off]) #ipe .ipr-tma>button:last-child{border-right:0}
 html:not([data-bolito-off]) #ipe .ipr-ca>button svg,
@@ -27,10 +27,9 @@ html:not([data-bolito-off]) #ipe .ipr-ca>button.ipr-del:hover,
 html:not([data-bolito-off]) #ipe .ipr-tma>button.del:hover{color:#d9725b}
 html:not([data-bolito-off]) #ipe .ipr-ca>button.ipr-del svg,
 html:not([data-bolito-off]) #ipe .ipr-tma>button.del svg{color:#d9725b}
-html:not([data-bolito-off]) #ipe .ipr-tma>.f{grid-column:1/-1;padding:6px}
-/* Acção principal em destaque: Ver em 3D / Ver no mapa */
-html:not([data-bolito-off]) #ipe .ipr-tma>button[data-a=v3d]{grid-column:1/-1;flex-direction:row;gap:6px;padding:6px 11px;border-right:0;border-bottom:1px solid var(--ln);background:var(--b-ac);color:#16160F;font:600 12.5px/1.2 Inter,sans-serif}
-html:not([data-bolito-off]) #ipe .ipr-tma>button[data-a=v3d] svg{color:#16160F;width:15px;height:15px}
+html:not([data-bolito-off]) #ipe .ipr-tma:has(>.f){flex-wrap:wrap}
+html:not([data-bolito-off]) #ipe .ipr-tma>.f{flex:1 0 100%;padding:6px}
+/* Acção principal em destaque: Ver no mapa */
 html:not([data-bolito-off]) #ipe .ipr-ver-mapa,
 html:not([data-bolito-off]) #ipe .tme-b[data-tme=ver]{display:inline-flex;align-items:center;gap:6px;background:var(--b-ac)!important;border-color:var(--b-ac)!important;color:#16160F!important;font:600 12.5px/1.2 Inter,sans-serif!important;border-radius:3px!important;padding:5px 11px!important}
 html:not([data-bolito-off]) #ipe .ipr-ver-mapa svg,
