@@ -599,6 +599,7 @@
   function fechar() {
     var p = pn(); if (p) p.remove(); var f = $("ipr-as-fundo"); if (f) f.remove();
     var R = raiz(); if (R) R.classList.remove("ipr-as-on"); pararEspera();
+    try { modoSimples(false); } catch (e) {}
     try { sessionStorage.setItem("ipr_as_auto", "1"); } catch (e) {}
   }
   function fecharTriagem() {
@@ -632,6 +633,7 @@
     var mn = el("button", "mn", t("mini")); mn.type = "button"; mn.addEventListener("click", function () { p.classList.remove("mini"); }); cab.appendChild(mn);
     var corpo = el("div", "corpo"); p.appendChild(corpo);
     var rod = el("div", "rod"); p.appendChild(rod);
+    if (/^(nic|morAqui|gps|coord|ponto|ficheiro|mapaQ|mapa|confirmar)$/.test(S.q)) { try { modoSimples(true); } catch (e) {} }
     try { (Q[S.q] || Q.produto)(corpo, rod); } catch (e) { corpo.appendChild(el("p", "erro", String(e && e.message || e))); }
     // botão «Voltar» sempre no rodapé (pedido do Nuno, 30/10, 20h49: «em todas as situações tem que haver sempre um botão
     // de voltar para trás e sempre uma barra de progresso»)
@@ -729,6 +731,48 @@
     var R = raiz(); if (!movel() || !R || !R.classList.contains("esq-aberto")) return;
     var l = document.querySelector('#ipe [data-tool="lado"]'); if (l) try { l.click(); } catch (e) {}
     if (R.classList.contains("esq-aberto")) R.classList.remove("esq-aberto");
+  }
+  // Modo simples do mapa enquanto se identifica o terreno (Nuno, 30/10, 20h59: «só tem que mostrar um ortofoto, a
+  // toponímia, estradas, localizações e o cadastro [...] o mais simples e ligeira possível»). Desliga as outras camadas do
+  // Atlas (viz) e as dos add-ons, põe o fundo no ortofotomapa e repõe tudo ao fechar o assistente.
+  var SIMPLES = null, MANTER = { f_ortosat: 1, f_sub: 1, o_nomes: 1, o_estradas: 1, o_fronteiras: 1 };
+  var CAMADA_OK = /^(iprv-f_ortosat|iprv-f_sub|iprv-o_nomes|iprv-o_estradas|iprv-o_fronteiras|iprv-bg|ipe-cad|ipe-loc|ipe-med|gl-draw)/;
+  function modoSimples(on) {
+    var V = window.__ipe && window.__ipe.viz, m = mapa(); if (!m) return;
+    if (on) {
+      if (!SIMPLES) {
+        SIMPLES = { viz: [], cam: [] };
+        try {
+          if (V && V.activas) {
+            V.activas().forEach(function (id) { if (!MANTER[id]) { SIMPLES.viz.push(id); try { V.ligar(id, false); } catch (e) {} } });
+            if (V.activas().indexOf("f_ortosat") < 0 && V.fundo) { SIMPLES.fundoLigado = 1; V.fundo("f_ortosat"); }
+            ["o_nomes", "o_estradas"].forEach(function (id) { if (V.activas().indexOf(id) < 0) { (SIMPLES.ligadas = SIMPLES.ligadas || []).push(id); try { V.ligar(id, true); } catch (e) {} } });
+          }
+        } catch (e) {}
+      }
+      // camadas de outros add-ons (água, fogo, habitats...) que não passam pelo viz
+      try {
+        (m.getStyle().layers || []).forEach(function (l) {
+          if (CAMADA_OK.test(l.id) || l.type === "background") return;
+          if (m.getLayoutProperty(l.id, "visibility") === "none") return;
+          SIMPLES.cam.push(l.id); m.setLayoutProperty(l.id, "visibility", "none");
+        });
+      } catch (e) {}
+      if (!SIMPLES.ouvir) { SIMPLES.ouvir = function () { if (SIMPLES && pn()) modoSimples(true); }; try { m.on("styledata", SIMPLES.ouvir); } catch (e) {} }
+      return;
+    }
+    if (!SIMPLES) return;
+    var X = SIMPLES; SIMPLES = null;
+    try { if (X.ouvir) m.off("styledata", X.ouvir); } catch (e) {}
+    try {
+      X.cam.forEach(function (id) { if (m.getLayer(id)) m.setLayoutProperty(id, "visibility", "visible"); });
+      if (V) {
+        (X.ligadas || []).forEach(function (id) { try { V.ligar(id, false); } catch (e) {} });
+        var fundoAntes = X.viz.filter(function (id) { return /^f_/.test(id); })[0];
+        if (fundoAntes && V.fundo) { try { V.fundo(fundoAntes); } catch (e) {} } else if (X.fundoLigado) { try { V.ligar("f_ortosat", false); } catch (e) {} }
+        X.viz.forEach(function (id) { if (/^f_/.test(id) && id === fundoAntes) return; try { V.ligar(id, true); } catch (e) {} });
+      }
+    } catch (e) {}
   }
   function terrenoAchado() { S.geo = true; S.local = {}; S.ha = areaHa(); S.consulta = false; S.nsei = false; vai("confirmar"); }
   function semLimite(local) { S.geo = false; S.local = local || {}; S.ha = null; depoisTerreno(); }
