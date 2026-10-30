@@ -52,7 +52,7 @@
       cancelado: "Cancelado.",
       erroMem: "O aparelho ficou sem memória para juntar o pacote. Descarregue o pacote tal como está e, à parte, o projecto leve.",
       erro: "Não foi possível preparar o pacote: %s",
-      grupoCam: "IPR Atlas · camadas ligadas (precisam de rede)", grupoFundo: "IPR Atlas · fundo (precisa de rede)",
+      grupoNotas: "IPR Atlas · notas de campo", juntarN: "Juntar notas de campo (camada de pontos editável no QField, com fotografia)", grupoCam: "IPR Atlas · camadas ligadas (precisam de rede)", grupoFundo: "IPR Atlas · fundo (precisa de rede)",
       limite: "Limite do terreno",
       motivo: { tipo: "tipo de camada que o QField não lê directamente", proprio: "serviço do IPR, fica no Atlas", base: "já está no pacote da Base",
         semCamada: "serviço sem nome de camada", dyn: "estilo dinâmico do ArcGIS, não passa para o QGIS" },
@@ -88,7 +88,7 @@
       cancelado: "Cancelled.",
       erroMem: "The device ran out of memory to merge the package. Download the package as it is and, separately, the light project.",
       erro: "Could not build the package: %s",
-      grupoCam: "IPR Atlas · layers turned on (need network)", grupoFundo: "IPR Atlas · background (needs network)",
+      grupoNotas: "IPR Atlas · field notes", juntarN: "Add field notes (a point layer editable in QField, with photo)", grupoCam: "IPR Atlas · layers turned on (need network)", grupoFundo: "IPR Atlas · background (needs network)",
       limite: "Site boundary",
       motivo: { tipo: "layer type QField cannot read directly", proprio: "IPR service, stays in the Atlas", base: "already in the Base package",
         semCamada: "service without a layer name", dyn: "ArcGIS dynamic style, does not carry over to QGIS" },
@@ -280,7 +280,8 @@
   }
 
   // Junta as camadas ao .qgs da Base (texto). Devolve o novo texto.
-  function juntarAoQgs(txt, defs) {
+  // nc (opcional): camada de notas de campo (notasXml), num grupo próprio no topo da árvore.
+  function juntarAoQgs(txt, defs, nc) {
     var doc = new DOMParser().parseFromString(txt, "application/xml");
     if (doc.getElementsByTagName("parsererror").length) throw new Error("qgs");
     var raiz = doc.documentElement, pl = null, arv = null, i, n;
@@ -293,13 +294,15 @@
     var fontes = [].map.call(pl.getElementsByTagName("datasource"), function (d) { return d.textContent; });
     var ids = {}; [].forEach.call(pl.getElementsByTagName("id"), function (d) { ids[d.textContent] = 1; });
     var p = preparar(defs, function (c) { return ids[c.id] || fontes.indexOf(c.src) >= 0; });
-    if (!p.todas.length) return { txt: txt, n: 0 };
+    if (nc && (ids[nc.id] || fontes.indexOf(nc.src) >= 0)) nc = null; // já lá está
+    if (!p.todas.length && !nc) return { txt: txt, n: 0, notas: false };
     function frag(s) {
       var d = new DOMParser().parseFromString("<r>" + s + "</r>", "application/xml");
       if (d.getElementsByTagName("parsererror").length) throw new Error("xml");
       return [].slice.call(d.documentElement.childNodes).map(function (k) { return doc.importNode(k, true); });
     }
-    p.todas.forEach(function (c) { frag(c.xml).forEach(function (k) { pl.appendChild(k); }); });
+    var novas = (nc ? [nc] : []).concat(p.todas);
+    novas.forEach(function (c) { frag(c.xml).forEach(function (k) { pl.appendChild(k); }); });
     // Grupo das camadas por cima de tudo (logo a seguir às propriedades do grupo de topo); fundo por baixo de tudo.
     var primeiro = null, ordem = null;
     for (i = 0; i < arv.childNodes.length; i++) {
@@ -308,16 +311,22 @@
       if (n.nodeName !== "customproperties" && !primeiro) primeiro = n;
     }
     if (p.cam.length) frag(grupoXml(t("grupoCam"), p.cam)).forEach(function (k) { arv.insertBefore(k, primeiro || ordem); });
+    if (nc) { // grupo das notas no topo de tudo
+      var topo = null;
+      for (i = 0; i < arv.childNodes.length; i++) { n = arv.childNodes[i]; if (n.nodeType === 1 && (n.nodeName === "layer-tree-group" || n.nodeName === "layer-tree-layer")) { topo = n; break; } }
+      frag(grupoXml(t("grupoNotas"), [nc])).forEach(function (k) { arv.insertBefore(k, topo || ordem); });
+    }
     if (p.fundo.length) frag(grupoXml(t("grupoFundo"), p.fundo)).forEach(function (k) { arv.insertBefore(k, ordem); });
     if (ordem) {
       p.cam.forEach(function (c) { var it = doc.createElement("item"); it.textContent = c.id; ordem.insertBefore(it, ordem.firstChild); });
       p.fundo.forEach(function (c) { var it = doc.createElement("item"); it.textContent = c.id; ordem.appendChild(it); });
+      if (nc) { var it = doc.createElement("item"); it.textContent = nc.id; ordem.insertBefore(it, ordem.firstChild); }
     }
     var lo = raiz.getElementsByTagName("layerorder")[0];
-    if (lo) p.todas.forEach(function (c) { var l = doc.createElement("layer"); l.setAttribute("id", c.id); lo.appendChild(l); });
+    if (lo) novas.forEach(function (c) { var l = doc.createElement("layer"); l.setAttribute("id", c.id); lo.appendChild(l); });
     var s = new XMLSerializer().serializeToString(doc);
     if (!/^<\?xml|^<!DOCTYPE/i.test(s)) s = "<!DOCTYPE qgis PUBLIC 'http://mrcc.com/qgis.dtd' 'SYSTEM'>\n" + s;
-    return { txt: s, n: p.todas.length };
+    return { txt: s, n: novas.length, notas: !!nc };
   }
 
   // Projecto leve (sem a Base): notas de campo, limite do terreno em GeoJSON e as camadas ligadas.
@@ -472,33 +481,42 @@
     setTimeout(function () { try { URL.revokeObjectURL(u); } catch (e) {} }, 300000);
     msg.textContent = ""; var l = el("a", "", fmt(t("pronto"), nome + " · " + mb(blob.size))); l.href = u; l.download = nome; msg.appendChild(l);
   }
-  function pacoteCompleto(m, defs, juntar, msg, sinal) {
+  // Notas de campo: GeoPackage pelo sql.js ou, se falhar, GeoJSON (ver notasGpkg e notasGeojson).
+  function prepararNotas(g) {
+    return sqljs().then(function (SQL) { return { f: "gpkg", nome: "notas_campo.gpkg", b: notasGpkg(SQL) }; })
+      .catch(function () { return { f: "geojson", nome: "notas_campo.geojson", b: notasGeojson(g) }; });
+  }
+  function pacoteCompleto(m, defs, juntar, notas, msg, sinal) {
     var qf = qfDe(m), Z = window.JSZip;
     msg.textContent = t("aDescarregar");
-    var avisar = 0;
+    var avisar = 0, comCamadas = !!(juntar && defs.length);
     return baixar(qf.url, function (a, tot) {
       msg.textContent = t("aDescarregar") + " " + mb(a) + (tot ? " / " + mb(tot) : "");
       if (tot > 157286400 && movel()) avisar = tot; // mais de 150 MB num telemóvel ou tablet: avisa já
       if (avisar) msg.textContent += " " + fmt(t("grande"), mb(avisar));
     }, sinal).then(function (blob) {
-      // Nada a acrescentar: entrega-se o zip tal como veio, sem o abrir nem recomprimir.
-      if (!(juntar && defs.length)) { entregar(blob, qf.nome, msg, sinal); return null; }
+      // Nada a acrescentar (nem camadas nem notas): entrega-se o zip tal como veio, sem o abrir nem recomprimir.
+      if (!comCamadas && !notas) { entregar(blob, qf.nome, msg, sinal); return null; }
       msg.textContent = t("aAbrir");
       return Z.loadAsync(blob).then(function (zip) {
         var qgz = zip.file(/(^|\/)[^/]+\.qgz$/i).sort(function (a, b) { return a.name.split("/").length - b.name.split("/").length; })[0];
         if (!qgz) throw new Error("semqgz");
-        return resolverAgs(defs).then(function (ds) {
+        var pasta = qgz.name.indexOf("/") >= 0 ? qgz.name.replace(/[^/]+$/, "") : ""; // as notas ficam ao lado do projecto
+        return Promise.all([comCamadas ? resolverAgs(defs) : Promise.resolve([]), notas ? (msg.textContent = t("aNotas"), prepararNotas(geo(m))) : Promise.resolve(null)]).then(function (rs) {
+          var ds = rs[0], nt = rs[1];
+          if (nt && zip.file(pasta + nt.nome)) nt = null; // o pacote já tem esta camada
           if (sinal && sinal.aborted) return null;
           msg.textContent = t("aJuntar");
           return qgz.async("uint8array").then(function (b) { return Z.loadAsync(b); }).then(function (iz) {
             var qgs = iz.file(/\.qgs$/i)[0]; if (!qgs) throw new Error("semqgz");
             return qgs.async("string").then(function (txt) {
-              var r = juntarAoQgs(txt, ds);
-              if (!r.n) { entregar(blob, qf.nome, msg, sinal); return null; } // todas já presentes: o original
+              var r = juntarAoQgs(txt, ds, nt ? notasXml(nt.f) : null);
+              if (!r.n) { entregar(blob, qf.nome, msg, sinal); return null; } // tudo já presente: o original
               iz.file(qgs.name, r.txt);
               return iz.generateAsync({ type: "uint8array", compression: "DEFLATE" }).then(function (nb) {
                 zip.file(qgz.name, nb, { date: new Date() });
-                zip.file("CAMADAS-IPR-ATLAS.txt", leiaMe(ds));
+                if (r.notas) { zip.file(pasta + nt.nome, nt.b); zip.folder(pasta + "DCIM"); } // DCIM: as fotografias do QField
+                zip.file("CAMADAS-IPR-ATLAS.txt", leiaMe(ds, r.notas ? t(nt.f === "gpkg" ? "notasG" : "notasJ") : ""));
                 if (sinal && sinal.aborted) return null;
                 msg.textContent = t("aGerar");
                 return zip.generateAsync({ type: "blob", compression: "DEFLATE", compressionOptions: { level: 6 }, comment: zip.comment || undefined, mimeType: "application/zip" }).then(function (out) {
@@ -579,9 +597,12 @@
       c.appendChild(el("h4", "", t("fora")));
       var uf = el("ul"); S.fora.forEach(function (f) { var li = el("li", "", f.n + " "); li.appendChild(el("small", "", "· " + f.motivo)); uf.appendChild(li); }); c.appendChild(uf);
     }
-    var ck = null;
+    var ck = null, ckN = null;
     if (S.vao.length && temZip) {
       var lb = el("label", "ipr-qfd-j"); ck = el("input"); ck.type = "checkbox"; ck.checked = true; lb.appendChild(ck); lb.appendChild(el("span", "", t("juntar") + " (" + S.vao.length + ")")); c.appendChild(lb);
+    }
+    if (temZip) { // decisão do Nuno, 30/10, 18h40: notas de campo também no pacote completo, ligadas por omissão
+      var lbN = el("label", "ipr-qfd-j"); ckN = el("input"); ckN.type = "checkbox"; ckN.checked = true; ckN.setAttribute("data-ipr-qf-notas", "1"); lbN.appendChild(ckN); lbN.appendChild(el("span", "", t("juntarN"))); c.appendChild(lbN);
     }
     var acc = el("div", "ipr-qfd-acc"), msg = el("div", "ipr-qfd-msg"); msg.setAttribute("aria-live", "polite");
     var bP = null, bL = null;
@@ -607,7 +628,7 @@
     }
     if (bP) bP.addEventListener("click", function () {
       if (ocupado) return; var sinal = trancar(true);
-      pacoteCompleto(m, S.vao, !ck || ck.checked, msg, sinal).catch(falhou).then(function () { trancar(false); });
+      pacoteCompleto(m, S.vao, !ck || ck.checked, !ckN || ckN.checked, msg, sinal).catch(falhou).then(function () { trancar(false); });
     });
     if (bL) bL.addEventListener("click", function () {
       if (ocupado) return; var sinal = trancar(true);
