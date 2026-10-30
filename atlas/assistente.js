@@ -20,6 +20,17 @@
    v2 (30/10, 19h36): o assistente passa a perguntas com opções, abre sozinho ao entrar (uma vez por sessão) e evita o mapa:
       número do prédio, coordenadas e GPS escolhem a parcela sozinhos; artigo, morada ou só o concelho seguem sem limite
       desenhado e a equipa localiza o terreno (m90590 v3). Ver a secção 2.
+   v3 (30/10, 22h12 a 22h17, Nuno no iPad): «o assistente está em cima do mapa, não deixa ler o mapa»; «apresentar isso mais
+      como horizontal, na base cá em baixo do ecrã»; «não precisa de mostrar os blocos laterais»; «enganei-me, queria voltar
+      atrás [...] não consigo»; «plantas, leituras e mesmo bases cartográficas não é preciso conta».
+      a) No computador, nos passos em que se marca o terreno (e na confirmação), o assistente é uma barra horizontal no
+         fundo do mapa, sem tapar a rosa dos ventos, as ferramentas nem a Formiga.
+      b) Enquanto o assistente está aberto, os blocos laterais recolhem (as colunas ficam a 0; o conteúdo continua no
+         documento, só invisível, para o formulário de encomenda funcionar). Voltam ao fechar.
+      c) Confirmação do terreno com «Começar de novo» (limpa o terreno e volta ao mapa).
+      d) Base Cartográfica sem conta: segue para o formulário de encomenda como quem tem sessão (o pedido-base m14473 é
+         público); entrar fica como opção.
+      e) window.iprAssistenteComprar(produto): o cartão do comprar.js abre o assistente já no preço, com o terreno marcado.
    Só acrescenta: não edita app.js, ajustes.js nem outros add-ons. Texto escapado (textContent). Cada parte falha em silêncio.
    Desligar: ?assistente=0 no endereço, localStorage ipr_assistente_off = 1, ou window.IPR_ASSISTENTE_OFF = true. */
 (function () {
@@ -111,7 +122,7 @@
       baseConta: "A Base Cartográfica fica na sua conta, com o projecto e os ficheiros. Entre ou crie conta para continuar: o terreno que indicou fica guardado.",
       entrar: "Entrar ou criar conta",
       baseForm: "Preencha os seus dados no formulário à direita e carregue em «Enviar pedido». Com cobertura LiDAR total, paga logo a seguir; sem ela, confirmamos antes de qualquer pagamento.",
-      baseIr: "Ir para o formulário",
+      baseIr: "Ir para o formulário", baseSemConta: "Não precisa de conta: basta o nome e o e-mail. Se já tem conta, pode entrar para a encomenda ficar na sua área.", jaConta: "Já tenho conta: entrar",
       okMail: "Abrimos o seu e-mail com o pedido já escrito para info@regenerativo.pt. Envie-o e respondemos com a ligação de pagamento, normalmente no mesmo dia útil.",
       locaisN: "{n} locais", mini: "À espera do terreno no mapa · tocar para abrir o assistente",
       conv: "Sem ligação ao serviço de conversão. Verifique a internet e tente de novo daqui a pouco."
@@ -196,7 +207,7 @@
       baseConta: "The Base Map is kept in your account, with the project and the files. Sign in or create an account to continue: the land you marked is kept.",
       entrar: "Sign in or create an account",
       baseForm: "Fill in your details in the form on the right and press «Send request». With full LiDAR coverage you pay straight away; otherwise we confirm before any payment.",
-      baseIr: "Go to the form",
+      baseIr: "Go to the form", baseSemConta: "No account needed: just your name and e-mail. If you already have an account you can sign in so the order is kept in your area.", jaConta: "I have an account: sign in",
       okMail: "We opened your e-mail with the order already written to info@regenerativo.pt. Send it and we reply with the payment link, usually the same working day.",
       locaisN: "{n} places", mini: "Waiting for the land on the map · tap to open the assistant",
       conv: "No connection to the conversion service. Check the internet and try again shortly."
@@ -308,7 +319,7 @@
     "#ipr-as-fundo{position:fixed;inset:0;z-index:2147482000;background:rgba(8,12,6,.55);animation:iprAsF .25s ease-out}" +
     "#ipr-as-pn.centro{background:#0F170B;position:fixed!important;z-index:2147482001;left:50%!important;top:50%!important;bottom:auto!important;transform:translate(-50%,-50%);width:min(540px,calc(100vw - 24px));max-width:none;max-height:calc(100vh - 32px);animation:none!important;opacity:1!important}" +
     "@keyframes iprAsC{from{opacity:0;transform:translate(-50%,-46%)}to{opacity:1;transform:translate(-50%,-50%)}}" +
-    "#ipr-as-pn.lado{z-index:1001;animation:none!important;opacity:1!important;transform:none!important}#ipr-as-pn.lado .corpo,#ipr-as-pn.lado .ach{animation:none!important}@media (min-width:901px){#ipr-as-pn.lado{bottom:auto!important;max-height:calc(100% - 90px)}}" +
+    "#ipr-as-pn.lado{z-index:1001;animation:none!important;opacity:1!important;transform:none!important}#ipr-as-pn.lado .corpo,#ipr-as-pn.lado .ach{animation:none!important}@media (min-width:901px){#ipr-as-pn.lado{top:auto!important;width:auto;max-width:1120px;max-height:min(232px,42vh)!important;flex-direction:row;align-items:stretch}#ipr-as-pn.lado .cab{flex:0 0 228px;display:flex;flex-direction:column;justify-content:center;border-bottom:0;border-right:1px solid #2E3A26}#ipr-as-pn.lado .corpo{flex:1 1 auto;min-width:0;padding:12px 16px;display:grid;grid-template-columns:minmax(190px,.85fr) minmax(250px,1.15fr);grid-auto-flow:row dense;column-gap:18px;row-gap:8px;align-content:center}#ipr-as-pn.lado .corpo>h2{grid-column:1;margin:0;font-size:18px}#ipr-as-pn.lado .corpo>.sub{grid-column:1;margin:0}#ipr-as-pn.lado .corpo>:not(h2):not(.sub){grid-column:2;margin-top:0!important;margin-bottom:0!important}#ipr-as-pn.lado .corpo>div:empty{display:none}#ipr-as-pn.lado .corpo>.ops{grid-column:1/-1}#ipr-as-pn.lado .ops{grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:6px}#ipr-as-pn.lado .op{padding:9px 10px}#ipr-as-pn.lado .op .tx b{font-size:14px}#ipr-as-pn.lado .rod{flex:0 0 auto;flex-direction:column;justify-content:center;gap:6px;border-top:0;border-left:1px solid #2E3A26}}@media (min-width:901px){#ipe.ipr-as-on{--wl:0px!important;--wr:0px!important}#ipe.ipr-as-on .ipe-esq,#ipe.ipr-as-on .ipe-dir{visibility:hidden!important;border:0!important}#ipe.ipr-as-on .ipr-px-wl,#ipe.ipr-as-on .ipr-px-wr{display:none!important}}" +
     "#ipr-as-pn .cab .lin .x:first-child{margin-left:-6px}#ipr-as-pn .np{flex:none;font:500 11px/1 " + M + ";color:#94BE39;letter-spacing:.04em;white-space:nowrap}" +
     "#ipr-as-pn .ops{display:grid;gap:7px}" +
     "#ipr-as-pn .op{all:unset;box-sizing:border-box;cursor:pointer;display:flex;align-items:center;gap:12px;padding:12px 12px 12px 12px;border:1px solid #2E3A26;border-left:3px solid #2E3A26;border-radius:2px;background:#14200F;transition:border-color .15s,background .15s,transform .15s}" +
@@ -477,7 +488,7 @@
       nadaT: "Onde fica o terreno, mais ou menos?", nadaS: "Com o concelho e a freguesia encontramos o terreno e confirmamos consigo antes de começar.",
       descricao: "Como se chega lá ou o que sabe do terreno (opcional)",
       confT: "Encontrámos o terreno", confS: "Confira no mapa. Está certo?",
-      confSim: ["Sim, é este", "Continuar para o preço."], confMais: ["Falta uma parte ou não é bem este", "Corrigir no mapa: juntar ou retirar parcelas."],
+      confSim: ["Sim, é este", "Continuar para o preço."], confMais: ["Falta uma parte ou não é bem este", "Corrigir no mapa: juntar ou retirar parcelas."], confNovo: ["Enganei-me: começar de novo", "Limpa o terreno marcado e volta ao mapa."],
       areaT: "Qual é a área, mais ou menos?", areaS: "O preço da Leitura depende da área. Se a área real for diferente, confirmamos antes de começar.",
       areas: [["5", "Até 5 ha", 5], ["20", "5 a 20 ha", 20], ["50", "20 a 50 ha", 50], ["100", "50 a 100 ha", 100], ["mais", "Mais de 100 ha", 0], ["nsei", "Não sei", 5]],
       areaConsulta: "Sob consulta", areaNsei: "Cobramos como até 5 ha; se for maior, dizemos antes de começar.",
@@ -546,7 +557,7 @@
       nadaT: "Roughly where is the land?", nadaS: "With the municipality and parish we find the land and confirm it with you before we start.",
       descricao: "How to get there or what you know about the land (optional)",
       confT: "We found the land", confS: "Check it on the map. Is it right?",
-      confSim: ["Yes, that's it", "Go on to the price."], confMais: ["A part is missing or it's not quite it", "Fix it on the map: add or remove parcels."],
+      confSim: ["Yes, that's it", "Go on to the price."], confMais: ["A part is missing or it's not quite it", "Fix it on the map: add or remove parcels."], confNovo: ["I got it wrong: start again", "Clears the marked land and goes back to the map."],
       areaT: "Roughly how big is it?", areaS: "The Reading's price depends on the area. If the real area differs, we confirm before we start.",
       areas: [["5", "Up to 5 ha", 5], ["20", "5 to 20 ha", 20], ["50", "20 to 50 ha", 50], ["100", "50 to 100 ha", 100], ["mais", "More than 100 ha", 0], ["nsei", "I don't know", 5]],
       areaConsulta: "On request", areaNsei: "We charge as up to 5 ha; if it is larger, we tell you before we start.",
@@ -573,7 +584,7 @@
 
   var S = { q: "produto", hist: [], produto: null, via: null, local: {}, geo: false, ha: null, consulta: false, nsei: false, conta: true, fin: null, leitura: false, enviado: null };
   var FASE = { produto: 1, ajuda: 1, sabe: 2, nic: 2, artigo: 2, morada: 2, morAqui: 2, gps: 2, coord: 2, ponto: 2, ficheiro: 2, mapa: 2, nada: 2, confirmar: 2, area: 2, preco: 3, base: 4, conta: 4, dados: 4, feito: 4 };
-  var LADO = { mapa: 1, ficheiro: 1, mapaEspera: 1 };
+  var LADO = { mapa: 1, ficheiro: 1, mapaEspera: 1, confirmar: 1 };
   function pn() { return $("ipr-as-pn"); }
   function botaoFixo() {
     var R = raiz(), mapaEl = $("ipe-mapa"); if (!R || !mapaEl) return;
@@ -589,7 +600,7 @@
   }
   function abrir(produto) {
     estilos(); var R = raiz(); if (!R) return;
-    R.classList.add("ipr-as-on");
+    R.classList.add("ipr-as-on"); redim();
     fecharTriagem();
     if (produto && /^(base|leitura|planta)$/.test(produto)) { S.produto = produto; S.hist = ["produto"]; S.q = "sabe"; }
     else if (!S.produto || S.q === "feito") { S.q = "produto"; S.hist = []; }
@@ -598,7 +609,7 @@
   }
   function fechar() {
     var p = pn(); if (p) p.remove(); var f = $("ipr-as-fundo"); if (f) f.remove();
-    var R = raiz(); if (R) R.classList.remove("ipr-as-on"); pararEspera();
+    var R = raiz(); if (R) R.classList.remove("ipr-as-on"); pararEspera(); redim();
     try { modoSimples(false); } catch (e) {}
     try { sessionStorage.setItem("ipr_as_auto", "1"); } catch (e) {}
   }
@@ -606,6 +617,15 @@
     var tri = $("ipr-tri"); if (tri && !tri.hidden) { var x = tri.querySelector('[data-a63="fechar"]'); if (x) try { x.click(); } catch (e) {} }
     document.documentElement.classList.add("ipr-sem-guia");
   }
+  function redim() { [60, 320].forEach(function (ms) { setTimeout(function () { try { var m = mapa(); if (m) m.resize(); var p = pn(); if (p) posicionar(p); } catch (e) {} }, ms); }); }
+  // entrada para o cartão do comprar.js: o terreno já está marcado, segue para o preço do produto
+  window.iprAssistenteComprar = function (k, extra) {
+    if (!/^(base|leitura|planta)$/.test(k || "")) return false;
+    abrir(k);
+    if (extra && typeof extra === "object") { if (extra.c1 != null) S.c1 = !!extra.c1; }
+    if (areaTexto()) { S.geo = true; S.local = {}; S.ha = areaHa(); S.consulta = false; S.nsei = false; S.hist = ["produto"]; vai(k === "base" ? "base" : "preco"); }
+    return true;
+  };
   function vai(n) { pararEspera(); if (S.q !== n) S.hist.push(S.q); S.q = n; desenhar(); }
   function voltar() { pararEspera(); S.q = S.hist.pop() || "produto"; desenhar(); }
 
@@ -660,7 +680,20 @@
       if (p.classList.contains("centro") || movel()) { p.style.left = ""; p.style.top = ""; p.style.bottom = ""; return; }
       var m = $("ipe-mapa"); if (!m) return;
       var hr = p.parentNode.getBoundingClientRect(), mr = m.getBoundingClientRect();
-      p.style.left = Math.max(8, mr.left - hr.left + 12) + "px"; p.style.top = Math.max(8, mr.top - hr.top + 12) + "px";
+      p.style.left = Math.max(8, mr.left - hr.left + 12) + "px";
+      if (p.classList.contains("lado")) {
+        // barra no fundo: à direita pára antes das ferramentas e da Formiga que estejam na metade de baixo do mapa
+        var lim = mr.right - 12;
+        [document.querySelector("#ipe .ipe-tools"), $("tcdfmb")].forEach(function (o) {
+          if (!o || !visivel(o)) return; var r = o.getBoundingClientRect();
+          if (r.width && r.left > mr.left + mr.width / 2 && r.bottom > mr.top + mr.height / 2) lim = Math.min(lim, r.left - 10);
+        });
+        p.style.right = Math.max(8, hr.right - lim) + "px"; p.style.top = "";
+        p.style.bottom = Math.max(8, hr.bottom - mr.bottom + 30) + "px";
+        return;
+      }
+      p.style.right = "";
+      p.style.top = Math.max(8, mr.top - hr.top + 12) + "px";
       p.style.bottom = Math.max(8, hr.bottom - mr.bottom + 34) + "px";
     } catch (e) {}
   }
@@ -978,10 +1011,11 @@
   Q.confirmar = function (c) {
     titulo(c, q("confT"), q("confS"));
     achadoSemAvancar(c, areaTexto());
-    var a = q("confSim"), b = q("confMais");
+    var a = q("confSim"), b = q("confMais"), n = q("confNovo");
     opcoes(c, [
       { ico: "ok", t: a[0], s: a[1], fn: function () { S.ha = areaHa(); depoisTerreno(); } },
-      { ico: "cadastro", t: b[0], s: b[1], fn: function () { S.modoMapa = "cadastro"; vai("mapa"); } }
+      { ico: "cadastro", t: b[0], s: b[1], fn: function () { S.modoMapa = "cadastro"; vai("mapa"); } },
+      { ico: "volta", t: n[0], s: n[1], fn: function () { var l = $("ipe-limpar"); if (l && !l.disabled) try { l.click(); } catch (e) {} S.geo = false; S.ha = null; vai("mapa"); } }
     ]);
   };
   Q.area = function (c) {
@@ -1054,7 +1088,7 @@
     ]);
   };
   Q.base = function (c, rod) {
-    if (sessao()) {
+    if (true) {
       titulo(c, t("p4T"), S.geo ? t("baseForm") : q("baseSemLimite"));
       var b = el("button", "bt w", t("baseIr")); b.type = "button"; c.appendChild(b);
       var irForm = function () {
@@ -1066,6 +1100,7 @@
         });
       };
       b.addEventListener("click", irForm);
+      if (!sessao()) { c.appendChild(el("p", "nota", t("baseSemConta"))); var ej = el("a", "lk", t("jaConta")); ej.href = entrarUrl(); c.appendChild(ej); }
       return;
     }
     titulo(c, q("baseT"), q("baseS"));
@@ -1124,6 +1159,7 @@
         pais: pais.value, notas: notas.value.trim(), finalidade: k === "planta" ? (S.fin || "") : "", consentimento: 1, conta: conta && conta.checked ? 1 : 0,
         website: hp.value, t: String(Math.min(T0, Date.now() - 9000)), lingua: lg(), via: S.via || ""
       };
+      if (k === "planta" && S.c1 != null) corpo.c1 = S.c1 ? 1 : 0;
       if (fc) corpo.geojson = JSON.stringify(fc);
       else { corpo.local = S.local || {}; if (k === "leitura") { corpo.ha_aprox = S.ha || 0; corpo.ha_escalao = S.haK || ""; } }
       if (S.consulta) corpo.consulta = 1;
