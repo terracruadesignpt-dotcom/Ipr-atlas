@@ -29,7 +29,6 @@
   // ---------- textos ----------
   var TX = {
     pt: {
-      ph: "Local, coordenadas, NIC ou projecto",
       b3d: "Vista 3D: inclina o mapa e liga o relevo", b3dOff: "Sair da vista 3D",
       medir: "Medir", medirT: "Medir distâncias e áreas", dist: "Distância", distT: "Medir um caminho (distância)", area: "Área", areaT: "Medir um polígono (área)",
       desenhar: "Desenhar", desenharT: "Desenhar o terreno",
@@ -39,7 +38,7 @@
       planta: "Planta de localização (PDF)", prancha: "Prancha do ecrã (PNG)",
       plantaSem: "A Planta de localização faz-se a partir de um terreno guardado num projecto (separador Projectos).",
       indisp: "Esta ferramenta não está disponível neste modo do Atlas.",
-      barra: "Ferramentas principais",
+      barra: "Ferramentas principais", ferr: "Ferramentas", ferrT: "Mostrar as ferramentas", fechar: "Fechar", fecharT: "Recolher as ferramentas",
       coordGd: "Coordenadas WGS84", coordGms: "Coordenadas em graus, minutos e segundos", coordTm: "Coordenadas PT-TM06 / ETRS89",
       oeste: "longitude a oeste (Portugal)", ir: "Ir para", nic: "Prédio pelo NIC (cadastro predial)",
       artigo: "Artigo matricial {a}", artigoS: "O artigo não tem localização pública. Use o NIC do prédio ou carregue a caderneta no pedido da Base.",
@@ -47,7 +46,6 @@
       sugest: "Sugestões", foraPt: "fora de Portugal continental: confirme a ordem M, P"
     },
     en: {
-      ph: "Place, coordinates, NIC or project",
       b3d: "3D view: tilts the map and turns on the relief", b3dOff: "Leave the 3D view",
       medir: "Measure", medirT: "Measure distances and areas", dist: "Distance", distT: "Measure a path (distance)", area: "Area", areaT: "Measure a polygon (area)",
       desenhar: "Draw", desenharT: "Draw the plot",
@@ -57,7 +55,7 @@
       planta: "Location plan (PDF)", prancha: "Screen sheet (PNG)",
       plantaSem: "The Location plan is made from a plot saved in a project (Projects tab).",
       indisp: "This tool is not available in this mode of the Atlas.",
-      barra: "Main tools",
+      barra: "Main tools", ferr: "Tools", ferrT: "Show the tools", fechar: "Close", fecharT: "Hide the tools",
       coordGd: "WGS84 coordinates", coordGms: "Degrees, minutes and seconds", coordTm: "PT-TM06 / ETRS89 coordinates",
       oeste: "longitude west (Portugal)", ir: "Go to", nic: "Property by NIC (land registry)",
       artigo: "Tax article {a}", artigoS: "The tax article has no public location. Use the property NIC or upload the tax record in the Base order.",
@@ -120,6 +118,11 @@
     ".ipr-pb-menu button:hover,.ipr-pb-menu button:focus-visible{background:var(--p3,rgba(255,255,255,.08))}.ipr-pb-menu svg{width:18px;height:18px;flex:none}" +
     ".ipe.claro #ipr-pb-barra{background:rgba(255,255,255,.95)}" +
     "#ipe.ipr-78-mm #ipr-pb-barra{display:none}" +
+    // telemóvel até 600 px: a barra começa recolhida num botão «Ferramentas», para não tapar o mapa
+    "#ipr-pb-barra>[data-pbt]{display:none}" +
+    "@media (max-width:600px){#ipr-pb-barra>[data-pbt]{display:flex;flex-direction:row;gap:6px;padding:4px 12px}#ipr-pb-barra.fechada>[data-pbb]{display:none}" +
+    "#ipr-pb-barra.fechada.so-icones>[data-pbt]>span{position:static;width:auto;height:auto;clip:auto;overflow:visible}" +
+    "#ipr-pb-barra:not(.fechada)>[data-pbt]>span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}}" +
     "#ipr-pb-tip{position:fixed;z-index:100004;pointer-events:none;opacity:0;transition:opacity .12s}#ipr-pb-tip.on{opacity:1}");
 
   // ---------- coordenadas ----------
@@ -148,7 +151,10 @@
     var mt = /^(?:([mxpy])\s*[:=]?\s*)?(-?\d{2,7}(?:[.,]\d+)?)\s*m?\s*[,; ]\s*(?:([mxpy])\s*[:=]?\s*)?(-?\d{2,7}(?:[.,]\d+)?)\s*m?$/i.exec(u);
     if (mt) {
       var v1 = num(mt[2]), v2 = num(mt[4]);
-      if (Math.abs(v1) > 180 || Math.abs(v2) > 180) {
+      // só com indicação explícita: PT-TM06/EPSG:3763 à frente, etiquetas M/P (X/Y), ou os dois valores com 5 ou mais
+      // algarismos inteiros (metros, como «-50000 -100000»). Dois números pequenos seguem para o app.js como antes.
+      var expl = u !== s || !!(mt[1] || mt[3]) || (Math.abs(v1) >= 10000 && Math.abs(v2) >= 10000);
+      if (expl && (Math.abs(v1) > 180 || Math.abs(v2) > 180)) {
         var x = v1, y = v2, l1 = (mt[1] || "").toLowerCase();
         if (l1 === "p" || l1 === "y") { x = v2; y = v1; }
         var g = tmInv(x, y);
@@ -237,7 +243,9 @@
     if (P && P.modo === "cliente" && P.actual && String(P.actual.id) === String(m.id)) { enquadrar(m); return; }
     var i = P && P.mapas ? P.mapas.indexOf(m) : -1, c = i >= 0 ? $('#ipe-proj .ipe-card[data-i="' + i + '"]') : null;
     if (c) { c.click(); setTimeout(function () { enquadrar(m); }, 900); return; }
-    if (m.id != null) location.href = "/atlas/?mapa=" + encodeURIComponent(m.id);
+    var enc = m.encomenda || m.id;
+    if (enc != null && typeof W.__iprOrgBase === "function") { try { W.__iprOrgBase(enc); setTimeout(function () { enquadrar(m); }, 1200); return; } catch (e) {} } // abre o cartão sem recarregar (ajustes.js)
+    if (m.id != null) location.href = location.pathname + "?mapa=" + encodeURIComponent(m.id);
   }
 
   // ---------- pesquisa ----------
@@ -251,7 +259,7 @@
       s: (c.tipo === "tm" ? t("coordTm") + " · M " + Math.round(c.x) + " · P " + Math.round(c.y) : c.tipo === "gms" ? t("coordGms") : t("coordGd")) + (c.nota ? " · " + c.nota : ""),
       f: function () { irPara(c); } });
     var n = NIC.exec(s);
-    if (n) { var nic = (n[1] + n[2] + n[3] + n[4]).toUpperCase(); out.push({ tag: "NIC", b: nic, s: t("nic"), f: function () { submeterApp(nic); } }); }
+    if (n) { var nic = (n[1] + n[2] + n[3] + n[4]).toUpperCase(); out.push({ tag: "NIC", b: nic, s: t("nic"), v: nic }); }
     var a = ART.exec(s);
     if (a) { var ur = (a[1] || "").replace(/[\s-]/g, "").toUpperCase(); out.push({ tag: en() ? "Article" : "Artigo", b: t("artigo", { a: (ur ? ur + "-" : "") + a[2] }), s: t("artigoS"), info: true }); }
     if (!c && !n) {
@@ -261,7 +269,7 @@
         out.push({ tag: t("proj"), b: p.nome, s: sub, f: function () { abrirProjecto(p); }, proj: p });
       });
     }
-    if (!c && !n && s.length >= 3) out.push({ tag: en() ? "Place" : "Local", b: t("local", { t: s }), s: "OpenStreetMap", f: function () { submeterApp(s); }, local: true });
+    if (!c && !n && s.length >= 3) out.push({ tag: en() ? "Place" : "Local", b: t("local", { t: s }), s: "OpenStreetMap", v: s, local: true });
     return out;
   }
   function submeterApp(v) {
@@ -275,7 +283,7 @@
     var u = D.getElementById("ipr-pb-sug"), q = D.getElementById("ipe-q"); if (!u) return;
     // só vale a pena mostrar quando há algo que o app.js não sugere (coordenadas, NIC, artigo, projectos)
     if (!l.some(function (x) { return !x.local; })) { fecharSug(); return; }
-    SUG.lista = l; SUG.sel = -1;
+    SUG.lista = l; SUG.sel = -1; SUG.valor = q ? q.value : "";
     u.innerHTML = l.map(function (x, i) {
       var h = "<i>" + esc(x.tag) + "</i><span><b>" + esc(x.b) + "</b>" + (x.s ? "<small>" + esc(x.s) + "</small>" : "") + "</span>";
       return '<li role="presentation">' + (x.info ? '<div role="note">' + h + "</div>" : '<button type="button" role="option" id="ipr-pb-o' + i + '" data-pbs="' + i + '">' + h + "</button>") + "</li>";
@@ -289,57 +297,69 @@
     var q = D.getElementById("ipe-q"); if (q) q.setAttribute("aria-activedescendant", bs[i].id);
     try { bs[i].scrollIntoView({ block: "nearest" }); } catch (e) {}
   }
-  function correr(i) { var x = SUG.lista[i]; if (!x || !x.f) return; fecharSug(); try { x.f(); } catch (e) {} }
+  // Clique numa sugestão: as de «Local» e «NIC» vão para o app.js pelo submit normal do formulário; as outras correm aqui.
+  function correr(i) { var x = SUG.lista[i]; if (!x) return; if (x.v != null) { submeterApp(x.v); return; } if (!x.f) return; fecharSug(); try { x.f(); } catch (e) {} }
 
+  // Liga-se à caixa que existe; se o app.js redesenhar o formulário, volta a ligar-se ao novo. O texto de exemplo da caixa
+  // (placeholder) não muda: o Nuno decide depois.
   function pesquisa() {
     var f = D.getElementById("ipe-busca"), q = D.getElementById("ipe-q"); if (!f || !q) return false;
-    if (f.getAttribute("data-ipr-pb")) return true;
-    f.setAttribute("data-ipr-pb", "1");
-    q.setAttribute("aria-autocomplete", "list"); q.setAttribute("aria-controls", "ipr-pb-sug"); q.setAttribute("aria-expanded", "false");
-    function ph() { var p = q.getAttribute("placeholder") || ""; if (/^(Local, coordenadas ou NIC|Place, coordinates or NIC)$/.test(p) || p === TX.pt.ph || p === TX.en.ph) q.setAttribute("placeholder", t("ph")); }
-    ph();
-    // botão 3D ao lado da caixa
-    try {
-      if (!D.getElementById("ipr-pb-3d")) {
-        var b = D.createElement("button"); b.type = "button"; b.id = "ipr-pb-3d"; b.className = "ipr-pb-3d"; b.textContent = "3D";
-        b.setAttribute("aria-pressed", "false"); b.title = t("b3d"); b.setAttribute("aria-label", t("b3d"));
-        b.addEventListener("click", function (e) { e.preventDefault(); e.stopPropagation(); carregar('[data-tool="3d"]'); setTimeout(estado, 60); });
-        var gps = D.getElementById("ipe-gpsq"); if (gps && gps.parentNode === f) f.insertBefore(b, gps.nextSibling); else f.appendChild(b);
-      }
-    } catch (e) {}
-    var u = D.createElement("ul"); u.id = "ipr-pb-sug"; u.setAttribute("role", "listbox"); u.setAttribute("aria-label", t("sugest")); u.hidden = true;
-    f.parentNode.insertBefore(u, f.nextSibling);
-    u.addEventListener("mousedown", function (e) { e.preventDefault(); }); // não tira o foco da caixa
-    u.addEventListener("click", function (e) { var b = e.target.closest && e.target.closest("[data-pbs]"); if (b) correr(+b.getAttribute("data-pbs")); });
-    var tm = 0;
-    q.addEventListener("input", function () { clearTimeout(tm); tm = setTimeout(function () { try { mostrarSug(interpretar(q.value)); } catch (e) {} }, 120); });
-    q.addEventListener("focus", function () { try { if (q.value.trim()) mostrarSug(interpretar(q.value)); } catch (e) {} });
-    q.addEventListener("blur", function () { setTimeout(fecharSug, 180); });
-    q.addEventListener("keydown", function (e) {
-      if (!SUG.lista.length) return;
-      if (e.key === "ArrowDown") { e.preventDefault(); marcarSel(1); }
-      else if (e.key === "ArrowUp") { e.preventDefault(); marcarSel(-1); }
-      else if (e.key === "Escape") { fecharSug(); }
-    });
-    // Enter: só se trata aqui o que o app.js não sabe ler (GMS, PT-TM06, NIC com separadores, nome exacto de projecto,
-    // sugestão escolhida com as setas). O resto segue para o app.js tal como antes.
-    D.addEventListener("submit", function (e) {
+    if (!f.getAttribute("data-ipr-pb")) {
+      f.setAttribute("data-ipr-pb", "1");
+      q.setAttribute("aria-autocomplete", "list"); q.setAttribute("aria-controls", "ipr-pb-sug"); q.setAttribute("aria-expanded", "false");
+      // botão 3D ao lado da caixa
       try {
-        if (e.target !== f || SUG.passar) return;
-        var v = q.value.trim(); if (!v) return;
-        if (SUG.sel >= 0 && SUG.lista[SUG.sel] && SUG.lista[SUG.sel].f) { var i = SUG.sel; e.preventDefault(); e.stopPropagation(); correr(i); return; }
-        var c = lerCoord(v);
-        if (c && c.tipo !== "gd") { e.preventDefault(); e.stopPropagation(); fecharSug(); irPara(c); return; }
-        var n = NIC.exec(v);
-        if (n) { var nic = (n[1] + n[2] + n[3] + n[4]).toUpperCase(); if (nic !== v) q.value = nic; fecharSug(); return; }
-        var qa = sAcento(v), ex = projectos().filter(function (p) { return sAcento(p.nome) === qa; });
-        if (ex.length === 1) { e.preventDefault(); e.stopPropagation(); fecharSug(); abrirProjecto(ex[0]); return; }
-        fecharSug();
-      } catch (x) {}
-    }, true);
-    D.addEventListener("ipr:lingua", function () { try { ph(); var b = D.getElementById("ipr-pb-3d"); if (b) { b.title = t("b3d"); b.setAttribute("aria-label", t("b3d")); } } catch (e) {} });
+        var b = D.getElementById("ipr-pb-3d");
+        if (!b) {
+          b = D.createElement("button"); b.type = "button"; b.id = "ipr-pb-3d"; b.className = "ipr-pb-3d"; b.textContent = "3D";
+          b.setAttribute("aria-pressed", "false"); b.title = t("b3d"); b.setAttribute("aria-label", t("b3d"));
+          b.addEventListener("click", function (e) { e.preventDefault(); e.stopPropagation(); carregar('[data-tool="3d"]'); setTimeout(estado, 60); });
+        }
+        if (b.parentNode !== f) { var gps = D.getElementById("ipe-gpsq"); if (gps && gps.parentNode === f) f.insertBefore(b, gps.nextSibling); else f.appendChild(b); }
+      } catch (e) {}
+      var tm = 0;
+      q.addEventListener("input", function () { SUG.sel = -1; clearTimeout(tm); tm = setTimeout(function () { try { mostrarSug(interpretar(q.value)); } catch (e) {} }, 120); });
+      q.addEventListener("focus", function () { try { if (q.value.trim()) mostrarSug(interpretar(q.value)); } catch (e) {} });
+      q.addEventListener("blur", function () { setTimeout(fecharSug, 180); });
+      q.addEventListener("keydown", function (e) {
+        if (e.key !== "ArrowDown" && e.key !== "ArrowUp" && e.key !== "Enter") SUG.sel = -1; // qualquer outra tecla desfaz a escolha por setas
+        if (!SUG.lista.length) return;
+        if (e.key === "ArrowDown") { e.preventDefault(); marcarSel(1); }
+        else if (e.key === "ArrowUp") { e.preventDefault(); marcarSel(-1); }
+        else if (e.key === "Escape") { fecharSug(); }
+      });
+    }
+    var u = D.getElementById("ipr-pb-sug");
+    if (!u) {
+      u = D.createElement("ul"); u.id = "ipr-pb-sug"; u.setAttribute("role", "listbox"); u.setAttribute("aria-label", t("sugest")); u.hidden = true;
+      u.addEventListener("mousedown", function (e) { e.preventDefault(); }); // não tira o foco da caixa
+      u.addEventListener("click", function (e) { var b = e.target.closest && e.target.closest("[data-pbs]"); if (b) correr(+b.getAttribute("data-pbs")); });
+    }
+    if (u.previousSibling !== f) f.parentNode.insertBefore(u, f.nextSibling);
     return true;
   }
+  // Enter: só se trata aqui o que o app.js não sabe ler (coordenadas GMS e PT-TM06 escritas com indicação explícita) e uma
+  // sugestão escolhida com as setas. Escrever o nome de um projecto e carregar em Enter faz o mesmo que antes (procura o
+  // sítio); o projecto só abre ao escolher a sugestão. Submissões de outros módulos (ajustes.js, guia.js) não são tocadas.
+  D.addEventListener("submit", function (e) {
+    try {
+      var f = D.getElementById("ipe-busca"), q = D.getElementById("ipe-q");
+      if (!f || !q || e.target !== f || SUG.passar) return;
+      var v = q.value.trim(); if (!v) return;
+      var x = SUG.sel >= 0 && q.value === SUG.valor ? SUG.lista[SUG.sel] : null;
+      if (x) {
+        if (x.v != null) { q.value = x.v; fecharSug(); return; } // segue o submit original, já com o valor
+        if (x.f) { e.preventDefault(); e.stopPropagation(); var i = SUG.sel; correr(i); return; }
+      }
+      SUG.sel = -1;
+      var c = lerCoord(v);
+      if (c && c.tipo !== "gd") { e.preventDefault(); e.stopPropagation(); fecharSug(); irPara(c); return; }
+      var n = NIC.exec(v);
+      if (n) { var nic = (n[1] + n[2] + n[3] + n[4]).toUpperCase(); if (nic !== v) q.value = nic; }
+      fecharSug();
+    } catch (x2) {}
+  }, true);
+  D.addEventListener("ipr:lingua", function () { try { var b = D.getElementById("ipr-pb-3d"); if (b) { b.title = t("b3d"); b.setAttribute("aria-label", t("b3d")); } var u = D.getElementById("ipr-pb-sug"); if (u) u.setAttribute("aria-label", t("sugest")); } catch (e) {} });
 
   // ---------- barra de baixo ----------
   var IC = {
@@ -349,6 +369,7 @@
     desenhar: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/>',
     perfil: '<path d="M2 19l5-8 4 5 3-6 8 9z"/><path d="M2 21h20"/>',
     d3: '<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/>',
+    ferr: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
     imprimir: '<path d="M7 9V3h10v6"/><rect x="3" y="9" width="18" height="8" rx="1"/><path d="M7 14h10v7H7z"/>',
     planta: '<path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4"/><path d="M9 13h7M9 17h5"/>',
     prancha: '<rect x="3" y="5" width="18" height="14" rx="1"/><path d="M3 15l5-5 4 4 3-3 6 6"/><circle cx="16" cy="9" r="1.5"/>'
@@ -404,11 +425,13 @@
     var B = D.getElementById("ipr-pb-barra");
     if (B && B.parentNode === host) return true;
     if (!B) {
-      B = D.createElement("div"); B.id = "ipr-pb-barra"; B.setAttribute("role", "toolbar");
-      B.innerHTML = BOT.map(function (b, i) {
+      B = D.createElement("div"); B.id = "ipr-pb-barra"; B.setAttribute("role", "toolbar"); B.className = "fechada";
+      B.innerHTML = '<button type="button" data-pbt aria-expanded="false">' + svg("ferr") + "<span></span></button>" + BOT.map(function (b, i) {
         return '<button type="button" data-pbb="' + i + '"' + (b.menu ? ' aria-haspopup="menu" aria-expanded="false"' : ' aria-pressed="false"') + ">" + svg(b.k) + "<span></span></button>";
       }).join("");
       B.addEventListener("click", function (e) {
+        var tg = e.target.closest && e.target.closest("[data-pbt]");
+        if (tg) { e.stopPropagation(); var ab = B.classList.toggle("fechada") === false; tg.setAttribute("aria-expanded", String(ab)); fecharMenu(); textos(); setTimeout(posicionar, 0); return; }
         var b = e.target.closest && e.target.closest("[data-pbb]"); if (!b) return;
         e.stopPropagation(); var def = BOT[+b.getAttribute("data-pbb")];
         if (b.getAttribute("aria-disabled") === "true") { avisar(t("indisp")); return; }
@@ -425,6 +448,8 @@
   function textos() {
     var B = D.getElementById("ipr-pb-barra"); if (!B) return;
     B.setAttribute("aria-label", t("barra"));
+    var tg = B.querySelector("[data-pbt]");
+    if (tg) { var ab = !B.classList.contains("fechada"); tg.querySelector("span").textContent = ab ? t("fechar") : t("ferr"); tg.setAttribute("aria-label", ab ? t("fecharT") : t("ferrT")); }
     [].forEach.call(B.querySelectorAll("[data-pbb]"), function (b) {
       var def = BOT[+b.getAttribute("data-pbb")]; b.querySelector("span").textContent = t(def.l);
       b.setAttribute("aria-label", t(def.d)); b.setAttribute("data-ipr-tip", t(def.d));
@@ -451,7 +476,7 @@
 
   // Obstáculos que a barra não pode tapar. A barra procura espaço livre na faixa de baixo do mapa; se não houver, fica só com
   // ícones; se ainda não couber, sobe por cima do obstáculo mais alto que a cruza.
-  var OBST = ["#ipe-hud", "#ipr-lgd", "#tcdfmb", "#ipr-pf", "#ipe .maplibregl-ctrl-bottom-left", "#ipe .maplibregl-ctrl-bottom-right", "#tcdck-l", "#ipe .ipe-tools", "#ipr-av62", "#ipe-st", "#tcdfm"];
+  var OBST = ["#ipe-hud", "#ipe .ipe-dir", "#ipe-esq", "#ipr-lgd", "#tcdfmb", "#ipr-pf", "#ipe .maplibregl-ctrl-bottom-left", "#ipe .maplibregl-ctrl-bottom-right", "#tcdck-l", "#ipe .ipe-tools", "#ipr-av62", "#ipe-st", "#tcdfm"];
   function rectsObst(B) {
     var out = [];
     OBST.forEach(function (s) {
@@ -509,7 +534,9 @@
   }
 
   // ---------- reporte 17041: caixa #ipe-hud sempre à vista ----------
+  var HUD_OCUPADO = false;
   function hudVisivel() {
+    if (HUD_OCUPADO) return; HUD_OCUPADO = true;
     try {
       var h = D.getElementById("ipe-hud"), M = mapa(); if (!h || !M) return;
       if (!h.classList.contains("on") || getComputedStyle(h).display === "none") {
@@ -537,7 +564,7 @@
         if (subir) h.style.setProperty("z-index", "9", "important");
         h.__iprPb = 1;
       }
-    } catch (e) {}
+    } catch (e) {} finally { HUD_OCUPADO = false; }
   }
 
   // O aviso do viz.js (.iprv-aviso, z-index 7, ao centro em baixo) não fica por cima da caixa #ipe-hud nem da barra de baixo:
@@ -546,7 +573,7 @@
     try {
       [].forEach.call(D.querySelectorAll("#ipe .iprv-aviso"), function (a) {
         if (a.__iprPb) { a.style.removeProperty("bottom"); a.__iprPb = 0; }
-        if (!a.classList.contains("on") || !vis(a)) return;
+        if (!a.classList.contains("on") || getComputedStyle(a).display === "none") return;
         var h = D.getElementById("ipe-hud"), B = D.getElementById("ipr-pb-barra"), obs = [];
         if (h && h.classList.contains("on") && vis(h)) obs.push(h); if (B && vis(B)) obs.push(B);
         var pai = (a.offsetParent || D.body).getBoundingClientRect();
@@ -579,7 +606,6 @@
       [].forEach.call(D.querySelectorAll(RAIL), function (b) {
         var n = nomeBotao(b); if (!n) return;
         if (!b.getAttribute("aria-label")) b.setAttribute("aria-label", n);
-        if (!b.getAttribute("title") && !b.getAttribute("data-ipr-tip")) b.setAttribute("title", n);
       });
     } catch (e) {}
   }
@@ -618,7 +644,7 @@
   // ---------- arranque ----------
   var feito = { p: false, b: false, ev: false };
   function ciclo() {
-    try { if (!feito.p) feito.p = pesquisa(); } catch (e) {}
+    try { feito.p = pesquisa(); } catch (e) {}
     try { feito.b = barra(); } catch (e) {}
     try { rotular(); } catch (e) {}
     try { estado(); } catch (e) {}
@@ -631,7 +657,7 @@
         feito.ev = true;
         ["zoomend", "resize", "pitchend"].forEach(function (ev) { M.on(ev, function () { setTimeout(function () { estado(); posicionar(); hudVisivel(); avisoLivre(); }, 80); }); });
         var h = D.getElementById("ipe-hud");
-        if (h) try { new MutationObserver(function () { clearTimeout(ciclo.t); ciclo.t = setTimeout(function () { posicionar(); hudVisivel(); avisoLivre(); }, 40); }).observe(h, { attributes: true, attributeFilter: ["class", "style"], childList: true, subtree: true }); } catch (e) {}
+        if (h) try { new MutationObserver(function () { clearTimeout(ciclo.t); ciclo.t = setTimeout(function () { posicionar(); hudVisivel(); avisoLivre(); }, 40); }).observe(h, { attributes: true, attributeFilter: ["class", "hidden"], childList: true, subtree: true }); } catch (e) {} // o style não se observa: é ele que se muda aqui
         [].forEach.call(D.querySelectorAll("#ipe .iprv-aviso"), function (a) {
           try { new MutationObserver(function () { clearTimeout(ciclo.a); ciclo.a = setTimeout(avisoLivre, 20); }).observe(a, { attributes: true, attributeFilter: ["class"] }); } catch (e) {}
         });
