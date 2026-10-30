@@ -15,7 +15,8 @@
    conjunto; a Planta de Localização passa a 19 € quando o m90551 estiver ligado (window.IPR_PRECOS.planta.preco e .rota):
    compra-se para um terreno novo: o limite fica guardado no site e a pessoa segue para o carrinho e o checkout normais
    do WooCommerce. Depois de pagar, «As minhas Plantas» (lista à parte) ou /atlas/?planta=ID abrem o diálogo da Planta
-   do Atlas para esse terreno (cookie ipr_planta só enquanto o diálogo está aberto). Quem já tem Bases continua a fazer a
+   do Atlas para esse terreno (cookie ipr_planta só enquanto o diálogo está aberto). No cartão há a caixa do pedido expresso
+   de entrega imediata (livre resolução, conteúdo digital); sem ela, a Planta fica disponível ao fim dos 14 dias. Quem já tem Bases continua a fazer a
    planta delas como hoje. Sem o m90551, fica «incluída na Base». O total da Leitura + Base usa a tabela do site
    (IPR_PRECOS.tabela) e as regras de arredondamento do m90430; sem ela, soma o que o formulário mostra.
    Preços: window.IPR_PRECOS (módulo m90550, só leitura dos produtos WooCommerce e da tabela do m14473). Sem ele, o «desde»
@@ -51,7 +52,9 @@
       plantaOutro: "Planta para outro terreno", plantaDesenhar: "Desenhar o terreno", plantaComprar: "Comprar a Planta",
       plantaOu: "ou incluída na Base", plantaEntrar: "Para comprar a planta precisa de conta. Entre ou crie a conta e volte a este passo.",
       plantaAEnviar: "A pôr a Planta no carrinho…", plantaErro: "Não foi possível pôr a Planta no carrinho. Tente outra vez ou escreva-nos.",
-      minhas: "As minhas Plantas", fazerPdf: "Fazer o PDF",
+      minhas: "As minhas Plantas", fazerPdf: "Fazer o PDF", dispA: "disponível a {d}",
+      c1: "Peço expressamente a entrega imediata da Planta de Localização (conteúdo digital), antes de terminar o prazo de 14 dias de livre resolução. Sei que perco o direito de livre resolução quando a puder fazer.",
+      c1Sem: "Sem esta caixa, a Planta fica disponível no fim dos 14 dias de livre resolução.",
       plantaSemTerreno: "Não encontrei o limite do terreno no mapa. Desenhe-o outra vez.",
       semNome: "Terreno sem nome", aCarregar: "A carregar os seus projectos…",
       cTitulo: "O seu terreno", cArea: "Área", cRodape: "Preços sem IVA. O pagamento é no passo seguinte.",
@@ -89,7 +92,9 @@
       plantaOutro: "Plan for another plot", plantaDesenhar: "Draw the plot", plantaComprar: "Buy the Plan",
       plantaOu: "or included with the Base", plantaEntrar: "You need an account to buy the plan. Sign in or create one, then come back to this step.",
       plantaAEnviar: "Adding the Plan to your cart…", plantaErro: "The Plan could not be added to your cart. Try again or write to us.",
-      minhas: "My Location Plans", fazerPdf: "Make the PDF",
+      minhas: "My Location Plans", fazerPdf: "Make the PDF", dispA: "available on {d}",
+      c1: "I expressly request the immediate supply of the Location Plan (digital content), before the 14-day withdrawal period ends. I know that I lose my right of withdrawal once I can make the PDF.",
+      c1Sem: "Without this box, the Plan becomes available when the 14-day withdrawal period ends.",
       plantaSemTerreno: "The plot boundary was not found on the map. Please draw it again.",
       semNome: "Unnamed site", aCarregar: "Loading your projects…",
       cTitulo: "Your plot", cArea: "Area", cRodape: "Prices exclude VAT. You pay in the next step.",
@@ -217,7 +222,8 @@
   function haNum(s) {
     var m = /([0-9][0-9.,\s\u00a0\u202f]*)\s*ha/.exec(String(s || "")); if (!m) return null;
     var x = m[1].replace(/[\s\u00a0\u202f]/g, "");
-    x = /,/.test(x) ? x.replace(/\./g, "").replace(",", ".") : x;
+    if (/,/.test(x)) x = x.replace(/\./g, "").replace(",", ".");          // pt-PT: 1.234,5 ou 1 234,56
+    else if (/\.\d{3}(\.|$)/.test(x)) x = x.replace(/\./g, "");          // 1.234 (milhares, sem decimais)
     var v = parseFloat(x); return isFinite(v) && v > 0 ? v : null;
   }
   // Base + Leitura: o m90430 tira 10 % a cada linha quando vão juntas (pacote ligado); sem essa informação, soma simples
@@ -316,6 +322,9 @@
     ".ipr-cp-to>svg{flex:none;color:var(--ac,#a8b878)}.ipr-cp-to span{flex:1;font-size:13.5px}" +
     ".ipr-cp-to .ipr-cp-a{width:auto;margin:0;flex:none}" +
     ".ipr-cp-to .ipr-cp-x{position:static;flex:none}" +
+    ".ipr-cp-c1{display:flex;gap:8px;align-items:flex-start;margin:10px 0 0;font-size:12.5px;line-height:1.4;cursor:pointer}" +
+    ".ipr-cp-c1 input{flex:none;width:20px;height:20px;margin:1px 0 0;accent-color:var(--ac,#a8b878)}" +
+    ".ipr-cp-a:disabled{opacity:.6;cursor:default}" +
     ".ipr-cp-luz{outline:2px solid var(--ac,#a8b878)!important;outline-offset:3px;border-radius:6px}" +
     "@media (max-width:900px){.ipr-cp-ct{left:10px;right:10px;width:auto;max-width:none;bottom:calc(10px + env(safe-area-inset-bottom))}}" +
     "@media (max-width:600px){.ipr-cp-pn{left:10px;right:10px;width:auto}.ipr-cp-g{grid-template-columns:1fr}.ipr-cp-sb{padding:14px}.ipr-cp-fu{padding:10px;align-items:flex-start}.ipr-cp-ps{font-size:11px}}";
@@ -477,7 +486,9 @@
       var w = el("div"); w.appendChild(el("p", "", t("minhas")));
       l.slice(0, 12).forEach(function (x) {
         var id = String(x.id || "").replace(/\D/g, ""); if (!id) return;
-        var b = botao("ipr-cp-a", (x.local || t("semNome")) + " · " + t("fazerPdf"), "planta-paga"); b.setAttribute("data-v", id);
+        var disp = x.disponivel !== false;
+        var b = botao("ipr-cp-a", (x.local || t("semNome")) + " · " + (disp ? t("fazerPdf") : t("dispA").replace("{d}", String(x.desde || "").split("-").reverse().join("/"))), "planta-paga"); b.setAttribute("data-v", id);
+        if (!disp) b.disabled = true;
         if (num(x.area_ha)) b.appendChild(el("small", "", (+x.area_ha).toLocaleString(lg() === "en" ? "en-GB" : "pt-PT", { maximumFractionDigits: 2 }) + " ha · #" + (x.numero || id)));
         w.appendChild(b);
       });
@@ -570,7 +581,13 @@
     if (tot == null && nb && nl) tot = somaPacote(nb, nl);
     if (vl) c.appendChild(linha("leitura", t("leituraC"), consulta || tot == null ? vl : eur(tot), consulta ? t("orcamento") : t("cLeit"), "c-leitura"));
     var pv = plantaVendida();
-    if (pv) { var lp = linha("planta", t("planta"), eur(pv.preco), t("plantaComprar"), "c-planta-comprar"); lp.querySelector(".ipr-cp-p").appendChild(el("small", "", t("plantaOu"))); c.appendChild(lp); }
+    if (pv) {
+      var lp = linha("planta", t("planta"), eur(pv.preco), t("plantaComprar"), "c-planta-comprar"); lp.querySelector(".ipr-cp-p").appendChild(el("small", "", t("plantaOu"))); c.appendChild(lp);
+      // livre resolução: pedido expresso de entrega imediata (conteúdo digital); sem ele, a Planta espera os 14 dias
+      var ck = el("label", "ipr-cp-c1"), ci = el("input"); ci.type = "checkbox"; ci.id = "ipr-cp-c1";
+      ck.appendChild(ci); ck.appendChild(el("span", "", t("c1"))); c.appendChild(ck);
+      c.appendChild(el("p", "ipr-cp-n", t("c1Sem")));
+    }
     else c.appendChild(linha("planta", t("planta"), t("incluida"), t("cPlanta"), "c-planta"));
     var msg = el("p", "ipr-cp-n"); msg.id = "ipr-cp-msg"; msg.setAttribute("aria-live", "polite"); msg.hidden = true; c.appendChild(msg);
     var p = PR();
@@ -638,7 +655,7 @@
     fetch(pv.rota, {
       method: "POST", credentials: "same-origin",
       headers: { "Content-Type": "application/json", "X-WP-Nonce": window.tcdNonce || "" },
-      body: JSON.stringify({ geojson: gj, local: String(($("ipe-local") || {}).value || "").slice(0, 80) })
+      body: JSON.stringify({ geojson: gj, local: String(($("ipe-local") || {}).value || "").slice(0, 80), c1: !!($("ipr-cp-c1") && $("ipr-cp-c1").checked), lingua: lg() })
     }).then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { return { ok: r.ok, j: j }; }); }).then(function (x) {
       var u = x.ok && x.j && (x.j.carrinho || x.j.pagar);
       // só para o próprio site
@@ -814,9 +831,11 @@
     planos: function () { try { abrirPlanos(); } catch (e) {} }
   };
 
+  var T0 = Date.now();
   function ciclo() {
     try { montarBotao(); lerDesdeDom(); vigiarParcelas(); } catch (e) {}
-    setTimeout(ciclo, $("ipr-cp-b") && OBS_EL ? 2000 : 300);
+    // rápido só no arranque, até o botão estar posto (no máximo 30 s); depois, de 2 em 2 s
+    setTimeout(ciclo, !$("ipr-cp-b") && Date.now() - T0 < 30000 ? 300 : 2000);
   }
   ciclo();
   ligarMapa();
