@@ -169,14 +169,16 @@
     var ipe = D.getElementById("ipe"); if (!ipe) return;
     ["wl", "wr"].forEach(function (k) {
       var v = ipe.style.getPropertyValue("--ipr-" + k).trim(), act = ipe.style.getPropertyValue("--" + k).trim();
-      if (v && act !== v) ipe.style.setProperty("--" + k, v, "important");
+      var fechado = ipe.classList.contains(k === "wl" ? "sem-esq" : "sem-dir"); // painel fechado: manda o estudio.css (0 px)
+      if (v && !fechado && act !== v) ipe.style.setProperty("--" + k, v, "important");
+      else if (fechado && act) ipe.style.removeProperty("--" + k);
       else if (!v && act) ipe.style.removeProperty("--" + k);
     });
   }
   (function vigiarLarguras(n) {
     var ipe = D.getElementById("ipe"); if (!ipe) { if (n < 120) setTimeout(function () { vigiarLarguras(n + 1); }, 500); return; }
     larguras();
-    new MutationObserver(function () { try { larguras(); } catch (e) {} var M = W.__ipe && W.__ipe.mapa; if (M && M.resize) { clearTimeout(vigiarLarguras.t); vigiarLarguras.t = setTimeout(function () { try { M.resize(); } catch (e) {} }, 60); } }).observe(ipe, { attributes: true, attributeFilter: ["style"] });
+    new MutationObserver(function () { try { larguras(); } catch (e) {} var M = W.__ipe && W.__ipe.mapa; if (M && M.resize) { clearTimeout(vigiarLarguras.t); vigiarLarguras.t = setTimeout(function () { try { M.resize(); } catch (e) {} }, 60); } }).observe(ipe, { attributes: true, attributeFilter: ["style", "class"] });
   })(0);
 
   // ───────── 3b. Simuladores só em Processos (Nuno, 18h07: «os simuladores estão em processos e saem definitivamente do
@@ -187,12 +189,13 @@
     "#ipe #ipr-t62 .ipr-sims,#ipe #ipr-t62 [data-fogo-sim],#ipe #ipr-t62 [data-agua-sim],#ipe #ipr-t62 [data-ipr-sim],#ipe #ipr-t62 [data-ipr-sim-lock]{display:none!important}" }));
 
   // ───────── 4. Perfis fora (Nuno, 30/10/2026, 18h07: «os perfis saem, já temos temas e isso é redundância») ─────────
-  // O selector «Perfil» do arrumar.js (§80, #ipr-79) deixa de se ver. O perfil guardado neste navegador (ipr_perfil) é
+  // O selector «Perfil» do arrumar.js (§80, #ipr-79) e o do agua.js (.ipr-ag-pf) deixam de se ver. O perfil guardado neste navegador (ipr_perfil) é
   // esquecido uma vez, para não voltar a ligar camadas sozinho ao abrir o Atlas sem forma de o mudar. Os perfis municipais
   // (§68) não são tocados.
   try { if (ler("ipr_perfis_fora") !== "1") { gravar("ipr_perfil", null); gravar("ipr_perfis_fora", "1"); } } catch (e) {}
-  function semPerfis() { var w = D.getElementById("ipr-79"); if (w && w.style.getPropertyValue("display") !== "none") w.style.setProperty("display", "none", "important"); }
-  setInterval(function () { if (!D.hidden) try { montar(); } catch (e) {} try { semPerfis(); } catch (e) {} }, 1000);
-  try { new MutationObserver(function () { try { semPerfis(); } catch (e) {} }).observe(D.documentElement, { childList: true, subtree: true }); } catch (e) {}
+  // também o selector de perfil do agua.js (.ipr-ag-pf, «Água» / «Protecção Civil»), que é o mesmo registo ipr_perfil
+  (D.head || D.documentElement).appendChild(Object.assign(D.createElement("style"), { id: "ipr-extra-perfis-css", textContent:
+    "html #ipe #ipr-79#ipr-79#ipr-79,html #ipe .ipr-ag-pf{display:none!important}" }));
+  setInterval(function () { if (!D.hidden) try { montar(); } catch (e) {} }, 1000);
   if (D.readyState === "loading") D.addEventListener("DOMContentLoaded", montar); else montar();
 })();
