@@ -27,7 +27,7 @@
       desH: "Clique no mapa para marcar os pontos. Termine com duplo clique ou em «Terminar». Esc cancela.", terminar: "Terminar", cancelar: "Cancelar",
       prof: "Profundidade", largura: "Largura", berma: "Altura da berma", coroa: "Cota do coroamento", desc: "Cota do descarregador", cn: "CN (II)", manning: "Rugosidade de Manning",
       nenhuma: "Ainda não desenhou nenhuma intervenção.", apagar: "Apagar",
-      simular: "Simular", aSimular: "A simular…", fila: "Na fila", corre: "A calcular", filaPos: "Na fila: {p}.º lugar.", filaFrente: "À frente: {x}.", filaOutros: "Pode haver trabalhos de outros mapas à frente.", haTempo: "há {t}", desde: "desde as {h}", lento: "Está a demorar mais do que o habitual para este tipo de simulação.", semParar: "Uma simulação já a calcular não pode ser parada a meio; só as que estão na fila.", parar: "Cancelar", aParar: "A cancelar…", parado: "Simulação cancelada.", estimado: "Costuma demorar {t}.", e_accepted: "na fila", e_running: "a calcular", e_successful: "concluída", e_failed: "falhou", e_dismissed: "cancelada", ultimo: "Último resultado deste separador, enquanto a nova simulação corre.", ok: "Concluído", falhou: "Não foi possível simular",
+      simular: "Simular", aSimular: "A simular…", fila: "Na fila", corre: "A calcular", filaPos: "Na fila: {p}.º lugar.", filaFrente: "À frente: {x}.", filaOutros: "Pode haver trabalhos de outros mapas à frente.", haTempo: "há {t}", desde: "desde as {h}", lento: "Está a demorar mais do que o habitual para este tipo de simulação.", pararCorre: "Parar o cálculo", parar: "Cancelar", aParar: "A cancelar…", parado: "Simulação cancelada.", estimado: "Costuma demorar {t}.", e_accepted: "na fila", e_running: "a calcular", e_successful: "concluída", e_failed: "falhou", e_dismissed: "cancelada", ultimo: "Último resultado deste separador, enquanto a nova simulação corre.", ok: "Concluído", falhou: "Não foi possível simular",
       anteriores: "Simulações deste mapa", nenhumaSim: "Ainda não há simulações neste mapa.", ver: "Ver",
       resultados: "Resultados", camadas: "No mapa", descargas: "Ficheiros (COG, GeoPackage, CSV)", balanco: "Balanço de volumes",
       envolvente: "Os mapas de máximos são a envolvente de toda a simulação, não um instante.",
@@ -61,7 +61,7 @@
       desH: "Click on the map to add points. Finish with a double click or «Finish». Esc cancels.", terminar: "Finish", cancelar: "Cancel",
       prof: "Depth", largura: "Width", berma: "Berm height", coroa: "Crest level", desc: "Spillway level", cn: "CN (II)", manning: "Manning roughness",
       nenhuma: "No interventions drawn yet.", apagar: "Delete",
-      simular: "Simulate", aSimular: "Simulating…", fila: "Queued", corre: "Running", filaPos: "Queued: position {p}.", filaFrente: "Ahead: {x}.", filaOutros: "Jobs from other maps may also be ahead.", haTempo: "for {t}", desde: "since {h}", lento: "This is taking longer than usual for this kind of simulation.", semParar: "A simulation that is already running cannot be stopped midway; only queued ones can.", parar: "Cancel", aParar: "Cancelling…", parado: "Simulation cancelled.", estimado: "Usually takes {t}.", e_accepted: "queued", e_running: "running", e_successful: "done", e_failed: "failed", e_dismissed: "cancelled", ultimo: "Last result for this tab, while the new simulation runs.", ok: "Done", falhou: "Could not simulate",
+      simular: "Simulate", aSimular: "Simulating…", fila: "Queued", corre: "Running", filaPos: "Queued: position {p}.", filaFrente: "Ahead: {x}.", filaOutros: "Jobs from other maps may also be ahead.", haTempo: "for {t}", desde: "since {h}", lento: "This is taking longer than usual for this kind of simulation.", pararCorre: "Stop the calculation", parar: "Cancel", aParar: "Cancelling…", parado: "Simulation cancelled.", estimado: "Usually takes {t}.", e_accepted: "queued", e_running: "running", e_successful: "done", e_failed: "failed", e_dismissed: "cancelled", ultimo: "Last result for this tab, while the new simulation runs.", ok: "Done", falhou: "Could not simulate",
       anteriores: "Simulations for this map", nenhumaSim: "No simulations for this map yet.", ver: "View",
       resultados: "Results", camadas: "On the map", descargas: "Files (COG, GeoPackage, CSV)", balanco: "Volume balance",
       envolvente: "Maximum maps are the envelope of the whole run, not a single moment.", estatico: "Static exploration: no timing, velocities or flows.",
@@ -263,7 +263,7 @@
         if (dt > TIPICO[proc] * 60000) h += '<p class="faixa">' + esc(t("lento")) + "</p>";
         else h += '<p class="nota">' + esc(t("estimado").replace("{t}", "~" + TIPICO[proc] + " min")) + "</p>";
       }
-      h += '<p class="nota">' + esc(t("semParar")) + "</p>";
+      if (d.pode_parar) h += '<div class="acc"><button class="b" data-as="parar"' + (j.aParar ? " disabled" : "") + ">" + esc(j.aParar ? t("aParar") : t("pararCorre")) + "</button></div>";
     } else {
       h += '<div class="prog"><i></i></div>';
       var f = d.fila;
