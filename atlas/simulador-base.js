@@ -1,11 +1,11 @@
-/* IPR Atlas · Simuladores de água e de fogo: aviso, escolha da Base e acesso Intelligence (módulo m90504).
+/* IPR Atlas · Simuladores de água e de fogo: aviso, escolha da Base e acesso Intelligence (módulo m90530).
    Pedidos do Nuno a 29/10/2026 (15h11, 15h12 e 15h18): «eu carrego o simulador de fogo, abro o disclaimer, aprovo e depois
    tenho que me dar em que parcela é que quero simular. Tanto para a água como para o fogo. [...] Sem estragar nada.»
    Ordem, nos dois simuladores: botão, aviso, aceitar, escolher a Base. Ao escolher uma Base na lista, o mapa abre essa Base
    (se ainda não estiver aberta, pelo cartão do próprio Atlas) e enquadra o limite do terreno, antes de carregar em «Simular».
    «Simular» abre o painel do simulador sobre essa Base. Nada corre nem fica na fila antes disso: um POST a agua/simular ou
    fogo/simular sem Base escolhida é travado aqui, e o pedido leva sempre «base» (id da encomenda, o de ?mapa=), que o site
-   verifica (m90504). Cancelar fecha tudo sem enviar nada.
+   verifica (m90530). Cancelar fecha tudo sem enviar nada.
    Quem não é Intelligence (nem administrador nem convidado) vê os botões pequenos marcados «Versão Intelligence» e, ao
    carregar, um aviso curto com a ligação para os planos; sem sessão, também a ligação para entrar ou registar-se.
    Os botões dos simuladores ficam com um só estilo (tamanho, forma, ícone, etiqueta de estado), só nesses botões.
@@ -443,30 +443,53 @@
   function botaoVer(id) { return document.querySelector('#ipr-mb [data-mb="' + String(id).replace(/"/g, "") + '"] [data-mb-acc=ver]'); }
   // No telemóvel a escolha da Base ocupa a parte de baixo do ecrã: o terreno enquadra-se na parte de cima, que fica à vista.
   function telemovel() { return W.innerWidth <= 600; }
+  // A escolha da Base fica por cima do mapa (no computador à direita, no telemóvel em baixo): o terreno enquadra-se na
+  // parte do mapa que fica à vista.
   function folga() {
     var p = W.innerWidth < 700 ? 30 : 70;
-    var c = telemovel() && M && !M.hidden && M.querySelector(".sb-c"), Mp = ipe().mapa;
+    var c = M && !M.hidden && M.querySelector(".sb-c"), Mp = ipe().mapa;
     if (!c || !Mp) return p;
     var r = c.getBoundingClientRect(), m = Mp.getContainer().getBoundingClientRect();
-    var baixo = Math.max(p, Math.round(m.bottom - r.top) + 16);
-    return baixo + p + 40 < m.height ? { top: p, left: p, right: p, bottom: baixo } : p;
+    if (telemovel()) {
+      var baixo = Math.max(p, Math.round(m.bottom - r.top) + 16);
+      return baixo + p + 40 < m.height ? { top: p, left: p, right: p, bottom: baixo } : p;
+    }
+    var dir = Math.max(p, Math.round(m.right - r.left) + 24);
+    return dir + p + 120 < m.width ? { top: p, left: p, right: dir, bottom: p } : p;
+  }
+  // A geometria da Base: da lista da escolha, da lista do Atlas ou da Base aberta.
+  function geoDe(id) {
+    var b = baseDe(id), e = est();
+    if (b && b.geojson) return b;
+    var m = e && Array.isArray(e.mapas) ? e.mapas.filter(function (x) { return x && String(x.id) === String(id) && x.geojson; })[0] : null;
+    if (m) return m;
+    if (e && e.actual && String(e.actual.id) === String(id) && e.actual.geojson) return e.actual;
+    return b;
+  }
+  // Enquadra depois de o mapa assentar (o Atlas e a lista da esquerda também mexem na câmara ao abrir uma Base).
+  function enquadrarFim(id, n) {
+    var t0 = Date.now(), quietos = 0;
+    (function v() {
+      if (n !== pedidoMostrar) return;
+      var Mp = ipe().mapa, mexe = true; try { mexe = !Mp || !mapaPronto() || Mp.isMoving() || Mp.isZooming() || Mp.isEasing(); } catch (x) {}
+      quietos = mexe ? 0 : quietos + 1;
+      if (quietos >= 3 || Date.now() - t0 > 6000) { enquadrar(geoDe(id)); return; }
+      setTimeout(v, 120);
+    })();
   }
   var pedidoMostrar = 0;
   // Ao escolher uma Base na lista: abre-a (se ainda não estiver aberta) e enquadra o terreno. Usa o «Ver» da lista
   // «Os meus projectos» da esquerda (minhas-bases.js: abre pelo cartão do Atlas e enquadra quando o mapa está pronto);
   // sem essa lista, o cartão do separador Projectos e o mesmo enquadramento do enquadrar.js.
   function mostrarBase(id) {
-    var n = ++pedidoMostrar, b = baseDe(id) || { id: id }, ver = telemovel() ? null : botaoVer(id), c = cartao(id);
+    var n = ++pedidoMostrar, ver = telemovel() ? null : botaoVer(id), c = cartao(id);
     var depois = function (ok) {
       if (n !== pedidoMostrar) return ok;
       if (F && F.passo === "base") { var foco = document.activeElement && document.activeElement.name === "ipr-sb-base"; pintar(); if (foco) { var r = M && M.querySelector("input[name=ipr-sb-base]:checked"); if (r) { try { r.focus(); } catch (x) {} } } }
       return ok;
     };
-    if (actualId() === String(id)) {
-      if (ver) ver.click(); else enquadrar(b);
-      return Promise.resolve(depois(true));
-    }
-    if (!c) { enquadrar(b); return Promise.resolve(depois(false)); }   // fora da lista do Atlas: só se enquadra; abre-se ao simular
+    if (actualId() === String(id)) { enquadrar(geoDe(id)); return Promise.resolve(depois(true)); }
+    if (!c) { enquadrar(geoDe(id)); return Promise.resolve(depois(false)); }   // fora da lista do Atlas: só se enquadra; abre-se ao simular
     if (ver) {
       var li = ver.closest("[data-mb]"), tg = li && li.querySelector("[data-mb-acc=ab]");
       if (li && tg && !li.classList.contains("ab")) tg.click();   // a linha desta Base fica aberta na lista da esquerda
@@ -474,7 +497,7 @@
       ver.click();
     } else c.click();
     return esperar(function () { return actualId() === String(id) && mapaPronto(); }, 15000).then(function (ok) {
-      if (n === pedidoMostrar && !ver) enquadrar(baseDe(id) || (est() && est().actual) || b);
+      if (n === pedidoMostrar) enquadrarFim(id, n);   // sempre, também depois do «Ver» da lista da esquerda
       return depois(ok);
     });
   }
