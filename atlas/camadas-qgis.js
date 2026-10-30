@@ -7,10 +7,11 @@
       como no QGIS: a de cima desenha por cima. Arrasta-se pela pega (rato, toque e caneta; também setas do teclado na pega);
       a linha agarrada segue o ponteiro e um marcador mostra onde vai ficar; cancelar ou perder a captura desfaz.
       As camadas MapLibre de cada entrada do catálogo são as do viz.js: «iprv-<id>-<sufixo>» (-r, -lzr, -f, -l, -c, -t,
-      -q ...), fonte «iprv-<id>». A ordem só é imposta depois do primeiro arrasto e só dentro das faixas do viz.js (entre os
-      sentinelas iprv-s-raster, -fill, -line, -point, -aoi, -label): imagens nunca passam por cima de linhas e uma camada
-      ligada depois entra na faixa do seu tipo. Terreno (aoi) e etiquetas (o_nomes, camadas só de texto) e os fundos ficam
-      fixos, sem pega. A ordem guarda-se neste navegador por mapa (?mapa= ou o terreno aberto).
+      -q ...), fonte «iprv-<id>». A ordem só é imposta depois do primeiro arrasto e é livre, como no QGIS (decisão do Nuno,
+      30/10/2026, 18h22): as camadas móveis ficam num só bloco, pela ordem da lista, abaixo do terreno e das etiquetas
+      (sentinela iprv-s-aoi do viz.js). Terreno (aoi), etiquetas (o_nomes, camadas só de texto) e fundos ficam fixos, sem
+      pega. Camadas ligadas depois de haver ordem guardada entram no topo da lista e do bloco. A ordem guarda-se neste
+      navegador por mapa (?mapa= ou o terreno aberto); «Repor a ordem do Atlas» apaga-a.
       Deslizador de opacidade (10 a 100 %, como o da árvore) com a mesma regra por tipo do mudarOpacidade do viz.js; passa
       pelo deslizador da árvore quando a linha dela está aberta. Só se grava o que é mexido neste painel; mexer na árvore
       só actualiza o valor mostrado aqui (e anula o que este painel tinha guardado para essa camada). Linhas bloqueadas
@@ -271,46 +272,39 @@
     var g = lerJ(chaveOrdem(), null);
     if (g && g.length) {
       var dentro = g.filter(function (id) { return mov.indexOf(id) >= 0; });
-      ordem.forEach(function (id, i) {
-        if (dentro.indexOf(id) >= 0) return;
-        // camada nova: entra junto da vizinha de cima na ordem actual, ou no topo
-        var pos = 0;
-        for (var j = i - 1; j >= 0; j--) { var k = dentro.indexOf(ordem[j]); if (k >= 0) { pos = k + 1; break; } }
-        dentro.splice(pos, 0, id);
-      });
+      // camadas ligadas depois de haver ordem guardada entram no topo (à vista), pela ordem de desenho do viz.js
+      var novas = ordem.filter(function (id) { return dentro.indexOf(id) < 0; });
+      dentro = novas.concat(dentro);
       return { ordem: dentro, fixas: fixas, imposta: true, act: act };
     }
     return { ordem: ordem, fixas: fixas, imposta: false, act: act };
   }
 
-  // Respeita as faixas do viz.js: cada camada fica entre os mesmos sentinelas (iprv-s-raster, -fill, -line, -point, -aoi,
-  // -label) e só se reordena dentro da sua faixa. Uma raster nunca passa por cima das linhas, e uma camada ligada depois
-  // entra na faixa do seu tipo (nunca fica escondida por baixo das imagens). Sem sentinelas no mapa, não se mexe em nada.
-  function impor(M, ordem) {
-    var L = estiloCamadas(M), qual = dono(ordem), faixas = [], cur = [], tem = false;
-    for (var i = 0; i < L.length; i++) {
-      var id = L[i].id;
-      if (id.indexOf("iprv-s-") === 0) { tem = true; faixas.push({ ancora: id, ls: cur }); cur = []; continue; }
-      if (qual(id)) cur.push(id);
+  // Ordem livre como no QGIS (decisão do Nuno, 30/10/2026, 18h22): as camadas móveis ficam num só bloco, pela ordem da
+  // lista, logo abaixo do terreno e das etiquetas (sentinela iprv-s-aoi do viz.js; sem ele, a camada mais baixa do terreno ou
+  // das etiquetas). Os fundos ficam por baixo de tudo e as camadas de desenho por cima, como estavam.
+  function impor(M, ordem, fixas) {
+    var L = estiloCamadas(M), qual = dono(ordem), pos = {}, i;
+    for (i = 0; i < L.length; i++) pos[L[i].id] = i;
+    var ancora = pos["iprv-s-aoi"] != null ? "iprv-s-aoi" : null;
+    if (!ancora && fixas && fixas.length) {
+      var qf = dono(fixas), menor = 1e9;
+      for (i = 0; i < L.length; i++) if (qf(L[i].id) && i < menor) { menor = i; ancora = L[i].id; }
     }
-    if (!tem) return;
-    if (cur.length) {
-      // por cima do último sentinela: âncora é a primeira camada não gerida acima da mais alta gerida
-      var conj = {}; cur.forEach(function (x) { conj[x] = 1; });
-      var idx = -1; for (i = 0; i < L.length; i++) if (L[i].id === cur[cur.length - 1]) idx = i;
-      var anc; for (i = idx + 1; i < L.length; i++) if (!conj[L[i].id]) { anc = L[i].id; break; }
-      faixas.push({ ancora: anc, ls: cur });
+    var geridas = []; for (i = 0; i < L.length; i++) if (qual(L[i].id)) geridas.push(L[i].id);
+    if (!geridas.length) return;
+    if (!ancora) {
+      // sem terreno nem etiquetas: o bloco fica onde está a camada gerida mais alta
+      var conj = {}; geridas.forEach(function (g) { conj[g] = 1; });
+      for (i = pos[geridas[geridas.length - 1]] + 1; i < L.length; i++) if (!conj[L[i].id]) { ancora = L[i].id; break; }
     }
-    var baixoCima = ordem.slice().reverse();
-    faixas.forEach(function (f) {
-      if (!f.ls.length) return;
-      var seq = [];
-      f.ls.forEach(function (lid) { var d = qual(lid); if (seq[seq.length - 1] !== d) seq.push(d); });
-      var desejada = baixoCima.filter(function (id) { return seq.indexOf(id) >= 0; });
-      if (seq.join("\n") === desejada.join("\n")) return;
-      desejada.forEach(function (id) {
-        f.ls.forEach(function (lid) { if (qual(lid) === id) { try { M.moveLayer(lid, f.ancora); } catch (e) {} } });
-      });
+    var seq = []; geridas.forEach(function (lid) { var d = qual(lid); if (seq[seq.length - 1] !== d) seq.push(d); });
+    var desejada = ordem.slice().reverse().filter(function (id) { return seq.indexOf(id) >= 0; });
+    var fimBloco = ancora ? pos[ancora] - 1 : L.length - 1;
+    var contiguo = pos[geridas[geridas.length - 1]] === fimBloco && pos[geridas[0]] === fimBloco - geridas.length + 1;
+    if (contiguo && seq.join("\n") === desejada.join("\n")) return;
+    desejada.forEach(function (id) {
+      geridas.forEach(function (lid) { if (qual(lid) === id) { try { M.moveLayer(lid, ancora || undefined); } catch (e) {} } });
     });
   }
 
@@ -401,7 +395,7 @@
     rp.textContent = T("Repor a ordem do Atlas", "Reset to Atlas order");
     rp.hidden = !(lerJ(chaveOrdem(), null) || []).length;
     var nt = B.sec.querySelector(".ipr-cq-nota");
-    if (nt) nt.textContent = T("A ordem aplica-se entre camadas do mesmo tipo (imagens, áreas, linhas, pontos). Linhas e pontos ficam sempre por cima das imagens, e as etiquetas e o terreno por cima de tudo.", "Order applies among layers of the same kind (images, areas, lines, points). Lines and points always stay above images, and labels and the site above everything.");
+    if (nt) nt.textContent = T("A de cima desenha por cima. As etiquetas e o terreno ficam sempre por cima e os fundos por baixo.", "The top layer draws on top. Labels and the site always stay on top, base maps at the bottom.");
   }
 
   function linha(id, fixa) {
@@ -462,7 +456,7 @@
       if (!montar()) return;
       var r = activasOrdenadas(M, V);
       novasCamadas(M, r.act);
-      if (r.imposta && !B.arrastar) impor(M, r.ordem);
+      if (r.imposta && !B.arrastar) impor(M, r.ordem, r.fixas);
       var fundos = []; try { fundos = (V.activas() || []).filter(ehFundo); } catch (e) {}
       var assin = r.fixas.join("|") + "#" + r.ordem.join("|") + "#" + fundos.join("|") + "#" + (en() ? "en" : "pt");
       if (assin !== B.assin && !B.arrastar) { B.assin = assin; desenharLista(r.ordem, r.fixas.concat(["--"]).concat(fundos)); }
@@ -477,7 +471,7 @@
   function gravarOrdemDoDom() {
     var ids = [].map.call(B.lista.querySelectorAll(".ipr-cq-it:not(.fixa)"), function (li) { return li.getAttribute("data-id"); });
     gravar(chaveOrdem(), JSON.stringify(ids));
-    var M = mapa(); if (M) impor(M, ids);
+    var M = mapa(); if (M) { try { impor(M, ids, activasOrdenadas(M, viz()).fixas); } catch (e) {} }
     textoCabecalho(ids.length);
   }
   // Arrastar: a linha agarrada não sai do sítio no DOM (fica com a captura do ponteiro); segue o dedo com transform e é um
