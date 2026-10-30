@@ -263,7 +263,7 @@
     "#ipr-as-pn ol.pp li{position:relative;padding-top:8px;font:500 11px/1.2 " + M + ";text-transform:uppercase;letter-spacing:.05em;color:#64703F}" +
     "#ipr-as-pn ol.pp li:before{content:'';position:absolute;left:0;right:0;top:0;height:3px;border-radius:2px;background:#2E3A26;transition:background .35s}" +
     "#ipr-as-pn ol.pp li.feito{color:#9AA088}#ipr-as-pn ol.pp li.feito:before{background:#64703F}#ipr-as-pn ol.pp li.agora{color:#E4E2D8}#ipr-as-pn ol.pp li.agora:before{background:#94BE39}" +
-    "#ipr-as-pn .corpo{flex:1;overflow:auto;padding:16px;animation:iprAsF .25s ease-out}@keyframes iprAsF{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}" +
+    "#ipr-as-pn .corpo{flex:1;overflow:auto;padding:16px}@keyframes iprAsF{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}" +
     "#ipr-as-pn h2{margin:0 0 4px;font:500 22px/1.2 " + O + ";color:#E4E2D8}#ipr-as-pn .sub{margin:0 0 14px;color:#9AA088;font-size:13px}" +
     "#ipr-as-pn .cartoes{display:grid;gap:8px}" +
     "#ipr-as-pn .c{all:unset;box-sizing:border-box;cursor:pointer;display:grid;grid-template-columns:32px 1fr auto;gap:2px 10px;align-items:start;padding:12px;border:1px solid #2E3A26;border-left:3px solid #2E3A26;border-radius:2px;background:#14200F;transition:border-color .15s,background .15s}" +
@@ -305,11 +305,11 @@
     "#ipr-as-eco .e:hover{border-color:#94BE39}#ipr-as-eco .e b{display:block;font:600 15px/1.3 " + O + ";color:#E4E2D8}#ipr-as-eco .e span{font-size:12.5px;color:#9AA088}" +
     "#ipr-as-eco .e.cur{cursor:default;border-left-color:#B8A83A}#ipr-as-eco .x{position:absolute;top:10px;right:10px}" +
     // pergunta a pergunta: quadro ao centro com fundo, opções grandes, escolhas rápidas
-    "#ipr-as-fundo{position:fixed;inset:0;z-index:100000;background:rgba(8,12,6,.55);animation:iprAsF .25s ease-out}" +
-    "#ipr-as-pn.centro{position:fixed!important;z-index:100001;left:50%!important;top:50%!important;bottom:auto!important;transform:translate(-50%,-50%);width:min(540px,calc(100vw - 24px));max-width:none;max-height:calc(100vh - 32px);animation:iprAsC .28s ease-out}" +
+    "#ipr-as-fundo{position:fixed;inset:0;z-index:2147482000;background:rgba(8,12,6,.55);animation:iprAsF .25s ease-out}" +
+    "#ipr-as-pn.centro{background:#0F170B;position:fixed!important;z-index:2147482001;left:50%!important;top:50%!important;bottom:auto!important;transform:translate(-50%,-50%);width:min(540px,calc(100vw - 24px));max-width:none;max-height:calc(100vh - 32px);animation:none!important;opacity:1!important}" +
     "@keyframes iprAsC{from{opacity:0;transform:translate(-50%,-46%)}to{opacity:1;transform:translate(-50%,-50%)}}" +
     "#ipr-as-pn.lado{z-index:1001;animation:none!important;opacity:1!important;transform:none!important}#ipr-as-pn.lado .corpo,#ipr-as-pn.lado .ach{animation:none!important}@media (min-width:901px){#ipr-as-pn.lado{bottom:auto!important;max-height:calc(100% - 90px)}}" +
-    "#ipr-as-pn .cab .lin .x:first-child{margin-left:-6px}" +
+    "#ipr-as-pn .cab .lin .x:first-child{margin-left:-6px}#ipr-as-pn .np{flex:none;font:500 11px/1 " + M + ";color:#94BE39;letter-spacing:.04em;white-space:nowrap}" +
     "#ipr-as-pn .ops{display:grid;gap:7px}" +
     "#ipr-as-pn .op{all:unset;box-sizing:border-box;cursor:pointer;display:flex;align-items:center;gap:12px;padding:12px 12px 12px 12px;border:1px solid #2E3A26;border-left:3px solid #2E3A26;border-radius:2px;background:#14200F;transition:border-color .15s,background .15s,transform .15s}" +
     "#ipr-as-pn .op:hover,#ipr-as-pn .op:focus-visible{border-color:#94BE39;background:#1B2816}#ipr-as-pn .op:active{transform:scale(.99)}#ipr-as-pn .op.on{border-color:#94BE39;border-left-color:#94BE39;background:#1B2816}" +
@@ -321,7 +321,7 @@
     "#ipr-as-pn .res{padding:10px 12px;margin:0 0 6px;border:1px solid #2E3A26;border-radius:2px;background:#14200F}#ipr-as-pn .res small{display:block;font:500 11px/1.4 " + M + ";text-transform:uppercase;letter-spacing:.05em;color:#9AA088}#ipr-as-pn .res b{display:block;font:600 15px/1.35 " + O + ";color:#E4E2D8}#ipr-as-pn .res b+small{text-transform:none;letter-spacing:0;color:#B8A83A;margin-top:2px}" +
     "#ipr-as-pn .lk{all:unset;cursor:pointer;display:block;margin:14px auto 0;font-size:13px;color:#9AA088;text-decoration:underline;text-underline-offset:3px}#ipr-as-pn .lk:hover{color:#94BE39}" +
     "#ipr-as-pn ul.van{margin:0 0 14px}#ipr-as-pn .chips+label.l,#ipr-as-pn .lin2+div{margin-top:10px}#ipr-as-pn .lin2+div .ops{margin-top:10px}" +
-    "@media (max-width:900px){#ipr-as-pn.centro{left:0!important;right:0!important;top:auto!important;bottom:0!important;transform:none;width:100%;max-height:88vh;border-left:0;border-right:0;animation:iprAsS .28s ease-out}@keyframes iprAsS{from{transform:translateY(30px);opacity:0}to{transform:none;opacity:1}}#ipr-as-pn .op{padding:11px 10px}#ipr-as-pn .op .tx b{font-size:14.5px}}" +
+    "@media (max-width:900px){#ipr-as-pn.centro{left:0!important;right:0!important;top:auto!important;bottom:0!important;transform:none;width:100%;max-height:88vh;border-left:0;border-right:0;animation:none!important;opacity:1!important}@keyframes iprAsS{from{transform:translateY(30px);opacity:0}to{transform:none;opacity:1}}#ipr-as-pn.centro .rod{padding-bottom:calc(12px + env(safe-area-inset-bottom))}#ipr-as-pn .op{padding:11px 10px}#ipr-as-pn .op .tx b{font-size:14.5px}}" +
     "#ipr-as-pn .mn{display:none}#ipr-as-pn.mini{max-height:none!important;top:auto!important}#ipr-as-pn.mini .corpo,#ipr-as-pn.mini .rod,#ipr-as-pn.mini ol.pp{display:none}#ipr-as-pn.mini .mn{all:unset;display:block;margin-top:8px;cursor:pointer;font-size:13px;color:#94BE39}" +
     "@media (max-width:900px){#ipr-as-pn{left:8px;right:8px;top:auto;bottom:8px;width:auto;max-width:none;max-height:72vh}#ipr-as-b{bottom:calc(64px + env(safe-area-inset-bottom))}}" +
     "@media (max-width:560px){#ipr-as-eco .g{grid-template-columns:1fr}#ipr-as-pn .formas{grid-template-columns:1fr 1fr}#ipr-as-pn h2{font-size:19px}#ipr-as-b{padding:8px 14px 8px 10px;font-size:13px}}" +
@@ -496,7 +496,7 @@
       baseSemLimite: "Para a Base precisamos do limite no mapa. Se não o conseguir marcar, preencha o formulário pelo artigo e nós desenhamos.",
       okPropT: "Pedido de proposta enviado", okPropP: "Respondemos para {e} no mesmo dia útil. Referência {r}.",
       aPagar: "A abrir o pagamento…",
-      recomecar: "Recomeçar"
+      recomecar: "Recomeçar", passoDe: "Passo {i} de {n}", projS: "Um terreno que já tem na conta, com a Base feita."
     },
     en: {
       ola: "Hello! What do you need for your land?", olaS: "Answer a few quick questions. No need to know how to use the map.",
@@ -565,7 +565,7 @@
       baseSemLimite: "For the Base we need the boundary on the map. If you cannot mark it, fill in the form by tax article and we draw it.",
       okPropT: "Quote request sent", okPropP: "We reply to {e} the same working day. Reference {r}.",
       aPagar: "Opening the payment…",
-      recomecar: "Start again"
+      recomecar: "Start again", passoDe: "Step {i} of {n}", projS: "Land already in your account, with the Base done."
     }
   };
   function q(k) { var o = TQ[lg()][k]; return o === undefined ? TQ.pt[k] : o; }
@@ -625,6 +625,7 @@
     lin.appendChild(el("b", "", S.produto ? t("prod")[S.produto][0] : t("abrir")));
     var x = el("button", "x"); x.type = "button"; x.setAttribute("aria-label", t("fechar")); x.title = t("fechar"); x.appendChild(icone("x", 18)); x.addEventListener("click", fechar);
     lin.appendChild(x); cab.appendChild(lin);
+    var np = passoN(); var pn0 = el("small", "np", qf("passoDe", { i: np[0], n: np[1] })); lin.insertBefore(pn0, x);
     var fz = FASE[S.q] || 1, ol = el("ol", "pp");
     t("passos").forEach(function (n, i) { ol.appendChild(el("li", i + 1 < fz ? "feito" : i + 1 === fz ? "agora" : "", n)); });
     cab.appendChild(ol); p.appendChild(cab);
@@ -632,8 +633,25 @@
     var corpo = el("div", "corpo"); p.appendChild(corpo);
     var rod = el("div", "rod"); p.appendChild(rod);
     try { (Q[S.q] || Q.produto)(corpo, rod); } catch (e) { corpo.appendChild(el("p", "erro", String(e && e.message || e))); }
+    // botão «Voltar» sempre no rodapé (pedido do Nuno, 30/10, 20h49: «em todas as situações tem que haver sempre um botão
+    // de voltar para trás e sempre uma barra de progresso»)
+    if (S.hist.length && S.q !== "feito") {
+      var vt = el("button", "bt s"); vt.type = "button"; vt.appendChild(icone("volta", 14)); vt.appendChild(document.createTextNode(t("voltar"))); vt.addEventListener("click", voltar);
+      var pr0 = rod.firstChild; if (pr0 && pr0.tagName === "SPAN" && !pr0.textContent) rod.replaceChild(vt, pr0); else rod.insertBefore(vt, rod.firstChild);
+      if (rod.children.length === 1) rod.style.justifyContent = "flex-start";
+    }
     if (!rod.children.length) rod.remove();
     if (!lado) { var f1 = corpo.querySelector("input,button.op"); if (f1 && !movel()) setTimeout(function () { try { f1.focus({ preventScroll: true }); } catch (e) {} }, 60); }
+  }
+  // passo actual e total previsto pelo caminho que a pessoa está a seguir
+  var FALTA = { produto: 5, ajuda: 5, sabe: 4, nic: 4, artigo: 3, morada: 4, morAqui: 3, gps: 5, coord: 5, ponto: 4, ficheiro: 4, mapaQ: 5, mapa: 4, nada: 3, projs: 0, confirmar: 3, area: 3, preco: 2, conta: 1, base: 0, dados: 0, feito: 0 };
+  function passoN() {
+    var i = S.hist.length + 1, f = FALTA[S.q] != null ? FALTA[S.q] : 2;
+    if (sessao() && f > 0 && S.q !== "dados" && S.q !== "conta") f -= 1;
+    if (S.produto === "leitura" && /^(artigo|nada|morada|morAqui)$/.test(S.q)) f += 1;
+    if (S.produto === "base" && f > 1) f -= 1;
+    if (S.q === "feito") i = S.hist.length;
+    return [i, Math.max(i, i + f)];
   }
   function posicionar(p) {
     try {
@@ -770,8 +788,14 @@
     L.push({ ico: "ficheiro", t: sb.ficheiro[0], s: sb.ficheiro[1], fn: function () { S.via = "ficheiro"; vai("ficheiro"); } });
     L.push({ ico: "cadastro", t: sb.mapa[0], s: sb.mapa[1], fn: function () { S.via = "mapa"; vai("mapaQ"); } });
     L.push({ ico: "locais", t: sb.nada[0], s: sb.nada[1], fn: function () { S.via = "nada"; vai("nada"); } });
+    if (S.produto === "planta" && sessao() && typeof window.__iprPlanta === "function" && meusProjectos().length) L.push({ ico: "planta", t: t("plantaProjB"), s: q("projS"), fn: function () { vai("projs"); } });
     opcoes(c, L);
   };
+  Q.projs = function (c) {
+    titulo(c, t("plantaProjB"), q("projS"));
+    opcoes(c, meusProjectos().slice(0, 30).map(function (m) { return { ico: "planta", t: m.local || m.nome || ("#" + (m.encomenda || m.id)), s: "#" + (m.encomenda || m.id) + (m.area_ha ? " · " + haTxt(m.area_ha) : ""), fn: function () { fechar(); window.__iprPlanta(m.encomenda || m.id); } }; }));
+  };
+  FASE.projs = 2;
   Q.nic = function (c, rod) {
     titulo(c, q("nicT"), q("nicS"));
     var msg = el("div");
@@ -974,15 +998,6 @@
     }
     if (k === "planta") tabela(PLANTA);
     else { esperaBox(caixa, "…"); precoLeitura(S.geo ? areaHa() : S.ha, tabela); }
-    if (k === "planta" && sessao() && typeof window.__iprPlanta === "function") {
-      var ms = meusProjectos();
-      if (ms.length) {
-        c.appendChild(el("p", "nota", t("plantaProj")));
-        var w = el("div", "proj");
-        ms.slice(0, 6).forEach(function (m) { var bb = el("button"); bb.type = "button"; bb.appendChild(document.createTextNode(m.local || m.nome || ("#" + (m.encomenda || m.id)))); bb.appendChild(el("small", "", "#" + (m.encomenda || m.id) + (m.area_ha ? " · " + haTxt(m.area_ha) : ""))); bb.addEventListener("click", function () { fechar(); window.__iprPlanta(m.encomenda || m.id); }); w.appendChild(bb); });
-        c.appendChild(w);
-      }
-    }
   };
   function meusProjectos() { var P = est(); if (!P) return []; return (P.mapas || []).filter(function (m) { return m && m.geojson && !m.rever; }); }
   Q.conta = function (c) {
