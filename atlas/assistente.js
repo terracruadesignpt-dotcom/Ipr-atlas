@@ -31,6 +31,9 @@
       d) Base Cartográfica sem conta: segue para o formulário de encomenda como quem tem sessão (o pedido-base m14473 é
          público); entrar fica como opção.
       e) window.iprAssistenteComprar(produto): o cartão do comprar.js abre o assistente já no preço, com o terreno marcado.
+   v4 (30/10, 23h18 a 23h19): «quando é para encomendar [...] é só ortofoto, cadastro e toponímia»: o modo simples deixa
+      estradas e fronteiras de fora e fica exposto (window.iprModoSimples) para o cartão do comprar.js; no passo dos dados
+      da Planta há sempre a caixa do pedido expresso de entrega imediata (registada no servidor pelo m90594).
    Só acrescenta: não edita app.js, ajustes.js nem outros add-ons. Texto escapado (textContent). Cada parte falha em silêncio.
    Desligar: ?assistente=0 no endereço, localStorage ipr_assistente_off = 1, ou window.IPR_ASSISTENTE_OFF = true. */
 (function () {
@@ -112,7 +115,7 @@
       notas: "Notas (opcional)",
       conta: "Criar conta com este e-mail: encomendas e ficheiros guardados, IPR Atlas e descontos nas compras seguintes.",
       contaSessao: "A encomenda fica na sua conta.",
-      consent: "Li a Política de Privacidade e aceito que usem estes dados para responder ao pedido.",
+      consent: "Li a Política de Privacidade e aceito que usem estes dados para responder ao pedido.", c1: "Peço expressamente a entrega imediata da Planta de Localização (conteúdo digital), antes de terminar o prazo de 14 dias de livre resolução. Sei que perco o direito de livre resolução quando a puder fazer.", c1Sem: "Sem esta caixa, a Planta fica disponível no fim dos 14 dias de livre resolução.",
       pagar: "Encomendar e pagar", pedirMail: "Enviar o pedido", aEnviar: "A registar…",
       faltam: "Falta: ", fNome: "o nome", fEmail: "um e-mail válido", fConsent: "aceitar a Política de Privacidade", fTerreno: "o terreno no mapa",
       okT: "Pedido registado", okTMail: "Pedido pronto a enviar", okP: "Enviámos a confirmação para {e}. Referência {r}.",
@@ -197,7 +200,7 @@
       notas: "Notes (optional)",
       conta: "Create an account with this e-mail: saved orders and files, IPR Atlas and discounts on later purchases.",
       contaSessao: "The order goes to your account.",
-      consent: "I have read the Privacy Policy and agree to these details being used to answer the request.",
+      consent: "I have read the Privacy Policy and agree to these details being used to answer the request.", c1: "I expressly request immediate delivery of the Location Plan (digital content), before the 14-day withdrawal period ends. I acknowledge that I lose my right of withdrawal once it can be downloaded.", c1Sem: "Without this box, the Plan becomes available when the 14-day withdrawal period ends.",
       pagar: "Order and pay", pedirMail: "Send the order", aEnviar: "Registering…",
       faltam: "Missing: ", fNome: "your name", fEmail: "a valid e-mail", fConsent: "accepting the Privacy Policy", fTerreno: "the land on the map",
       okT: "Order registered", okTMail: "Order ready to send", okP: "We sent the confirmation to {e}. Reference {r}.",
@@ -319,7 +322,7 @@
     "#ipr-as-fundo{position:fixed;inset:0;z-index:2147482000;background:rgba(8,12,6,.55);animation:iprAsF .25s ease-out}" +
     "#ipr-as-pn.centro{background:#0F170B;position:fixed!important;z-index:2147482001;left:50%!important;top:50%!important;bottom:auto!important;transform:translate(-50%,-50%);width:min(540px,calc(100vw - 24px));max-width:none;max-height:calc(100vh - 32px);animation:none!important;opacity:1!important}" +
     "@keyframes iprAsC{from{opacity:0;transform:translate(-50%,-46%)}to{opacity:1;transform:translate(-50%,-50%)}}" +
-    "#ipr-as-pn.lado{z-index:1001;animation:none!important;opacity:1!important;transform:none!important}#ipr-as-pn.lado .corpo,#ipr-as-pn.lado .ach{animation:none!important}@media (min-width:901px){#ipr-as-pn.lado{top:auto!important;width:auto;max-width:1120px;max-height:min(232px,42vh)!important;flex-direction:row;align-items:stretch}#ipr-as-pn.lado .cab{flex:0 0 228px;display:flex;flex-direction:column;justify-content:center;border-bottom:0;border-right:1px solid #2E3A26}#ipr-as-pn.lado .corpo{flex:1 1 auto;min-width:0;padding:12px 16px;display:grid;grid-template-columns:minmax(190px,.85fr) minmax(250px,1.15fr);grid-auto-flow:row dense;column-gap:18px;row-gap:8px;align-content:center}#ipr-as-pn.lado .corpo>h2{grid-column:1;margin:0;font-size:18px}#ipr-as-pn.lado .corpo>.sub{grid-column:1;margin:0}#ipr-as-pn.lado .corpo>:not(h2):not(.sub){grid-column:2;margin-top:0!important;margin-bottom:0!important}#ipr-as-pn.lado .corpo>div:empty{display:none}#ipr-as-pn.lado .corpo>.ops{grid-column:1/-1}#ipr-as-pn.lado .ops{grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:6px}#ipr-as-pn.lado .op{padding:9px 10px}#ipr-as-pn.lado .op .tx b{font-size:14px}#ipr-as-pn.lado .rod{flex:0 0 auto;flex-direction:column;justify-content:center;gap:6px;border-top:0;border-left:1px solid #2E3A26}}@media (min-width:901px){#ipe.ipr-as-on{--wl:0px!important;--wr:0px!important;grid-template-columns:0 minmax(0,1fr) 0!important}#ipe.ipr-as-on .ipe-esq,#ipe.ipr-as-on .ipe-dir{visibility:hidden!important;border:0!important}#ipe.ipr-as-on .ipr-px-wl,#ipe.ipr-as-on .ipr-px-wr{display:none!important}}" +
+    "#ipr-as-pn.lado{z-index:1001;animation:none!important;opacity:1!important;transform:none!important}#ipr-as-pn.lado .corpo,#ipr-as-pn.lado .ach{animation:none!important}@media (min-width:901px){#ipr-as-pn.lado{top:auto!important;width:auto;max-width:1120px;max-height:min(232px,42vh)!important;flex-direction:row;align-items:stretch}#ipr-as-pn.lado .cab{flex:0 0 228px;display:flex;flex-direction:column;justify-content:center;border-bottom:0;border-right:1px solid #2E3A26}#ipr-as-pn.lado .corpo{flex:1 1 auto;min-width:0;padding:12px 16px;display:grid;grid-template-columns:minmax(190px,.85fr) minmax(250px,1.15fr);grid-auto-flow:row dense;column-gap:18px;row-gap:8px;align-content:center}#ipr-as-pn.lado .corpo>h2{grid-column:1;margin:0;font-size:18px}#ipr-as-pn.lado .corpo>.sub{grid-column:1;margin:0}#ipr-as-pn.lado .corpo>:not(h2):not(.sub){grid-column:2;margin-top:0!important;margin-bottom:0!important}#ipr-as-pn.lado .corpo>div:empty{display:none}#ipr-as-pn.lado .corpo>.ops{grid-column:1/-1}#ipr-as-pn.lado .ops{grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:6px}#ipr-as-pn.lado .op{padding:9px 10px}#ipr-as-pn.lado .op .tx b{font-size:14px}#ipr-as-pn.lado .rod{flex:0 0 auto;flex-direction:column;justify-content:center;gap:6px;border-top:0;border-left:1px solid #2E3A26}}@media (min-width:901px){#ipe.ipr-as-on{--wl:0px!important;--wr:0px!important;grid-template-columns:0 minmax(0,1fr) 0!important}#ipe.ipr-as-on .ipe-esq,#ipe.ipr-as-on .ipe-dir{visibility:hidden!important;border:0!important}#ipe.ipr-as-on .ipr-px-wl,#ipe.ipr-as-on .ipr-px-wr{display:none!important}}html:has(#ipe.ipr-as-on) #ipr-lgd{display:none!important}" +
     "#ipr-as-pn .cab .lin .x:first-child{margin-left:-6px}#ipr-as-pn .np{flex:none;font:500 11px/1 " + M + ";color:#94BE39;letter-spacing:.04em;white-space:nowrap}" +
     "#ipr-as-pn .ops{display:grid;gap:7px}" +
     "#ipr-as-pn .op{all:unset;box-sizing:border-box;cursor:pointer;display:flex;align-items:center;gap:12px;padding:12px 12px 12px 12px;border:1px solid #2E3A26;border-left:3px solid #2E3A26;border-radius:2px;background:#14200F;transition:border-color .15s,background .15s,transform .15s}" +
@@ -610,7 +613,7 @@
   function fechar() {
     var p = pn(); if (p) p.remove(); var f = $("ipr-as-fundo"); if (f) f.remove();
     var R = raiz(); if (R) R.classList.remove("ipr-as-on"); pararEspera(); redim();
-    try { modoSimples(false); } catch (e) {}
+    if (!SIMPLES_EXT) try { modoSimples(false); } catch (e) {}
     try { sessionStorage.setItem("ipr_as_auto", "1"); } catch (e) {}
   }
   function fecharTriagem() {
@@ -768,8 +771,10 @@
   // Modo simples do mapa enquanto se identifica o terreno (Nuno, 30/10, 20h59: «só tem que mostrar um ortofoto, a
   // toponímia, estradas, localizações e o cadastro [...] o mais simples e ligeira possível»). Desliga as outras camadas do
   // Atlas (viz) e as dos add-ons, põe o fundo no ortofotomapa e repõe tudo ao fechar o assistente.
-  var SIMPLES = null, MANTER = { f_ortosat: 1, f_sub: 1, o_nomes: 1, o_estradas: 1, o_fronteiras: 1 };
-  var CAMADA_OK = /^(iprv-f_ortosat|iprv-f_sub|iprv-o_nomes|iprv-o_estradas|iprv-o_fronteiras|iprv-bg|ipe-cad|ipe-loc|ipe-med|gl-draw)/;
+  var SIMPLES = null, SIMPLES_EXT = false, MANTER = { f_ortosat: 1, f_sub: 1, o_nomes: 1 };
+  var CAMADA_OK = /^(iprv-f_ortosat|iprv-f_sub|iprv-o_nomes|iprv-bg|ipe-cad|ipe-loc|ipe-med|gl-draw)/;
+  // o cartão do comprar.js liga e desliga o mesmo modo (o assistente fechado não o desliga enquanto o cartão o pedir)
+  window.iprModoSimples = function (on) { SIMPLES_EXT = !!on; try { if (on) modoSimples(true); else if (!pn()) modoSimples(false); } catch (e) {} };
   function modoSimples(on) {
     var V = window.__ipe && window.__ipe.viz, m = mapa(); if (!m) return;
     if (on) {
@@ -779,7 +784,7 @@
           if (V && V.activas) {
             V.activas().forEach(function (id) { if (!MANTER[id]) { SIMPLES.viz.push(id); try { V.ligar(id, false); } catch (e) {} } });
             if (V.activas().indexOf("f_ortosat") < 0 && V.fundo) { SIMPLES.fundoLigado = 1; V.fundo("f_ortosat"); }
-            ["o_nomes", "o_estradas"].forEach(function (id) { if (V.activas().indexOf(id) < 0) { (SIMPLES.ligadas = SIMPLES.ligadas || []).push(id); try { V.ligar(id, true); } catch (e) {} } });
+            ["o_nomes"].forEach(function (id) { if (V.activas().indexOf(id) < 0) { (SIMPLES.ligadas = SIMPLES.ligadas || []).push(id); try { V.ligar(id, true); } catch (e) {} } });
           }
         } catch (e) {}
       }
@@ -791,7 +796,7 @@
           SIMPLES.cam.push(l.id); m.setLayoutProperty(l.id, "visibility", "none");
         });
       } catch (e) {}
-      if (!SIMPLES.ouvir) { SIMPLES.ouvir = function () { if (SIMPLES && pn()) modoSimples(true); }; try { m.on("styledata", SIMPLES.ouvir); } catch (e) {} }
+      if (!SIMPLES.ouvir) { SIMPLES.ouvir = function () { if (SIMPLES && (pn() || SIMPLES_EXT)) modoSimples(true); }; try { m.on("styledata", SIMPLES.ouvir); } catch (e) {} }
       return;
     }
     if (!SIMPLES) return;
@@ -1129,6 +1134,11 @@
     if (sessao()) form.appendChild(el("p", "nota", t("contaSessao")));
     else if (S.consulta) {}
     else { var lc = el("label", "ck"); conta = el("input"); conta.type = "checkbox"; conta.checked = S.conta !== false; lc.appendChild(conta); lc.appendChild(el("span", "", t("conta"))); form.appendChild(lc); conta.addEventListener("change", function () { S.conta = conta.checked; }); }
+    if (k === "planta") {
+      var l1 = el("label", "ck"), c1 = el("input"); c1.type = "checkbox"; c1.checked = !!S.c1; l1.appendChild(c1); l1.appendChild(el("span", "", t("c1"))); form.appendChild(l1);
+      form.appendChild(el("p", "nota", t("c1Sem")));
+      c1.addEventListener("change", function () { S.c1 = c1.checked; });
+    }
     var lk = el("label", "ck"), cons = el("input"); cons.type = "checkbox"; lk.appendChild(cons);
     var sp = el("span"); var pol = el("a", "", t("consent")); pol.href = "/politica-de-privacidade/"; pol.target = "_blank"; pol.rel = "noopener"; pol.style.color = "inherit"; sp.appendChild(pol); sp.appendChild(document.createTextNode(" *")); lk.appendChild(sp); form.appendChild(lk);
     var hp = el("input"); hp.type = "text"; hp.name = "website"; hp.tabIndex = -1; hp.autocomplete = "off"; hp.setAttribute("aria-hidden", "true"); hp.style.cssText = "position:absolute;left:-9999px;width:1px;height:1px;opacity:0"; form.appendChild(hp);
@@ -1159,7 +1169,7 @@
         pais: pais.value, notas: notas.value.trim(), finalidade: k === "planta" ? (S.fin || "") : "", consentimento: 1, conta: conta && conta.checked ? 1 : 0,
         website: hp.value, t: String(Math.min(T0, Date.now() - 9000)), lingua: lg(), via: S.via || ""
       };
-      if (k === "planta" && S.c1 != null) corpo.c1 = S.c1 ? 1 : 0;
+      if (k === "planta") corpo.c1 = S.c1 ? 1 : 0;
       if (fc) corpo.geojson = JSON.stringify(fc);
       else { corpo.local = S.local || {}; if (k === "leitura") { corpo.ha_aprox = S.ha || 0; corpo.ha_escalao = S.haK || ""; } }
       if (S.consulta) corpo.consulta = 1;

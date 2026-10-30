@@ -30,6 +30,9 @@
       sozinho) e «Começar de novo» (limpa o terreno com o #ipe-limpar e volta a ligar o desenho, se era desenho).
    b) Planta sem sessão: segue pelo assistente (window.iprAssistenteComprar), que compra sem conta pelo m90590, com o
       pedido expresso de entrega imediata marcado no cartão. Com sessão continua pelo m90551 (carrinho).
+   d) v5 (23h18 a 23h19): os passos «1 Escolher» e «2 Desenhar o terreno» passam a botões para voltar atrás; o cartão não
+         faz scroll; a legenda esconde-se com o cartão aberto; ao encomendar o mapa fica só com ortofoto, cadastro e
+         toponímia (window.iprModoSimples do assistente.js).
    c) No computador o cartão é uma faixa horizontal no fundo do mapa, com os três produtos lado a lado; o botão
       «Comprar passo a passo» esconde-se enquanto o cartão ou a pílula estão abertos. */
 (function () {
@@ -59,7 +62,7 @@
       plantaSem: "A Planta de Localização vem com a Base Cartográfica. Desenhe o terreno e encomende a Base.",
       plantaVende: "Desenhe o terreno ou escolha as parcelas. Paga a planta e faz o PDF logo a seguir, aqui no Atlas. Se encomendar a Base, a planta vem incluída.",
       plantaOutro: "Planta para outro terreno", plantaDesenhar: "Desenhar o terreno", plantaComprar: "Comprar a Planta",
-      plantaOu: "ou incluída na Base", mudar: "‹ Mudar o terreno", limpar: "Começar de novo", verPrecos: "Ver os preços deste terreno", mudarG: "Clique nas parcelas para juntar ou retirar, ou ajuste o desenho. Os preços voltam a aparecer.", novoG: "Terreno limpo. Clique nas parcelas do cadastro ou desenhe o limite.", plantaEntrar: "Para comprar a planta precisa de conta. Entre ou crie a conta e volte a este passo.",
+      plantaOu: "ou incluída na Base", mudar: "‹ Voltar: mudar o terreno", limpar: "Começar de novo", verPrecos: "Ver os preços deste terreno", mudarG: "Clique nas parcelas para juntar ou retirar, ou ajuste o desenho. Os preços voltam a aparecer.", novoG: "Terreno limpo. Clique nas parcelas do cadastro ou desenhe o limite.", plantaEntrar: "Para comprar a planta precisa de conta. Entre ou crie a conta e volte a este passo.",
       plantaAEnviar: "A pôr a Planta no carrinho…", plantaErro: "Não foi possível pôr a Planta no carrinho. Tente outra vez ou escreva-nos.",
       minhas: "As minhas Plantas", fazerPdf: "Fazer o PDF", dispA: "disponível a {d}",
       c1: "Peço expressamente a entrega imediata da Planta de Localização (conteúdo digital), antes de terminar o prazo de 14 dias de livre resolução. Sei que perco o direito de livre resolução quando a puder fazer.",
@@ -99,7 +102,7 @@
       plantaSem: "The Location Plan comes with the Base Map. Draw your plot and order the Base.",
       plantaVende: "Draw your plot or pick the parcels. Pay for the plan and make the PDF straight away, here in the Atlas. If you order the Base, the plan is included.",
       plantaOutro: "Plan for another plot", plantaDesenhar: "Draw the plot", plantaComprar: "Buy the Plan",
-      plantaOu: "or included with the Base", mudar: "‹ Change the land", limpar: "Start again", verPrecos: "See the prices for this land", mudarG: "Click parcels to add or remove them, or adjust the drawing. The prices come back.", novoG: "Land cleared. Click the cadastral parcels or draw the boundary.", plantaEntrar: "You need an account to buy the plan. Sign in or create one, then come back to this step.",
+      plantaOu: "or included with the Base", mudar: "‹ Back: change the land", limpar: "Start again", verPrecos: "See the prices for this land", mudarG: "Click parcels to add or remove them, or adjust the drawing. The prices come back.", novoG: "Land cleared. Click the cadastral parcels or draw the boundary.", plantaEntrar: "You need an account to buy the plan. Sign in or create one, then come back to this step.",
       plantaAEnviar: "Adding the Plan to your cart…", plantaErro: "The Plan could not be added to your cart. Try again or write to us.",
       minhas: "My Location Plans", fazerPdf: "Make the PDF", dispA: "available on {d}",
       c1: "I expressly request the immediate supply of the Location Plan (digital content), before the 14-day withdrawal period ends. I know that I lose my right of withdrawal once I can make the PDF.",
@@ -335,13 +338,15 @@
     ".ipr-cp-c1 input{flex:none;width:20px;height:20px;margin:1px 0 0;accent-color:var(--ac,#a8b878)}" +
     ".ipr-cp-a:disabled{opacity:.6;cursor:default}" +
     ".ipr-cp-luz{outline:2px solid var(--ac,#a8b878)!important;outline-offset:3px;border-radius:6px}" +
+    ".ipr-cp-ps li.vai{cursor:pointer;border-radius:6px}.ipr-cp-ps li.vai:hover,.ipr-cp-ps li.vai:focus-visible{background:rgba(148,190,57,.14);outline:none}.ipr-cp-ps li.vai span{text-decoration:underline;text-underline-offset:3px}" +
+    "html:has(#ipr-cp-ct) #ipr-lgd,html:has(#ipr-cp-vt) #ipr-lgd{display:none!important}" +
     ".ipr-cp-nv{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 8px}.ipr-cp-nv .ipr-cp-a{width:auto;min-height:36px;margin:0;padding:6px 12px;font-size:12.5px}" +
     ".ipr-cp-vt{position:fixed;z-index:57;left:50%;transform:translateX(-50%);top:calc(58px + env(safe-area-inset-top));display:flex;align-items:center;gap:10px;max-width:calc(100vw - 20px);padding:8px 8px 8px 14px;border:1px solid var(--ac,#94BE39);border-radius:10px;background:var(--p1,#171a13);box-shadow:0 10px 30px rgba(0,0,0,.45);font:13px/1.35 " + F + ";color:var(--tx,#ebe7d8)}" +
     ".ipr-cp-vt .ipr-cp-a{width:auto;margin:0;flex:none;min-height:38px}.ipr-cp-vt .ipr-cp-x{position:static;flex:none;width:34px;height:34px}" +
     "body:has(#ipr-cp-ct) #ipr-as-b,body:has(#ipr-cp-vt) #ipr-as-b{display:none!important}" +
     "@media (min-width:901px){#ipe.ipr-cp-foco{--wl:0px!important;--wr:0px!important;grid-template-columns:0 minmax(0,1fr) 0!important}#ipe.ipr-cp-foco .ipe-esq,#ipe.ipr-cp-foco .ipe-dir{visibility:hidden!important;border:0!important}#ipe.ipr-cp-foco .ipr-px-wl,#ipe.ipr-cp-foco .ipr-px-wr{display:none!important}" +
     ".ipr-cp-ct{left:calc(var(--wl,0px) + 14px);right:calc(var(--wr,0px) + 196px);width:auto;max-width:1120px;max-height:min(46vh,430px);display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-auto-flow:row dense;column-gap:18px;padding:12px 16px}" +
-    ".ipr-cp-ct>*{grid-column:1/-1}.ipr-cp-ct>h2{grid-column:1;margin:0;align-self:center}.ipr-cp-ct>.ipr-cp-ar{grid-column:2/-1;justify-self:end;align-self:center;margin:0 44px 0 0}" +
+    ".ipr-cp-ct{max-height:calc(100vh - 130px)!important}.ipr-cp-ct>*{grid-column:1/-1}.ipr-cp-ct>h2{grid-column:1;margin:0;align-self:center}.ipr-cp-ct>.ipr-cp-ar{grid-column:2/-1;justify-self:end;align-self:center;margin:0 44px 0 0}" +
     ".ipr-cp-ct>.ipr-cp-r{grid-column:auto;align-self:stretch;padding:10px 0;min-width:0;grid-template-columns:minmax(0,1fr);align-content:start}.ipr-cp-ct>.ipr-cp-r>b,.ipr-cp-ct>.ipr-cp-r>.ipr-cp-p{grid-column:1;min-width:0}.ipr-cp-ct>.ipr-cp-r .ipr-cp-a{grid-column:1;grid-row:3;width:100%;min-width:0;margin-top:6px}.ipr-cp-ct>.ipr-cp-n,.ipr-cp-ct>.ipr-cp-c1{margin-top:8px}}" +
     "@media (max-width:900px){.ipr-cp-ct{left:10px;right:10px;width:auto;max-width:none;bottom:calc(10px + env(safe-area-inset-bottom))}}" +
     "@media (max-width:600px){.ipr-cp-pn{left:10px;right:10px;width:auto}.ipr-cp-g{grid-template-columns:1fr}.ipr-cp-sb{padding:14px}.ipr-cp-fu{padding:10px;align-items:flex-start}.ipr-cp-ps{font-size:11px}}";
@@ -534,7 +539,7 @@
 
   // passo 2: desenhar o terreno com a ferramenta do Atlas
   function comecar(k) {
-    ESCOLHA = k;
+    ESCOLHA = k; simples(true);
     if (haTerreno()) { abrirCartao(true); return; }
     if (!movel()) { abrirDireita("enc"); setTimeout(function () { try { separadorBase(); } catch (e) {} }, 120); }
     else fecharDireitaMovel();
@@ -587,7 +592,13 @@
     var c = el("div", "ipr-cp ipr-cp-ct"); c.id = "ipr-cp-ct"; c.setAttribute("role", "dialog"); c.setAttribute("aria-label", t("cTitulo")); c.lang = lg();
     var x = botao("ipr-cp-x", "×", "fechar"); x.setAttribute("aria-label", t("fechar")); x.title = t("fechar"); c.appendChild(x);
     c.appendChild(el("h2", "", t("cTitulo")));
-    c.appendChild(passos(3));
+    var ps = passos(3); c.appendChild(ps);
+    [].forEach.call(ps.children, function (li, i) {
+      if (i > 1) return;
+      li.classList.add("vai"); li.setAttribute("role", "button"); li.tabIndex = 0;
+      var ir = function () { if (i === 0) { fecharCartao(true); simples(false); try { abrirPainel(); } catch (e) {} } else mudarTerreno(false); };
+      li.addEventListener("click", ir); li.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); ir(); } });
+    });
     var nv = el("div", "ipr-cp-nv"); nv.appendChild(botao("ipr-cp-a", t("mudar"), "mudar")); nv.appendChild(botao("ipr-cp-a", t("limpar"), "limpar")); c.appendChild(nv);
     var ar = el("p", "ipr-cp-ar"); ar.appendChild(el("span", "", t("cArea"))); ar.appendChild(el("strong", "", area)); c.appendChild(ar);
     // acima de 5000 ha o Atlas escreve «sob consulta» (sem €): pede-se orçamento pelo mesmo formulário
@@ -623,11 +634,13 @@
         else if (k === "c-leitura") encomendar(true);
       } catch (x) {}
     });
-    casa().appendChild(c); foco(true);
+    casa().appendChild(c); foco(true); simples(true);
     try { c.querySelector(".ipr-cp-a.pri").focus({ preventScroll: true }); } catch (e) {}
     return true;
   }
-  function fecharCartao() { var c = $("ipr-cp-ct"); if (c) c.remove(); foco(false); }
+  function fecharCartao(manter) { var c = $("ipr-cp-ct"); if (c) c.remove(); foco(false); if (!manter && !$("ipr-cp-vt")) simples(false); }
+  // só ortofoto, cadastro e toponímia enquanto se escolhe o terreno e o produto (Nuno, 30/10, 23h19)
+  function simples(on) { try { if (typeof window.iprModoSimples === "function") window.iprModoSimples(!!on); } catch (e) {} }
   // enquanto o cartão está aberto, o mapa fica com a largura toda (Nuno, 30/10, 22h13: «não precisa de mostrar os blocos laterais»)
   function foco(on) {
     var R = raiz(); if (!R || R.classList.contains("ipr-cp-foco") === !!on) return;
@@ -636,7 +649,7 @@
   }
   // «Mudar o terreno» / «Começar de novo»: o cartão sai da frente; mudar as parcelas volta a abri-lo sozinho
   function mudarTerreno(limpar) {
-    fecharCartao(); VISTOS = {}; VISTOS_P = {};
+    fecharCartao(true); VISTOS = {}; VISTOS_P = {}; simples(true);
     if (limpar) {
       var P = est(), parcelas = !!(P && P.tool === "parcelas") || !!conjuntoParcelas();
       var l = $("ipe-limpar"); if (l && !l.disabled) try { l.click(); } catch (e) {}
@@ -644,13 +657,13 @@
       pilula(t("novoG"), false);
     } else pilula(t("mudarG"), true);
   }
-  function fecharPilula() { var p = $("ipr-cp-vt"); if (p) p.remove(); }
+  function fecharPilula(fim) { var p = $("ipr-cp-vt"); if (p) p.remove(); if (fim && !$("ipr-cp-ct")) simples(false); }
   function pilula(texto, verPrecos) {
     css(); fecharPilula();
     var p = el("div", "ipr-cp ipr-cp-vt"); p.id = "ipr-cp-vt"; p.setAttribute("role", "status"); p.lang = lg();
     p.appendChild(el("span", "", texto));
     if (verPrecos) { var v = botao("ipr-cp-a pri", t("verPrecos"), "ver"); v.addEventListener("click", function () { fecharPilula(); abrirCartao(true); }); p.appendChild(v); }
-    var x = botao("ipr-cp-x", "×", "fechar"); x.setAttribute("aria-label", t("fechar")); x.addEventListener("click", fecharPilula); p.appendChild(x);
+    var x = botao("ipr-cp-x", "×", "fechar"); x.setAttribute("aria-label", t("fechar")); x.addEventListener("click", function () { fecharPilula(true); }); p.appendChild(x);
     casa().appendChild(p);
     clearTimeout(pilula.t); pilula.t = setTimeout(function () { if (!haTerreno()) fecharPilula(); }, 90000);
   }
