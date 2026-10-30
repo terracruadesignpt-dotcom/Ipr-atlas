@@ -1,0 +1,7 @@
+
+/* v6, 30/10/2026: logótipo IPR Cloud do Pedro Bolito (símbolo IPR, nome da ferramenta e linha do Instituto, com pulso de
+   4 s no triângulo do I), verde noite #14200F como no IPR Atlas. Acrescenta à v5; não tira nada. */
+:root{--ipr-escuro:#14200F;--ipr-verde:#94BE39}
+img.qfc-header-logo,img[src*="/staticfiles/logo_sidetext"]{content:url(/ipr-marca/ipr-cloud.svg?v=6)!important;height:32px!important;margin:3px 0 3px 8px}
+img.qfc-main-logo,img[src*="/staticfiles/logo_undertext"]{content:url(/ipr-marca/ipr-cloud.svg?v=6)!important;width:300px!important;max-width:80%!important;padding:0!important;background:none!important;border-radius:4px}
+.brand-link .brand-image{content:url(/ipr-marca/ipr-cloud.svg?v=6)!important;max-height:28px!important;padding:0!important;background:none!important}

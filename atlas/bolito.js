@@ -33,7 +33,9 @@
     arq: '<rect x="3" y="4" width="18" height="5" rx="1"/><path d="M5 9v10h14V9M10 13h4"/>',
     juntar: '<circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><path d="M17 8v6M14 11h6"/>',
     lixo: '<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/>',
-    mapa: '<path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/>'
+    mapa: '<path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/>',
+    olho: '<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+    olhoF: '<path d="M3 3l18 18M10.6 5.1A10 10 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-3.2 4M6.6 6.6C3.8 8.4 2 12 2 12s3.6 7 10 7a9.6 9.6 0 0 0 4.4-1M9.9 9.9a3 3 0 0 0 4.2 4.2"/>'
   };
   // [selector, ícone, curto pt, curto en]
   var ACC = [
@@ -57,6 +59,12 @@
       if (cheio) { b.title = b.title || cheio; b.setAttribute("aria-label", cheio); }
       var curto = m[2] ? (en() ? m[3] : m[2]) : cheio;
       b.innerHTML = svg(m[1]) + "<span>" + curto.replace(/[<>&]/g, "") + "</span>";
+    }
+    // Organização: as mesmas marcas nas acções de cada projecto
+    var os = document.querySelectorAll("#ipr-orgv .ov-acc>button:not([data-b5])");
+    for (var q = 0; q < os.length; q++) {
+      var ob = os[q], ik = ob.hasAttribute("data-ov-ir") ? "mapa" : ob.hasAttribute("data-ov-todas") ? "olho" : ob.hasAttribute("data-ov-nenhuma") ? "olhoF" : "";
+      ob.setAttribute("data-b5", "1"); if (ik) ob.insertAdjacentHTML("afterbegin", svg(ik));
     }
     var vs = document.querySelectorAll("#ipe .ipr-ver-mapa:not([data-b5]), #ipe .tme-b[data-tme=ver]:not([data-b5])");
     for (var k = 0; k < vs.length; k++) { vs[k].setAttribute("data-b5", "1"); vs[k].insertAdjacentHTML("afterbegin", svg("mapa")); }
