@@ -22,7 +22,7 @@
     if (new URLSearchParams(location.search).get("qfield") === "0") return;
     if (localStorage.getItem("ipr_qfield_off") === "1") return;
   } catch (e) {}
-  if (!window.tcdNonce) return; // sem sessão não há Bases
+  // Sem sessão não há Bases; o tcdNonce pode chegar depois deste ficheiro (ver o arranque, no fim).
 
   // ---------- textos (PT pré-acordo e EN) ----------
   var TX = {
@@ -47,6 +47,8 @@
       aDescarregar: "A descarregar o pacote da Base…", aAbrir: "A abrir o pacote…", aJuntar: "A juntar as camadas ao projecto…",
       aGerar: "A preparar o ficheiro…", pronto: "Pronto: %s. Se não começou a transferência, toque aqui.",
       erroDesc: "Não foi possível descarregar o pacote da Base (%s).", erroZip: "O pacote não tem um projecto QGIS (.qgz) que se possa abrir aqui.",
+      grandeMax: "O pacote da Base passa de %s, demasiado para juntar no navegador sem risco de faltar memória (sobretudo no iPad e no telemóvel). Descarregue o pacote tal como está e, à parte, o projecto leve com as camadas ligadas.",
+      cancelado: "Cancelado.",
       erroMem: "O aparelho ficou sem memória para juntar o pacote. Descarregue o pacote tal como está e, à parte, o projecto leve.",
       erro: "Não foi possível preparar o pacote: %s",
       grupoCam: "IPR Atlas · camadas ligadas (precisam de rede)", grupoFundo: "IPR Atlas · fundo (precisa de rede)",
@@ -76,6 +78,8 @@
       aDescarregar: "Downloading the Base package…", aAbrir: "Opening the package…", aJuntar: "Adding the layers to the project…",
       aGerar: "Preparing the file…", pronto: "Ready: %s. If the download did not start, tap here.",
       erroDesc: "Could not download the Base package (%s).", erroZip: "The package has no QGIS project (.qgz) that can be opened here.",
+      grandeMax: "The Base package is larger than %s, too much to merge in the browser without risking running out of memory (especially on iPad and phones). Download the package as it is and, separately, the light project with the layers turned on.",
+      cancelado: "Cancelled.",
       erroMem: "The device ran out of memory to merge the package. Download the package as it is and, separately, the light project.",
       erro: "Could not build the package: %s",
       grupoCam: "IPR Atlas · layers turned on (need network)", grupoFundo: "IPR Atlas · background (needs network)",
@@ -97,9 +101,16 @@
   function x(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&apos;" }[c]; }); }
   function mb(n) { n = +n || 0; return n >= 1048576 ? (n / 1048576).toFixed(n >= 104857600 ? 0 : 1) + " MB" : Math.max(1, Math.round(n / 1024)) + " kB"; }
   function nomeFich(d) { return String(d && d.nome || "").split("· ").pop().split("/").pop().trim(); }
+  var ROTA = /\/tcd\/v1\/mapa-ficheiro(\?|$)|[?&]rest_route=(%2F|\/)tcd(%2F|\/)v1(%2F|\/)mapa-ficheiro(&|$)/i;
+  // Número entre 0 e 1 (opacidade); o que não for número dá o valor por omissão.
+  function op01(v, d) { return typeof v === "number" && isFinite(v) ? Math.max(0.05, Math.min(1, v)) : d; }
   function qfDe(m) {
     var l = (m && Array.isArray(m.downloads)) ? m.downloads : [];
-    for (var i = 0; i < l.length; i++) { var a = nomeFich(l[i]); if (/_qfield\.zip$/i.test(a) && l[i].url) return { nome: a, url: l[i].url }; }
+    // Só a rota autenticada do m14513 (/tcd/v1/mapa-ficheiro); os download_url do WooCommerce ficam de fora.
+    for (var i = 0; i < l.length; i++) {
+      var a = nomeFich(l[i]), u = String(l[i] && l[i].url || "");
+      if (/_qfield\.zip$/i.test(a) && ROTA.test(u)) return { nome: a, url: u };
+    }
     return null;
   }
   function entregue(m) { return !!(m && (qfDe(m) || (m.estado_k === "completed" && m.geojson))); }
@@ -131,7 +142,7 @@
     catalogo().forEach(function (e) { if (e && e.id) por[e.id] = e; });
     activas().forEach(function (id) {
       var e = por[id]; if (!e) return;
-      var n = e.n || e.id, g = (e.fundo || e.g === "fundo") ? "fundo" : "cam", op = e.op != null && isFinite(+e.op) ? Math.max(0.05, Math.min(1, +e.op)) : 1;
+      var n = e.n || e.id, g = (e.fundo || e.g === "fundo") ? "fundo" : "cam", op = op01(e.op, 1);
       var base = { id: "ipr_atlas_" + String(e.id).replace(/[^A-Za-z0-9_]/g, "_"), n: n, grupo: g, op: op, fonte: e.fonte || host(e.url) || "" };
       if (e.t === "lidar" || e.t === "aoi" || /^l_/.test(e.id)) { out.fora.push({ n: n, motivo: M.base }); return; }
       if (e.url && PROPRIOS.test(host(e.url))) { out.fora.push({ n: n, motivo: M.proprio }); return; }
@@ -160,7 +171,7 @@
         base.tipo = "vt"; base.prov = "xyzvectortiles";
         base.url = "https://ogcapi.dgterritorio.gov.pt/collections/" + e.col + "/tiles/WebMercatorQuad/{z}/{y}/{x}?f=mvt";
         base.fonteDados = "type=xyz&url=" + uv(base.url) + "&zmax=15&zmin=0";
-        base.vt = { camada: e.src, tipo: tipo, cor: cor, op: st.op != null ? +st.op : (tipo === "fill" ? 0.35 : 1), larg: typeof st.larg === "number" ? st.larg : 1, raio: +st.raio || 3, dash: Array.isArray(st.dash) };
+        base.vt = { camada: e.src, tipo: tipo, cor: cor, op: op01(st.op, tipo === "fill" ? 0.35 : 1), larg: typeof st.larg === "number" ? st.larg : 1, raio: +st.raio || 3, dash: Array.isArray(st.dash) };
         base.minz = +e.minz || 0;
         out.vao.push(base); return;
       }
@@ -178,10 +189,11 @@
         clearTimeout(tm);
         var nomes = {}, topo = [];
         if (j && Array.isArray(j.layers)) j.layers.forEach(function (l) {
-          nomes[l.id] = l.name;
-          if ((l.parentLayerId == null || l.parentLayerId === -1) && l.defaultVisibility !== false) topo.push(String(l.id));
+          var id = String(l && l.id); if (!/^\d+$/.test(id)) return; // só ids numéricos entram no URI do QGIS
+          nomes[id] = typeof l.name === "string" ? l.name.slice(0, 120) : null;
+          if ((l.parentLayerId == null || l.parentLayerId === -1) && l.defaultVisibility !== false) topo.push(id);
         });
-        var ids = d.ags.length ? d.ags : topo.length ? topo : ["0"];
+        var ids = (d.ags.length ? d.ags : topo.length ? topo : ["0"]).filter(function (id) { return /^\d+$/.test(id); });
         d.sub = ids.map(function (id) { return { id: id, n: nomes[id] || null }; });
         return d;
       });
@@ -344,27 +356,34 @@
   }
 
   // ---------- descarregar, abrir, juntar, devolver ----------
-  function baixar(url, prog) {
-    return fetch(url, { credentials: "same-origin", headers: { "X-WP-Nonce": window.tcdNonce || "" } }).then(function (r) {
+  var LIMITE = 314572800; // 300 MB: acima disto não se junta no navegador
+  function grande() { var e = new Error("grande"); e.limite = 1; return e; }
+  // Devolve um Blob (os pedaços não se copiam para um só bloco de memória). Pára acima do LIMITE ou ao cancelar.
+  function baixar(url, prog, sinal) {
+    return fetch(url, { credentials: "same-origin", headers: { "X-WP-Nonce": window.tcdNonce || "" }, signal: sinal }).then(function (r) {
       if (!r.ok) throw new Error("HTTP " + r.status);
       var total = +r.headers.get("Content-Length") || 0;
-      if (!r.body || !r.body.getReader) return r.arrayBuffer();
+      if (total > LIMITE) { try { if (r.body) r.body.cancel().catch(function () {}); } catch (e) {} throw grande(); }
+      if (!r.body || !r.body.getReader) return r.blob().then(function (b) { if (b.size > LIMITE) throw grande(); return b; });
       var rd = r.body.getReader(), partes = [], tem = 0;
       return (function ler() {
         return rd.read().then(function (o) {
-          if (o.done) { var u = new Uint8Array(tem), p = 0; partes.forEach(function (c) { u.set(c, p); p += c.length; }); return u.buffer; }
-          partes.push(o.value); tem += o.value.length; prog(tem, total); return ler();
+          if (o.done) { var b = new Blob(partes, { type: "application/zip" }); partes = null; return b; }
+          tem += o.value.length;
+          if (tem > LIMITE) { try { rd.cancel().catch(function () {}); } catch (e) {} partes = null; throw grande(); }
+          partes.push(o.value); prog(tem, total); return ler();
         });
       })();
     });
   }
-  function entregar(blob, nome, msg) {
+  function entregar(blob, nome, msg, sinal) {
+    if (sinal && sinal.aborted) return;
     var u = URL.createObjectURL(blob), a = el("a"); a.href = u; a.download = nome; a.rel = "noopener";
     document.body.appendChild(a); a.click(); setTimeout(function () { try { a.remove(); } catch (e) {} }, 0);
     setTimeout(function () { try { URL.revokeObjectURL(u); } catch (e) {} }, 300000);
     msg.textContent = ""; var l = el("a", "", fmt(t("pronto"), nome + " · " + mb(blob.size))); l.href = u; l.download = nome; msg.appendChild(l);
   }
-  function pacoteCompleto(m, defs, juntar, msg) {
+  function pacoteCompleto(m, defs, juntar, msg, sinal) {
     var qf = qfDe(m), Z = window.JSZip;
     msg.textContent = t("aDescarregar");
     var avisar = 0;
@@ -372,38 +391,38 @@
       msg.textContent = t("aDescarregar") + " " + mb(a) + (tot ? " / " + mb(tot) : "");
       if (tot > 157286400 && movel()) avisar = tot; // mais de 150 MB num telemóvel ou tablet: avisa já
       if (avisar) msg.textContent += " " + fmt(t("grande"), mb(avisar));
-    }).then(function (buf) {
+    }, sinal).then(function (blob) {
+      // Nada a acrescentar: entrega-se o zip tal como veio, sem o abrir nem recomprimir.
+      if (!(juntar && defs.length)) { entregar(blob, qf.nome, msg, sinal); return null; }
       msg.textContent = t("aAbrir");
-      return Z.loadAsync(buf).then(function (zip) {
+      return Z.loadAsync(blob).then(function (zip) {
         var qgz = zip.file(/(^|\/)[^/]+\.qgz$/i).sort(function (a, b) { return a.name.split("/").length - b.name.split("/").length; })[0];
         if (!qgz) throw new Error("semqgz");
-        var add = juntar && defs.length ? resolverAgs(defs) : Promise.resolve([]);
-        return add.then(function (ds) {
-          if (!ds.length) return { zip: zip, n: 0, ds: ds };
+        return resolverAgs(defs).then(function (ds) {
+          if (sinal && sinal.aborted) return null;
           msg.textContent = t("aJuntar");
           return qgz.async("uint8array").then(function (b) { return Z.loadAsync(b); }).then(function (iz) {
             var qgs = iz.file(/\.qgs$/i)[0]; if (!qgs) throw new Error("semqgz");
             return qgs.async("string").then(function (txt) {
               var r = juntarAoQgs(txt, ds);
-              if (!r.n) return { zip: zip, n: 0, ds: ds };
+              if (!r.n) { entregar(blob, qf.nome, msg, sinal); return null; } // todas já presentes: o original
               iz.file(qgs.name, r.txt);
               return iz.generateAsync({ type: "uint8array", compression: "DEFLATE" }).then(function (nb) {
                 zip.file(qgz.name, nb, { date: new Date() });
                 zip.file("CAMADAS-IPR-ATLAS.txt", leiaMe(ds));
-                return { zip: zip, n: r.n, ds: ds };
+                if (sinal && sinal.aborted) return null;
+                msg.textContent = t("aGerar");
+                return zip.generateAsync({ type: "blob", compression: "DEFLATE", compressionOptions: { level: 6 }, comment: zip.comment || undefined, mimeType: "application/zip" }).then(function (out) {
+                  entregar(out, qf.nome.replace(/_qfield\.zip$/i, "") + "_QField_campo.zip", msg, sinal);
+                });
               });
             });
           });
         });
       });
-    }).then(function (o) {
-      msg.textContent = t("aGerar");
-      return o.zip.generateAsync({ type: "blob", compression: "DEFLATE", compressionOptions: { level: 6 }, comment: o.zip.comment || undefined, mimeType: "application/zip" }).then(function (blob) {
-        entregar(blob, qf.nome.replace(/_qfield\.zip$/i, "") + (o.n ? "_QField_campo.zip" : "_QField.zip"), msg);
-      });
     });
   }
-  function pacoteLeve(m, defs, msg) {
+  function pacoteLeve(m, defs, msg, sinal) {
     var Z = window.JSZip; msg.textContent = t("aJuntar");
     return resolverAgs(defs).then(function (ds) {
       var r = qgsLeve(m, ds), zip = new Z(), nome = seguro(m.local || ("base_" + (m.encomenda || m.id)));
@@ -411,7 +430,7 @@
       if (r.geojson) zip.file("limite.geojson", JSON.stringify(r.geojson));
       zip.file("CAMADAS-IPR-ATLAS.txt", leiaMe(ds, (m.local || "") + (m.encomenda ? " · #" + m.encomenda : "")));
       msg.textContent = t("aGerar");
-      return zip.generateAsync({ type: "blob", compression: "DEFLATE", mimeType: "application/zip" }).then(function (blob) { entregar(blob, nome + "_QField_leve.zip", msg); });
+      return zip.generateAsync({ type: "blob", compression: "DEFLATE", mimeType: "application/zip" }).then(function (blob) { entregar(blob, nome + "_QField_leve.zip", msg, sinal); });
     });
   }
 
@@ -442,9 +461,12 @@
   function estilo() { if (document.getElementById("ipr-qf-css")) return; var s = el("style"); s.id = "ipr-qf-css"; s.textContent = CSS; document.head.appendChild(s); }
   var ICONE = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2"/><path d="M12 7.5c-1.7 0-3 1.3-3 3 0 2.2 3 5 3 5s3-2.8 3-5c0-1.7-1.3-3-3-3z"/><circle cx="12" cy="10.5" r=".8"/></svg>';
 
-  var aberta = null;
-  function fecharJanela() { if (aberta) { try { aberta.remove(); } catch (e) {} aberta = null; document.removeEventListener("keydown", tecla); } }
-  function tecla(e) { if (e.key === "Escape") fecharJanela(); }
+  var aberta = null, emCurso = null; // emCurso: AbortController do trabalho em curso
+  function fecharJanela() {
+    if (emCurso) { try { emCurso.abort(); } catch (e) {} emCurso = null; } // fechar pelo × cancela a transferência
+    if (aberta) { try { aberta.remove(); } catch (e) {} aberta = null; document.removeEventListener("keydown", tecla); }
+  }
+  function tecla(e) { if (e.key === "Escape" && !emCurso) fecharJanela(); } // durante um trabalho, Esc não fecha
   function janela(m) {
     fecharJanela(); estilo();
     var S = servicos(), qf = qfDe(m), temZip = !!(window.JSZip && qf), ocupado = false;
@@ -476,18 +498,25 @@
     var ol = el("ol"); ["c1", "c2", "c3", "c4", "c5"].forEach(function (k) { ol.appendChild(el("li", "", t(k))); }); det.appendChild(ol);
     if (!qf || movel()) det.open = true;
     c.appendChild(det);
-    function trancar(v) { ocupado = v; [bP, bL].forEach(function (b) { if (b) b.disabled = v; }); }
+    function trancar(v) {
+      ocupado = v; [bP, bL].forEach(function (b) { if (b) b.disabled = v; });
+      if (v) emCurso = window.AbortController ? new AbortController() : { abort: function () { this.signal.aborted = true; }, signal: { aborted: false } };
+      else emCurso = null;
+      return emCurso && emCurso.signal;
+    }
     function falhou(e) {
       var s = String(e && e.message || e || "");
+      if (e && e.name === "AbortError") { msg.textContent = t("cancelado"); return; }
+      if (e && e.limite) { msg.textContent = fmt(t("grandeMax"), mb(LIMITE)); if (bL) { bL.classList.add("ac"); try { bL.focus(); } catch (x) {} } return; }
       msg.textContent = s === "semqgz" ? t("erroZip") : /^HTTP/.test(s) ? fmt(t("erroDesc"), s) : (e && (e.name === "RangeError" || /memory|allocation/i.test(s))) ? t("erroMem") : fmt(t("erro"), s || "?");
     }
     if (bP) bP.addEventListener("click", function () {
-      if (ocupado) return; trancar(true);
-      pacoteCompleto(m, S.vao, !ck || ck.checked, msg).catch(falhou).then(function () { trancar(false); });
+      if (ocupado) return; var sinal = trancar(true);
+      pacoteCompleto(m, S.vao, !ck || ck.checked, msg, sinal).catch(falhou).then(function () { trancar(false); });
     });
     if (bL) bL.addEventListener("click", function () {
-      if (ocupado) return; trancar(true);
-      pacoteLeve(m, S.vao, msg).catch(falhou).then(function () { trancar(false); });
+      if (ocupado) return; var sinal = trancar(true);
+      pacoteLeve(m, S.vao, msg, sinal).catch(falhou).then(function () { trancar(false); });
     });
     xb.addEventListener("click", fecharJanela);
     fundo.addEventListener("click", function (e) { if (e.target === fundo && !ocupado) fecharJanela(); });
@@ -536,13 +565,26 @@
   }
 
   var tm = null;
-  function agendar() { if (tm) return; tm = setTimeout(function () { tm = null; try { injectar(); } catch (e) {} }, 150); }
+  function nosso(n) { return n && n.nodeType === 1 && n.matches && (n.matches(".ipr-qfd, .ipr-qf-campo, [data-ipr-qf], #ipr-qf-css") || (n.closest && n.closest(".ipr-qfd"))); }
+  function soNosso(ms) {
+    return ms.every(function (r) {
+      var alvo = r.target && r.target.nodeType === 1 ? r.target : r.target && r.target.parentElement;
+      if (alvo && alvo.closest && alvo.closest(".ipr-qfd")) return true; // texto e progresso dentro da janela
+      var ns = [].slice.call(r.addedNodes || []).concat([].slice.call(r.removedNodes || []));
+      return ns.length > 0 && ns.every(nosso);
+    });
+  }
+  function agendar(ms) { if (ms && soNosso(ms)) return; if (tm) return; tm = setTimeout(function () { tm = null; try { injectar(); } catch (e) {} }, 150); }
   function arrancar() {
     try { injectar(); } catch (e) {}
     try { new MutationObserver(agendar).observe(document.getElementById("ipe") || document.body, { childList: true, subtree: true }); } catch (e) {}
   }
   document.addEventListener("ipr:lingua", function () { try { relinguar(); } catch (e) {} });
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", arrancar); else arrancar();
+  function comNonce() {
+    if (window.tcdNonce) { arrancar(); return; }
+    var n = 0, iv = setInterval(function () { if (window.tcdNonce) { clearInterval(iv); arrancar(); } else if (++n > 240) clearInterval(iv); }, 500); // até 2 minutos
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", comNonce); else comNonce();
 
   // Para ensaio (sem efeitos): window.__iprQFieldTeste.juntarAoQgs(texto, defs), .qgsLeve(m, defs), .servicos()
   window.__iprQFieldTeste = { juntarAoQgs: juntarAoQgs, qgsLeve: qgsLeve, servicos: servicos, camadasQgis: camadasQgis, resolverAgs: resolverAgs };
