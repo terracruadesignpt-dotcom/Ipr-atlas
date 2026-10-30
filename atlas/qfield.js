@@ -11,7 +11,8 @@
       ligadas» no topo e «IPR Atlas · fundo» em baixo, e devolve o .zip pronto a importar no QField. O resto do pacote
       (GeoPackages, rasters, levantamento, LICENCA-IPR.txt, comentário do zip) fica tal como veio.
    4. Sem pacote QField na entrega (Bases antigas) ou com um pacote grande demais para o aparelho: «Projecto leve» com o
-      limite do terreno e as camadas ligadas (só consulta, precisa de rede para as camadas de serviço).
+      limite do terreno, as camadas ligadas (precisam de rede) e uma camada de notas de campo editável (notas_campo.gpkg em
+      EPSG:3763, feito no navegador com o sql.js, carregado só ao clicar; se o sql.js falhar, notas_campo.geojson em WGS84).
    Nada sai para fora do navegador; não grava nada no servidor.
    Desligar: ?qfield=0 no endereço ou localStorage ipr_qfield_off=1. Cada parte num try/catch; falha em silêncio. */
 (function () {
@@ -35,8 +36,8 @@
       fora: "Ficam de fora", nenhuma: "Não tem camadas públicas ligadas no IPR Atlas. Ligue as que quiser levar (cadastro, ortofotos, REN, RAN…) e volte a abrir esta janela.",
       juntar: "Juntar ao projecto as camadas ligadas no IPR Atlas",
       preparar: "Preparar e descarregar", original: "Descarregar o pacote da Base tal como está",
-      leve: "Projecto leve: limite e camadas ligadas", leveT: "Só consulta: o limite do terreno e as camadas ligadas, sem os dados da Base",
-      semPac: "Esta entrega não tem pacote QField. Pode levar um projecto leve com o limite do terreno e as camadas ligadas; para ter a Base no QField, peça o pacote à equipa (info@terracruadesign.pt).",
+      leve: "Projecto leve: limite, camadas ligadas e notas de campo", leveT: "O limite do terreno, as camadas ligadas e uma camada de notas editável no QField, sem os dados da Base",
+      semPac: "Esta entrega não tem pacote QField. Pode levar um projecto leve com o limite do terreno, as camadas ligadas e uma camada de notas de campo; para ter a Base no QField, peça o pacote à equipa (info@terracruadesign.pt).",
       grande: "O pacote da Base tem %s. Num telemóvel ou tablet pode faltar memória para o juntar aqui; se falhar, descarregue o pacote tal como está e, à parte, o projecto leve.",
       fechar: "Fechar", como: "Como abrir no QField",
       c1: "Instale o QField (gratuito) a partir da loja de aplicações.",
@@ -55,7 +56,12 @@
       limite: "Limite do terreno",
       motivo: { tipo: "tipo de camada que o QField não lê directamente", proprio: "serviço do IPR, fica no Atlas", base: "já está no pacote da Base",
         semCamada: "serviço sem nome de camada", dyn: "estilo dinâmico do ArcGIS, não passa para o QGIS" },
-      leia: "CAMADAS DO IPR ATLAS NESTE PROJECTO", semNome: "Terreno sem nome"
+      leia: "CAMADAS DO IPR ATLAS NESTE PROJECTO", semNome: "Terreno sem nome",
+      notas: "Notas de campo", aNotas: "A preparar a camada de notas de campo…",
+      notasG: "NOTAS DE CAMPO: camada de pontos editável no QField (notas_campo.gpkg, EPSG:3763), com data, autor, tipo (observação, problema, foto, medição), texto e fotografia tirada com a câmara. Toque na camada «Notas de campo», no lápis e marque no mapa.",
+      notasJ: "NOTAS DE CAMPO: não foi possível criar o GeoPackage neste navegador; a camada vai em GeoJSON (notas_campo.geojson, coordenadas WGS84), também editável no QField, com um ponto de exemplo que pode apagar. Para EPSG:3763 em GeoPackage, gere o projecto leve noutro navegador ou num computador.",
+      tipos: [["observacao", "Observação"], ["problema", "Problema"], ["foto", "Foto"], ["medicao", "Medição"]],
+      exemplo: "Exemplo: pode apagar este ponto."
     },
     en: {
       botao: "Take to the field (QField)", botaoT: "Build the QField package for this Base with the layers turned on in IPR Atlas",
@@ -66,8 +72,8 @@
       fora: "Left out", nenhuma: "You have no public layers turned on in IPR Atlas. Turn on the ones you want to take (land registry, orthophotos, REN, RAN…) and open this window again.",
       juntar: "Add the layers turned on in IPR Atlas to the project",
       preparar: "Build and download", original: "Download the Base package as it is",
-      leve: "Light project: boundary and layers turned on", leveT: "View only: the site boundary and the layers turned on, without the Base data",
-      semPac: "This delivery has no QField package. You can take a light project with the site boundary and the layers turned on; to have the Base in QField, ask the team for the package (info@terracruadesign.pt).",
+      leve: "Light project: boundary, layers turned on and field notes", leveT: "The site boundary, the layers turned on and a notes layer editable in QField, without the Base data",
+      semPac: "This delivery has no QField package. You can take a light project with the site boundary, the layers turned on and a field notes layer; to have the Base in QField, ask the team for the package (info@terracruadesign.pt).",
       grande: "The Base package is %s. A phone or tablet may run out of memory to merge it here; if it fails, download the package as it is and, separately, the light project.",
       fechar: "Close", como: "How to open it in QField",
       c1: "Install QField (free) from the app store.",
@@ -86,7 +92,12 @@
       limite: "Site boundary",
       motivo: { tipo: "layer type QField cannot read directly", proprio: "IPR service, stays in the Atlas", base: "already in the Base package",
         semCamada: "service without a layer name", dyn: "ArcGIS dynamic style, does not carry over to QGIS" },
-      leia: "IPR ATLAS LAYERS IN THIS PROJECT", semNome: "Unnamed site"
+      leia: "IPR ATLAS LAYERS IN THIS PROJECT", semNome: "Unnamed site",
+      notas: "Field notes", aNotas: "Preparing the field notes layer…",
+      notasG: "FIELD NOTES: a point layer editable in QField (notas_campo.gpkg, EPSG:3763), with date, author, type (observation, problem, photo, measurement), text and a photo taken with the camera. Tap the \u201cField notes\u201d layer, the pencil, and mark on the map.",
+      notasJ: "FIELD NOTES: the GeoPackage could not be created in this browser; the layer goes as GeoJSON (notas_campo.geojson, WGS84 coordinates), also editable in QField, with a sample point you can delete. For EPSG:3763 in a GeoPackage, build the light project in another browser or on a computer.",
+      tipos: [["observacao", "Observation"], ["problema", "Problem"], ["foto", "Photo"], ["medicao", "Measurement"]],
+      exemplo: "Sample: you can delete this point."
     }
   };
   function lg() { return (window.IPR_LINGUA || "pt") === "en" ? "en" : "pt"; }
@@ -309,7 +320,7 @@
     return { txt: s, n: p.todas.length };
   }
 
-  // Projecto leve (sem a Base): limite do terreno em GeoJSON e as camadas ligadas.
+  // Projecto leve (sem a Base): notas de campo, limite do terreno em GeoJSON e as camadas ligadas.
   function caixa(g) {
     var b = [Infinity, Infinity, -Infinity, -Infinity];
     (function per(c) { if (!c || !c.length) return; if (typeof c[0] === "number") { b[0] = Math.min(b[0], c[0]); b[1] = Math.min(b[1], c[1]); b[2] = Math.max(b[2], c[0]); b[3] = Math.max(b[3], c[1]); } else c.forEach(per); })(
@@ -317,8 +328,86 @@
     return isFinite(b[0]) && b[0] <= b[2] ? b : null;
   }
   function geo(m) { var g = m && m.geojson; if (typeof g === "string") { try { g = JSON.parse(g); } catch (e) { g = null; } } return g && typeof g === "object" ? g : null; }
-  function qgsLeve(m, defs) {
+  // Camada de notas de campo editável (pedido do Nuno, 30/10/2026, 18h22): GeoPackage EPSG:3763, ou GeoJSON se o sql.js falhar.
+  // Formulário igual ao do levantamento do worker (projecto.py): lista de tipos, texto multilinha, foto como anexo de câmara
+  // (ExternalResource, caminho relativo ao projecto), data e autor automáticos. Estrutura conferida com o QGIS 3.34.4.
+  function notasXml(formato) {
+    var gp = formato === "gpkg", src = gp ? "./notas_campo.gpkg|layername=notas_campo" : "./notas_campo.geojson";
+    function w(campo, tipo, cfg) { return '<field configurationFlags="NoFlag" name="' + campo + '"><editWidget type="' + tipo + '"><config>' + (cfg ? '<Option type="Map">' + cfg + "</Option>" : "<Option/>") + "</config></editWidget></field>"; }
+    function o(n, v, ty) { return '<Option name="' + x(n) + '" value="' + x(v) + '" type="' + (ty || "QString") + '"/>'; }
+    var mapa = '<Option name="map" type="List">' + t("tipos").map(function (k) { return '<Option type="Map">' + o(k[1], k[0]) + "</Option>"; }).join("") + "</Option>";
+    var campos = (gp ? ["fid", "data", "autor", "tipo", "texto", "foto"] : ["data", "autor", "tipo", "texto", "foto"]);
+    var en = lg() === "en", alias = { data: en ? "Date" : "Data", autor: en ? "Author" : "Autor", tipo: en ? "Type" : "Tipo", texto: en ? "Text" : "Texto", foto: en ? "Photo" : "Fotografia" };
+    var def = { data: "now()", autor: "coalesce(@cloud_username, @user_full_name, '')", tipo: "'observacao'" };
+    var c = { id: "ipr_notas_campo", nome: t("notas"), prov: "ogr", src: src };
+    c.xml = '<maplayer type="vector" geometry="Point" wkbType="Point" readOnly="0" styleCategories="AllStyleCategories" hasScaleBasedVisibilityFlag="0" minScale="1e+08" maxScale="0" autoRefreshMode="Disabled" autoRefreshTime="0">' +
+      "<id>" + c.id + "</id><datasource>" + x(src) + "</datasource><layername>" + x(c.nome) + "</layername><srs>" +
+      (gp ? '<spatialrefsys nativeFormat="Wkt"><authid>EPSG:3763</authid></spatialrefsys>' : SRS4326) + '</srs><provider encoding="UTF-8">ogr</provider>' +
+      '<renderer-v2 type="singleSymbol" symbollevels="0" enableorderby="0" forceraster="0" referencescale="-1"><symbols><symbol type="marker" name="0" alpha="1" clip_to_extent="1" force_rhr="0"><layer class="SimpleMarker" enabled="1" locked="0" pass="0"><Option type="Map">' +
+      opt("color", "228,87,46,255") + opt("name", "circle") + opt("outline_color", "255,255,255,255") + opt("outline_width", "0.4") + opt("outline_width_unit", "MM") + opt("size", "3") + opt("size_unit", "MM") +
+      "</Option></layer></symbol></symbols><rotation/><sizescale/></renderer-v2>" +
+      "<fieldConfiguration>" + campos.map(function (k) {
+        if (k === "fid") return w(k, "Hidden");
+        if (k === "data") return w(k, "DateTime", o("allow_null", "true", "bool") + o("calendar_popup", "true", "bool") + o("display_format", "dd/MM/yyyy HH:mm") + o("field_format", "yyyy-MM-dd HH:mm:ss"));
+        if (k === "tipo") return w(k, "ValueMap", mapa);
+        if (k === "texto") return w(k, "TextEdit", o("IsMultiline", "true", "bool"));
+        if (k === "foto") return w(k, "ExternalResource", o("DocumentViewer", "1", "int") + o("DocumentViewerHeight", "0", "int") + o("DocumentViewerWidth", "0", "int") + o("FileWidget", "true", "bool") + o("FileWidgetButton", "true", "bool") + o("RelativeStorage", "1", "int") + o("StorageMode", "0", "int"));
+        return w(k, "TextEdit", o("IsMultiline", "false", "bool"));
+      }).join("") + "</fieldConfiguration>" +
+      "<aliases>" + campos.map(function (k, i) { return '<alias index="' + i + '" field="' + k + '" name="' + x(alias[k] || "") + '"/>'; }).join("") + "</aliases>" +
+      "<defaults>" + campos.map(function (k) { return '<default field="' + k + '" applyOnUpdate="0" expression="' + x(def[k] || "") + '"/>'; }).join("") + "</defaults>" +
+      "<blendMode>0</blendMode><featureBlendMode>0</featureBlendMode><layerOpacity>1</layerOpacity></maplayer>";
+    return c;
+  }
+  var SQLJS = "https://cdn.jsdelivr.net/npm/sql.js@1.13.0/dist/"; // a mesma versão que o ajustes.js (§75) já usa no Atlas
+  var SQLP = null;
+  function sqljs() { // só se carrega ao gerar o projecto leve
+    if (SQLP) return SQLP;
+    SQLP = new Promise(function (res, rej) {
+      var tm = setTimeout(function () { rej(new Error("sqljs")); }, 20000);
+      function ok() { window.initSqlJs({ locateFile: function (f) { return SQLJS + f; } }).then(function (S) { clearTimeout(tm); res(S); }, function (e) { clearTimeout(tm); rej(e); }); }
+      if (window.initSqlJs) return ok();
+      var sc = document.createElement("script"); sc.src = SQLJS + "sql-wasm.js"; sc.crossOrigin = "anonymous"; sc.onload = ok;
+      sc.onerror = function () { clearTimeout(tm); rej(new Error("sqljs")); };
+      document.head.appendChild(sc);
+    });
+    SQLP.catch(function () { SQLP = null; });
+    return SQLP;
+  }
+  // GeoPackage 1.2 mínimo com a tabela de pontos vazia «notas_campo» em EPSG:3763 (mesma estrutura que o GDAL escreve).
+  var W3763 = 'PROJCS["ETRS89 / Portugal TM06",GEOGCS["ETRS89",DATUM["European_Terrestrial_Reference_System_1989",SPHEROID["GRS 1980",6378137,298.257222101,AUTHORITY["EPSG","7019"]],AUTHORITY["EPSG","6258"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4258"]],PROJECTION["Transverse_Mercator"],PARAMETER["latitude_of_origin",39.6682583333333],PARAMETER["central_meridian",-8.13310833333333],PARAMETER["scale_factor",1],PARAMETER["false_easting",0],PARAMETER["false_northing",0],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AXIS["Easting",EAST],AXIS["Northing",NORTH],AUTHORITY["EPSG","3763"]]', W4326 = 'GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AXIS["Latitude",NORTH],AXIS["Longitude",EAST],AUTHORITY["EPSG","4326"]]';
+  function notasGpkg(SQL) {
+    var db = new SQL.Database();
+    try {
+      db.run("PRAGMA application_id=1196444487; PRAGMA user_version=10200;" +
+        "CREATE TABLE gpkg_spatial_ref_sys (srs_name TEXT NOT NULL,srs_id INTEGER NOT NULL PRIMARY KEY,organization TEXT NOT NULL,organization_coordsys_id INTEGER NOT NULL,definition TEXT NOT NULL,description TEXT);" +
+        "CREATE TABLE gpkg_contents (table_name TEXT NOT NULL PRIMARY KEY,data_type TEXT NOT NULL,identifier TEXT UNIQUE,description TEXT DEFAULT '',last_change DATETIME NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),min_x DOUBLE,min_y DOUBLE,max_x DOUBLE,max_y DOUBLE,srs_id INTEGER,CONSTRAINT fk_gc_r_srs_id FOREIGN KEY (srs_id) REFERENCES gpkg_spatial_ref_sys(srs_id));" +
+        "CREATE TABLE gpkg_geometry_columns (table_name TEXT NOT NULL,column_name TEXT NOT NULL,geometry_type_name TEXT NOT NULL,srs_id INTEGER NOT NULL,z TINYINT NOT NULL,m TINYINT NOT NULL,CONSTRAINT pk_geom_cols PRIMARY KEY (table_name, column_name),CONSTRAINT uk_gc_table_name UNIQUE (table_name),CONSTRAINT fk_gc_tn FOREIGN KEY (table_name) REFERENCES gpkg_contents(table_name),CONSTRAINT fk_gc_srs FOREIGN KEY (srs_id) REFERENCES gpkg_spatial_ref_sys (srs_id));" +
+        "CREATE TABLE gpkg_ogr_contents(table_name TEXT NOT NULL PRIMARY KEY,feature_count INTEGER DEFAULT NULL);" +
+        'CREATE TABLE "notas_campo" ("fid" INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,"geom" POINT,"data" DATETIME,"autor" TEXT(80),"tipo" TEXT(20),"texto" TEXT(1000),"foto" TEXT(255));' +
+        "CREATE TRIGGER \"trigger_insert_feature_count_notas_campo\" AFTER INSERT ON \"notas_campo\" BEGIN UPDATE gpkg_ogr_contents SET feature_count = feature_count + 1 WHERE lower(table_name) = lower('notas_campo'); END;" +
+        "CREATE TRIGGER \"trigger_delete_feature_count_notas_campo\" AFTER DELETE ON \"notas_campo\" BEGIN UPDATE gpkg_ogr_contents SET feature_count = feature_count - 1 WHERE lower(table_name) = lower('notas_campo'); END;");
+      var ins = "INSERT INTO gpkg_spatial_ref_sys VALUES (?,?,?,?,?,?)";
+      db.run(ins, ["Undefined Cartesian SRS", -1, "NONE", -1, "undefined", "undefined Cartesian coordinate reference system"]);
+      db.run(ins, ["Undefined geographic SRS", 0, "NONE", 0, "undefined", "undefined geographic coordinate reference system"]);
+      db.run(ins, ["WGS 84 geodetic", 4326, "EPSG", 4326, W4326, "longitude/latitude coordinates in decimal degrees on the WGS 84 spheroid"]);
+      db.run(ins, ["ETRS89 / Portugal TM06", 3763, "EPSG", 3763, W3763, null]);
+      db.run("INSERT INTO gpkg_contents (table_name,data_type,identifier,description,srs_id) VALUES ('notas_campo','features','notas_campo','',3763)");
+      db.run("INSERT INTO gpkg_geometry_columns VALUES ('notas_campo','geom','POINT',3763,0,0)");
+      db.run("INSERT INTO gpkg_ogr_contents VALUES ('notas_campo',0)");
+      return db.export();
+    } finally { try { db.close(); } catch (e) {} }
+  }
+  function notasGeojson(g) {
+    var b = g && caixa(g), c = b ? [(b[0] + b[2]) / 2, (b[1] + b[3]) / 2] : [-8.1331, 39.6683];
+    return JSON.stringify({ type: "FeatureCollection", name: "notas_campo", features: [{ type: "Feature",
+      properties: { data: new Date().toISOString().slice(0, 19).replace("T", " "), autor: "", tipo: "observacao", texto: t("exemplo"), foto: "" },
+      geometry: { type: "Point", coordinates: c } }] });
+  }
+
+  function qgsLeve(m, defs, notas) {
     var titulo = (m.local || t("semNome")) + " · IPR Atlas", g = geo(m), b = g && caixa(g), p = preparar(defs, null), cs = [];
+    var nc = notas ? notasXml(notas) : null; if (nc) cs.push(nc);
     var limite = null;
     if (g) {
       limite = { id: "ipr_limite_terreno", nome: t("limite"), prov: "ogr", src: "./limite.geojson" };
@@ -331,7 +420,7 @@
       cs.push(limite);
     }
     var todas = cs.concat(p.todas);
-    var arv = '<layer-tree-group><customproperties><Option/></customproperties>' + (limite ? noArvore(limite, true) : "") +
+    var arv = '<layer-tree-group><customproperties><Option/></customproperties>' + (nc ? noArvore(nc, true) : "") + (limite ? noArvore(limite, true) : "") +
       (p.cam.length ? grupoXml(t("grupoCam"), p.cam) : "") + (p.fundo.length ? grupoXml(t("grupoFundo"), p.fundo) : "") +
       '<custom-order enabled="0">' + todas.map(function (c) { return "<item>" + x(c.id) + "</item>"; }).join("") + "</custom-order></layer-tree-group>";
     var vista = "";
@@ -425,12 +514,18 @@
   function pacoteLeve(m, defs, msg, sinal) {
     var Z = window.JSZip; msg.textContent = t("aJuntar");
     return resolverAgs(defs).then(function (ds) {
-      var r = qgsLeve(m, ds), zip = new Z(), nome = seguro(m.local || ("base_" + (m.encomenda || m.id)));
+      if (sinal && sinal.aborted) return null;
+      msg.textContent = t("aNotas");
+      return sqljs().then(function (SQL) { return { f: "gpkg", b: notasGpkg(SQL) }; }).catch(function () { return { f: "geojson" }; }).then(function (nt) {
+      var r = qgsLeve(m, ds, nt.f), zip = new Z(), nome = seguro(m.local || ("base_" + (m.encomenda || m.id)));
       zip.file(nome + ".qgs", r.qgs);
       if (r.geojson) zip.file("limite.geojson", JSON.stringify(r.geojson));
-      zip.file("CAMADAS-IPR-ATLAS.txt", leiaMe(ds, (m.local || "") + (m.encomenda ? " · #" + m.encomenda : "")));
+      if (nt.f === "gpkg") zip.file("notas_campo.gpkg", nt.b); else zip.file("notas_campo.geojson", notasGeojson(r.geojson));
+      zip.folder("DCIM"); // as fotografias do QField ficam aqui, com caminho relativo
+      zip.file("CAMADAS-IPR-ATLAS.txt", leiaMe(ds, t(nt.f === "gpkg" ? "notasG" : "notasJ") + "\r\n\r\n" + (m.local || "") + (m.encomenda ? " · #" + m.encomenda : "")));
       msg.textContent = t("aGerar");
       return zip.generateAsync({ type: "blob", compression: "DEFLATE", mimeType: "application/zip" }).then(function (blob) { entregar(blob, nome + "_QField_leve.zip", msg, sinal); });
+      });
     });
   }
 
@@ -492,7 +587,7 @@
     var bP = null, bL = null;
     if (temZip) { bP = el("button", "ac", t("preparar")); bP.type = "button"; acc.appendChild(bP); }
     if (qf) { var ao = el("a", "", t("original")); ao.href = qf.url; ao.download = qf.nome; ao.target = "_blank"; ao.rel = "noopener"; acc.appendChild(ao); }
-    if (window.JSZip && (S.vao.length || geo(m))) { bL = el("button", qf ? "" : "ac", t("leve")); bL.type = "button"; bL.title = t("leveT"); acc.appendChild(bL); }
+    if (window.JSZip) { bL = el("button", qf ? "" : "ac", t("leve")); bL.type = "button"; bL.title = t("leveT"); acc.appendChild(bL); }
     c.appendChild(acc); c.appendChild(msg);
     var det = el("details"); det.appendChild(el("summary", "", t("como")));
     var ol = el("ol"); ["c1", "c2", "c3", "c4", "c5"].forEach(function (k) { ol.appendChild(el("li", "", t(k))); }); det.appendChild(ol);
