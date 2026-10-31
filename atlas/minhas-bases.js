@@ -13,7 +13,11 @@
       a ordem das camadas, os níveis de acesso (Explorer e Intelligence) e o que fica guardado são os mesmos.
    4. Sem sessão, ou com a área de cliente fechada (meus-mapas «bloqueado»), não aparece nada.
    Não mexe no app.js. Texto todo escapado (só textContent e atributos). Cores pelas variáveis do Atlas (tema claro e escuro).
-   Desligar: window.IPR_MINHAS_BASES_OFF = true antes de carregar, ou ?minhas_bases=0 no endereço. */
+   Desligar: window.IPR_MINHAS_BASES_OFF = true antes de carregar, ou ?minhas_bases=0 no endereço.
+   31/10/2026 (Nuno, 02h17: «Devia ter Base Cartográfica e Terracrua Design, as duas»): o corpo de cada projecto passa a ter
+   duas partes, «Base Cartográfica» (o que já havia) e «Design Terracrua Design», desenhada pelo design-projecto.js
+   (window.IPRDesign.parte). Um projecto sem camadas da Base mas com desenhos convertidos também se abre. Sem o
+   design-projecto.js tudo fica como antes, só com o título «Base Cartográfica». */
 (function () {
   "use strict";
   if (window.__iprMinhasBases || window.IPR_MINHAS_BASES_OFF) return;
@@ -28,12 +32,12 @@
       prep: "Em preparação", sem: "Sem camadas para o mapa nesta entrega.", ligar: "Ligar todas", desligar: "Desligar todas",
       ficha: "Ficha do projecto", ver: "Ver", verT: "Enquadrar esta Base no mapa", abrir: "Abrir no mapa",
       fora: "Esta Base não está aberta no mapa. Abra-a para ligar as camadas.", op: "Opacidade de ", limite: "Limite do terreno",
-      entrega: "Da entrega", aberta: "aberta no mapa", semNome: "Terreno sem nome" },
+      entrega: "Da entrega", aberta: "aberta no mapa", semNome: "Terreno sem nome", parteBase: "Base Cartográfica" },
     en: { titulo: "My projects", camadas: "layers", camada: "layer", partilhado: "shared with you", rever: "to review",
       prep: "Being prepared", sem: "No map layers in this delivery.", ligar: "Turn all on", desligar: "Turn all off",
       ficha: "Project sheet", ver: "View", verT: "Fit this Base on the map", abrir: "Open on the map",
       fora: "This Base is not open on the map. Open it to turn the layers on.", op: "Opacity of ", limite: "Site boundary",
-      entrega: "From the delivery", aberta: "open on the map", semNome: "Unnamed site" }
+      entrega: "From the delivery", aberta: "open on the map", semNome: "Unnamed site", parteBase: "Base Cartográfica" }
   };
   function t(k) { var l = (window.IPR_LINGUA || "pt") === "en" ? "en" : "pt"; return TX[l][k] || TX.pt[k]; }
 
@@ -79,6 +83,8 @@
     });
     return lista.concat(ent);
   }
+  // Desenhos do projecto (design-projecto.js): há convertidos prontos para o mapa?
+  function design(m) { try { return !!(window.IPRDesign && window.IPRDesign.tem && window.IPRDesign.tem(m)); } catch (e) { return false; } }
   function nCamadas(cs) { return cs.filter(function (c) { return c.id !== "aoi"; }).length; }
   function bases() {
     var P = est(); if (!P || !P.dados || P.dados.bloqueado) return null;
@@ -192,6 +198,7 @@
     "#ipr-mb .ipr-mb-acc button:hover{border-color:var(--ac);color:var(--ac2)}" +
     "#ipr-mb .ipr-mb-acc button.ac{background:var(--ac);border-color:var(--ac);color:var(--bg)}" +
     "#ipr-mb .ipr-mb-nota{margin:2px 10px 6px;font:12px/1.4 Inter,system-ui,sans-serif;color:var(--mu)}" +
+    "#ipr-mb .ipr-mb-parte{padding:6px 10px 3px;font:600 11px/1.2 var(--mono,monospace);letter-spacing:.08em;text-transform:uppercase;color:var(--ac2)}" +
     "#ipr-mb .ipr-mb-sub{padding:7px 10px 2px 12px;font:600 10px/1.2 Inter,system-ui,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--mu)}" +
     "#ipr-mb .ipr-mb-it{padding:0 8px 0 6px}" +
     "#ipr-mb .ipr-mb-it label{display:flex;align-items:flex-start;gap:7px;padding:4px 4px 4px 6px;cursor:pointer;font:13px/1.3 Inter,system-ui,sans-serif;color:var(--tx)}" +
@@ -230,11 +237,13 @@
   document.addEventListener("click", function (e) { try { if (e.target.closest && e.target.closest('.ipe-sb[data-sb="locais"] .ipe-sbh')) setTimeout(marcar, 0); } catch (x) {} });
 
   var ULT = "";
+  // Para o design-projecto.js pedir um redesenho quando tem dados novos.
+  window.IPRMinhasBases = { pintar: function () { try { pintar(true); } catch (e) {} } };
   function assinatura(bs) {
     var P = est() || {}, v = viz();
     if (v && !v.__mbN) v.__mbN = ++assinatura.n;
     return [v ? v.__mbN : 0, P.modo, P.actual && P.actual.id, (bs || []).map(function (m) { return m.id + ":" + (Array.isArray(m.downloads) ? m.downloads.length : 0) + ":" + (MEM.ab[m.id] ? 1 : 0); }).join(","),
-      activas().join(","), window.IPR_LINGUA || "pt", !!document.querySelector("#ipe-cam .ipr-it")].join("|");
+      activas().join(","), window.IPR_LINGUA || "pt", !!document.querySelector("#ipe-cam .ipr-it"), window.IPRDesign && window.IPRDesign.versao ? window.IPRDesign.versao() : 0].join("|");
   }
   assinatura.n = 0;
 
@@ -254,11 +263,11 @@
     var cab = el("div", "ipr-mb-cab"); cab.appendChild(el("span", "", t("titulo"))); cab.appendChild(el("em", "", bs.length)); box.appendChild(cab);
     var ul = el("ul", "ipr-mb-l"), act = activas();
     bs.forEach(function (m) {
-      var cs = camadasDe(m), n = nCamadas(cs), na = actual(m), ab = !!MEM.ab[m.id] && cs.length > 0;
+      var cs = camadasDe(m), n = nCamadas(cs), na = actual(m), dz = design(m), ab = !!MEM.ab[m.id] && (cs.length > 0 || dz);
       var li = el("li", "ipr-mb-b" + (ab ? " ab" : "") + (na ? " actual" : "")); li.setAttribute("data-mb", String(m.id));
       var bc = el("div", "ipr-mb-bc");
       var bt = el("button", "ipr-mb-bt"); bt.type = "button"; bt.setAttribute("data-mb-acc", "ab"); bt.setAttribute("data-mb-foco", "ab" + m.id);
-      bt.setAttribute("aria-expanded", String(ab)); if (!cs.length) bt.disabled = true;
+      bt.setAttribute("aria-expanded", String(ab)); if (!cs.length && !dz) bt.disabled = true;
       bt.appendChild(el("span", "ipr-mb-car"));
       var tt = el("span", "ipr-mb-t"); tt.appendChild(el("b", "", m.local || t("semNome")));
       var meta = [m.area_ha ? num(m.area_ha, 2) + " ha" : "", n ? n + " " + (n === 1 ? t("camada") : t("camadas")) : (m.estado_k === "completed" ? "" : (m.estado || t("prep")))];
@@ -279,6 +288,7 @@
 
   function corpo(m, cs, na, act) {
     var c = el("div", "ipr-mb-corpo");
+    c.appendChild(el("div", "ipr-mb-parte", t("parteBase")));
     if (!na) { c.appendChild(el("p", "ipr-mb-nota", t("fora"))); }
     var acc = el("div", "ipr-mb-acc");
     function b(acao, txt, cl) { var x = el("button", cl || "", txt); x.type = "button"; x.setAttribute("data-mb-acc", acao); x.setAttribute("data-mb-foco", acao + m.id); acc.appendChild(x); }
@@ -305,6 +315,9 @@
       ul.appendChild(li);
     });
     c.appendChild(ul);
+    if (!cs.length) c.appendChild(el("p", "ipr-mb-nota", t("sem")));
+    // Segunda parte: os desenhos do projecto da Terracrua Design (design-projecto.js). Uma falha ali não estraga a Base.
+    if (window.IPRDesign && window.IPRDesign.parte) { try { var dp = window.IPRDesign.parte(m); if (dp) c.appendChild(dp); } catch (e) {} }
     return c;
   }
 
