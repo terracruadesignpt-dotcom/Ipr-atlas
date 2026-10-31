@@ -3719,6 +3719,29 @@
     });
   }
   function pmRgba(h, a) { var c = pmHex(h); return "rgba(" + c[0] + "," + c[1] + "," + c[2] + "," + a + ")"; }
+  // §55b (Nuno, 31/10/2026, 13h38: «quero ver as legendas das plantas e leituras com tudo, incluindo as percentagens»).
+  //     A legenda de cada folha passa a ter, ao lado de cada classe, a parte do terreno que ocupa (% e ha), só com as classes
+  //     presentes e por ordem de área. Os números são os mesmos do quadro de síntese (medida.classes). Linhas (redes, servidões)
+  //     ficam como estavam: medem presença, não área. Se algo falhar, a legenda sai como antes.
+  function pmLegPct(itens, classes, M0, linear) {
+    try {
+      if (linear || !itens || !itens.length) return itens;
+      var por = {}; (classes || []).forEach(function (c) { if (c && c.n != null) por[String(c.n)] = c; });
+      var ms = itens.map(function (it) {
+        var k = por[String(it.txt)];
+        if (!k && itens.length === 1 && M0 && M0.ha > 0) k = { ha: M0.ha, pct: M0.pct };
+        return { it: it, k: k };
+      });
+      var pres = ms.filter(function (x) { return x.k && x.k.ha > 0; });
+      if (!pres.length) return itens;
+      pres.sort(function (a, b) { return b.k.ha - a.k.ha; });
+      return pres.map(function (x) {
+        var o = {}; for (var q in x.it) o[q] = x.it[q];
+        o.txt = String(x.it.txt) + " · " + pmNum(x.k.pct, 1) + " % (" + pmNum(x.k.ha, x.k.ha < 10 ? 2 : 1) + " ha)";
+        return o;
+      });
+    } catch (e) { return itens; }
+  }
   // Uma camada vectorial (OGC API): imagem da folha, legenda e medição dentro do limite.
   function pmCamadaMvt(e, F, L, linear) {
     return pmItems(e.col, F).then(function (fs) {
@@ -3747,6 +3770,7 @@
       var itens = leg ? leg.map(function (l, i) { return grupos[i] ? { t: linear ? "linha" : "area", cor: pmHex(l[0]), txt: plCls(l[1]) } : null; }).filter(Boolean) : [{ t: linear ? "linha" : "area", cor: pmHex(base), txt: plNome(e) }];
       if (leg && grupos[-1]) itens.push({ t: "area", cor: pmHex(base), txt: plT("outras") });
       if (!fs.length) itens = [{ t: linear ? "linha" : "area", cor: pmHex(base), txt: plT("nenhum", { n: plNome(e) }) }];
+      itens = pmLegPct(itens, classes, M0, linear); // 31/10: % e ha de cada classe na legenda da folha
       return { canvas: cv, op: 1, legenda: itens, medida: { ha: M0.ha, pct: M0.pct, presente: tot > 0, classes: leg ? classes : [], n: fs.length, metodo: plT("mVect", { px: pmNum(px, px < 1 ? 2 : 1) }) } };
     });
   }
@@ -3791,6 +3815,7 @@
       var px = F.gw / F.wpx, M0 = pmMedida(tot, L, F), classes = [];
       if (sw) { sw.forEach(function (s, k) { if (cont[k]) { var m = pmMedida(cont[k], L, F); classes.push({ n: s.txt, cor: s.cor, ha: m.ha, pct: m.pct }); } }); if (outras) { var m2 = pmMedida(outras, L, F); classes.push({ n: plT("semCor"), ha: m2.ha, pct: m2.pct }); } classes.sort(function (a, b) { return b.pct - a.pct; }); }
       var itens = lg && lg.itens && lg.itens.length ? lg.itens : [{ t: linear ? "linha" : "area", cor: pmHex(e.cor), txt: plNome(e) }];
+      itens = pmLegPct(itens, classes, M0, linear); // 31/10: % e ha de cada classe na legenda da folha
       return { canvas: cv, op: 0.8, legenda: itens, legendaImg: lg && lg.img, medida: { ha: M0.ha, pct: M0.pct, presente: tot > 0, classes: classes, imagem: 1, metodo: plT("mImg", { px: pmNum(px, px < 1 ? 2 : 1) }) } };
     });
   }
