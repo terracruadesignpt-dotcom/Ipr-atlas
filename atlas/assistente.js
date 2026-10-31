@@ -618,7 +618,7 @@
   function fechar() {
     var p = pn(); if (p) p.remove(); var f = $("ipr-as-fundo"); if (f) f.remove();
     var R = raiz(); if (R) R.classList.remove("ipr-as-on"); pararEspera(); redim();
-    if (!SIMPLES_EXT && !SIMPLES_BT) try { modoSimples(false); } catch (e) {}
+    if (!SIMPLES_EXT) try { modoSimples(false); } catch (e) {}
     try { sessionStorage.setItem("ipr_as_auto", "1"); } catch (e) {}
   }
   function fecharTriagem() {
@@ -832,7 +832,7 @@
   // Modo simples do mapa enquanto se identifica o terreno (Nuno, 30/10, 20h59: «só tem que mostrar um ortofoto, a
   // toponímia, estradas, localizações e o cadastro [...] o mais simples e ligeira possível»). Desliga as outras camadas do
   // Atlas (viz) e as dos add-ons, põe o fundo no ortofotomapa e repõe tudo ao fechar o assistente.
-  var SIMPLES = null, SIMPLES_EXT = false, SIMPLES_BT = false, MANTER = { f_ortosat: 1, f_sub: 1, o_nomes: 1, o_estradas: 1 };
+  var SIMPLES = null, SIMPLES_EXT = false, MANTER = { f_ortosat: 1, f_sub: 1, o_nomes: 1, o_estradas: 1 };
   var CAMADA_OK = /^(iprv-f_ortosat|iprv-f_sub|iprv-o_nomes|iprv-o_estradas|iprv-bg|ipr-compra-|ipe-cad|ipe-loc|ipe-med|gl-draw)/;
   // Mapa de compra (Nuno, 30/10/2026, 23h32: «as pessoas precisam de um mapa normal [...] igual ao Google Maps: a ortofoto,
   // a toponímia, com as estradas, o número das localizações, dos sítios»). Por cima da ortofoto: estradas e localidades do
@@ -863,7 +863,7 @@
   }
 
   // o cartão do comprar.js liga e desliga o mesmo modo (o assistente fechado não o desliga enquanto o cartão o pedir)
-  window.iprModoSimples = function (on) { SIMPLES_EXT = !!on; try { if (on) modoSimples(true); else if (!pn() && !SIMPLES_BT) modoSimples(false); } catch (e) {} };
+  window.iprModoSimples = function (on) { SIMPLES_EXT = !!on; try { if (on) modoSimples(true); else if (!pn()) modoSimples(false); } catch (e) {} };
   function modoSimples(on) {
     var V = window.__ipe && window.__ipe.viz, m = mapa(); if (!m) return;
     if (on) {
@@ -886,7 +886,7 @@
         });
       } catch (e) {}
       etiquetasCompra(true);
-      if (!SIMPLES.ouvir) { SIMPLES.ouvir = function () { if (!SIMPLES) return; if (pn() || SIMPLES_EXT) modoSimples(true); else if (SIMPLES_BT) simplesLargado(); }; try { m.on("styledata", SIMPLES.ouvir); } catch (e) {} }
+      if (!SIMPLES.ouvir) { SIMPLES.ouvir = function () { if (SIMPLES && (pn() || SIMPLES_EXT)) modoSimples(true); }; try { m.on("styledata", SIMPLES.ouvir); } catch (e) {} }
       return;
     }
     if (!SIMPLES) return;
@@ -902,49 +902,6 @@
       }
     } catch (e) {}
   }
-  // Botão «Mapa simples» na barra de cima, ao lado do «Comprar» (Nuno, 31/10/2026, 01h11: «um botão num sítio bem visível
-  // [...] voltar ao mapa simples [...] que as pessoas possam descomplicar o mapa quando tem camadas e temas»). Desliga
-  // camadas e temas e deixa a ortofoto com nomes e estradas (o mesmo mapa da compra). Carregar outra vez repõe o que estava.
-  // Se a pessoa ligar outra camada pelo painel, o modo simples larga-se sem repor nada.
-  var BT_TX = { pt: { s: "Mapa simples", st: "Voltar ao mapa simples: tira as camadas e os temas e fica a ortofoto com os nomes", r: "Repor camadas", rt: "Repor as camadas e os temas que estavam ligados" },
-    en: { s: "Simple map", st: "Back to the simple map: hides layers and themes, keeps the aerial photo with names", r: "Restore layers", rt: "Restore the layers and themes that were on" } };
-  function simplesLargado() {
-    var V = window.__ipe && window.__ipe.viz;
-    try { if (V && V.activas && V.activas().some(function (id) { return !MANTER[id]; })) { var m = mapa(), X = SIMPLES; SIMPLES = null; SIMPLES_BT = false; etiquetasCompra(false); if (m && X && X.ouvir) m.off("styledata", X.ouvir); botaoSimples(); } } catch (e) {}
-  }
-  function botaoSimples() {
-    // no telemóvel e no iPad ao alto a barra de cima não tem espaço: o botão flutua no meio do topo do mapa
-    var flut = window.matchMedia && window.matchMedia("(max-width: 900px)").matches;
-    var R = $("ipe"), tr = flut ? $("ipe-mapa") : R && R.querySelector(".ipe-top .ipe-tr"); if (!tr) return;
-    var b = $("ipr-ms-b"), L = BT_TX[lg()], on = SIMPLES_BT && !!SIMPLES;
-    if (!b) {
-      if (!$("ipr-ms-css")) { var st = document.createElement("style"); st.id = "ipr-ms-css"; st.textContent =
-        "#ipr-ms-b{display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:0 13px;margin:0 2px;border:1px solid var(--ac,#a8b878);border-radius:20px;background:transparent;color:var(--tx,#e9eddc);font:600 14px/1 Inter,system-ui,sans-serif;cursor:pointer;white-space:nowrap;flex:none}" +
-        "#ipr-ms-b:hover{background:rgba(168,184,120,.14)}#ipr-ms-b[aria-pressed=true]{background:var(--ac,#a8b878);color:var(--bg,#121410)}" +
-        "#ipr-ms-b:focus-visible{outline:2px solid var(--ac2,#cdd6a8);outline-offset:2px}#ipr-ms-b svg{flex:none}" +
-        "#ipr-ms-b.flut{position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:6;min-height:36px;padding:0 12px;font-size:13px;background:rgba(18,20,16,.86);box-shadow:0 2px 8px rgba(0,0,0,.35)}#ipr-ms-b.flut[aria-pressed=true]{background:var(--ac,#a8b878)}" +
-        "html.ipr-ini-on #ipr-ms-b{visibility:hidden}"; document.head.appendChild(st); }
-      b = document.createElement("button"); b.type = "button"; b.id = "ipr-ms-b";
-      b.innerHTML = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14M15 6v14"/></svg><span></span>';
-      b.addEventListener("click", function () {
-        try {
-          if (SIMPLES_BT && SIMPLES) { SIMPLES_BT = false; if (!pn() && !SIMPLES_EXT) modoSimples(false); }
-          else { SIMPLES_BT = true; modoSimples(true); }
-        } catch (e) {}
-        botaoSimples();
-      });
-    }
-    var sp = b.querySelector("span"), tx = on ? L.r : L.s, tt = on ? L.rt : L.st;
-    if (sp.textContent !== tx) sp.textContent = tx;
-    if (b.title !== tt) { b.title = tt; b.setAttribute("aria-label", tt); }
-    b.setAttribute("aria-pressed", on ? "true" : "false");
-    b.classList.toggle("flut", !!flut);
-    if (b.parentNode && b.parentNode !== tr) b.remove();
-    if (flut) { if (!b.isConnected) tr.appendChild(b); return; }
-    if (!b.isConnected) { var cp = $("ipr-cp-b"); if (cp && cp.parentNode === tr) tr.insertBefore(b, cp); else tr.appendChild(b); }
-    else { var cp2 = $("ipr-cp-b"); if (cp2 && cp2.parentNode === tr && b.nextSibling !== cp2) tr.insertBefore(b, cp2); }
-  }
-  (function cicloBotao() { try { botaoSimples(); } catch (e) {} setTimeout(cicloBotao, 2000); })();
   function terrenoAchado() { S.geo = true; S.local = {}; S.ha = areaHa(); S.consulta = false; S.nsei = false; vai("confirmar"); }
   function semLimite(local) { S.geo = false; S.local = local || {}; S.ha = null; depoisTerreno(); }
   function depoisTerreno() {
