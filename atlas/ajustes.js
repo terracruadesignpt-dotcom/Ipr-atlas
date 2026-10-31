@@ -916,6 +916,11 @@
       var nome = (b.textContent || "").trim() || "Formiga";
       b.classList.add("tcd-fm-mini"); if (!b.title) b.title = nome; b.setAttribute("aria-label", b.title || nome);
     }
+    // §73f (Nuno, 31/10/2026, 20h08: «O formiga continua a saltar»): no Atlas quem põe a Formiga no sítio é só o §73d (canto
+    // de baixo, à direita, acima do mapa). Esta função e o §73d corriam ambos de tempos a tempos e cada um calculava o fundo de
+    // maneira diferente (fundo do contentor do mapa contra fundo do mapa, por cima das abas): no telemóvel a Formiga saltava
+    // entre os dois sítios. Com o §73d presente, aqui só se trata do ícone pequeno.
+    if (window.__ipr73d) return true;
     var I = mapa(), ctr = document.querySelector("#ipe .ipe-tools") || document.querySelector("#ipe .maplibregl-ctrl-top-right"), cv = I && I.getContainer ? I.getContainer() : null;
     if (ctr && cv) {
       var rc = cv.getBoundingClientRect(), rt = ctr.getBoundingClientRect();
