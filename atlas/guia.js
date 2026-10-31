@@ -15,6 +15,15 @@
   var url = new URLSearchParams(location.search), pedido = url.get("servico"), EST = null;
   function lerE() { try { return JSON.parse(sessionStorage.getItem(K) || "null"); } catch (e) { return null; } }
   function gravarE() { try { if (EST) sessionStorage.setItem(K, JSON.stringify(EST)); else sessionStorage.removeItem(K); } catch (e) {} }
+  // Planta e Leitura vendem-se sem conta (Nuno, 30/10/2026, 18h35 e 19h36): os cartões da /documentos/ com ?servico=planta,
+  // leitura ou territorial passam a abrir o assistente de compra pergunta a pergunta (assistente.js), que não pede conta.
+  // A Base Cartográfica continua neste guia (precisa de conta).
+  if (pedido && /^(planta|leitura|territorial)$/.test(pedido) && !window.IPR_ASSISTENTE_OFF) {
+    var prod = pedido === "planta" ? "planta" : "leitura", n0 = 0;
+    try { sessionStorage.removeItem(K); sessionStorage.setItem("ipr_as_auto", "1"); } catch (e) {}
+    (function esp() { if (typeof window.__iprAssistenteAbrir === "function") { window.__iprAssistenteAbrir(prod); return; } if (++n0 < 60) setTimeout(esp, 250); })();
+    return;
+  }
   if (pedido && SERV.indexOf(pedido) >= 0) { EST = { s: pedido, p: 0, t: Date.now(), q: url.get("q") || "", qf: 0 }; gravarE(); }
   else { EST = lerE(); if (!EST || SERV.indexOf(EST.s) < 0 || Date.now() - EST.t > 3 * 3600e3) { EST = null; gravarE(); return; } }
   // A triagem do §63 (ajustes.js) abre na primeira visita: com o assistente ligado não abre.
@@ -154,7 +163,14 @@
       var a = b.getAttribute("data-g");
       if (a === "sair") return sair();
       if (a === "seg") { if (passo().ultimo || EST.p >= lista().length - 1) return sair(); avancar(); return; }
-      if (a === "vol") { if (EST.p > 0) { EST.p--; while (EST.p > 0 && passo().saltar && passo().saltar()) EST.p--; gravarE(); entrarPasso(); } return; }
+      if (a === "vol") {
+        // «Voltar» em todos os passos (Nuno, 30/10/2026, 20h49): no fim volta ao último passo; no primeiro volta à página de onde
+        // a pessoa veio (documentos, cartões de serviço) ou, sem ela, sai do assistente.
+        if (EST.fim) { EST.fim = 0; gravarE(); entrarPasso(); return; }
+        if (EST.p > 0) { EST.p--; while (EST.p > 0 && passo().saltar && passo().saltar()) EST.p--; gravarE(); entrarPasso(); return; }
+        var ref = ""; try { ref = document.referrer && new URL(document.referrer).origin === location.origin && !/\/atlas\//.test(new URL(document.referrer).pathname) ? document.referrer : ""; } catch (e) {}
+        sair(); if (ref) history.back(); return;
+      }
       if (a && a.indexOf("ir:") === 0) { EST.s = a.slice(3); EST.p = 0; gravarE(); var i = lista().map(function (x) { return x.id; }).indexOf("escolher"); EST.p = Math.max(0, area() ? i + 1 : 0); entrarPasso(); }
     });
     document.addEventListener("keydown", function (e) { if (e.key === "Escape" && document.getElementById("ipr-gu")) sair(); });
@@ -181,7 +197,7 @@
       var h = '<span class="seta"></span><p class="k">' + t(NOME[EST.s][0], NOME[EST.s][1]) + " · " + t("passo ", "step ") + (EST.p + 1) + t(" de ", " of ") + n + "</p>" +
         '<div class="pp">' + L.map(function (x, i) { return '<i class="' + (i < EST.p ? "f" : i === EST.p ? "a" : "") + '"></i>'; }).join("") + "</div>" +
         "<h4>" + (fim ? t("Feito", "Done") : p.tt()) + "</h4><p>" + (fim ? p.fim() : p.tx()) + '</p><div class="b">';
-      if (EST.p > 0 && !fim) h += '<button type="button" data-g="vol">' + t("Voltar", "Back") + "</button>";
+      h += '<button type="button" data-g="vol">' + t("Voltar", "Back") + "</button>";
       (p.extra || []).forEach(function (x) { h += '<button type="button" class="pri" data-g="ir:' + x[0] + '">' + x[1]() + "</button>"; });
       if (fim) h += '<button type="button" class="pri" data-g="sair">' + t("Fechar", "Close") + "</button>";
       else if (p.manual) h += '<button type="button" class="' + (p.extra ? "" : "pri") + '" data-g="seg">' + p.manual() + "</button>";
