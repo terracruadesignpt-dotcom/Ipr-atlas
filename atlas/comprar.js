@@ -589,6 +589,8 @@
   }
   function abrirCartao(forcar) {
     var area = areaTexto(); if (!area) return false;
+    // o assistente mandou a pessoa para o formulário da Base: o cartão não se abre por cima dele (31/10, ronda de lançamento)
+    if (!forcar && (window.__iprFormAte || 0) > Date.now()) return false;
     var vb = txt("ipe-preco"), vl = txt("ipe-preco-l");
     if (!vb || /^desde\s/i.test(vb)) { if (!forcar) return false; }
     css(); fecharCartao(); fecharPilula();
@@ -700,6 +702,7 @@
     "@media (max-width:560px){.ipr-jan-o{width:48px}}";
 
   function fecharCartao(manter) { var c = $("ipr-cp-ct"); if (c) c.remove(); foco(false); if (!manter && !$("ipr-cp-vt")) simples(false); }
+  window.iprFecharCartao = function () { try { fecharCartao(true); fecharPilula(); } catch (e) {} };
   // só ortofoto, cadastro e toponímia enquanto se escolhe o terreno e o produto (Nuno, 30/10, 23h19)
   function simples(on) { try { if (typeof window.iprModoSimples === "function") window.iprModoSimples(!!on); } catch (e) {} }
   // enquanto o cartão está aberto, o mapa fica com a largura toda (Nuno, 30/10, 22h13: «não precisa de mostrar os blocos laterais»)

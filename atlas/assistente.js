@@ -93,7 +93,7 @@
         gps: "A ir para a sua posição. Depois clique nas parcelas ou desenhe o limite.",
         ficheiro: "Escolha o ficheiro. O limite aparece no mapa.",
         locais: "Escolha o local na lista.",
-        artigo: "Preencha o concelho, a freguesia e o artigo no formulário à direita (ou junte a caderneta)."
+        artigo: "Preencha o concelho, a freguesia e o artigo no formulário de encomenda (ou junte a caderneta)."
       },
       coordPh: "38.12345, -8.12345", coordIr: "Ir", coordMau: "Não percebi as coordenadas. Escreva latitude e longitude, por exemplo 37.65, -8.21.",
       nicPh: "AAA000742446", nicIr: "Localizar",
@@ -127,7 +127,7 @@
       erro: "Não foi possível registar o pedido: {m}",
       baseConta: "A Base Cartográfica fica na sua conta, com o projecto e os ficheiros. Entre ou crie conta para continuar: o terreno que indicou fica guardado.",
       entrar: "Entrar ou criar conta",
-      baseForm: "Preencha os seus dados no formulário à direita e carregue em «Enviar pedido». Com cobertura LiDAR total, paga logo a seguir; sem ela, confirmamos antes de qualquer pagamento.",
+      baseForm: "Preencha os seus dados no formulário de encomenda e carregue em «Enviar pedido». Com cobertura LiDAR total, paga logo a seguir; sem ela, confirmamos antes de qualquer pagamento.",
       baseIr: "Ir para o formulário", baseSemConta: "Não precisa de conta: basta o nome e o e-mail. Se já tem conta, pode entrar para a encomenda ficar na sua área.", jaConta: "Já tenho conta: entrar",
       okMail: "Abrimos o seu e-mail com o pedido já escrito para info@regenerativo.pt. Envie-o e respondemos com a ligação de pagamento, normalmente no mesmo dia útil.",
       locaisN: "{n} locais", mini: "À espera do terreno no mapa · tocar para abrir o assistente",
@@ -178,7 +178,7 @@
         gps: "Going to your position. Then click the parcels or draw the boundary.",
         ficheiro: "Choose the file. The boundary appears on the map.",
         locais: "Choose the place from the list.",
-        artigo: "Fill in the municipality, parish and article in the form on the right (or attach the deed)."
+        artigo: "Fill in the municipality, parish and article in the order form (or attach the deed)."
       },
       coordPh: "38.12345, -8.12345", coordIr: "Go", coordMau: "I could not read the coordinates. Type latitude and longitude, e.g. 37.65, -8.21.",
       nicPh: "AAA000742446", nicIr: "Find",
@@ -212,7 +212,7 @@
       erro: "The order could not be registered: {m}",
       baseConta: "The Base Map is kept in your account, with the project and the files. Sign in or create an account to continue: the land you marked is kept.",
       entrar: "Sign in or create an account",
-      baseForm: "Fill in your details in the form on the right and press «Send request». With full LiDAR coverage you pay straight away; otherwise we confirm before any payment.",
+      baseForm: "Fill in your details in the order form and press «Send request». With full LiDAR coverage you pay straight away; otherwise we confirm before any payment.",
       baseIr: "Go to the form", baseSemConta: "No account needed: just your name and e-mail. If you already have an account you can sign in so the order is kept in your area.", jaConta: "I have an account: sign in",
       okMail: "We opened your e-mail with the order already written to info@regenerativo.pt. Send it and we reply with the payment link, usually the same working day.",
       locaisN: "{n} places", mini: "Waiting for the land on the map · tap to open the assistant",
@@ -355,7 +355,7 @@
     "#ipe .ipe-rosa,#ipe .ipe-rosa.rod{background:transparent!important;box-shadow:none!important;border:0!important}" +
     "html body #ipe .ipe-tools>.ipr-nav .ipe-rosa,html body #ipe .ipe-tools>.ipr-nav .ipe-rosa svg,html body #ipe .ipr-nav .ipe-rosa,html body #ipe .ipr-nav .ipe-rosa svg{width:34px!important;height:34px!important;min-width:0!important}" +
     "#ipe .ipr-pd-b span{font-size:13px!important;line-height:1.25!important;word-break:normal!important;overflow-wrap:normal!important;hyphens:manual!important}";
-  function estilos() { if ($("ipr-as-css")) return; var s = el("style"); s.id = "ipr-as-css"; s.textContent = CSS + JAN_CSS; document.head.appendChild(s); }
+  function estilos() { if ($("ipr-as-css")) return; var s = el("style"); s.id = "ipr-as-css"; s.textContent = CSS + JAN_CSS + "@media (max-width:900px){html.ipr-form-base #ipr-as-b{display:none!important}}"; document.head.appendChild(s); }
 
   // ---------------------------------------------------------------- 1. topo e ecossistema
   var TOPO_ORIG = /^(Nova Base Cartográfica|New Base Map)$/;
@@ -409,12 +409,12 @@
     var sb = [].filter.call(document.querySelectorAll('#ipe [data-pane="enc"] button, #ipe .ipe-tab2 button'), function (b) { return /^(Base Cartogr|Base Map$)/.test(b.textContent.trim()) && visivel(b); })[0];
     if (sb && sb.getAttribute("aria-pressed") !== "true" && sb.getAttribute("aria-selected") !== "true" && !sb.classList.contains("on")) sb.click();
   }
-  function abrirEncomenda(depois) {
+  function abrirEncomenda(depois, manter) {
     var P = est();
     if (!$("ipe-form") || (P && P.modo === "cliente")) { /* no projecto aberto o formulário existe na mesma (separador enc) */ }
     if (!abrirDireita("enc")) { if (depois) depois(null); return; }
     setTimeout(function () { try { separadorBase(); } catch (e) {} esperar(function () { var f = $("ipe-form"); return f && visivel(f) ? f : null; }, 4000, function (f) { if (depois) depois(f); }); }, 150);
-    if (movel()) setTimeout(fecharDireitaMovel, 700);
+    if (movel() && !manter) setTimeout(fecharDireitaMovel, 700);
   }
   function fecharDireitaMovel() {
     var R = raiz(), dir = $("ipe-dir"); if (!movel() || !dir || !dir.classList.contains("aberto")) return;
@@ -1187,12 +1187,18 @@
       titulo(c, t("p4T"), S.geo ? t("baseForm") : q("baseSemLimite"));
       var b = el("button", "bt w", t("baseIr")); b.type = "button"; c.appendChild(b);
       var irForm = function () {
+        window.__iprFormAte = Date.now() + 10 * 60000;
+        try { if (typeof window.iprFecharCartao === "function") window.iprFecharCartao(); } catch (e) {}
         abrirEncomenda(function (f) {
           if (!f) return;
           if (!S.geo) { metodo("artigo"); var L = S.local || {}; var lc = $("ipe-local"); if (lc && !lc.value) { lc.value = [L.nic, L.artigo && ("art. " + L.artigo), L.freguesia, L.concelho, L.morada, L.coord].filter(Boolean).join(", "); lc.dispatchEvent(new Event("input", { bubbles: true })); } }
           var n = $("ipe-nome"); luz(n); try { n.focus({ preventScroll: true }); } catch (e) {}
           fechar();
-        });
+          // no telemóvel o formulário fica aberto (31/10: antes fechava-se e a pessoa não o via)
+          if (movel()) setTimeout(function () { try { abrirDireita("enc"); var n2 = $("ipe-nome"); if (n2) n2.scrollIntoView({ block: "start" });
+            var H = document.documentElement, D = $("ipe-dir"); H.classList.add("ipr-form-base");
+            if (D) { var ob = new MutationObserver(function () { if (!D.classList.contains("aberto")) { H.classList.remove("ipr-form-base"); ob.disconnect(); } }); ob.observe(D, { attributes: true, attributeFilter: ["class"] }); } } catch (e) {} }, 400);
+        }, true);
       };
       b.addEventListener("click", irForm);
       if (!sessao()) { c.appendChild(el("p", "nota", t("baseSemConta"))); var ej = el("a", "lk", t("jaConta")); ej.href = entrarUrl(); c.appendChild(ej); }
