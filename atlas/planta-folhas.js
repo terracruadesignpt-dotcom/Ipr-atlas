@@ -18,6 +18,13 @@
    Âmbito: só entre o clique em «Gerar PDF» e o fim da geração (o botão volta a ficar activo; tecto de 10 min), só para
    pedidos feitos com um endereço em texto e um objecto de opções (o pmPedir e o plImg); o MapLibre pede com objectos
    Request e nunca é interceptado. As imagens da planta vêm todas por fetch (o Image() só lê blob: e data:).
+   4. (31/10/2026, reporte do Nuno, 00h45: planta de condicionantes de Aljezur aos bocados, «isto é o layer mais
+      importante».) Os mosaicos /wms/ da planta esperavam na fila de uma vaga com o relógio de 30 s do pmPedir já a contar:
+      os de trás eram cancelados antes de chegar a vez, e o SNIT às vezes demora mais de 10 s. Agora, para /wms/:
+      - o pedido segue sem o sinal do pmPedir, com relógio próprio de 90 s que só conta depois de entrar na fila;
+      - leva pl=1, para o m90379 (v2) esperar pela vez em vez de responder vazio, dar mais tempo ao SNIT e ignorar falhas
+        antigas memorizadas;
+      - imagem vazia ou 502/503/504 repete até 3 vezes, ao fim de cerca de 2, 5 e 10 s.
    Desligar: window.IPR_PLANTA_FOLHAS_OFF = true antes de carregar, ou ?planta_folhas=0 no endereço. */
 (function () {
   "use strict";
@@ -97,23 +104,32 @@
   // ---------- pedidos da planta ----------
   // Cada tentativa ocupa uma vaga da fila só enquanto o pedido e a leitura do corpo duram; a espera antes da repetição
   // é feita fora da fila.
-  function pedidoPlanta(u, init, fila, tipo) {
-    var sinal = init && init.signal;
+  function pedidoPlanta(u, init, fila, tipo, longo) {
+    // longo (mosaicos /wms/): o sinal do pmPedir (30 s desde a chamada, fila incluída) não se usa; cada tentativa tem 90 s
+    // contados depois de entrar na fila, e repete até 3 vezes.
+    var sinal = longo ? null : init && init.signal, ESPERAS = longo ? [2000, 5000, 10000] : [1800];
     function tentar(url) {
       return fila.entrar(sinal).then(function () {
-        var saiu = false;
-        function sair() { if (!saiu) { saiu = true; fila.sair(); } }
-        return nativo(url, init).then(lerResp).then(function (a) { sair(); return a; }, function (x) { sair(); throw x; });
+        var saiu = false, rel = null, ini = init;
+        function sair() { if (!saiu) { saiu = true; fila.sair(); if (rel) clearTimeout(rel); } }
+        if (longo && window.AbortController) {
+          var ac = new AbortController(); rel = setTimeout(function () { ac.abort(); }, 90000);
+          ini = Object.assign({}, init, { signal: ac.signal });
+        } else if (longo) { ini = Object.assign({}, init); delete ini.signal; }
+        return nativo(url, ini).then(lerResp).then(function (a) { sair(); return a; }, function (x) {
+          sair(); if (longo && x && x.name === "AbortError") return { vazio: true, r: indisponivel("tempo") }; throw x;
+        });
       });
     }
-    return tentar(u).then(function (a) {
+    function seguinte(a, n) {
       if (!a.vazio || tipo === "json") return a.r;
+      if (n >= ESPERAS.length) return n ? indisponivel("vazio") : a.r;
       G.repetidos++;
-      return esperar(1800 + Math.round(Math.random() * 400), sinal).then(function () { return tentar(comR(u)); }).then(function (b) {
-        return b.vazio ? indisponivel("vazio") : b.r;
-      });
-    });
+      return esperar(ESPERAS[n] + Math.round(Math.random() * 400), sinal).then(function () { return tentar(comR(u)); }).then(function (b) { return seguinte(b, n + 1); });
+    }
+    return tentar(u).then(function (a) { return seguinte(a, 0); });
   }
+  function comPl(u) { return /[?&]leg=1/.test(u) ? u : u + (u.indexOf("?") < 0 ? "?" : "&") + "pl=1"; }
   function contarPdm(u, p) {
     if (!/\/wms\/pdm_\d{4}/.test(u) || /[?&]leg=1/.test(u)) return p;
     G.pdmTot++;
@@ -142,7 +158,7 @@
             var alvo = ""; try { alvo = decodeURIComponent((/[?&]u=([^&]*)/.exec(input) || [])[1] || ""); } catch (e) {}
             return pedidoPlanta(input, init, FILA_PX, IMG_RE.test(alvo) ? "img" : "json");
           }
-          if (WMS_RE.test(input)) return contarPdm(input, pedidoPlanta(input, init, FILA_WMS, /[?&]leg=1/.test(input) ? "leg" : "img"));
+          if (WMS_RE.test(input)) return contarPdm(input, pedidoPlanta(comPl(input), init, FILA_WMS, /[?&]leg=1/.test(input) ? "leg" : "img", true));
         }
       }
     } catch (e) {}
