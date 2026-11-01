@@ -9,6 +9,12 @@
    - um regulador de transparência (35 a 100 %).
    Posição e transparência ficam lembradas por janela neste navegador (localStorage; falha em silêncio).
    Janelas que já têm a barra própria (.ipr-jan: assistente e cartão de preços) ficam como estão.
+   v2 (Nuno, 01/11/2026, 19h09, foto do iPad com a escolha da Base do simulador: «todas as caixas devem ter botão de
+   cancelar, possibilidade de a arrastar e móvel de transparência. Já te disse isto»):
+   - a barra ganha um «×» que fecha a janela: usa o botão de fechar/cancelar da própria janela quando ele existe (assim o
+     ficheiro dono faz o que faria), senão esconde-a;
+   - entram também as caixas que vivem dentro dos painéis laterais mas se abrem por cima do mapa (escolha da Base dos
+     simuladores #ipr-sb, painéis dos simuladores #ipr-fs e #ipr-as e outras com id ipr-* posicionadas por cima do mapa).
    Fora: a barra de cima, os painéis laterais e a gaveta do telemóvel, o ecrã de entrada (ocupa o ecrã todo) e o aviso
    de cookies. Desligar: ?janelas=0 ou localStorage ipr_janelas_off = 1. */
 (function () {
@@ -21,9 +27,10 @@
   var NOME = /(^|[\s_-])(popup|pop|modal|dialog|dlg|janela|ficha|painel|panel|card|caixa|aviso|toast|legenda|lgd|formiga|sim|tip)([\s_-]|$)/i;
   var FORA_ID = /^(ipe|ipe-mapa|ipe-top|ipe-esq|ipe-dir|ipe-tools|tcdck|ipr-ini|ipr-ms-b|ipr-cp-b|ipr-as-b|ipr-as-fundo|wpadminbar)$/;
   var FORA_SEL = ".ipe-top,.ipe-esq,.ipe-dir,.ipe-tools,.maplibregl-ctrl,.maplibregl-canvas-container,#tcdck,#wpadminbar,.ipr-janb";
-  var T = function () { return (D.documentElement.lang || "").indexOf("en") === 0 || W.IPR_LINGUA === "en" ? { m: "Move (double-tap to reset)", o: "Transparency" } : { m: "Mover (duplo toque repõe)", o: "Transparência" }; };
+  var T = function () { return (D.documentElement.lang || "").indexOf("en") === 0 || W.IPR_LINGUA === "en" ? { m: "Move (double-tap to reset)", o: "Transparency", f: "Close" } : { m: "Mover (duplo toque repõe)", o: "Transparência", f: "Fechar" }; };
   var VIVAS = []; // { el, bar, k, G }
-  var SEL = "[role=dialog],[aria-modal=true],.maplibregl-popup,[id*=lgd],[id*=popup],[id*=painel],[id*=dlg],[id*=janela],[id*=ficha],[class*=popup],[class*=modal],[class*=dialog],[class*=painel],[class*=panel],[class*=ficha],[class*=janela],[class*=legenda]";
+  var FORCA = "#ipr-sb,#ipr-fs,#ipr-as,[id^=ipr-sb-]";
+  var SEL = FORCA + ",[role=dialog],[aria-modal=true],.maplibregl-popup,[id*=lgd],[id*=popup],[id*=painel],[id*=dlg],[id*=janela],[id*=ficha],[class*=popup],[class*=modal],[class*=dialog],[class*=painel],[class*=panel],[class*=ficha],[class*=janela],[class*=legenda]";
 
   function css() {
     if (D.getElementById("ipr-janb-css")) return;
@@ -31,7 +38,7 @@
     s.textContent = ".ipr-janb{position:fixed;z-index:2147483000;display:flex;align-items:center;gap:4px;padding:2px 6px 2px 2px;border-radius:14px;background:rgba(18,22,15,.92);border:1px solid #2E3A26;box-shadow:0 2px 8px rgba(0,0,0,.35);opacity:.55;transition:opacity .15s}" +
       ".ipr-janb:hover,.ipr-janb:focus-within,.ipr-janb.on{opacity:1}" +
       ".ipr-janb button{all:unset;box-sizing:border-box;cursor:grab;touch-action:none;display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:13px;color:#cfd6bd}" +
-      ".ipr-janb button:active{cursor:grabbing}.ipr-janb button:focus-visible{outline:2px solid #94BE39}" +
+      ".ipr-janb .ipr-janb-x{cursor:pointer;font:600 16px/1 system-ui,sans-serif}.ipr-janb button:active{cursor:grabbing}.ipr-janb button:focus-visible{outline:2px solid #94BE39}" +
       ".ipr-janb input{width:58px;height:18px;margin:0;accent-color:#94BE39;cursor:pointer;touch-action:pan-x}" +
       "@media (hover:none){.ipr-janb{opacity:.85}}";
     D.head.appendChild(s);
@@ -48,7 +55,9 @@
   function candidata(el) {
     if (!el || el.nodeType !== 1 || el === D.body || el === D.documentElement) return false;
     if (el.id && FORA_ID.test(el.id)) return false;
-    if (el.closest(FORA_SEL) || el.querySelector(".ipr-jan")) return false;
+    var forca = false; try { forca = el.matches(FORCA); } catch (e) {}
+    if (!forca && (el.closest(FORA_SEL) || el.querySelector(".ipr-jan"))) return false;
+    if (forca) { var sf = getComputedStyle(el), bf = el.getBoundingClientRect(); if (bf.width < 160 || bf.height < 60) return false; for (var pf = el.parentElement; pf && pf !== D.body; pf = pf.parentElement) { if (pf.__iprJanb) return false; } return sf.position === "fixed" || sf.position === "absolute" || sf.position === "sticky" || el.getAttribute("role") === "dialog"; }
     if (el.classList.contains("ipr-jan") || el.classList.contains("ipr-janb")) return false;
     var s = getComputedStyle(el); if (s.position !== "fixed" && s.position !== "absolute") return false;
     var b = el.getBoundingClientRect();
@@ -76,7 +85,19 @@
     var pg = D.createElement("button"); pg.type = "button"; pg.title = t.m; pg.setAttribute("aria-label", t.m);
     pg.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M12 2l3 3h-2v4h4V7l3 3-3 3v-2h-4v4h2l-3 3-3-3h2v-4H7v2l-3-3 3-3v2h4V5H9z"/></svg>';
     var op = D.createElement("input"); op.type = "range"; op.min = "35"; op.max = "100"; op.step = "5"; op.value = String(G.o || 100); op.title = t.o; op.setAttribute("aria-label", t.o);
-    bar.appendChild(pg); bar.appendChild(op); D.body.appendChild(bar);
+    var fx = D.createElement("button"); fx.type = "button"; fx.className = "ipr-janb-x"; fx.title = t.f; fx.setAttribute("aria-label", t.f); fx.textContent = "×";
+    bar.appendChild(pg); bar.appendChild(op); bar.appendChild(fx); D.body.appendChild(bar);
+    fx.addEventListener("click", function (e) {
+      e.preventDefault(); e.stopPropagation();
+      var dono = null, cs = el.querySelectorAll("button,a,[role=button]");
+      for (var i = 0; i < cs.length && !dono; i++) {
+        var c = cs[i], tx = ((c.getAttribute("aria-label") || "") + " " + (c.title || "") + " " + (c.textContent || "")).trim();
+        if (c.closest(".ipr-janb")) continue;
+        if (/^(×|✕|✖|x)$/i.test((c.textContent || "").trim()) || /\b(fechar|cancelar|close|cancel)\b/i.test(tx)) dono = c;
+      }
+      if (dono) { try { dono.click(); } catch (x) {} }
+      setTimeout(function () { if (el.isConnected && visivel(el)) { el.hidden = true; el.style.display = "none"; } arrumar(); }, 120);
+    });
     var J = { el: el, bar: bar, k: k, G: G };
     function aplicar() {
       el.style.setProperty("opacity", String(Math.max(35, Math.min(100, +op.value || 100)) / 100), "important");
