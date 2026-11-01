@@ -102,8 +102,8 @@
 
   // ───────────── estilos ─────────────
   function css() {
-    if (document.getElementById("ipr-as-css")) return;
-    var st = document.createElement("style"); st.id = "ipr-as-css";
+    if (document.getElementById("ipr-agua-sim-css")) return;
+    var st = document.createElement("style"); st.id = "ipr-agua-sim-css";
     st.textContent =
       "#ipr-as{position:absolute;z-index:41;top:12px;right:12px;width:360px;max-width:calc(100% - 24px);max-height:calc(100% - 24px);display:flex;flex-direction:column;background:var(--p1,#171a13);color:var(--tx,#ebe7d8);border:1px solid var(--ln2,#3b4232);border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.35);font:13px/1.45 Inter,system-ui,sans-serif;overflow:hidden}" +
       "#ipr-as[hidden]{display:none}#ipr-as *{box-sizing:border-box}#ipr-as.min .as-corpo,#ipr-as.min .as-tabs{display:none}" +
