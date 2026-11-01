@@ -364,12 +364,24 @@
       });
   }
   var timer = null;
+  // 01/11/2026 (Nuno: «não subcarregar o site»): cada pergunta ao site custa um pedido ao WordPress. Pergunta-se mais vezes
+  // no primeiro minuto e cada vez menos depois; com o separador escondido, de 30 em 30 s. Ao voltar ao separador, já.
+  function intervalo(job) {
+    if (document.hidden) return 30000;
+    if (job.estado !== "running") return 10000;
+    var dt = Date.now() - (job.t0 || Date.now());
+    return dt < 60000 ? 4000 : dt < 300000 ? 8000 : dt < 900000 ? 12000 : 20000;
+  }
+  document.addEventListener("visibilitychange", function () {
+    if (!document.hidden && S.job && S.job.id) { clearTimeout(timer); acompanhar(); }
+  });
   function acompanhar() {
     clearTimeout(timer);
     var a = actual(), job = S.job; if (!job || !job.id || !a) return;
     api("fogo/trabalho/" + job.id + "?enc=" + encodeURIComponent(a.id)).then(function (r) {
       if (S.job !== job) return;                     // resposta de um acompanhamento antigo (outra simulação ou «Ver»)
       job.estado = r.estado;
+      if (r.estado === "running" && !job.t0) job.t0 = Date.now();
       if (r.estado === "successful") {
         S.res = r; S.job = null;
         var v = (r.ficheiros || []).filter(function (f) { return f.nome === "vista/vista.json"; })[0];
@@ -381,7 +393,7 @@
         pintar(); return;
       }
       if (r.estado === "failed" || r.estado === "dismissed") { S.erro = t("falhou") + (r.mensagem ? ": " + r.mensagem : "."); S.job = null; pintar(); return; }
-      pintar(); timer = setTimeout(acompanhar, 4000);
+      pintar(); timer = setTimeout(acompanhar, intervalo(job));
     }).catch(function (err) { if (S.job !== job) return; S.erro = err.message; S.job = null; pintar(); });
   }
   function listar() {
