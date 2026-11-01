@@ -414,6 +414,17 @@
       .catch(function (err) { S.job = null; S.erro = err.message; if (/aviso/i.test(err.message)) { S.aviso = false; try { localStorage.removeItem("ipr_agua_aviso"); } catch (e2) {} } pintar(); });
   }
   var timer = null;
+  // Cada consulta ao estado é um pedido ao site e outro ao motor (01/11/2026, Nuno: «não sobrecarregar o site»):
+  // 4 s no primeiro minuto, depois cada vez mais espaçado até 20 s; 30 s com o separador escondido; na fila, 10 s.
+  function intervalo(job, estado) {
+    if (document.hidden) return 30000;
+    if (estado !== "running") return 10000;
+    var ini = job && job.det && job.det.iniciado ? Date.parse(job.det.iniciado) : (job && job.t0) || Date.now();
+    var dt = Date.now() - ini;
+    return dt < 60000 ? 4000 : dt < 300000 ? 8000 : dt < 900000 ? 12000 : 20000;
+  }
+  // Ao voltar ao separador, consulta logo (sem esperar pelos 30 s).
+  document.addEventListener("visibilitychange", function () { if (!document.hidden && S.job && S.job.id && !S.job.enviar) { clearTimeout(timer); acompanhar(); } });
   function acompanhar() {
     clearTimeout(timer);
     var a = actual(), job = S.job; if (!job || !job.id || !a) return;
@@ -440,7 +451,7 @@
       }
       if (r.estado === "dismissed") { S.erro = t("parado"); S.job = null; pintar(); listar(); return; }
       if (r.estado === "failed") { S.erro = t("falhou") + (r.mensagem ? ": " + r.mensagem : "."); S.job = null; pintar(); return; }
-      pintar(); timer = setTimeout(acompanhar, r.estado === "running" ? 4000 : 6000);
+      pintar(); timer = setTimeout(acompanhar, intervalo(job, r.estado));
     }).catch(function (err) { if (S.job !== job) return; S.erro = err.message; S.job = null; pintar(); });
   }
   function listar() {
