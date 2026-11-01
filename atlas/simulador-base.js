@@ -390,11 +390,12 @@
       if (F !== f) return;
       var vistos = {};
       f.bases = (l || []).filter(function (b) { if (!entregue(b) || vistos[b.id]) return false; vistos[b.id] = 1; return true; });
-      var ab = actualId(), ul = ""; try { ul = localStorage.getItem(ULTIMA) || ""; } catch (x) {}
+      var ab = actualId() || (new URLSearchParams(location.search).get("mapa") || ""), ul = ""; try { ul = localStorage.getItem(ULTIMA) || ""; } catch (x) {}
       var tem = function (id) { return id && f.bases.some(function (b) { return String(b.id) === String(id); }); };
+      // 01/11/2026: a Base aberta no mapa vem primeiro (escolher outra obrigava a trocar o mapa e às vezes a recarregar).
       if (f.bases.length === 1) f.sel = String(f.bases[0].id);
+      else if (tem(ab)) f.sel = String(ab);
       else if (tem(ul)) f.sel = ul;
-      else if (tem(ab)) f.sel = ab;
       pintar();
       var c = M && M.querySelector("input[name=ipr-sb-base]:checked") || M && M.querySelector("[data-sb-foco]"); if (c) { try { c.focus(); } catch (x) {} }
       if (f.sel != null) mostrarBase(f.sel);
@@ -714,4 +715,22 @@
   document.addEventListener("ipr:lingua", function () { garantir(); pintar(); });
 
   W.IPR_SIM_BASE_UI = { iniciar: iniciar, cancelar: cancelar, _esc: ESC };
+
+  // 01/11/2026: o botão da Formiga (#tcdfmb, posição imposta por outros códigos com !important) ficava por cima do botão
+  // «Simular» da escolha da Base e do fundo dos painéis. Enquanto a escolha ou um painel de simulador está à vista, a
+  // Formiga esconde-se (display, que nenhum desses códigos mexe) e volta quando fecham.
+  (function () {
+    function visivel(sel) {
+      var e = document.querySelector(sel); if (!e || e.hidden) return false;
+      var r = e.getBoundingClientRect(); if (r.width < 2 || r.height < 2) return false;
+      var cs = W.getComputedStyle(e); return cs.display !== "none" && cs.visibility !== "hidden" && !e.classList.contains("min");
+    }
+    var escondi = false;
+    setInterval(function () {
+      var b = document.getElementById("tcdfmb"); if (!b) return;
+      var tapa = visivel("#ipr-sb .sb-c") || visivel("#ipr-as") || visivel("#ipr-fs");
+      if (tapa && b.style.getPropertyValue("display") !== "none") { b.style.setProperty("display", "none", "important"); escondi = true; }
+      else if (!tapa && escondi) { b.style.removeProperty("display"); escondi = false; }
+    }, 400);
+  })();
 })(window);
