@@ -29,7 +29,11 @@
       // tem altura máxima com barra própria.
       "#ipr-mb{max-height:none!important;overflow-y:visible!important}" +
       "#ipe #ipe-esq{overflow-y:hidden!important}" +
-      "#ipe #ipe-esq>.ipe-sb[data-sb=\"locais\"]{flex:1 1 auto!important;min-height:120px!important;overflow-y:auto!important;overscroll-behavior:contain;overflow-anchor:none}" +
+      // 2/11, 14h17 (vídeo do Bernardo: camadas da Base escritas por cima da árvore das camadas): o assistente.js
+      // força esta secção a «height:auto; overflow:visible» com um selector mais forte (.ipc-movido:has(#ipr-mb));
+      // com a barra parada, a lista transbordava por cima das secções de baixo (modo completo) ou ficava cortada
+      // (ecrã limpo). Mesmo selector, mais forte, para a secção rolar por dentro.
+      "#ipe #ipe-esq>.ipe-sb[data-sb=\"locais\"],#ipe #ipe-esq>.ipe-sb.ipc-movido.ipc-movido[data-sb=\"locais\"]:has(#ipr-mb:not([hidden])){flex:1 1 auto!important;height:auto!important;min-height:120px!important;overflow-y:auto!important;overscroll-behavior:contain;overflow-anchor:none}" +
       "#ipe #ipe-esq>#ipr-cq{flex:0 0 auto;max-height:28vh!important;overflow-y:auto!important;overscroll-behavior:contain}";
     (D.head || D.documentElement).appendChild(st);
   } catch (e) {}
