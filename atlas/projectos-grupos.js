@@ -87,12 +87,16 @@
   function quatro(m) {
     var e = (ES && ES[String(m.id)]) || null; if (!e) return null;
     var num = e.num || "";
-    var atlas = !!((num && ORG && (ORG[num] || ORG[num.split(".")[0]])) || e.fich > 0);
+    // 02/11/2026 (Nuno: «se seleciono o filtro, só os que estão todos carregados, espero ver ali o projecto»): o desenho
+    // visível no Atlas passa a contar. e.dat = camadas de desenho prontas para o mapa (m90599); grupos da organização
+    // também contam (Quinta Linda). Sem o campo (m90599 antigo) fica como antes.
+    var atlas = !!((num && ORG && (ORG[num] || ORG[num.split(".")[0]])) || e.dat > 0);
     var q = [
       ["base", !!e.base && baseOk(m), T("Base", "Base")],
       ["cloud", !!(e.cloud && e.desenho), num ? T("desenho na Cloud", "design in the Cloud") : T("número do projecto", "project number")],
       ["bcloud", !!e.base_cloud, T("Base na Cloud", "Base in the Cloud")]
     ];
+    if ("dat" in e) q.push(["atlas", atlas, T("desenho no Atlas", "design in the Atlas")]);
     q.atlas = atlas;
     return q;
   }
@@ -112,7 +116,7 @@
     if (!w) { w = el("div", "ipr-pg-w"); parar(w); var st = ct.querySelector(":scope > strong"); if (st && st.nextSibling) ct.insertBefore(w, st.nextSibling); else ct.appendChild(w); }
     w.dataset.k = chave; w.textContent = "";
     var tg = el("span", "ipr-pg-t " + (falta.length ? "av" : "ok"), falta.length ? T("Falta: ", "Missing: ") + falta.join(", ") : T("Tudo carregado", "All loaded"));
-    tg.title = q.map(function (x) { return (x[1] ? "✓ " : "· ") + x[2]; }).join("\n") + "\n" + (q.atlas ? "✓ " : "· ") + T("desenho também no Atlas", "design also in the Atlas") + (e.num ? "\n" + T("Projecto ", "Project ") + e.num : "");
+    tg.title = q.map(function (x) { return (x[1] ? "✓ " : "· ") + x[2]; }).join("\n") + "\n" + ("dat" in e ? "" : (q.atlas ? "✓ " : "· ") + T("desenho também no Atlas", "design also in the Atlas")) + (e.num ? "\n" + T("Projecto ", "Project ") + e.num : "");
     w.appendChild(tg);
     if (equipa()) {
       var g = el("div", "ipr-pg-g"), lb = el("label", "", T("Grupo", "Group")), s = el("select");
