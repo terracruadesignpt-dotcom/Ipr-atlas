@@ -23,9 +23,14 @@
     st.textContent =
       // A secção da lista não encolhe (antes ficava com ~260 px e cortava as camadas por baixo do painel «Camadas
       // ligadas»); a barra da esquerda passa a rolar inteira, com a lista toda dentro.
+      // 2/11, 10h39 (Nuno: «cada vez que se carrega em seja o que for, o site salta»): pôr a barra da esquerda inteira a
+      // rolar fazia-a mexer a cada mudança de qualquer secção (produtos, painel «Camadas ligadas», foco do minhas-bases).
+      // Agora só a secção das Bases rola, dentro do espaço que sobra; a barra fica parada e o painel «Camadas ligadas»
+      // tem altura máxima com barra própria.
       "#ipr-mb{max-height:none!important;overflow-y:visible!important}" +
-      "#ipe #ipe-esq{overflow-y:auto!important;overscroll-behavior:contain}" +
-      "#ipe #ipe-esq>.ipe-sb[data-sb=\"locais\"]{flex-shrink:0!important}";
+      "#ipe #ipe-esq{overflow-y:hidden!important}" +
+      "#ipe #ipe-esq>.ipe-sb[data-sb=\"locais\"]{flex:1 1 auto!important;min-height:120px!important;overflow-y:auto!important;overscroll-behavior:contain;overflow-anchor:none}" +
+      "#ipe #ipe-esq>#ipr-cq{flex:0 0 auto;max-height:28vh!important;overflow-y:auto!important;overscroll-behavior:contain}";
     (D.head || D.documentElement).appendChild(st);
   } catch (e) {}
 
@@ -77,7 +82,9 @@
     if (OBS) try { OBS.disconnect(); } catch (e) {}
     OBSBOX = box;
     OBS = new MutationObserver(function () { if (ANC) { repoe(); W.requestAnimationFrame(repoe); } });
-    OBS.observe(box, { childList: true });
+    // também as mudanças dentro das linhas (legendas que aparecem, «a carregar» que some), não só o refazer da lista
+    OBS.observe(box, { childList: true, subtree: true });
+    try { new ResizeObserver(function () { if (ANC) repoe(); }).observe(box); } catch (e) {}
   }
 
   // Corre antes do minhas-bases.js (que ouve na própria caixa): fase de captura no documento.
@@ -88,7 +95,7 @@
       var t = e.target; if (!t || t.type !== "checkbox" || !t.closest || !t.closest("#ipr-mb")) return;
       if (!ANC) guarda(t); else ANC.ate = Date.now() + 2500;
       // o refazer acontece já a seguir (no mesmo evento) e outra vez quando a camada acaba de ligar
-      W.requestAnimationFrame(repoe); setTimeout(repoe, 150); setTimeout(repoe, 600);
+      W.requestAnimationFrame(repoe); [150, 600, 1200, 2000].forEach(function (t) { setTimeout(repoe, t); });
     } catch (x) {}
   }, true);
   D.addEventListener("click", function (e) {
