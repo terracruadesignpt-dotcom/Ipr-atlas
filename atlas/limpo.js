@@ -11,7 +11,8 @@
       barra de baixo: coordenadas, escala, zoom, elevação (fica «Reportar problema»);
       painel da direita: fechado ao abrir, no computador (o assistente de compra abre-o sozinho quando é preciso).
    2. Botão «Modo completo» / «Modo simples» no topo (no telemóvel, no cimo da gaveta da esquerda). A escolha fica lembrada neste navegador (localStorage ipr_modo).
-      Quem tem window.IPR_PERFIL.modo === "avancado" começa no modo completo.
+      Quem tem window.IPR_PERFIL.modo === "avancado" e a equipa (window.tcdEquipa) começam no modo completo (decisão do
+      Nuno, 02/11, 12h20).
    3. Ecrã de entrada (#ipr-ini do inicio.js): cada documento ganha uma frase simples do que é e para que serve, e por
       baixo «Não sabe o que escolher? Fale com um técnico» (marcação da consultoria e WhatsApp).
    Desliga-se com ?limpo=0 ou localStorage ipr_limpo_off = 1. Força o modo completo com ?completo=1. Falha em silêncio. */
@@ -51,8 +52,10 @@
     try { if (q && q.get("completo") === "1") return "completo"; } catch (e) {}
     try { var g = localStorage.getItem(K); if (g === "completo" || g === "simples") return g; } catch (e) {}
     try { if (W.IPR_PERFIL && W.IPR_PERFIL.modo === "avancado") return "completo"; } catch (e) {}
+    if (W.tcdEquipa) return "completo";
     return "simples";
   }
+  function escolhaGuardada() { try { var g = localStorage.getItem(K); return g === "completo" || g === "simples"; } catch (e) { return false; } }
   var modo = modoInicial(), dirFechadaPorNos = false, dirFeito = false;
   function desk() { return W.innerWidth > 900; }
   function ipe() { var e = D.getElementById("ipe"); return e && e.classList.contains("ipe") && D.getElementById("ipe-dir") ? e : null; }
@@ -136,6 +139,8 @@
   var n = 0;
   (function ciclo() {
     try { entrada(); } catch (e) {}
+    // a equipa (window.tcdEquipa, posto pelo site) começa no modo completo, se ainda não escolheu
+    try { if (W.tcdEquipa && modo === "simples" && !escolhaGuardada() && !(q && q.get("completo") === "0")) { modo = "completo"; } } catch (e) {}
     try { if (ipe()) { aplicar(false); } } catch (e) {}
     n++; setTimeout(ciclo, n < 40 ? 250 : 1500);
   })();
