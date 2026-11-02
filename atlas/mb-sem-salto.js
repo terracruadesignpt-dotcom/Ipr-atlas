@@ -27,13 +27,14 @@
       // rolar fazia-a mexer a cada mudança de qualquer secção (produtos, painel «Camadas ligadas», foco do minhas-bases).
       // Agora só a secção das Bases rola, dentro do espaço que sobra; a barra fica parada e o painel «Camadas ligadas»
       // tem altura máxima com barra própria.
+      // 2/11, 14h53 (Bernardo: «camadas da base ficaram numa janela à parte [...] difícil de visualizar, basta reverter a
+      // como estava antes»): com Produtos aberto a secção das Bases ficava com ~140 px e barra própria. Volta a haver uma
+      // só barra de rolar, a da esquerda inteira, com a lista toda à vista; os saltos continuam a ser corrigidos pelo
+      // guião abaixo (repõe a mesma linha no mesmo sítio depois de cada refazer).
       "#ipr-mb{max-height:none!important;overflow-y:visible!important}" +
-      "#ipe #ipe-esq{overflow-y:hidden!important}" +
-      // 2/11, 14h17 (vídeo do Bernardo: camadas da Base escritas por cima da árvore das camadas): o assistente.js
-      // força esta secção a «height:auto; overflow:visible» com um selector mais forte (.ipc-movido:has(#ipr-mb));
-      // com a barra parada, a lista transbordava por cima das secções de baixo (modo completo) ou ficava cortada
-      // (ecrã limpo). Mesmo selector, mais forte, para a secção rolar por dentro.
-      "#ipe #ipe-esq>.ipe-sb[data-sb=\"locais\"],#ipe #ipe-esq>.ipe-sb.ipc-movido.ipc-movido[data-sb=\"locais\"]:has(#ipr-mb:not([hidden])){flex:1 1 auto!important;height:auto!important;min-height:120px!important;overflow-y:auto!important;overscroll-behavior:contain;overflow-anchor:none}" +
+      "#ipe #ipe-esq{overflow-y:auto!important;overscroll-behavior:contain;overflow-anchor:none}" +
+      "#ipe #ipe-esq>.ipe-sb[data-sb=\"locais\"],#ipe #ipe-esq>.ipe-sb.ipc-movido.ipc-movido[data-sb=\"locais\"]:has(#ipr-mb:not([hidden])){flex:0 0 auto!important;height:auto!important;max-height:none!important;min-height:0!important;overflow:visible!important}" +
+      "#ipe #ipe-esq>.ipe-sb[data-sb=\"cam\"]{flex:0 0 auto!important}" +
       "#ipe #ipe-esq>#ipr-cq{flex:0 0 auto;max-height:28vh!important;overflow-y:auto!important;overscroll-behavior:contain}";
     (D.head || D.documentElement).appendChild(st);
   } catch (e) {}
@@ -81,15 +82,53 @@
       if (ck && D.activeElement !== ck) try { ck.focus({ preventScroll: true }); } catch (e) {}
     }
   }
+  // 2/11, 14h49 a 14h52 (Bernardo): «2 secções Hidrologia nas camadas da base cartográfica» e «camada das curvas de nível
+  // 0,25 m está numa secção à parte, devia juntar-se com as restantes». Depois de cada refazer da lista: junta as
+  // secções com o mesmo título (a segunda passa para o fim da primeira) e põe o curvas025 da entrega, com o nome
+  // «Curvas de nível 0,25 m», junto das outras curvas. Só mexe na ordem das linhas; os cliques seguem por data-mb-c.
+  function nomeDe(li) { var n = li.querySelector(".ipr-mb-n"); return n ? String(n.firstChild && n.firstChild.nodeType === 3 ? n.firstChild.nodeValue : n.textContent).trim() : ""; }
+  function arrumar(box) {
+    if (!box) return;
+    [].forEach.call(box.querySelectorAll("ul.ipr-mb-cam"), function (ul) {
+      var kids = [].slice.call(ul.children);
+      // curvas025 junto das outras curvas
+      kids.forEach(function (li) {
+        if (!li.classList.contains("ipr-mb-it") || !/^ent/.test(li.getAttribute("data-mb-c") || "")) return;
+        if (!/^curvas\s*0?25$/i.test(nomeDe(li))) return;
+        var n = li.querySelector(".ipr-mb-n");
+        if (n && n.firstChild && n.firstChild.nodeType === 3) n.firstChild.nodeValue = "Curvas de nível 0,25 m";
+        var curvas = [].filter.call(ul.children, function (x) { return x !== li && x.classList.contains("ipr-mb-it") && /^Curvas de n[ií]vel/i.test(nomeDe(x)); });
+        if (!curvas.length) return;
+        var antes = li.previousElementSibling;
+        ul.insertBefore(li, curvas[0]);
+        if (antes && antes.classList.contains("ipr-mb-sub") && (!antes.nextElementSibling || antes.nextElementSibling.classList.contains("ipr-mb-sub"))) antes.remove();
+      });
+      // secções repetidas: a segunda vai para o fim da primeira
+      var vistos = {};
+      [].slice.call(ul.children).forEach(function (sub) {
+        if (!sub.classList.contains("ipr-mb-sub") || !sub.parentNode) return;
+        var k = String(sub.textContent || "").trim().toLowerCase();
+        if (!vistos[k]) { vistos[k] = sub; return; }
+        var itens = [], x = sub.nextElementSibling;
+        while (x && !x.classList.contains("ipr-mb-sub")) { itens.push(x); x = x.nextElementSibling; }
+        var fim = vistos[k].nextElementSibling;
+        while (fim && !fim.classList.contains("ipr-mb-sub")) fim = fim.nextElementSibling;
+        itens.forEach(function (it) { ul.insertBefore(it, fim); });
+        sub.remove();
+      });
+    });
+  }
   function vigia(box) {
-    if (OBSBOX === box) return;
+    if (!box || OBSBOX === box) return;
     if (OBS) try { OBS.disconnect(); } catch (e) {}
     OBSBOX = box;
-    OBS = new MutationObserver(function () { if (ANC) { repoe(); W.requestAnimationFrame(repoe); } });
+    OBS = new MutationObserver(function () { try { arrumar(box); } catch (e) {} if (ANC) { repoe(); W.requestAnimationFrame(repoe); } });
     // também as mudanças dentro das linhas (legendas que aparecem, «a carregar» que some), não só o refazer da lista
     OBS.observe(box, { childList: true, subtree: true });
     try { new ResizeObserver(function () { if (ANC) repoe(); }).observe(box); } catch (e) {}
+    try { arrumar(box); } catch (e) {}
   }
+  setInterval(function () { try { vigia(D.getElementById("ipr-mb")); } catch (e) {} }, 1000);
 
   // Corre antes do minhas-bases.js (que ouve na própria caixa): fase de captura no documento.
   D.addEventListener("pointerdown", function (e) { try { if (e.target.closest && e.target.closest("#ipr-mb")) guarda(e.target); } catch (x) {} }, true);
