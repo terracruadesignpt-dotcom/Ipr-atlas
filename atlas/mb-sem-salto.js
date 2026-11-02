@@ -4,6 +4,9 @@
    (invisível no Mac): ao esvaziar, essa barra voltava ao início, e era o salto. A mesma altura máxima escondia metade das
    camadas da Base (Hidrologia, Erosão, vento) dentro da caixa, sem se perceber que havia mais (Nuno, 09h15, Monte Branco
    da Serra: as 16 camadas estão na entrega, só não se viam).
+   2/11, 09h38 (Nuno: continua sem todas as camadas e a saltar): a secção da lista encolhia para ~260 px dentro da barra
+   da esquerda, que não rolava, e o painel «Camadas ligadas» tapava o resto; reproduzido com o Atlas real (camadas abaixo
+   dos 900 px inalcançáveis) e corrigido: a secção não encolhe e a barra da esquerda rola inteira.
    Este guião: (1) tira a altura máxima, para a lista toda correr com a barra da esquerda; (2) guarda, antes do clique, onde
    estava a linha no ecrã e o deslocamento das caixas com barra de rolar; depois de cada refazer (o primeiro e os que vêm
    logo a seguir, quando a camada acaba de ligar) põe a mesma linha no mesmo sítio e devolve o foco à caixa, sem rolar.
@@ -17,7 +20,12 @@
   var ANC = null, OBS = null, OBSBOX = null;
   try {
     var st = D.createElement("style"); st.id = "ipr-mbsalto-css";
-    st.textContent = "#ipr-mb{max-height:none!important;overflow-y:visible!important}";
+    st.textContent =
+      // A secção da lista não encolhe (antes ficava com ~260 px e cortava as camadas por baixo do painel «Camadas
+      // ligadas»); a barra da esquerda passa a rolar inteira, com a lista toda dentro.
+      "#ipr-mb{max-height:none!important;overflow-y:visible!important}" +
+      "#ipe #ipe-esq{overflow-y:auto!important;overscroll-behavior:contain}" +
+      "#ipe #ipe-esq>.ipe-sb[data-sb=\"locais\"]{flex-shrink:0!important}";
     (D.head || D.documentElement).appendChild(st);
   } catch (e) {}
 
