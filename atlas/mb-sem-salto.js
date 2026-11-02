@@ -35,7 +35,15 @@
       "#ipe #ipe-esq{overflow-y:auto!important;overscroll-behavior:contain;overflow-anchor:none}" +
       "#ipe #ipe-esq>.ipe-sb[data-sb=\"locais\"],#ipe #ipe-esq>.ipe-sb.ipc-movido.ipc-movido[data-sb=\"locais\"]:has(#ipr-mb:not([hidden])){flex:0 0 auto!important;height:auto!important;max-height:none!important;min-height:0!important;overflow:visible!important}" +
       "#ipe #ipe-esq>.ipe-sb[data-sb=\"cam\"]{flex:0 0 auto!important}" +
-      "#ipe #ipe-esq>#ipr-cq{flex:0 0 auto;max-height:28vh!important;overflow-y:auto!important;overscroll-behavior:contain}";
+      // 2/11, 15h11 (Miguel Clemente: «estas barras estão foleiras»): o painel «Camadas ligadas» tinha duas barras, a
+      // minha (28vh) por fora da do activas.js; fica só a de dentro. Barras finas e escuras, da cor do Atlas.
+      "#ipe #ipe-esq>#ipr-cq{flex:0 0 auto;max-height:none!important;overflow:visible!important}" +
+      "#ipe #ipr-cq .ipr-cq-c{max-height:min(342px,45vh)!important;overscroll-behavior:contain}" +
+      "#ipe #ipe-esq,#ipe #ipe-esq *{scrollbar-width:thin;scrollbar-color:rgba(148,190,57,.45) transparent}" +
+      "#ipe #ipe-esq::-webkit-scrollbar,#ipe #ipe-esq *::-webkit-scrollbar{width:6px;height:6px}" +
+      "#ipe #ipe-esq::-webkit-scrollbar-track,#ipe #ipe-esq *::-webkit-scrollbar-track{background:transparent}" +
+      "#ipe #ipe-esq::-webkit-scrollbar-thumb,#ipe #ipe-esq *::-webkit-scrollbar-thumb{background:rgba(148,190,57,.4);border-radius:3px}" +
+      "#ipe #ipe-esq::-webkit-scrollbar-button,#ipe #ipe-esq *::-webkit-scrollbar-button{display:none;height:0}";
     (D.head || D.documentElement).appendChild(st);
   } catch (e) {}
 
@@ -129,6 +137,18 @@
     try { arrumar(box); } catch (e) {}
   }
   setInterval(function () { try { vigia(D.getElementById("ipr-mb")); } catch (e) {} }, 1000);
+  // 2/11, 15h11 (Miguel Clemente): «f_sub» nas Camadas ligadas é o satélite de 2016 que fica por baixo da ortofoto e
+  // não está no catálogo; passa a ter nome. O mesmo para «aoi» (limite do terreno) e para as camadas da entrega (ent0…).
+  var NSUB = (W.IPR_LINGUA === "en") ? "Satellite 2016 · 10 m (under the aerial photo)" : "Satélite 2016 · 10 m (por baixo da ortofoto)";
+  setInterval(function () {
+    try { [].forEach.call(D.querySelectorAll("#ipr-cq .iac-nt"), function (e) {
+      if (e.childElementCount !== 0) return;
+      var t = e.textContent.trim();
+      if (t === "f_sub") e.textContent = NSUB;
+      else if (t === "aoi") e.textContent = (W.IPR_LINGUA === "en") ? "Site boundary" : "Limite do terreno";
+      else if (/^ent\d+$/.test(t)) { var li = D.querySelector('#ipr-mb li[data-mb-c="' + t + '"] .ipr-mb-n'); if (li) e.textContent = li.textContent.trim(); }
+    }); } catch (e) {}
+  }, 700);
 
   // Corre antes do minhas-bases.js (que ouve na própria caixa): fase de captura no documento.
   D.addEventListener("pointerdown", function (e) { try { if (e.target.closest && e.target.closest("#ipr-mb")) guarda(e.target); } catch (x) {} }, true);

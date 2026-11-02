@@ -57,15 +57,27 @@
     ".ipr-cvv{position:fixed;z-index:20;left:12px;bottom:calc(46px + env(safe-area-inset-bottom,0px));font:600 12px Inter,system-ui,sans-serif;border:1px solid var(--ac,#94BE39);background:var(--p1,#18200f);color:var(--tx,#e9eadf);border-radius:16px;padding:6px 12px;cursor:pointer}";
   (D.head || D.documentElement).appendChild(css);
 
+  // 2/11, 15h11 (Miguel Clemente, Base 271 Quinta da Boavista: «Pacote completo ×2», «Relatório PDF ×2?»): o nome
+  // vinha só do rótulo do servidor, igual para o PDF em português e em inglês e para o ZIP e o QField. Agora o nome sai
+  // do ficheiro, e o mesmo ficheiro não aparece duas vezes.
+  function ficheiro(d) { return String(d && d.nome || "").split("· ").pop().trim(); }
   function rotulo(d) {
+    var f = ficheiro(d).toLowerCase(), en = (W.IPR_LINGUA || "pt") === "en";
+    if (/_territorial_reading_en\.pdf$/.test(f)) return en ? "Territorial Reading (PDF, English)" : "Leitura Territorial em inglês (PDF)";
+    if (/_cartographic_base_en\.pdf$/.test(f)) return en ? "Cartographic Base report (PDF, English)" : "Relatório da Base em inglês (PDF)";
+    if (/_leitura_territorial\.pdf$/.test(f)) return en ? "Territorial Reading (PDF, Portuguese)" : "Leitura Territorial (PDF)";
+    if (/_relatorio_base\.pdf$/.test(f)) return en ? "Cartographic Base report (PDF, Portuguese)" : "Relatório da Base (PDF)";
+    if (/_qfield\.zip$/.test(f)) return en ? "QField package (phone, in the field)" : "Pacote QField (telemóvel, no campo)";
+    if (/\.zip$/.test(f)) return en ? "Full package (QGIS project, PDF, Shapefile, KMZ)" : "Pacote completo (projecto QGIS, PDF, Shapefile, KMZ)";
     var n = String(d && d.nome || ""), i = n.lastIndexOf(" · ");
     var r = i > 0 ? n.slice(0, i) : n; return r.replace(/\s*\(abrir no telemóvel ou no computador\)/, "");
   }
   function docs(m) {
-    var l = Array.isArray(m && m.downloads) ? m.downloads : [];
+    var l = Array.isArray(m && m.downloads) ? m.downloads : [], vistos = {};
     return l.filter(function (d) {
-      var f = String(d && d.nome || "").split("· ").pop().toLowerCase();
-      return /\.(pdf|zip|kmz|gpkg)$/.test(f);
+      var f = ficheiro(d).toLowerCase();
+      if (!/\.(pdf|zip|kmz|gpkg)$/.test(f) || vistos[f]) return false;
+      vistos[f] = 1; return true;
     }).slice(0, 8);
   }
   function aberta() {
