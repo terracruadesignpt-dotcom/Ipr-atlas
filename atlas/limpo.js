@@ -4,15 +4,17 @@
    cliente burro consiga comprar». Escolhas: «Entrada por objectivo», «Ecrã limpo por omissão», «Ajuda humana» (os vídeos
    ficam para depois). Regra: nada é retirado, só fica atrás de «Modo completo».
    1. Ecrã limpo por omissão (classe html.ipr-limpo). Escondidos, não apagados:
-      topo: Explorer, beta, «Mapa simples», −Auto+, tema, App, Actualizar;
+      topo: Explorer, beta, −Auto+, tema, App, Actualizar;
       mapa: barra grande de ferramentas, Exportar prancha, perfil, barrinha de mover e transparência das janelas (ficava
             por cima do Comprar);
       esquerda: Produtos (repete o Comprar) e a linha dos Temas (#ipr-t62; as Vistas do activas.js fazem isso);
       barra de baixo: coordenadas, escala, zoom, elevação (fica «Reportar problema»);
       painel da direita: fechado ao abrir, no computador (o assistente de compra abre-o sozinho quando é preciso).
-   2. Botão «Modo completo» / «Modo simples» no topo (no telemóvel, no cimo da gaveta da esquerda). A escolha fica lembrada neste navegador (localStorage ipr_modo).
+   2. Botão «Ver tudo» / «Simplificar» no topo, antes do «Entrar» (o único do género: ao simplificar põe também as camadas
+      base do mapa-simples.js, que passou para dentro do menu «…» com o nome «Camadas base») (no telemóvel, no cimo da gaveta da esquerda). A escolha fica lembrada neste navegador (localStorage ipr_modo).
       Quem tem window.IPR_PERFIL.modo === "avancado" e a equipa (window.tcdEquipa) começam no modo completo (decisão do
       Nuno, 02/11, 12h20).
+   2b. Barra de cima, nos dois modos: sem o subtítulo genérico, sem «Comprar passo a passo», língua num botão pequeno.
    3. Ecrã de entrada (#ipr-ini do inicio.js): cada documento ganha uma frase simples do que é e para que serve, e por
       baixo «Não sabe o que escolher? Fale com um técnico» (marcação da consultoria e WhatsApp).
    Desliga-se com ?limpo=0 ou localStorage ipr_limpo_off = 1. Força o modo completo com ?completo=1. Falha em silêncio. */
@@ -25,19 +27,19 @@
 
   function lingua() { var l = W.IPR_LINGUA || (/^(en|es)/i.exec(H.lang || "") || ["pt"])[0]; l = String(l).slice(0, 2).toLowerCase(); return l === "en" || l === "es" ? l : "pt"; }
   var TX = {
-    pt: { completo: "Modo completo", simples: "Modo simples", tc: "Mostra todas as ferramentas, barras e painéis do Atlas", ts: "Esconde o que é avançado; fica o mapa, as camadas e o Comprar",
+    pt: { completo: "Ver tudo", simples: "Simplificar", tc: "Mostra todas as ferramentas, barras e painéis do Atlas", ts: "Esconde o que é avançado; fica o mapa, as camadas e o Comprar",
       duvida: "Não sabe o que escolher?", tecnico: "Fale com um técnico", wa: "WhatsApp",
       docs: ["A planta do terreno para a Câmara, o banco ou uma escritura. Pronta a imprimir.",
         "O que já se sabe do terreno: condicionantes, água, relevo e incêndio. Sem pagar.",
         "Um relatório em linguagem simples: o que o terreno permite, os riscos e o potencial.",
         "Relevo, água e limites do terreno, em ficheiros para o técnico e no mapa."] },
-    en: { completo: "Full mode", simples: "Simple mode", tc: "Show every Atlas tool, bar and panel", ts: "Hide the advanced parts; keep the map, the layers and Buy",
+    en: { completo: "Show all", simples: "Simplify", tc: "Show every Atlas tool, bar and panel", ts: "Hide the advanced parts; keep the map, the layers and Buy",
       duvida: "Not sure which one?", tecnico: "Talk to a technician", wa: "WhatsApp",
       docs: ["The land plan for the council, the bank or a deed. Ready to print.",
         "What is already known about the land: constraints, water, relief and fire. Free.",
         "A plain language report: what the land allows, its risks and its potential.",
         "Relief, water and boundaries of the land, as files for your technician and on the map."] },
-    es: { completo: "Modo completo", simples: "Modo sencillo", tc: "Muestra todas las herramientas, barras y paneles del Atlas", ts: "Oculta lo avanzado; quedan el mapa, las capas y Comprar",
+    es: { completo: "Ver todo", simples: "Simplificar", tc: "Muestra todas las herramientas, barras y paneles del Atlas", ts: "Oculta lo avanzado; quedan el mapa, las capas y Comprar",
       duvida: "¿No sabe qué elegir?", tecnico: "Hable con un técnico", wa: "WhatsApp",
       docs: ["El plano del terreno para el ayuntamiento, el banco o una escritura. Listo para imprimir.",
         "Lo que ya se sabe del terreno: condicionantes, agua, relieve e incendio. Gratis.",
@@ -77,7 +79,7 @@
   // ---------------------------------------------------------------- estilos
   var css = ""
     // topo
-    + "html.ipr-limpo #ipe .ipe-nivel,html.ipr-limpo #ipe .ipe-beta,html.ipr-limpo #ipe .ipe-vsep,html.ipr-limpo #ipr-msimples,html.ipr-limpo #ipr-z67,"
+    + "html.ipr-limpo #ipe .ipe-nivel,html.ipr-limpo #ipe .ipe-beta,html.ipr-limpo #ipe .ipe-vsep,html.ipr-limpo #ipr-z67,"
     + "html.ipr-limpo #ipe-tema,html.ipr-limpo #ipr-app-b,html.ipr-limpo #ipr-ref{display:none!important}"
     // mapa
     + "html.ipr-limpo #ipr-pb-barra,html.ipr-limpo #ipr-perfil-b,html.ipr-limpo #ipe-mapa [data-tool=foto],html.ipr-limpo .ipr-janb{display:none!important}"
@@ -85,6 +87,14 @@
     + "html.ipr-limpo #ipr-pd,html.ipr-limpo #ipr-t62{display:none!important}"
     // barra de baixo: só «Reportar problema» e o rodapé
     + "@media(min-width:901px){html.ipr-limpo #ipe-st>span:not(.esp):not(.dono):not(:has(#ipe-bug)){display:none!important}}"
+    // barra de cima harmonizada (Nuno, 02/11, 14h00), nos dois modos: sem o subtítulo genérico «IPR Atlas · plataforma
+    // territorial» (o nome do projecto aberto continua), sem «Comprar passo a passo» (repete o Comprar, que abre o mesmo
+    // assistente), e a língua num botão pequeno que mostra só a outra
+    + "#ipe .ipe-ctx.ipr-as-eco,#ipr-tp-as{display:none!important}"
+    + "@media(max-width:900px){#ipe .ipe-nivel,#ipe .ipe-beta{display:none!important}}"
+    + "#ipr-lg-topo .ipr-lg-top{border:0!important;background:transparent!important;gap:0!important}"
+    + "#ipr-lg-topo button[aria-pressed=true]{display:none!important}"
+    + "#ipr-lg-topo button[aria-pressed=false]{font:600 11px/1 Inter,system-ui,sans-serif!important;letter-spacing:.06em;padding:7px 9px!important;border-radius:999px!important;border:1px solid rgba(228,226,216,.35)!important;background:transparent!important;color:inherit!important;min-height:30px}"
     // botão do modo
     + "#ipr-modo{font:600 12px/1 Inter,system-ui,sans-serif;padding:7px 11px;border-radius:999px;border:1px solid rgba(228,226,216,.35);background:transparent;color:inherit;cursor:pointer;white-space:nowrap;margin:0 6px;min-height:30px}"
     + "#ipr-modo:hover{border-color:#9BC53D}#ipr-modo:focus-visible{outline:2px solid #9BC53D;outline-offset:2px}"
@@ -101,7 +111,11 @@
     var b = D.getElementById("ipr-modo");
     if (!b) {
       b = D.createElement("button"); b.type = "button"; b.id = "ipr-modo";
-      b.addEventListener("click", function (e) { e.preventDefault(); modo = modo === "simples" ? "completo" : "simples"; aplicar(true); });
+      b.addEventListener("click", function (e) {
+        e.preventDefault(); modo = modo === "simples" ? "completo" : "simples"; aplicar(true);
+        // «Só um botão» (Nuno, 02/11, 13h55): simplificar também põe as camadas base (mapa-simples.js); ver tudo repõe as que estavam
+        try { if (typeof W.iprCamadasBase === "function") W.iprCamadasBase(modo === "simples"); } catch (x) {}
+      });
     }
     var t = T(), txt = modo === "simples" ? t.completo : t.simples;
     if (b.textContent !== txt) { b.textContent = txt; b.title = modo === "simples" ? t.tc : t.ts; }
@@ -110,8 +124,13 @@
     var E = D.getElementById("ipe-esq");
     if (!desk() && E) { if (E.firstChild !== b) E.insertBefore(b, E.firstChild); b.classList.add("ipr-modo-g"); return; }
     b.classList.remove("ipr-modo-g");
+    // 02/11, 13h47: antes ia para o primeiro lugar da barra, o mesmo que o «Camadas base» (mapa-simples.js) quer, e os dois
+    // trocavam de lugar a cada segundo (piscavam). Agora fica logo antes do «Entrar» / «Conta» (ou do menu «…»), ou no fim da barra.
     var tr = top.querySelector(":scope > .ipe-tr");
-    if (tr) { if (b.parentNode !== tr || tr.firstChild !== b) tr.insertBefore(b, tr.firstChild); }
+    if (tr) {
+      var alvo = null; ["ipe-entrar", "ipe-user", "ipe-mais"].some(function (id) { var e = D.getElementById(id); if (e && e.parentNode === tr) { alvo = e; return true; } return false; });
+      if (b.parentNode !== tr || (alvo ? b.nextSibling !== alvo : tr.lastChild !== b)) tr.insertBefore(b, alvo);
+    }
     else if (b.parentNode !== top) top.appendChild(b);
   }
 
