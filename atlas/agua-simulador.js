@@ -41,6 +41,7 @@
       faixa: "Em testes · só informativo e para aprendizagem · não usar para decisões de segurança. Emergência: 112.",
       talI: "Talude interior (1:x)", talE: "Talude exterior (1:x)", folga: "Folga até ao coroamento", coroaL: "Largura do coroamento", cotaAgua: "Cota da água (vazio = automática)",
       fundoQ: "Fundo", fundo_impermeavel: "Impermeabilizado (tela ou argila)", fundo_natural: "Terreno natural", fundo_infiltracao: "Charca de infiltração",
+      resAd: "Terreno grande: calculado com células de {c} m (a Base tem {b} m), para caber na memória do servidor. Os padrões gerais valem; charcas e depressões mais pequenas do que a célula não aparecem.",
       montT: "Água de montante", montSem: "Esta Base ainda não tem os dados de montante: só entra a chuva que cai no terreno. Se chegar água de fora, os resultados ficam por baixo da realidade.", montTx: "{v} m³ de fora do terreno ({p} % da água), {n} troços de entrada, {a} km² a montante.",
       charcaR: "Charca", volUtil: "Volume útil", cotaA: "Cota da água", corte: "Corte", aterro: "Aterro", dique: "Altura máx. do dique", descR: "Descarregador", aviso: "Resultados de modelo para apoiar decisões de projecto; não substituem estudo hidráulico nem licenciamento."
     },
@@ -74,6 +75,7 @@
       faixa: "In testing · information and learning only · not for safety decisions. Emergency: 112.",
       talI: "Inner slope (1:x)", talE: "Outer slope (1:x)", folga: "Freeboard to crest", coroaL: "Crest width", cotaAgua: "Water level (empty = automatic)",
       fundoQ: "Bottom", fundo_impermeavel: "Lined (membrane or clay)", fundo_natural: "Natural ground", fundo_infiltracao: "Infiltration pond",
+      resAd: "Large area: computed with {c} m cells (the Base Map has {b} m) to fit the server memory. General patterns hold; ponds and hollows smaller than a cell do not show.",
       montT: "Upstream water", montSem: "This Base Map has no upstream data yet: only rain falling on the land is counted. If water arrives from outside, results are underestimated.", montTx: "{v} m³ from outside the land ({p} % of the water), {n} inflow sections, {a} km² upstream.",
       charcaR: "Pond", volUtil: "Useful volume", cotaA: "Water level", corte: "Cut", aterro: "Fill", dique: "Max. embankment height", descR: "Spillway", aviso: "Model results to support design decisions; they do not replace a hydraulic study or permitting."
     }
@@ -277,6 +279,9 @@
   function resultados(rx) {
     var r = rx || S.res, s = r.resumo || {}, h = '<span class="as-h">' + esc(t("resultados")) + "</span>";
     if (s.aviso_rio) h += '<p class="faixa">' + esc(s.aviso_rio) + "</p>";
+    // 03/11/2026: o motor calculou com células maiores do que as da Base (terreno grande; agua-04nov)
+    var ra = s.resolucao || {};
+    if (ra.adaptada) h += '<p class="faixa">' + esc(t("resAd").replace("{c}", n(ra.celula_calculo_m, 2)).replace("{b}", n(ra.celula_base_m, 2))) + "</p>";
     (s.rio || []).forEach(function (x) { h += '<p class="nota"><b>' + esc(L() === "en" ? "River" : "Rio") + "</b> · " + esc(x.cenario_titulo) + " · " + n(x.pico_m3s, 1) + " m³/s · " + esc(x.hipotese) + "</p>"; });
     if (s.aviso_montante) h += '<p class="faixa">' + esc(t("montSem")) + "</p>";
     else if (s.montante) {
