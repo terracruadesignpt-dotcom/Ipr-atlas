@@ -37,7 +37,7 @@
       simular: "Simular", aSimular: "A simular…", fila: "Na fila", corre: "A calcular", falhou: "Não foi possível simular",
       bloqueado: "Simulador bloqueado neste local.", emerg: "Em caso de incêndio, siga as indicações da Protecção Civil e ligue 112.",
       anteriores: "Simulações deste mapa", nenhumaSim: "Ainda não há simulações neste mapa.", ver: "Ver",
-      resultados: "Resultados", camadas: "No mapa", descargas: "Ficheiros (COG, GeoPackage, CSV)",
+      resultados: "Resultados", opT: "Isto bate certo com o que conhece do terreno?", opSub: "Período de testes: a sua resposta fica guardada com a sua conta, esta Base e esta simulação, e serve para afinar o simulador.", op_certo: "Bate certo", op_parcial: "Em parte", op_errado: "Não bate certo", opTx: "O que viu ou sabe do terreno (por onde ardeu, quando, a que velocidade, o que travou o fogo)? Opcional.", opEnviar: "Enviar", opObrigado: "Obrigado. Ficou registado.", camadas: "No mapa", descargas: "Ficheiros (COG, GeoPackage, CSV)",
       area: "Área ardida", areaProp: "Ardida dentro do terreno", chegada: "Primeira chegada ao terreno", truncado: "A frente chegou ao limite do domínio: a área está subestimada.",
       antes: "Antes", depois: "Depois", difA: "Diferença de área", freqMax: "Fracção máxima", corridas: "Corridas", chuvaAg: "A área ardida está pronta para o Simulador de Água (intervenção «ocupação»). O CN depois do fogo dá-se lá, com fonte.",
       naoMod: "Não modelado", ventoR: "Vento", humR: "Humidade",
@@ -71,7 +71,7 @@
       simular: "Simulate", aSimular: "Simulating…", fila: "Queued", corre: "Running", falhou: "Could not simulate",
       bloqueado: "The simulator is blocked here.", emerg: "In a fire, follow Civil Protection instructions and call 112.",
       anteriores: "Simulations for this map", nenhumaSim: "No simulations for this map yet.", ver: "View",
-      resultados: "Results", camadas: "On the map", descargas: "Files (COG, GeoPackage, CSV)",
+      resultados: "Results", opT: "Does this match what you know of the land?", opSub: "Testing period: your answer is stored with your account, this Base and this simulation, and helps tune the simulator.", op_certo: "It matches", op_parcial: "Partly", op_errado: "It does not match", opTx: "What did you see or know on the ground (where it burnt, when, how fast, what stopped it)? Optional.", opEnviar: "Send", opObrigado: "Thank you. It has been recorded.", camadas: "On the map", descargas: "Files (COG, GeoPackage, CSV)",
       area: "Burnt area", areaProp: "Burnt inside the property", chegada: "First arrival at the property", truncado: "The front reached the domain edge: the area is underestimated.",
       antes: "Before", depois: "After", difA: "Area difference", freqMax: "Maximum fraction", corridas: "Runs", chuvaAg: "The burnt area is ready for the Water Simulator (land-cover intervention). The post-fire CN is set there, with a source.",
       naoMod: "Not modelled", ventoR: "Wind", humR: "Moisture",
@@ -294,8 +294,28 @@
       h += "</div>";
     }
     var fx = (r.ficheiros || []).filter(function (f) { return !/^vista\//.test(f.nome); });
+    if (r.id) h += opiniao(r.id);
     if (fx.length) h += '<span class="fs-h">' + esc(t("descargas")) + '</span><ul class="fx">' + fx.map(function (f) { return '<li><a href="' + esc(urlF(f.url)) + '" download>' + esc(f.nome) + "</a> <small>" + n(f.bytes / 1048576, 1) + " MB</small></li>"; }).join("") + "</ul>";
     return h;
+  }
+  // Período de testes (m90800): quem testa diz se o resultado bate certo; fica registado com a simulação.
+  var OPIN = {};
+  function opiniao(id) {
+    var o = OPIN[id] || (OPIN[id] = { nota: "", texto: "", feito: false, aEnviar: false, erro: "", enc: (actual() || {}).id });
+    var h = '<span class="fs-h">' + esc(t("opT")) + '</span><p class="nota">' + esc(t("opSub")) + "</p>";
+    if (o.feito) return h + '<p class="nota"><b>' + esc(t("opObrigado")) + "</b></p>";
+    h += '<div class="acc">' + ["certo", "parcial", "errado"].map(function (k) { return '<button class="b' + (o.nota === k ? " pri" : "") + '" data-op="' + k + '">' + esc(t("op_" + k)) + "</button>"; }).join("") + "</div>";
+    if (o.nota) h += '<label class="f">' + esc(t("opTx")) + '<textarea data-k="opTexto" maxlength="2000">' + esc(o.texto) + '</textarea></label><div class="acc"><button class="b pri" data-fs="opEnviar"' + (o.aEnviar ? " disabled" : "") + ">" + esc(t("opEnviar")) + "</button></div>";
+    if (o.erro) h += '<div class="err">' + esc(o.erro) + "</div>";
+    return h;
+  }
+  function enviarOpiniao() {
+    var a = actual(), r = S.res; if (!a || !r || !r.id) return;
+    var o = OPIN[r.id]; if (!o || !o.nota || o.aEnviar) return;
+    o.aEnviar = true; o.erro = ""; pintar();
+    api("fogo/ensaio/opiniao", { method: "POST", body: { enc: o.enc || a.id, id: r.id, nota: o.nota, texto: o.texto } })
+      .then(function () { o.aEnviar = false; o.feito = true; pintar(); })
+      .catch(function (err) { o.aEnviar = false; o.erro = err.message; pintar(); });
   }
   function anteriores() {
     var h = '<span class="fs-h">' + esc(t("anteriores")) + "</span>", inv = {};
@@ -313,6 +333,8 @@
     if (a === "min") { P.classList.toggle("min"); return; }
     if (el.hasAttribute("data-tab")) { S.tab = el.getAttribute("data-tab"); pararDesenho(false); pintar(); return; }
     if (a === "simular") return simular();
+    if (el.hasAttribute("data-op") && S.res && S.res.id) { var o = OPIN[S.res.id]; if (o) { o.nota = el.getAttribute("data-op"); pintar(); } return; }
+    if (a === "opEnviar") return enviarOpiniao();
     if (a === "aceitar") {
       api("fogo/aviso", { method: "POST", body: { versao: S.avisoTx.versao } }).then(function () { S.aviso = true; S.erro = ""; pintar(); })
         .catch(function (err) { S.erro = err.message; S.avisoTx = null; lerAviso(); pintar(); });
@@ -332,6 +354,7 @@
     if (el.hasAttribute("data-fi")) { S.feats[+el.getAttribute("data-fi")].properties.combustivel = +el.value; return; }
     var k = el.getAttribute("data-k"); if (!k) return;
     if (k === "avisoChk") { S.avisoChk = el.checked; pintar(); return; }
+    if (k === "opTexto") { if (S.res && S.res.id && OPIN[S.res.id]) OPIN[S.res.id].texto = el.value; return; }
     if (k === "limite") { S.limite = el.checked; return; }
     if (k === "kmh" || k === "de") { S.vento[k] = +el.value; return; }
     if (k === "campoV") { S.vento.campo = el.value; return; }
@@ -383,7 +406,7 @@
       job.estado = r.estado;
       if (r.estado === "running" && !job.t0) job.t0 = Date.now();
       if (r.estado === "successful") {
-        S.res = r; S.job = null;
+        S.res = r; if (!r.id) r.id = job.id; S.job = null;
         var v = (r.ficheiros || []).filter(function (f) { return f.nome === "vista/vista.json"; })[0];
         if (v) return fetch(urlF(v.url), { credentials: "same-origin" }).then(function (x) { return x.json(); }).then(function (vj) {
           S.res.vista = vj; S.res.fich = {}; (r.ficheiros || []).forEach(function (f) { S.res.fich[f.nome] = f.url; });
