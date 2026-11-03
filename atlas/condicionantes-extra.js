@@ -29,33 +29,30 @@
     ["poc_critica", ORLA, "Áreas críticas (POC)", "Critical areas (coastal programme)", POC, "show:15", "#c62828", .45, 10],
     ["pgri_perigo", INUN, "Perigo de inundação para os PDM (PGRI, 2.º ciclo)", "Flood hazard for land-use plans (2nd cycle)", PGRI, "show:0", "#e53935", .5, 9]
   ];
-  // Onde entra cada subgrupo: antes do primeiro item do subgrupo indicado (ordem dos subgrupos = primeira aparição).
-  var ANTES = { "Litoral": "Reservas", "Inundações": "Servidões" };
-  function arrumar(E, novos) {
-    novos.forEach(function (e) { var i = E.indexOf(e); if (i >= 0) E.splice(i, 1); });
-    novos.forEach(function (e) {
-      var j = -1, k;
-      // Se o subgrupo já existe (ex.: Litoral, de outra sessão), entra logo a seguir ao seu último item.
-      for (k = E.length - 1; k >= 0; k--) if (E[k].g === "cond" && E[k]._sub0 === e._sub && novos.indexOf(E[k]) < 0) { j = k + 1; break; }
-      if (j < 0) { var alvo = ANTES[e._sub];
-        for (k = 0; k < E.length; k++) if (E[k].g === "cond" && E[k]._sub0 === alvo) { j = k; break; }
-        if (j >= 0) { for (k = j - 1; k >= 0; k--) if (E[k].g === "cond" && E[k]._sub0 === e._sub) { j = k + 1; break; } } }
-      if (j < 0) E.push(e); else E.splice(j, 0, e);
-      e._sub0 = e._sub;
-    });
+  // Ordem dos subgrupos de Condicionantes (pedido do Nuno, 3/11, 20h48: «organizar ... que faça sentido»). O painel ordena
+  // os subgrupos pela primeira aparição no catálogo; aqui reordenam-se só as entradas «cond», nas mesmas posições, de forma
+  // estável. Subgrupos que não estejam na lista ficam no fim, pela ordem em que estavam.
+  var ORDEM = ["Ordenamento (PDM)", "PDM · planta de condicionantes (imagem)", "Litoral", "Reservas", "Natureza", "Áreas classificadas",
+    "Água", "Inundações", "Servidões", "Servidões oficiais (SRUP · DGT)", "Caça e lazer"];
+  var ITEM = { poc_area: 0, poc_ztp: 1, poc_margem: 2, poc_faixas: 3, poc_critica: 4 };
+  function arrumar(E) {
+    var pos = [], it = [];
+    E.forEach(function (e, i) { if (e && e.g === "cond") { pos.push(i); it.push({ e: e, i: i }); } });
+    function rank(x) { var k = ORDEM.indexOf(String(x.e._sub || x.e.sub || "")); return k < 0 ? ORDEM.length : k; }
+    it.sort(function (a, b) { return rank(a) - rank(b) || ((ITEM[a.e.id] != null && ITEM[b.e.id] != null) ? ITEM[a.e.id] - ITEM[b.e.id] : a.i - b.i); });
+    pos.forEach(function (p, k) { E[p] = it[k].e; });
   }
   function registar() {
     var V = window.IPRViz; if (!V || typeof V.juntar !== "function" || !V.catalogo) return false;
-    var E = V.catalogo, novos = [];
-    E.forEach(function (x) { if (x && x.g === "cond" && x._sub0 == null) x._sub0 = String(x.sub || ""); });
+    var E = V.catalogo;
     L.forEach(function (d) {
       var e = { id: d[0], g: "cond", sub: d[1][0], subEn: d[1][1], n: d[2], en: d[3], t: "ags", url: d[4], layers: d[5],
         lic: "v", op: d[7], cor: d[6], minz: d[8], fonte: "APA", nota: NOTA };
       e._sub = d[1][0];
-      if (V.juntar(e)) novos.push(e);
+      V.juntar(e);
     });
-    try { arrumar(E, novos); } catch (x) {}
+    try { arrumar(E); } catch (x) {}
     return true;
   }
-  (function vez(n) { try { if (registar()) return; } catch (e) {} if (n < 40) setTimeout(function () { vez(n + 1); }, 50); })(0);
+  (function vez(n) { try { if (registar()) { [300, 1000, 2500, 5000].forEach(function (t) { setTimeout(function () { try { arrumar(window.IPRViz.catalogo); } catch (x) {} }, t); }); return; } } catch (e) {} if (n < 40) setTimeout(function () { vez(n + 1); }, 50); })(0);
 })();
