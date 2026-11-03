@@ -10,7 +10,12 @@
    · BDG/PSRN2000_habitats, camada 1: Plano Sectorial da Rede Natura 2000, 1:100 000, um código por polígono (cod_hab_n3).
    · BDG/rel_art17_habitats, camada 0: relatório do art. 17.º da Directiva Habitats (2013–2018), quadrícula de 10 km,
      com o estado de conservação global (a_global: FV, U1, U2, XX).
-   Licença «a» (âmbar) até o ICNF confirmar por escrito a exibição num serviço pago. */
+   Licença «a» (âmbar) até o ICNF confirmar por escrito a exibição num serviço pago.
+   3/11/2026, resposta do ICNF (Lia Godinho, DAGAC; decisão do Nuno, caixas das 12h30): podemos usar e mostrar os dados com
+   a referência à propriedade do ICNF, mas não consumir directamente os serviços do Geocatálogo; e o PSRN2000 está obsoleto
+   fora das ZEC Arquipélago da Berlenga e Alvito/Cuba. Por isso a camada hab_psrn passa a ser uma cópia nossa, só da
+   Berlenga (dados/psrn2000_habitats_PTCON0006.geojson, 10 polígonos, descarregada a 3/11/2026; Alvito/Cuba não tem
+   polígonos no PSRN2000). As restantes camadas passam a cópias nossas na migração das camadas do ICNF. */
 (function () {
   "use strict";
   if (window.__iprHabitats) return;
@@ -83,9 +88,20 @@
     junta({ id: "hab_" + h[0].toLowerCase(), sub: "zec", n: h[0] + ast + " · " + h[2], en: h[0] + ast + " · " + h[3], url: ZEC, layers: "show:1", cor: h[1], op: .8, niv: "i", fam: "hab", hab: h,
       dyn: [camada(301, 1, em3(h[0]), h[1], 200, "#ffffff")] });
   });
-  // 4. PSRN2000 (1:100 000), por grupo, para toda a Rede Natura do continente.
-  junta({ id: "hab_psrn", sub: "nac", n: "Habitats do Plano Sectorial Rede Natura (1:100 000)", en: "Natura 2000 Sectoral Plan habitats (1:100,000)", url: PSRN, layers: "show:1", cor: "#5a8f3a", op: .6, niv: "e", fam: "psrn",
-    dyn: GR.map(function (g, i) { return camada(401 + i, 1, "cod_hab_n3 LIKE '" + g[0] + "%'", g[1], 170); }),
+  // 4. PSRN2000 (1:100 000), só onde ainda é a referência (Berlenga), a partir da nossa cópia.
+  var AQUI = (function () { try { var c = document.currentScript && document.currentScript.src; if (c) return c.replace(/[^\/]*$/, ""); } catch (e) {} return ""; })();
+  var PSRN_COPIA = (AQUI || "https://cdn.jsdelivr.net/gh/terracruadesignpt-dotcom/Ipr-atlas@main/atlas/") + "dados/psrn2000_habitats_PTCON0006.geojson";
+  var PSRN_DATA = "3/11/2026";
+  function ligarPsrn(c) {
+    var M = c.mapa, id = c.id, op = c.op == null ? .6 : c.op;
+    return fetch(PSRN_COPIA).then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); }).then(function (gj) {
+      if (!M.getSource(id)) M.addSource(id, { type: "geojson", data: gj, attribution: c.atrib });
+      var cor = ["match", ["get", "cod_hab_n1"]]; GR.forEach(function (g) { cor.push(g[0], g[1]); }); cor.push("#5a8f3a");
+      c.camada({ id: id + "-f", type: "fill", source: id, paint: { "fill-color": cor, "fill-opacity": .7 * op } }, "fill");
+      c.camada({ id: id + "-l", type: "line", source: id, paint: { "line-color": cor, "line-width": 1, "line-opacity": op } }, "line");
+    });
+  }
+  junta({ id: "hab_psrn", sub: "nac", n: "Habitats do Plano Sectorial Rede Natura (1:100 000) · Berlenga", en: "Natura 2000 Sectoral Plan habitats (1:100,000) · Berlenga", t: "ext", ligar: ligarPsrn, cor: "#5a8f3a", op: .6, niv: "e", fam: "psrn",
     leg: GR.map(function (g) { return [g[1], g[0] + " · " + g[2]]; }), legEn: GR.map(function (g) { return [g[1], g[0] + " · " + g[3]]; }) });
   // 5. Quadrícula de 10 km do art. 17.º, por habitat, com o estado de conservação.
   HB.forEach(function (h) {
@@ -99,7 +115,8 @@
     var en = lg() === "en";
     LIST.forEach(function (d) {
       if (EXPL && d.niv === "i") return;
-      var e = { id: d.id, g: "nat", sub: SUB[d.sub][0], subEn: SUB[d.sub][1], n: d.n, en: d.en, t: "ags", url: d.url, layers: d.layers,
+      var e = d.t === "ext" ? { id: d.id, g: "nat", sub: SUB[d.sub][0], subEn: SUB[d.sub][1], n: d.n, en: d.en, t: "ext", ligar: d.ligar, lic: "v", op: d.op, cor: d.cor, fonte: "ICNF (cópia de " + PSRN_DATA + ")", nota: "", niv: d.niv, minz: 6 }
+        : { id: d.id, g: "nat", sub: SUB[d.sub][0], subEn: SUB[d.sub][1], n: d.n, en: d.en, t: "ags", url: d.url, layers: d.layers,
         dyn: JSON.stringify(d.dyn), lic: "a", op: d.op, cor: d.cor, fonte: "ICNF", nota: d.niv === "i" ? "Intelligence" : "", niv: d.niv, minz: 6 };
       if (d.leg) e.leg = en && d.legEn ? d.legEn : d.leg;
       V.juntar(e);
@@ -111,8 +128,8 @@
   // Fichas de camada (formato do §28). Textos escritos em português e em inglês.
   var CIT = { pt: "ICNF, {c}, {u}, consultado em " + DATA + ". Dados abertos com citação; exibição num serviço pago por confirmar com o ICNF (âmbar).",
     en: "ICNF, {c}, {u}, accessed " + DATA + ". Open data with attribution; use in a paid service to be confirmed with ICNF (amber)." };
-  var ZEC_LIM = { pt: "Só cobre as 59 ZEC terrestres do continente com cartografia nova (faltam, por exemplo, Alvito/Cuba e Berlenga). Fora delas, a falta de mancha não quer dizer falta de habitat. Cada polígono pode ter até três habitats; as classes de cobertura A a D ainda não estão explicadas nos metadados.",
-    en: "Only covers the 59 mainland terrestrial SACs with new mapping (Alvito/Cuba and Berlenga, for example, are missing). Outside them, no patch does not mean no habitat. Each polygon can hold up to three habitats; the A to D cover classes are not yet explained in the metadata." };
+  var ZEC_LIM = { pt: "Só cobre as 59 ZEC terrestres do continente com cartografia nova (faltam, por exemplo, Alvito/Cuba e Berlenga). Fora delas, a falta de mancha não quer dizer falta de habitat. Cada polígono pode ter até três habitats, por ordem decrescente de cobertura. Classes de cobertura (ICNF): A, mais de 75 %; B, 30 a 75 %; C, até 30 %.",
+    en: "Only covers the 59 mainland terrestrial SACs with new mapping (Alvito/Cuba and Berlenga, for example, are missing). Outside them, no patch does not mean no habitat. Each polygon can hold up to three habitats, in decreasing order of cover. Cover classes (ICNF): A, over 75%; B, 30 to 75%; C, up to 30%." };
   var FAM = {
     grupos: {
       pt: { s: "Ver de relance que tipo de natureza ocupa cada parte de uma ZEC: florestas, matos, prados e montados, águas doces.", l: "Cada cor é um grupo do Anexo I da Directiva Habitats, pelo habitat dominante do polígono. Clique para ver os três habitats e a cobertura.", d: "Cartografia de habitats naturais e seminaturais em ZEC, 2018 a 2023 (ICNF, ISA, Floradata, Aqualogus, Território XXI).", c: "59 ZEC terrestres do continente.", e: "1:5 000 (alguns 1:10 000).", ex: "Perceber se um terreno dentro de uma ZEC tem montado, galeria ripícola ou charcos temporários antes de planear charcas ou caminhos." },
@@ -124,19 +141,21 @@
       pt: { s: "Saber onde está um habitat concreto, com o pormenor que conta para o projecto: limites de intervenção, faixas, charcas, pastoreio.", l: "Mancha com contorno branco: polígonos onde o habitat aparece em qualquer posição. O asterisco marca os prioritários da Directiva.", d: "Cartografia de habitats em ZEC, 2018 a 2023.", c: "59 ZEC terrestres do continente.", e: "1:5 000.", ex: "Desenhar uma intervenção num monte alentejano evitando os charcos temporários (3170*) e mantendo o montado (6310)." },
       en: { s: "Find where a specific habitat lies, at the detail that matters for a project: works boundaries, fuel breaks, ponds, grazing.", l: "Patch with a white outline: polygons where the habitat appears in any position. The asterisk marks priority habitats under the Directive.", d: "Habitat mapping in SACs, 2018 to 2023.", c: "59 mainland terrestrial SACs.", e: "1:5,000.", ex: "Plan works on an Alentejo farm while avoiding temporary ponds (3170*) and keeping the dehesa (6310)." } },
     psrn: {
-      pt: { s: "Enquadrar os habitats em toda a Rede Natura do continente, incluindo as ZEC sem cartografia nova.", l: "Cores por grupo do Anexo I, como no mapa das ZEC. Um habitat por polígono.", d: "Plano Sectorial da Rede Natura 2000 (RCM n.º 115-A/2008).", c: "Rede Natura 2000 do continente.", e: "1:100 000, generalizado.", lim: "Escala regional: serve para enquadrar, não para desenhar uma intervenção. Mais antigo do que a cartografia das ZEC; onde houver as duas, vale a das ZEC.", ex: "Ver que habitats o plano sectorial esperava numa ZEC que ainda não tem cartografia de pormenor." },
-      en: { s: "Frame habitats across the whole mainland Natura 2000 network, including SACs without new mapping.", l: "Colours by Annex I group, as in the SAC map. One habitat per polygon.", d: "Natura 2000 Sectoral Plan (Council of Ministers Resolution 115-A/2008).", c: "Mainland Natura 2000 network.", e: "1:100,000, generalised.", lim: "Regional scale: good for context, not for designing works. Older than the SAC mapping; where both exist, the SAC mapping prevails.", ex: "See which habitats the sectoral plan expected in a SAC that has no detailed mapping yet." } },
+      pt: { s: "Ver os habitats da ZEC Arquipélago da Berlenga, que ainda não tem a cartografia nova.", l: "Cores por grupo do Anexo I, como no mapa das ZEC. Um habitat por polígono.", d: "Plano Sectorial da Rede Natura 2000 (RCM n.º 115-A/2008).", c: "Só a ZEC Arquipélago da Berlenga (PTCON0006). Nas outras ZEC vale a cartografia nova, que é a homologada e de referência (indicação do ICNF, 3/11/2026). A ZEC Alvito/Cuba não tem habitats no PSRN2000.", e: "1:100 000, generalizado e indicativo.", lim: "Escala regional e carácter indicativo: serve para enquadrar, não para desenhar uma intervenção. Fica até o ICNF publicar a cartografia nova da Berlenga.", ex: "Ver que habitats costeiros o plano sectorial assinala na Berlenga." },
+      en: { s: "See the habitats of the Berlengas Archipelago SAC, which has no new mapping yet.", l: "Colours by Annex I group, as in the SAC map. One habitat per polygon.", d: "Natura 2000 Sectoral Plan (Council of Ministers Resolution 115-A/2008).", c: "Berlengas Archipelago SAC only (PTCON0006). In every other SAC the new mapping applies, as the approved reference (ICNF guidance, 3 Nov 2026). The Alvito/Cuba SAC has no habitats in the Sectoral Plan.", e: "1:100,000, generalised and indicative.", lim: "Regional scale and indicative: good for context, not for designing works. Kept until ICNF publishes new mapping for the Berlengas.", ex: "See which coastal habitats the sectoral plan marks on the Berlengas." } },
     art17: {
       pt: { s: "Saber se um habitat existe na região, mesmo fora da Rede Natura, e em que estado de conservação está no país.", l: "Quadrículas de 10 km onde o habitat foi reportado, pintadas pelo estado de conservação global da região biogeográfica: verde favorável, amarelo inadequado, vermelho mau, cinzento desconhecido.", d: "Relatório nacional do art. 17.º da Directiva Habitats, 2013 a 2018.", c: "Todo o país, incluindo fora da Rede Natura.", e: "Quadrícula de 10 km (grelha europeia da EEA).", lim: "Presença na quadrícula, não no terreno: um quadrado de 10 km pode ter o habitat só num canto. O estado é o da região biogeográfica, não o do sítio.", ex: "Ver se um terreno fora da Rede Natura está numa quadrícula com montado ou charcos temporários reportados." },
       en: { s: "Find whether a habitat occurs in the area, even outside Natura 2000, and its conservation status nationally.", l: "10 km cells where the habitat was reported, coloured by the overall status in the biogeographical region: green favourable, yellow inadequate, red bad, grey unknown.", d: "National Article 17 report under the Habitats Directive, 2013 to 2018.", c: "Whole country, including outside Natura 2000.", e: "10 km grid (EEA reference grid).", lim: "Presence in the cell, not on the ground: a 10 km square may hold the habitat in one corner only. Status refers to the biogeographical region, not the site.", ex: "Check whether a plot outside Natura 2000 lies in a cell with reported dehesa or temporary ponds." } }
   };
   var SVC = { zec: ["Habitats naturais e seminaturais em ZEC", ZEC], psrn: ["Habitats do PSRN2000", PSRN], art17: ["Relatório art. 17.º, habitats 2013–2018", A17] };
+  var CIT_COPIA = { pt: "ICNF, {c}, {u}. Cópia do IPR descarregada a " + PSRN_DATA + "; dados do ICNF, com referência à propriedade do ICNF.",
+    en: "ICNF, {c}, {u}. IPR copy downloaded on " + PSRN_DATA + "; ICNF data, credited to ICNF as owner." };
   function ficha(d, l) {
-    var F = FAM[d.fam][l], sv = d.fam === "psrn" ? SVC.psrn : d.fam === "art17" ? SVC.art17 : SVC.zec;
+    var F = FAM[d.fam][l], sv = d.fam === "psrn" ? SVC.psrn : d.fam === "art17" ? SVC.art17 : SVC.zec, cit = d.fam === "psrn" ? CIT_COPIA : CIT;
     var nome = l === "pt" ? d.n : d.en, o = nome + ".";
     if (d.hab) o = (l === "pt" ? "Habitat " : "Habitat ") + d.hab[0] + (d.hab[4] ? (l === "pt" ? " (prioritário)" : " (priority)") : "") + ": " + (l === "pt" ? d.hab[2] : d.hab[3]) + ".";
     return { id: d.id, n: nome, g: (l === "pt" ? "Natureza e clima · " : "Nature and climate · ") + SUB[d.sub][l === "pt" ? 0 : 1] + (d.niv === "i" ? " · Intelligence" : ""),
-      o: o, s: F.s, l: F.l, f: CIT[l].replace("{c}", sv[0]).replace("{u}", sv[1]), d: F.d, c: F.c, e: F.e,
+      o: o, s: F.s, l: F.l, f: cit[l].replace("{c}", sv[0]).replace("{u}", sv[1]), d: F.d, c: F.c, e: F.e,
       lim: F.lim || ZEC_LIM[l], ex: F.ex, est: l === "pt" ? "disponível" : "available", porConfirmar: [] };
   }
   function fichas() {
