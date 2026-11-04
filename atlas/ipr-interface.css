@@ -1,0 +1,118 @@
+/* IPR Atlas · componentes do sistema de design do Pedro Bolito (regenerativo.pt/interface/, «Interface das ferramentas IPR»,
+   versão B · IPR, escuro neutro). Pedido do Nuno, 04/11/2026, 23h34: «tudo isto é para actualizar [...] absorvas todas as
+   directrizes [...] retroactivo». Carregado depois do ipr-neutro.css; o ipr-interface.js trata dos textos.
+   Tamanhos da página do Pedro:
+     título de ecrã Outfit 400 15 px · subtítulo e campos IBM Plex Mono 11 a 12 px · etiquetas Plex Mono 500 10 px em
+     maiúsculas, #0B0C0A com letra #B5D86A · botões Inter 600 12 px, só a primeira letra maiúscula, cantos de 2 px
+     (principal #94BE39, secundário contorno #383A33, terciário só texto) · separadores Inter 12 px, o activo a 600 com linha
+     verde · selector segmentado Inter 600 12 px · títulos de secção Plex Mono 11 px verde («01 · TERRENO») · números dos
+     passos Plex Mono 10 px · chips Inter 12 px · temas em 2 colunas · ferramentas do mapa 30 × 30 px, activo em verde ·
+     ícones 16 px, traço 1,7 px · barra de coordenadas Plex Mono 11 px · legenda mínima com o MDT na horizontal.
+   No telemóvel (até 600 px) os mesmos tamanhos, com alvos de toque de pelo menos 40 px. Os botões flutuantes e a barra de
+   cima do telemóvel são do m90898 e não mudam aqui. O tema claro (.claro) fica como está.
+   Desligar: ?neutro=0 (o mesmo interruptor do ipr-neutro). Propriedade de IPR – Instituto de Planeamento Regenerativo, Lda. */
+
+/* ── Marca: logótipo IPR Atlas com as cores originais e sem subtítulo ── */
+html:not([data-neutro-off]) #ipe .ipe-marca.ipr-bolito-logo svg g[fill="#818a72"]{display:none}
+html:not([data-neutro-off]) #ipe .ipe-marca.ipr-bolito-logo svg{height:24px;width:auto}
+
+/* ── Título e subtítulo do ecrã (nome do projecto aberto) ── */
+html:not([data-neutro-off]) #ipe:not(.claro) .ipe-ctx:not(.ipr-as-eco) #ipe-ctx-t{font:400 15px/1.2 Outfit,Inter,system-ui,sans-serif!important;letter-spacing:0!important;color:#F5F4EE}
+html:not([data-neutro-off]) #ipe:not(.claro) .ipe-ctx:not(.ipr-as-eco) #ipe-ctx-r{font:400 11px/1.3 'IBM Plex Mono',ui-monospace,monospace!important;letter-spacing:0!important;color:#C3C5BC}
+
+/* ── Etiquetas (Intelligence, Explorer, Beta, contadores) ── */
+html:not([data-neutro-off]) #ipe:not(.claro) .ipe-nivel,html:not([data-neutro-off]) #ipe:not(.claro) .ipe-beta{font:500 10px/1.4 'IBM Plex Mono',ui-monospace,monospace!important;letter-spacing:.08em!important;text-transform:uppercase!important;background:#0B0C0A!important;color:#B5D86A!important;border:0!important;border-radius:2px!important;padding:3px 7px!important}
+
+/* ── Botões ── */
+html:not([data-neutro-off]) #ipe:not(.claro) .ipe-b,html:not([data-neutro-off]) #ipe:not(.claro) .tme-b{font:600 12px/1.25 Inter,system-ui,sans-serif!important;text-transform:none!important;letter-spacing:0!important;border-radius:2px!important}
+html:not([data-neutro-off]) #ipe:not(.claro) .ipe-b--ac,html:not([data-neutro-off]) #ipe:not(.claro) .tme-b:not(.tme-b--s){background:#94BE39!important;border-color:#94BE39!important;color:#141513!important}
+html:not([data-neutro-off]) #ipe:not(.claro) .ipe-b:not(.ipe-b--ac),html:not([data-neutro-off]) #ipe:not(.claro) .tme-b--s{background:transparent!important;border:1px solid #383A33!important;color:#F5F4EE!important}
+html:not([data-neutro-off]) #ipe:not(.claro) .ipe-b:not(.ipe-b--ac):hover,html:not([data-neutro-off]) #ipe:not(.claro) .tme-b--s:hover{border-color:#94BE39!important}
+html:not([data-neutro-off]) #ipe:not(.claro) .ipe-lk{font:600 12px/1.25 Inter,system-ui,sans-serif!important;text-transform:none!important;border-radius:2px!important}
+html:not([data-neutro-off]) .ipr-cp button,html:not([data-neutro-off]) .ipr-cp a{border-radius:2px}
+
+/* ── Separadores: Inter 12 px, o activo a 600 com linha verde por baixo ── */
+html:not([data-neutro-off]) #ipe:not(.claro) #ipe-tabs{gap:0!important;border-bottom:1px solid #383A33!important;background:transparent!important}
+html:not([data-neutro-off]) #ipe:not(.claro) #ipe-tabs .ipe-tab{font-family:Inter,system-ui,sans-serif!important;font-weight:500!important;line-height:1.2!important;text-transform:none!important;letter-spacing:0!important;color:#C3C5BC!important;background:transparent!important;border:0!important;border-bottom:2px solid transparent!important;border-radius:0!important;box-shadow:none!important;padding:10px 8px 8px!important;margin-bottom:-1px!important}
+html:not([data-neutro-off]) #ipe:not(.claro) #ipe-tabs .ipe-tab[aria-selected=true]{font-weight:600!important;color:#F5F4EE!important;border-bottom-color:#94BE39!important;background:transparent!important}
+html:not([data-neutro-off]) #ipe:not(.claro) #ipe-tabs .ipe-tab:hover{color:#F5F4EE!important}
+/* Alguns separadores mudam de nome por CSS (letra a 0 e o nome novo no ::after): o tamanho vai para o ::after */
+html:not([data-neutro-off]) #ipe:not(.claro) #ipe-tabs .ipe-tab::after{position:static!important;font-family:Inter,system-ui,sans-serif!important;font-size:12px!important;letter-spacing:0!important}
+/* Separadores de estado das Bases (projectos-grupos.js) com o mesmo desenho */
+html:not([data-neutro-off]) #ipr-pg-f .abas button{font:500 12px/1.2 Inter,system-ui,sans-serif!important;color:#C3C5BC!important}
+html:not([data-neutro-off]) #ipr-pg-f .abas button[aria-selected=true]{font-weight:600!important;color:#F5F4EE!important;border-bottom-color:#94BE39!important}
+/* Lista dos tipos das Bases (bases-acordeao.js): Inter 12 px, a aberta a 600 com linha verde */
+html:not([data-neutro-off]) .ipr-ac button{font:500 12px/1.25 Inter,system-ui,sans-serif!important;min-height:40px!important}
+html:not([data-neutro-off]) .ipr-ac button[aria-expanded=true]{font-weight:600!important;box-shadow:inset 0 -2px 0 #94BE39!important}
+
+/* ── Selector segmentado (PT / EN, Base Cartográfica / Converter) ── */
+html:not([data-neutro-off]) .ipr-lg{border:1px solid #383A33!important;border-radius:2px!important}
+html:not([data-neutro-off]) .ipr-lg button{font:600 12px/1.2 Inter,system-ui,sans-serif!important;letter-spacing:0!important;border-radius:0!important}
+html:not([data-neutro-off]) .ipr-lg button[aria-pressed=true]{background:#0B0C0A!important;color:#94BE39!important;box-shadow:inset 0 -1px 0 #B8A83A!important}
+html:not([data-neutro-off]) #ipe:not(.claro) .ipe-seg button{font:600 12px/1.2 Inter,system-ui,sans-serif!important;border-radius:2px!important}
+
+/* ── Títulos de secção: Plex Mono 11 px verde, «01 · TERRENO» ── */
+html:not([data-neutro-off]) #ipe:not(.claro) .ipe-dir h3.ipe-h.n6-sec{font:500 11px/1.3 'IBM Plex Mono',ui-monospace,monospace!important;letter-spacing:.08em!important;text-transform:uppercase!important;color:#94BE39!important;border-bottom:1px solid #383A33;padding-bottom:6px!important}
+html:not([data-neutro-off]) #ipe:not(.claro) .ipe-dir h3.ipe-h.n6-sec>b{display:inline!important;font:inherit!important;color:inherit!important;background:none!important;padding:0!important;min-width:0!important}
+
+/* ── Números dos passos: Plex Mono 10 px ── */
+html:not([data-neutro-off]) .ipr-cp-ps b{font:500 10px/1 'IBM Plex Mono',ui-monospace,monospace!important;border-radius:2px!important}
+html:not([data-neutro-off]) .ipr-cp-ps li.on b{background:#0B0C0A!important;color:#94BE39!important;box-shadow:inset 0 -1px 0 #B8A83A}
+html:not([data-neutro-off]) .ipr-cp-ps span{font:400 12px/1.25 Inter,system-ui,sans-serif!important}
+/* Comprar: título no estilo do ecrã e frase por baixo */
+html:not([data-neutro-off]) .ipr-cp-pn>h2{font:400 15px/1.25 Outfit,Inter,system-ui,sans-serif!important;letter-spacing:0!important}
+html:not([data-neutro-off]) .ipr-cp-pn .n6-sub{display:block;margin:-4px 0 10px;font:400 12px/1.4 Inter,system-ui,sans-serif;color:#C3C5BC}
+html:not([data-neutro-off]) .ipr-cp-pn .n5-mais a small{display:inline-block;width:100%;font:400 11px/1.3 Inter,system-ui,sans-serif;color:#C3C5BC;margin-top:2px;text-decoration:none}
+
+/* ── Chips de ferramentas (Ponto, Linha, Área, KML) ── */
+html:not([data-neutro-off]) #ipe:not(.claro) [data-loc].ipe-b,html:not([data-neutro-off]) .ipe-chip{font:400 12px/1.2 Inter,system-ui,sans-serif!important;border-radius:2px!important}
+
+/* ── Temas em grelha de 2 colunas ── */
+html:not([data-neutro-off]) #ipr-t62 [role=list],html:not([data-neutro-off]) #ipr-t62 .g{display:grid!important;grid-template-columns:1fr 1fr!important;gap:4px!important}
+html:not([data-neutro-off]) #ipr-t62 button[data-t62],html:not([data-neutro-off]) #ipr-t62 button[data-agt]{font:400 12px/1.25 Inter,system-ui,sans-serif!important;border-radius:2px!important}
+
+/* ── Campos e listas de escolha ── */
+html:not([data-neutro-off]) #ipe:not(.claro) input[type=text],html:not([data-neutro-off]) #ipe:not(.claro) input[type=search],html:not([data-neutro-off]) #ipe:not(.claro) input[type=email],html:not([data-neutro-off]) #ipe:not(.claro) input[type=number],html:not([data-neutro-off]) #ipe:not(.claro) textarea{font-family:'IBM Plex Mono',ui-monospace,monospace!important;font-size:12px!important;border-radius:2px!important}
+html:not([data-neutro-off]) #ipe:not(.claro) select{font:400 12px/1.3 Inter,system-ui,sans-serif!important;border-radius:2px!important}
+
+/* ── Ferramentas do mapa: 30 × 30 px, activo em verde; ícones 16 px, traço 1,7 px ── */
+@media (min-width:601px){
+html:not([data-neutro-off]) #ipe .ipe-tools .ipe-t{width:30px!important;height:30px!important;min-width:30px!important;min-height:30px!important;padding:0!important}
+}
+html:not([data-neutro-off]) #ipe .ipe-tools .ipe-t svg,html:not([data-neutro-off]) #ipe .ipe-tab svg,html:not([data-neutro-off]) #ipe .ipe-b svg,html:not([data-neutro-off]) #ipr-t62 button svg{width:16px!important;height:16px!important;stroke-width:1.7!important}
+html:not([data-neutro-off]) #ipe .ipe-tools .ipe-t{color:#F5F4EE}
+html:not([data-neutro-off]) #ipe .ipe-tools .ipe-t[aria-pressed=true]{color:#94BE39!important;background:#0B0C0A!important}
+html:not([data-neutro-off]) #ipe .ipe-tools .ipe-t[aria-pressed=true] svg{stroke:#94BE39}
+
+/* ── Barra de coordenadas: Plex Mono 11 px, separadores «·» ── */
+html:not([data-neutro-off]) #ipe:not(.claro) #ipe-st,html:not([data-neutro-off]) #ipe:not(.claro) #ipe-st *{font-family:'IBM Plex Mono',ui-monospace,monospace!important;font-size:11px!important}
+html:not([data-neutro-off]) #ipe:not(.claro) #ipe-st>.ipr-crs+.ipr-ed::before,html:not([data-neutro-off]) #ipe:not(.claro) #ipe-st>.ipr-ed+.ipr-ed::before{content:"·";margin:0 6px 0 0;color:#8A8C82}
+
+/* ── Legenda mínima: MDT na horizontal (rampa baixo → alto em linha) ── */
+html:not([data-neutro-off]) #ipr-lgd.n5-min .c .one.rampa{flex-wrap:wrap!important;align-items:center!important;row-gap:2px}
+html:not([data-neutro-off]) #ipr-lgd.n5-min .c .one.rampa>s{display:none!important}
+html:not([data-neutro-off]) #ipr-lgd.n5-min .c .one.rampa .n5-rp{display:none!important}
+html:not([data-neutro-off]) #ipr-lgd.n5-min .c .one.rampa .n6-rh{display:grid;grid-template-columns:auto 1fr;grid-template-rows:auto auto;column-gap:8px;align-items:center;width:100%;min-width:150px}
+html:not([data-neutro-off]) #ipr-lgd.n5-min .n6-rh>b{grid-row:1/3;font:400 12px/1.25 Inter,system-ui,sans-serif;color:#F5F4EE}
+html:not([data-neutro-off]) #ipr-lgd.n5-min .n6-rh>s{display:block;height:7px;border-radius:1px;background:linear-gradient(90deg,#3D6B3A,#CFE07A 35%,#E9C452 65%,#8A4A22)}
+html:not([data-neutro-off]) #ipr-lgd.n5-min .n6-rh>span{display:flex;justify-content:space-between;font:400 10px/1.2 'IBM Plex Mono',ui-monospace,monospace;color:#C3C5BC}
+html:not([data-neutro-off]) #ipr-lgd .n6-rh{display:none}
+
+/* ── Painel de projectos e da Base ── */
+html:not([data-neutro-off]) #ipe:not(.claro) .n6-entregue{display:inline-flex;align-items:center;gap:5px;font:500 10px/1.4 'IBM Plex Mono',ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;background:#0B0C0A;color:#B5D86A;border-radius:2px;padding:2px 7px}
+
+/* ── Telemóvel: os mesmos tamanhos, alvos de toque de 40 px, nada cortado ── */
+@media (max-width:600px){
+html:not([data-neutro-off]) #ipe:not(.claro) #ipe-tabs .ipe-tab{min-height:40px!important;padding:10px 6px 8px!important}
+html:not([data-neutro-off]) #ipe:not(.claro) .ipe-b,html:not([data-neutro-off]) #ipe:not(.claro) .tme-b,html:not([data-neutro-off]) .ipr-cp-i,html:not([data-neutro-off]) .ipr-lg button{min-height:40px!important}
+html:not([data-neutro-off]) #ipe .ipe-tools .ipe-t{min-width:40px!important;min-height:40px!important}
+html:not([data-neutro-off]) #ipr-t62 button[data-t62],html:not([data-neutro-off]) #ipr-t62 button[data-agt]{min-height:40px!important}
+html:not([data-neutro-off]) .ipr-cp-pn{max-width:calc(100vw - 16px)!important;right:8px!important;left:8px!important;width:auto!important}
+html:not([data-neutro-off]) #ipe:not(.claro) .ipe-dir input,html:not([data-neutro-off]) #ipe:not(.claro) .ipe-dir select{font-size:16px!important;min-height:40px}
+html:not([data-neutro-off]) #ipr-lgd.n5-min{max-width:calc(100vw - 80px)!important}
+}
+
+/* ── Correcções vistas no ensaio de 04/11 ── */
+html:not([data-neutro-off]) #ipr-lgd.n5-min,html:not([data-neutro-off]) #ipr-lgd.n5-min *{letter-spacing:0!important}
+html:not([data-neutro-off]) #ipr-lgd.n5-min>.h{letter-spacing:.1em!important}
+html:not([data-neutro-off]) #ipe:not(.claro) #ipe-tabs .ipe-tab>i:not(:empty){margin-left:5px;font:500 10px/1 'IBM Plex Mono',ui-monospace,monospace;font-style:normal;color:#B5D86A;background:#0B0C0A;border-radius:2px;padding:2px 5px;vertical-align:1px}
