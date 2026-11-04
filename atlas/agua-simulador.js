@@ -123,7 +123,7 @@
       "#ipr-as .err{margin:8px 0;padding:7px 9px;border-left:3px solid #d9534f;background:var(--p2,#1d2118);font-size:12px}" +
       "#ipr-as .it{border:1px solid var(--ln,#2b3024);border-radius:9px;padding:8px;margin:0 0 6px;background:var(--p2,#1d2118)}#ipr-as .it b{font-size:12.5px}#ipr-as .it .ln input{height:28px}" +
       "#ipr-as table.pti{width:100%;border-collapse:collapse;font-size:12px;margin:2px 0 6px}#ipr-as table.pti th{font-weight:500;text-align:right;opacity:.75;padding:2px 4px}#ipr-as table.pti th:first-child{text-align:left}" +
-      "#ipr-as table.pti td{padding:3px 4px;text-align:right;font:500 12px 'IBM Plex Mono',monospace;border-top:1px solid var(--ln,#2b3024)}#ipr-as table.pti td:first-child{text-align:left}#ipr-as table.pti tr[data-pti]{cursor:pointer}#ipr-as table.pti tr[data-pti]:hover td{background:rgba(255,255,255,.05)}" +
+      "#ipr-as table.pti td{padding:3px 4px;text-align:right;font:500 12px 'IBM Plex Mono',monospace;border-top:1px solid var(--ln,#2b3024)}#ipr-as table.pti td:first-child{text-align:left}#ipr-as table.pti tr[data-pti],#ipr-as table.pti tr[data-dep]{cursor:pointer}#ipr-as table.pti tr[data-pti]:hover td,#ipr-as table.pti tr[data-dep]:hover td{background:rgba(255,255,255,.05)}" +
       "#ipr-as i.pt{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;border:1px solid #fff;vertical-align:-1px;background:#f4d03f}#ipr-as i.pt.perigo{background:#e67e22}#ipr-as i.pt.grave{background:#922b21}" +
       "#ipr-as .kv{display:grid;grid-template-columns:1fr auto;gap:2px 10px;font-size:12px;margin:0 0 6px}#ipr-as .kv span:nth-child(2n){font:500 12px 'IBM Plex Mono',monospace;text-align:right}" +
       "#ipr-as .cam label{display:flex;gap:6px;align-items:center;font-size:12px;margin:0 0 4px}#ipr-as .leg{display:flex;height:8px;border-radius:4px;overflow:hidden;margin:2px 0 1px}#ipr-as .leg i{flex:1}#ipr-as .legv{display:flex;justify-content:space-between;font:500 10px 'IBM Plex Mono',monospace;color:var(--mu,#a3a690)}" +
@@ -321,6 +321,7 @@
       });
     }
     h += pontosInundacao(s);
+    h += extras(r, s);
     if (r.vista && r.vista.camadas) {
       h += '<span class="as-h">' + esc(t("camadas")) + '</span><div class="cam">';
       r.vista.camadas.forEach(function (c) {
@@ -362,6 +363,134 @@
     });
     return h;
   }
+  // ───────────── 04/11/2026 (Nuno: «mostrar no painel o que o motor já calcula») ─────────────
+  // Hidrograma à saída (hidrograma_saida.csv), depressões com a curva cota-área-volume (vista de depressoes.gpkg e
+  // charcas_cav.csv) e passagens hidráulicas abertas. Os ficheiros vêm pelas mesmas ligações do resto dos resultados
+  // e só se pedem quando o resultado é mostrado; ficam guardados no próprio resultado.
+  var EX = {
+    pt: { hidT: "Hidrograma à saída do terreno", hidX: "minutos", hidY: "m³/s", antes: "antes", depois: "depois", hidN: "Caudal que sai do terreno ao longo da simulação.",
+      depT: "Maiores depressões", depId: "N.º", depCap: "Cabe", depProf: "Fundo", depTr: "Transborda a", depN: "Toque numa depressão para a ver no mapa e ver a curva cota-área-volume.",
+      cavT: "Curva cota-área-volume", cavX: "volume (m³)", cavY: "cota (m)", cavA: "área cheia", a_carregar: "A carregar…",
+      pasT: "Passagens hidráulicas abertas", pasN: "Aterros cortados onde a linha de água passa por baixo (método de Yamazaki et al., 2012). Confirme no terreno se existe passagem.",
+      pasAlt: "Altura", pasComp: "Comprimento", pasMont: "Bacia a montante", lazT: "Dados do LiDAR usados", lazM: "rugosidade", lazE: "edifícios", sim: "sim", nao: "não" },
+    en: { hidT: "Outflow hydrograph", hidX: "minutes", hidY: "m³/s", antes: "before", depois: "after", hidN: "Flow leaving the land through the run.",
+      depT: "Largest depressions", depId: "No.", depCap: "Holds", depProf: "Depth", depTr: "Spills at", depN: "Tap a depression to see it on the map and its level-area-volume curve.",
+      cavT: "Level-area-volume curve", cavX: "volume (m³)", cavY: "level (m)", cavA: "wetted area", a_carregar: "Loading…",
+      pasT: "Culverts opened", pasN: "Embankments cut where the watercourse passes underneath (Yamazaki et al., 2012). Check on site that a culvert exists.",
+      pasAlt: "Height", pasComp: "Length", pasMont: "Upstream area", lazT: "LiDAR data used", lazM: "roughness", lazE: "buildings", sim: "yes", nao: "no" }
+  };
+  function tx(k) { return EX[L()][k] || EX.pt[k] || k; }
+  function urlNome(r, nome) { var f = (r.ficheiros || []).filter(function (x) { return x.nome === nome; })[0]; return f ? f.url : null; }
+  function carregar(r, chave, nome, tipo) {
+    var X = r._x || (r._x = {}); if (chave in X) return X[chave];
+    var u = urlNome(r, nome); if (!u) { X[chave] = null; return null; }
+    X[chave] = "a carregar";
+    fetch(urlF(u), { credentials: "same-origin" }).then(function (x) { if (!x.ok) throw new Error(x.status); return tipo === "json" ? x.json() : x.text(); })
+      .then(function (d) { X[chave] = tipo === "json" ? d : csv(d); pintar(); }).catch(function () { X[chave] = null; pintar(); });
+    return X[chave];
+  }
+  function csv(s) {
+    var l = String(s).trim().split(/\r?\n/), c = l.shift().split(",");
+    return l.map(function (x) { var v = x.split(","), o = {}; c.forEach(function (k, i) { o[k] = isNaN(+v[i]) ? v[i] : +v[i]; }); return o; });
+  }
+  // gráfico de linhas simples em SVG; séries = [{nome, cor, pts:[[x,y],…]}]
+  function grafico(series, rx, ry, eixoXmin) {
+    var Wd = 330, Ht = 140, ml = 42, mr = 8, mt = 8, mb = 26, x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+    series.forEach(function (s) { s.pts.forEach(function (p) { if (p[0] < x0) x0 = p[0]; if (p[0] > x1) x1 = p[0]; if (p[1] < y0) y0 = p[1]; if (p[1] > y1) y1 = p[1]; }); });
+    if (!isFinite(x0) || x1 === x0) return "";
+    if (eixoXmin != null) x0 = Math.min(x0, eixoXmin);
+    if (y1 === y0) y1 = y0 + 1;
+    var X = function (v) { return ml + (v - x0) / (x1 - x0) * (Wd - ml - mr); }, Y = function (v) { return Ht - mb - (v - y0) / (y1 - y0) * (Ht - mt - mb); };
+    var g = '<svg viewBox="0 0 ' + Wd + " " + Ht + '" width="100%" style="display:block;margin:2px 0 4px" role="img">';
+    g += '<line x1="' + ml + '" y1="' + (Ht - mb) + '" x2="' + (Wd - mr) + '" y2="' + (Ht - mb) + '" stroke="currentColor" stroke-opacity=".3"/><line x1="' + ml + '" y1="' + mt + '" x2="' + ml + '" y2="' + (Ht - mb) + '" stroke="currentColor" stroke-opacity=".3"/>';
+    [y0, (y0 + y1) / 2, y1].forEach(function (v) { g += '<text x="' + (ml - 4) + '" y="' + (Y(v) + 3) + '" text-anchor="end" font-size="9" fill="currentColor" fill-opacity=".7" font-family="IBM Plex Mono,monospace">' + esc(n(v, Math.abs(y1 - y0) < 1 ? 3 : Math.abs(y1 - y0) < 20 ? 2 : 0)) + "</text>"; });
+    [x0, (x0 + x1) / 2, x1].forEach(function (v) { g += '<text x="' + X(v) + '" y="' + (Ht - mb + 12) + '" text-anchor="middle" font-size="9" fill="currentColor" fill-opacity=".7" font-family="IBM Plex Mono,monospace">' + esc(n(v, Math.abs(x1 - x0) < 20 ? 1 : 0)) + "</text>"; });
+    g += '<text x="' + ((ml + Wd - mr) / 2) + '" y="' + (Ht - 2) + '" text-anchor="middle" font-size="9.5" fill="currentColor" fill-opacity=".75">' + esc(rx) + "</text>";
+    g += '<text x="10" y="' + ((mt + Ht - mb) / 2) + '" text-anchor="middle" font-size="9.5" fill="currentColor" fill-opacity=".75" transform="rotate(-90 10 ' + ((mt + Ht - mb) / 2) + ')">' + esc(ry) + "</text>";
+    series.forEach(function (s) {
+      var p = s.pts, passo = Math.max(1, Math.floor(p.length / 300)), d = "";
+      for (var i = 0; i < p.length; i += passo) d += (d ? "L" : "M") + X(p[i][0]).toFixed(1) + " " + Y(p[i][1]).toFixed(1);
+      if ((p.length - 1) % passo) d += "L" + X(p[p.length - 1][0]).toFixed(1) + " " + Y(p[p.length - 1][1]).toFixed(1);
+      g += '<path d="' + d + '" fill="none" stroke="' + s.cor + '" stroke-width="1.8" stroke-linejoin="round"' + (s.tracejado ? ' stroke-dasharray="4 3"' : "") + "/>";
+    });
+    g += "</svg>";
+    if (series.length > 1) g += '<p class="nota">' + series.map(function (s) { return '<span style="display:inline-block;width:14px;height:0;border-top:2px ' + (s.tracejado ? "dashed" : "solid") + " " + s.cor + ';vertical-align:middle;margin-right:4px"></span>' + esc(s.nome); }).join(" &nbsp; ") + "</p>";
+    return g;
+  }
+  var COR_A = "#9aa0a6", COR_D = "#3498db";
+  function extras(r, s) {
+    var h = "";
+    // hidrograma (2D, ou antes e depois em 2D)
+    var hs = [];
+    [["", "hidrograma_saida.csv", COR_D, false], [tx("antes"), "antes/hidrograma_saida.csv", COR_A, true], [tx("depois"), "depois/hidrograma_saida.csv", COR_D, false]].forEach(function (q) {
+      if (!urlNome(r, q[1])) return;
+      var d = carregar(r, "hid:" + q[1], q[1], "csv");
+      hs.push({ nome: q[0], cor: q[2], tracejado: q[3], d: d });
+    });
+    if (hs.length) {
+      h += '<span class="as-h">' + esc(tx("hidT")) + "</span>";
+      if (hs.some(function (x) { return x.d === "a carregar"; })) h += '<p class="nota">' + esc(tx("a_carregar")) + "</p>";
+      else {
+        var ok = hs.filter(function (x) { return x.d && x.d.length; }).map(function (x) { return { nome: x.nome, cor: x.cor, tracejado: x.tracejado, pts: x.d.map(function (o) { return [o.tempo_s / 60, o.caudal_saida_m3s]; }) }; });
+        if (ok.length) h += grafico(ok, tx("hidX"), tx("hidY"), 0) + '<p class="nota">' + esc(tx("hidN")) + "</p>";
+      }
+    }
+    // depressões (Onde a água pára; em antes e depois, as de «depois»)
+    var cd = r.vista && r.vista.camadas && (r.vista.camadas.filter(function (c) { return c.id === "depressoes"; })[0] || r.vista.camadas.filter(function (c) { return c.id === "depois__depressoes"; })[0]);
+    if (cd) {
+      var gj = carregar(r, "dep", "vista/" + cd.geojson, "json"), pref = cd.id === "depressoes" ? "" : "depois/";
+      if (gj && gj !== "a carregar" && gj.features && gj.features.length) {
+        var fs = gj.features.slice().sort(function (a, b) { return (b.properties.capacidade_m3 || 0) - (a.properties.capacidade_m3 || 0); }).slice(0, 8);
+        h += '<span class="as-h">' + esc(tx("depT")) + '</span><table class="pti"><tr><th>' + esc(tx("depId")) + "</th><th>" + esc(tx("depCap")) + "</th><th>" + esc(tx("depProf")) + "</th><th>" + esc(tx("depTr")) + "</th></tr>";
+        fs.forEach(function (f) {
+          var p = f.properties, sel = r._x.sel != null && String(r._x.sel) === String(p.id);
+          h += '<tr data-dep="' + esc(p.id) + '"' + (sel ? ' style="outline:1px solid var(--ac,#a8b878)"' : "") + "><td>" + esc(p.id) + "</td><td>" + n(p.capacidade_m3, 0) + " m³</td><td>" + n(p.profundidade_max_m, 2) + " m</td><td>" + n(p.cota_transbordo_m, 2) + " m</td></tr>";
+        });
+        h += '</table><p class="nota">' + esc(tx("depN")) + "</p>";
+        if (r._x.sel != null) {
+          var cav = carregar(r, "cav", pref + "charcas_cav.csv", "csv");
+          if (cav === "a carregar") h += '<p class="nota">' + esc(tx("a_carregar")) + "</p>";
+          else if (cav && cav.length) {
+            var pts = cav.filter(function (o) { return String(o.id) === String(r._x.sel); }).sort(function (a, b) { return a.cota_m - b.cota_m; });
+            if (pts.length > 1) {
+              var ul = pts[pts.length - 1];
+              h += '<span class="as-h">' + esc(tx("cavT")) + " · " + esc(r._x.sel) + "</span>" + grafico([{ nome: "", cor: COR_D, pts: pts.map(function (o) { return [o.volume_m3, o.cota_m]; }) }], tx("cavX"), tx("cavY"));
+              h += '<div class="kv"><span>' + esc(tx("cavY")) + "</span><span>" + n(pts[0].cota_m, 2) + " → " + n(ul.cota_m, 2) + " m</span><span>" + esc(tx("cavA")) + "</span><span>" + n(ul.area_m2, 0) + " m²</span><span>" + esc(tx("cavX")) + "</span><span>" + n(ul.volume_m3, 0) + " m³</span></div>";
+            }
+          }
+        }
+      }
+    }
+    // passagens hidráulicas e camadas do LiDAR (2D)
+    var pa = s.passagens;
+    if (pa && pa.lista && pa.lista.length) {
+      var ls = pa.lista.filter(function (x) { return !x.erro; });
+      h += '<span class="as-h">' + esc(tx("pasT")) + " · " + n(pa.abertas, 0) + "</span>";
+      if (ls.length) {
+        h += '<table class="pti"><tr><th>' + esc(tx("pasMont")) + "</th><th>" + esc(tx("pasAlt")) + "</th><th>" + esc(tx("pasComp")) + "</th></tr>";
+        ls.slice(0, 8).forEach(function (x) { h += "<tr><td>" + n(x.area_montante_ha, 1) + " ha</td><td>" + n(x.altura_m, 2) + " m</td><td>" + n(x.comprimento_m, 0) + " m</td></tr>"; });
+        h += "</table>";
+      }
+      pa.lista.filter(function (x) { return x.erro; }).forEach(function (x) { h += '<p class="nota">' + esc(x.erro) + "</p>"; });
+      h += '<p class="nota">' + esc(tx("pasN")) + "</p>";
+    }
+    if (s.camadas_laz) h += '<p class="nota"><b>' + esc(tx("lazT")) + "</b> · " + esc(tx("lazM")) + ": " + esc(s.camadas_laz.manning ? tx("sim") : tx("nao")) + " · " + esc(tx("lazE")) + ": " + esc(s.camadas_laz.edificios ? tx("sim") : tx("nao")) + "</p>";
+    return h;
+  }
+  function centro(geom) {
+    var x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+    (function corre(c) { if (typeof c[0] === "number") { if (c[0] < x0) x0 = c[0]; if (c[0] > x1) x1 = c[0]; if (c[1] < y0) y0 = c[1]; if (c[1] > y1) y1 = c[1]; } else c.forEach(corre); })(geom.coordinates);
+    return isFinite(x0) ? [[x0, y0], [x1, y1]] : null;
+  }
+  function escolherDep(id) {
+    var r = S.res; if (!r || !r._x) return;
+    r._x.sel = r._x.sel === id ? null : id;
+    var gj = r._x.dep, f = gj && gj.features && gj.features.filter(function (x) { return String(x.properties.id) === String(id); })[0];
+    var M = mapa(), bb = f && centro(f.geometry);
+    if (M && bb && r._x.sel != null) M.fitBounds(bb, { padding: 80, maxZoom: 18, duration: 600 });
+    pintar();
+  }
+
   // Período de testes (m90453): quem testa diz se o resultado bate certo; fica registado com a simulação.
   function opiniao(id) {
     var o = S.opin[id] || (S.opin[id] = { nota: "", texto: "", feito: false, aEnviar: false, erro: "" });
@@ -390,6 +519,8 @@
   function clique(e) {
     var tr = e.target.closest && e.target.closest("[data-pti]");
     if (tr && mapa()) { var ll = tr.getAttribute("data-pti").split(",").map(Number); mapa().flyTo({ center: ll, zoom: Math.max(mapa().getZoom(), 16) }); return; }
+    var trd = e.target.closest && e.target.closest("[data-dep]");
+    if (trd) { escolherDep(trd.getAttribute("data-dep")); return; }
     var el = e.target.closest("button,a,[data-cam]"); if (!el) return;
     if (el.hasAttribute("data-cam")) return;
     e.preventDefault();
