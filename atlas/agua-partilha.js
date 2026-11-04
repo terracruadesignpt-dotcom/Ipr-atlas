@@ -245,12 +245,13 @@
   var tent = 0;
   (function esperar() {
     var M = mapa();
-    if (!M || !M.loaded || !(M.isStyleLoaded ? M.isStyleLoaded() : M.loaded())) { if (++tent < 120) return setTimeout(esperar, 500); }
+    if (!M || !M.loaded || !(M.isStyleLoaded ? M.isStyleLoaded() : M.loaded())) { if (++tent < 12) return setTimeout(esperar, 500); }
     cartao();
     pedido.then(function () {
       cartao();
       if (!R || !M) return;
       por(); enquadrar();
+      if (!M.getSource("ipr-ap-0")) { var repor = function () { por(); if (M.getSource("ipr-ap-0")) { enquadrar(); M.off("idle", repor); } }; M.on("idle", repor); }
       M.on("styledata", function () { if (C && R) { IDS = IDS.filter(function (sid) { return !!M.getSource(sid); }); por(); } });
     });
   })();
