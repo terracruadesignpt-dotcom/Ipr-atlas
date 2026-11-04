@@ -6,6 +6,10 @@
    · Madeira: COSRAM 2018 (DROTe, CC BY 4.0) e Rede Natura 2000 (Agência Europeia do Ambiente, CC BY 4.0).
    As camadas de licença não comercial (ortofotos, MDT 10 m, cadastro, cheias da Madeira) ficam de fora até haver
    autorização escrita (pedidos enviados a 3/11 à SRAAC e ao IFCN; DROTe e DRAM a seguir).
+   4/11/2026: a SRAAC respondeu (IDEA, 4/11, 16h49) que os dados geográficos pedidos estão em CC BY 4.0, uso comercial sem
+     autorização específica, com a atribuição «© SRAAC/GRA». Entram os habitats, os sítios protegidos, a Reserva da Biosfera,
+     as zonas de risco de inundação (PGRIA), as zonas de protecção às captações e as zonas vulneráveis. Ortofotos, MDT de
+     10 m e cadastro não estavam no pedido: continuam de fora. Cada camada ligada mostra a fonte e a legenda do serviço.
    Os GeoServer wssig3 e wssig4 dos Açores não aceitam pedidos de outros sítios (sem CORS): passam pelo Worker ipr-ilhas
    (Cloudflare, cache de 7 dias). O grupo só aparece quando o mapa está sobre um dos arquipélagos.
    Desligar: ?ilhas=0 ou localStorage ipr_ilhas_off = 1. */
@@ -17,8 +21,8 @@
   function t(pt, en) { return EN ? en : pt; }
   var RELE = "https://ipr-ilhas.terracrua-ipr.workers.dev/";
   var CCBY = '<a href="https://creativecommons.org/licenses/by/4.0/deed.pt" target="_blank" rel="noopener">CC BY 4.0</a>';
-  var A_SRAAC = "© Secretaria Regional do Ambiente e Ação Climática / Governo dos Açores · " + CCBY;
-  var A_RELEVO = "© Secretaria Regional do Ambiente e Ação Climática / Governo dos Açores (relevo VRICON, 2012–2017)";
+  var A_SRAAC = "© SRAAC/GRA (Secretaria Regional do Ambiente e Ação Climática, Governo dos Açores) · " + CCBY;
+  var A_RELEVO = "© SRAAC/GRA (relevo VRICON, 2012–2017) · " + CCBY;
   var A_DROTE = "© Direção Regional do Ordenamento do Território / Governo Regional da Madeira · " + CCBY;
   var A_AEA = "© Agência Europeia do Ambiente (Natura 2000) · " + CCBY;
   function wms(base, camada) {
@@ -40,13 +44,28 @@
     ] },
     { reg: "acores", sub: t("Açores · conservação da natureza", "Azores · nature conservation"), itens: [
       { id: "ilh-az-n2000", nome: t("Rede Natura 2000 (ZEC e ZPE)", "Natura 2000 (SAC and SPA)"), url: wms(RELE + "wssig3.azores.gov.pt/geoserver/ps/wms", "PS.ProtectedSitesNatura2000"), op: 0.7, min: 7, at: A_SRAAC },
-      { id: "ilh-az-ap", nome: t("Áreas protegidas (parques naturais de ilha)", "Protected areas (island natural parks)"), url: wms(RELE + "wssig3.azores.gov.pt/geoserver/ps/wms", "PS.ProtectedSitesNatureConservation"), op: 0.7, min: 7, at: A_SRAAC }
+      { id: "ilh-az-ap", nome: t("Áreas protegidas (parques naturais de ilha)", "Protected areas (island natural parks)"), url: wms(RELE + "wssig3.azores.gov.pt/geoserver/ps/wms", "PS.ProtectedSitesNatureConservation"), op: 0.7, min: 7, at: A_SRAAC },
+      { id: "ilh-az-sitios", nome: t("Sítios protegidos (todas as figuras)", "Protected sites (all designations)"), url: wms(RELE + "wssig3.azores.gov.pt/geoserver/ps/wms", "PS.ProtectedSites"), op: 0.7, min: 7, at: A_SRAAC },
+      { id: "ilh-az-biosfera", nome: t("Reservas da Biosfera", "Biosphere reserves"), url: wms(RELE + "wssig3.azores.gov.pt/geoserver/ps/wms", "PS.ProtectedSitesBiosphereReserve"), op: 0.6, min: 7, at: A_SRAAC },
+      { id: "ilh-az-hab", nome: t("Habitats da Directiva (relatório 2013-2018)", "Habitats Directive (2013-2018 report)"), url: wms(RELE + "wssig3.azores.gov.pt/geoserver/hbd/wms", "HBD.HabitatDistribution_2013_2018"), op: 0.7, min: 8, at: A_SRAAC },
+      { id: "ilh-az-biotopos", nome: t("Biótopos Corine", "Corine biotopes"), url: wms(RELE + "wssig3.azores.gov.pt/geoserver/hb/wms", "HB.Habitat"), op: 0.6, min: 8, at: A_SRAAC }
+    ] },
+    { reg: "acores", sub: t("Açores · água e riscos", "Azores · water and hazards"), itens: [
+      { id: "ilh-az-inund", nome: t("Zonas com risco de inundação (PGRIA)", "Flood risk zones (PGRIA)"), url: wms(RELE + "wssig3.azores.gov.pt/geoserver/nz/wms", "NZ.RiskZone"), op: 0.7, min: 8, at: A_SRAAC },
+      { id: "ilh-az-capt", nome: t("Zonas de protecção às captações de água", "Drinking water protection zones"), url: wms(RELE + "wssig3.azores.gov.pt/geoserver/am/wms", "AM.DrinkingWaterProtectionArea"), op: 0.7, min: 8, at: A_SRAAC },
+      { id: "ilh-az-nitr", nome: t("Zonas vulneráveis a nitratos", "Nitrate vulnerable zones"), url: wms(RELE + "wssig3.azores.gov.pt/geoserver/am/wms", "AM.NitrateVulnerableZone"), op: 0.6, min: 7, at: A_SRAAC }
     ] },
     { reg: "madeira", sub: t("Madeira e Porto Santo", "Madeira and Porto Santo"), itens: [
       { id: "ilh-md-cosram", nome: t("Ocupação do solo COSRAM 2018", "Land cover COSRAM 2018"), url: wms("https://geoservices.madeira.gov.pt/geoserver/LC_COSRAM_2018/wms", "LC.LandCoverSurfaces"), op: 0.6, min: 9, at: A_DROTE },
       { id: "ilh-md-n2000", nome: t("Rede Natura 2000 (Agência Europeia do Ambiente)", "Natura 2000 (European Environment Agency)"), url: AEA, op: 0.7, min: 7, at: A_AEA }
     ] }
   ];
+  // Legenda do próprio serviço (WMS GetLegendGraphic) para as camadas WMS; a Natura 2000 da AEA é ArcGIS (legenda simples).
+  function legImg(it) {
+    if (!/request=GetMap/.test(it.url) || /ilh-az-relevo/.test(it.id)) return "";
+    var u = it.url.split("?")[0] + "?service=WMS&version=1.3.0&request=GetLegendGraphic&format=image%2Fpng&layer=" + encodeURIComponent((/layers=([^&]+)/.exec(it.url) || [])[1] ? decodeURIComponent(/layers=([^&]+)/.exec(it.url)[1]) : "");
+    return '<img alt="" loading="lazy" src="' + u + '" onerror="this.remove()">';
+  }
   var CHAVE = "tcd_atlas_ilhas";
   var ligados = {};
   try { ligados = JSON.parse(W.localStorage.getItem(CHAVE) || "{}") || {}; } catch (e) { ligados = {}; }
@@ -74,6 +93,7 @@
     ".tilh h5{margin:8px 0 3px;font:600 11.5px Inter,system-ui,sans-serif;color:var(--mu,#666);text-transform:uppercase;letter-spacing:.04em}" +
     ".tilh label{display:flex;gap:7px;align-items:flex-start;font:13px/1.35 Inter,system-ui,sans-serif;color:var(--tx,#222);padding:3px 0;cursor:pointer}.tilh label input{margin-top:2px}" +
     ".tilh small{display:block;margin-top:6px;font-size:11px;line-height:1.4;color:var(--mu,#777)}.tilh small a{color:inherit}" +
+    ".tilh .lg{display:block;margin:2px 0 6px 22px;font-size:10.5px;line-height:1.35;color:var(--mu,#777)}.tilh .lg img{display:block;max-width:100%;margin-top:3px;background:#fff;border-radius:3px;padding:2px}.tilh .lg[hidden]{display:none}" +
     ".tilh .av{display:none;margin-top:6px;font-size:11.5px;color:#b6432e}.tilh.falha .av{display:block}.tilh [data-reg][hidden]{display:none}";
   function montar() {
     var cam = D.getElementById("ipe-cam"); if (!cam) return false;
@@ -83,7 +103,7 @@
     var h = "<h4><span class=\"tilh-t\">" + t("Açores e Madeira", "Azores and Madeira") + "</span><em>" + t("dados regionais", "regional data") + "</em></h4>";
     CAT.forEach(function (g) {
       h += '<div data-reg="' + g.reg + '"><h5>' + g.sub + "</h5>";
-      g.itens.forEach(function (it) { h += '<label><input type="checkbox" data-tilh="' + it.id + '"' + (ligados[it.id] ? " checked" : "") + "> <span>" + it.nome + "</span></label>"; });
+      g.itens.forEach(function (it) { h += '<label><input type="checkbox" data-tilh="' + it.id + '"' + (ligados[it.id] ? " checked" : "") + "> <span>" + it.nome + "</span></label>" + '<span class="lg" data-lg="' + it.id + '"' + (ligados[it.id] ? "" : " hidden") + ">" + t("Fonte: ", "Source: ") + it.at + legImg(it) + "</span>"; });
       h += "</div>";
     });
     h += '<p class="av" role="status">' + t("Um dos serviços regionais não respondeu. Tente mais tarde.", "One of the regional services did not respond. Please try later.") + "</p>";
@@ -97,6 +117,7 @@
       var c = e.target.closest("[data-tilh]"); if (!c) return;
       var x = itemPor(c.getAttribute("data-tilh")); if (!x) return;
       if (c.checked) { ligados[x.it.id] = 1; ligar(x); } else { delete ligados[x.it.id]; desligar(x); }
+      var lg = d.querySelector('[data-lg="' + x.it.id + '"]'); if (lg) lg.hidden = !c.checked;
       guardar();
     });
     return true;
