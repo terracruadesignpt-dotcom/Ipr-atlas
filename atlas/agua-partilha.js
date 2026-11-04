@@ -257,7 +257,8 @@
         if (!M2 || !(M2.style && M2.style._loaded)) { if (++n < 180) setTimeout(ligar, 500); return; }
         por(); enquadrar();
         // o Atlas ainda reposiciona o mapa no arranque: volta a enquadrar uma vez quando ele assentar
-        setTimeout(function () { M2.once("idle", enquadrar); }, 2500);
+        var mexeu = false; M2.once("dragstart", function () { mexeu = true; }); M2.once("wheel", function () { mexeu = true; });
+        [3000, 8000, 15000].forEach(function (ms) { setTimeout(function () { if (!mexeu) enquadrar(); }, ms); });
         var subir = function () { var ls = (M2.getStyle() || {}).layers || []; var nossas = ls.filter(function (l) { return /^ipr-ap-/.test(l.id); }).length; if (!nossas || ls.slice(-nossas).every(function (l) { return /^ipr-ap-/.test(l.id); })) return; IDS.forEach(function (sid) { [sid + "-l", sid + "-c"].forEach(function (l) { try { if (M2.getLayer(l)) M2.moveLayer(l); } catch (e) {} }); }); };
         subir();
         M2.on("styledata", function () { if (C && R) { IDS = IDS.filter(function (sid) { return !!M2.getSource(sid); }); por(); subir(); } });
