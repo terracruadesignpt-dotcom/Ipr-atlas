@@ -281,7 +281,19 @@
   // Por entidade (primeiro padrão que bater no texto da fonte ou no endereço do serviço). Verificado a 4/11/2026.
   var LIC = [
     [/azores|SRAAC|Açores/i, "SRAAC, Secretaria Regional do Ambiente e Ação Climática (Governo dos Açores)", "CC BY 4.0, uso comercial sem autorização específica (resposta da SRAAC de 4/11/2026). Atribuição: «© SRAAC/GRA».", "https://idea.azores.gov.pt/"],
-    [/cnig|PNOA/i, "CNIG / IGN, Espanha (PNOA)", "CC BY 4.0 (scne.es). Citar como obra derivada do PNOA, com o produto e o ano.", "https://centrodedescargas.cnig.es/"],
+    [/^IPR · motor/i, "IPR · Terracrua Design", "Resultado de simulação, produção própria. Indicativo.", "https://terracruadesign.pt/"],
+    [/EDIA, S\.A\.|edia\.pt/, "EDIA, Empresa de Desenvolvimento e Infra-estruturas do Alqueva", "Serviço EDIA_DadosAbertos, CC BY 4.0. Atribuição: «© EDIA, S.A.».", "https://www.edia.pt/"],
+    [/DROTe|madeira\.gov/i, "DROTe, Governo Regional da Madeira", "CC BY 4.0 (metadados da COSRAM 2018).", "https://geoservices.madeira.gov.pt/"],
+    [/Agência Europeia do Ambiente|discomap\.eea\.europa\.eu\/arcgis\/(rest\/)?services\/ProtectedSites/i, "Agência Europeia do Ambiente (Natura 2000)", "Dados Natura 2000 da AEA, CC BY 4.0, com indicação da fonte.", "https://www.eea.europa.eu/en/legal-notice"],
+    [/Catastro/i, "Dirección General del Catastro (Espanha)", "Cartografia cadastral INSPIRE; reutilização com indicação da fonte, nos termos da DG del Catastro.", "https://www.catastro.hacienda.gob.es/"],
+    [/SIGPAC|FEGA/i, "FEGA, Fondo Español de Garantía Agraria (SIGPAC)", "Visualização pública do SIGPAC, com indicação da fonte.", "https://sigpac-hubcloud.es/"],
+    [/SNCZI|MITECO/i, "MITECO, Espanha (SNCZI)", "Cartografia de zonas inundáveis do SNCZI, com indicação da fonte.", "https://www.miteco.gob.es/"],
+    [/IGME/i, "IGME-CSIC (Espanha)", "CC BY 4.0.", "https://www.igme.es/"],
+    [/SoilGrids|ISRIC/i, "ISRIC, World Soil Information (SoilGrids 2.0)", "CC BY 4.0. Citar Poggio et al. (2021), SOIL 7, 217-240.", "https://www.isric.org/explore/soilgrids"],
+    [/Global Forest Watch|Hansen/i, "Hansen / UMD / Google / USGS / NASA, via Global Forest Watch", "CC BY 4.0.", "https://www.globalforestwatch.org/"],
+    [/Global Surface Water|JRC/i, "Comissão Europeia, JRC (Global Surface Water)", "Dados abertos do JRC, com indicação da fonte (Pekel et al. 2016).", "https://global-surface-water.appspot.com/"],
+    [/Impact Observatory/i, "Impact Observatory, Microsoft e Esri", "CC BY 4.0.", "https://livingatlas.arcgis.com/landcover/"],
+    [/cnig|PNOA|IGN \/ CNIG/i, "CNIG / IGN, Espanha (PNOA)", "CC BY 4.0 (scne.es). Citar como obra derivada do PNOA, com o produto e o ano.", "https://centrodedescargas.cnig.es/"],
     [/dgterritorio|DGT|SNIT|SRUP|CAOP/i, "DGT, Direção-Geral do Território", "Dados abertos da DGT, licença CC BY 4.0 (COS, LiDAR, ortofotos, CAOP confirmados nos metadados do SNIG). Atribuição: «Informação geográfica cedida pela Direção-Geral do Território».", "https://snig.dgterritorio.gov.pt/"],
     [/apambiente|APA|SNIRH|SNIAmb/i, "APA, Agência Portuguesa do Ambiente", "Serviço público de visualização do SNIAmb. Os metadados não indicam licença (só «© SNIRH» em várias camadas): citar a APA; para reproduzir em relatórios, confirmar com a APA.", "https://sniamb.apambiente.pt/"],
     [/icnf|ICNF/i, "ICNF, Instituto da Conservação da Natureza e das Florestas", "Propriedade do ICNF. Citar «Fonte: ICNF» e a data da versão. A pedido do ICNF (3/11/2026), estas camadas vão passar a ser servidas a partir de cópias do IPR, actualizadas periodicamente.", "https://geocatalogo.icnf.pt/"],
@@ -419,9 +431,93 @@
     "#ipr-lgd .ipr-ii-f{display:block;font-size:10.5px;color:var(--mu,#9aa08f);margin:-1px 0 3px;font-weight:400}#ipr-lgd .ipr-ii-b{width:15px;height:15px;font-size:9.5px;line-height:13px;vertical-align:1px}" +
     "@media (max-width:700px){#ipr-ii{right:8px;left:8px;width:auto;top:auto;bottom:70px;max-height:60vh}}";
   function css() { if (D.getElementById("ipr-ii-css")) return; var s = D.createElement("style"); s.id = "ipr-ii-css"; s.textContent = CSS; (D.head || D.documentElement).appendChild(s); }
+  // ── Camadas de fora do catálogo (4/11/2026, 18h12: «para a frente com isso tudo»): Açores e Madeira (ilhas-camadas.js),
+  //    EDIA (edia-camadas.js), Espanha (es-camadas.js), mundo (mundo-camadas.js) e resultados dos simuladores. Cada uma
+  //    entra com a mesma forma das do catálogo, para o painel e a legenda funcionarem igual.
+  var WMS = function (id, n, sub, base, layer, fonte, d, x) { var o = { id: id, n: n, sub: sub, t: "wms", url: base, layer: layer, fonte: fonte, lic: "v" }; for (var k in x || {}) o[k] = x[k]; DESC[id] = d; return o; };
+  var AGS = function (id, n, sub, base, ids, fonte, d, x) { var o = { id: id, n: n, sub: sub, t: "ags", url: base, layers: "show:" + ids, fonte: fonte, lic: "v" }; for (var k in x || {}) o[k] = x[k]; DESC[id] = d; return o; };
+  var OUT = function (id, n, sub, url, fonte, d, leg, x) { var o = { id: id, n: n, sub: sub, t: "xyz", url: url, fonte: fonte, lic: "v" }; for (var k in x || {}) o[k] = x[k]; DESC[id] = d; if (leg) LEG[id] = leg; return o; };
+  var IGN = "IGN / CNIG (Espanha), CC BY 4.0 scne.es", GIBS = "https://gibs.earthdata.nasa.gov/", SGM = "https://maps.isric.org/mapserv?map=/map/";
+  var EDIA_S = "https://sigims2.edia.pt/ediaags2/rest/services/publico/EDIA_DadosAbertos/MapServer", EEA_N2K = "https://bio.discomap.eea.europa.eu/arcgis/rest/services/ProtectedSites/Natura2000Sites/MapServer";
+  var COR_REAL = { txt: "Imagem em cor real: não tem classes." }, IV = { txt: "Falsa-cor de infravermelho: vegetação viva em vermelho, água em azul-escuro, solo nu e construído em tons claros." };
+  var EXTRA = [
+    // Açores e Madeira
+    OUT("ilh-az-relevo", "Relevo sombreado 1:1000 (9 ilhas)", "Açores · relevo e ocupação", "https://wssig4.azores.gov.pt/geoserver/relevo/wms", "© SRAAC/GRA · CC BY 4.0", "Relevo sombreado das nove ilhas a partir do modelo de superfície VRICON (2012-2017), à escala 1:1000.", { txt: "Sombra calculada com luz de noroeste. Não tem classes." }),
+    WMS("ilh-az-cosa18", "Ocupação do solo COS.A 2018 (nível 1)", "Açores · relevo e ocupação", "https://visualizador-idea.ambiente.azores.gov.pt/postgresql/idea/public/cosa/cgi-bin/qgis_mapserv.fcgi", "cosa2018_n1", "© SRAAC/GRA · CC BY 4.0", "Carta de Ocupação do Solo da Região Autónoma dos Açores de 2018, no primeiro nível de classes."),
+    WMS("ilh-az-cosa07", "Ocupação do solo COS.A 2007", "Açores · relevo e ocupação", "https://visualizador-idea.ambiente.azores.gov.pt/postgresql/idea/public/cosa/cgi-bin/qgis_mapserv.fcgi", "cosa_2007", "© SRAAC/GRA · CC BY 4.0", "Carta de Ocupação do Solo dos Açores de 2007, para comparar com a de 2018."),
+    WMS("ilh-az-n2000", "Rede Natura 2000 (ZEC e ZPE)", "Açores · conservação da natureza", "https://wssig3.azores.gov.pt/geoserver/ps/wms", "PS.ProtectedSitesNatura2000", "© SRAAC/GRA · CC BY 4.0", "Zonas Especiais de Conservação e Zonas de Protecção Especial da Rede Natura 2000 nos Açores."),
+    WMS("ilh-az-ap", "Áreas protegidas (parques naturais de ilha)", "Açores · conservação da natureza", "https://wssig3.azores.gov.pt/geoserver/ps/wms", "PS.ProtectedSitesNatureConservation", "© SRAAC/GRA · CC BY 4.0", "Áreas protegidas dos parques naturais de cada ilha, com as suas categorias."),
+    WMS("ilh-az-sitios", "Sítios protegidos (todas as figuras)", "Açores · conservação da natureza", "https://wssig3.azores.gov.pt/geoserver/ps/wms", "PS.ProtectedSites", "© SRAAC/GRA · CC BY 4.0", "Todos os sítios protegidos da Região, em todas as figuras de protecção."),
+    WMS("ilh-az-biosfera", "Reservas da Biosfera", "Açores · conservação da natureza", "https://wssig3.azores.gov.pt/geoserver/ps/wms", "PS.ProtectedSitesBiosphereReserve", "© SRAAC/GRA · CC BY 4.0", "Reservas da Biosfera da UNESCO nos Açores (Corvo, Graciosa, Flores e Fajãs de São Jorge)."),
+    WMS("ilh-az-hab", "Habitats da Directiva (relatório 2013-2018)", "Açores · conservação da natureza", "https://wssig3.azores.gov.pt/geoserver/hbd/wms", "HBD.HabitatDistribution_2013_2018", "© SRAAC/GRA · CC BY 4.0", "Distribuição dos habitats do Anexo I da Directiva Habitats comunicada no relatório de 2013-2018."),
+    WMS("ilh-az-biotopos", "Biótopos Corine", "Açores · conservação da natureza", "https://wssig3.azores.gov.pt/geoserver/hb/wms", "HB.Habitat", "© SRAAC/GRA · CC BY 4.0", "Biótopos Corine: áreas de interesse para a conservação inventariadas no programa europeu Corine."),
+    WMS("ilh-az-inund", "Zonas com risco de inundação (PGRIA)", "Açores · água e riscos", "https://wssig3.azores.gov.pt/geoserver/nz/wms", "NZ.RiskZone", "© SRAAC/GRA · CC BY 4.0", "Zonas com risco de inundação do Plano de Gestão de Riscos de Inundações dos Açores (PGRIA)."),
+    WMS("ilh-az-capt", "Zonas de protecção às captações de água", "Açores · água e riscos", "https://wssig3.azores.gov.pt/geoserver/am/wms", "AM.DrinkingWaterProtectionArea", "© SRAAC/GRA · CC BY 4.0", "Perímetros de protecção das captações de água para consumo humano, com usos condicionados."),
+    WMS("ilh-az-nitr", "Zonas vulneráveis a nitratos", "Açores · água e riscos", "https://wssig3.azores.gov.pt/geoserver/am/wms", "AM.NitrateVulnerableZone", "© SRAAC/GRA · CC BY 4.0", "Zonas vulneráveis à poluição por nitratos de origem agrícola (bacias de lagoas), com regras de fertilização."),
+    WMS("ilh-md-cosram", "Ocupação do solo COSRAM 2018", "Madeira e Porto Santo", "https://geoservices.madeira.gov.pt/geoserver/LC_COSRAM_2018/wms", "LC.LandCoverSurfaces", "© DROTe, Governo Regional da Madeira · CC BY 4.0", "Carta de Ocupação do Solo da Região Autónoma da Madeira de 2018."),
+    AGS("ilh-md-n2000", "Rede Natura 2000 (Agência Europeia do Ambiente)", "Madeira e Porto Santo", EEA_N2K, "0,1,2", "© Agência Europeia do Ambiente (Natura 2000) · CC BY 4.0", "Sítios da Rede Natura 2000 na Madeira, a partir da base de dados europeia da AEA."),
+    // EDIA (Alqueva)
+    AGS("edia-2025", "Ortofotomapa 2025 · cor real (EDIA)", "Alqueva (EDIA)", EDIA_S, "75", "© EDIA, S.A. · CC BY 4.0", "Ortofotomapa de 2025, 25 cm, em cor real, da área do Empreendimento de Fins Múltiplos de Alqueva."),
+    AGS("edia-2025iv", "Ortofotomapa 2025 · infravermelho (EDIA)", "Alqueva (EDIA)", EDIA_S, "73", "© EDIA, S.A. · CC BY 4.0", "Ortofotomapa de 2025 em falsa-cor de infravermelho: ajuda a ver vegetação viva, regadio e linhas de água."),
+    AGS("edia-2022", "Ortofotomapa 2022 (EDIA)", "Alqueva (EDIA)", EDIA_S, "56", "© EDIA, S.A. · CC BY 4.0", "Ortofotomapa de 2022 da área do Alqueva."),
+    AGS("edia-2022iv", "Ortofotomapa 2022 · infravermelho (EDIA)", "Alqueva (EDIA)", EDIA_S, "70", "© EDIA, S.A. · CC BY 4.0", "Ortofotomapa de 2022 em falsa-cor de infravermelho."),
+    AGS("edia-2019", "Ortofotomapa 2019 (EDIA)", "Alqueva (EDIA)", EDIA_S, "28", "© EDIA, S.A. · CC BY 4.0", "Ortofotomapa de 2019 da área do Alqueva."),
+    AGS("edia-2019iv", "Ortofotomapa 2019 · infravermelho (EDIA)", "Alqueva (EDIA)", EDIA_S, "37", "© EDIA, S.A. · CC BY 4.0", "Ortofotomapa de 2019 em falsa-cor de infravermelho."),
+    AGS("edia-2017", "Ortofotomapa 2017 (EDIA)", "Alqueva (EDIA)", EDIA_S, "4", "© EDIA, S.A. · CC BY 4.0", "Ortofotomapa de 2017 da área do Alqueva."),
+    AGS("edia-2015", "Ortofotomapa 2015 (EDIA)", "Alqueva (EDIA)", EDIA_S, "12", "© EDIA, S.A. · CC BY 4.0", "Ortofotomapa de 2015 da área do Alqueva."),
+    AGS("edia-2004", "Ortofotomapa 2004 (EDIA)", "Alqueva (EDIA)", EDIA_S, "13", "© EDIA, S.A. · CC BY 4.0", "Ortofotomapa de 2004: a paisagem antes do enchimento completo e do regadio."),
+    AGS("edia-1995", "Ortofotomapa 1995 (EDIA)", "Alqueva (EDIA)", EDIA_S, "14", "© EDIA, S.A. · CC BY 4.0", "Ortofotomapa de 1995: a paisagem antes da barragem de Alqueva."),
+    AGS("edia-aptidao", "Carta de aptidão ao regadio (EDIA)", "Alqueva (EDIA)", EDIA_S, "17", "© EDIA, S.A. · CC BY 4.0", "Aptidão dos solos ao regadio na área do Alqueva, em classes."),
+    AGS("edia-curvas", "Curvas de nível 1995, 1:5000 (EDIA)", "Alqueva (EDIA)", EDIA_S, "1", "© EDIA, S.A. · CC BY 4.0", "Curvas de nível da cartografia 1:5000 de 1995 da EDIA."),
+    // Espanha
+    OUT("es-pnoa", "Ortofoto PNOA (IGN)", "Espanha", "https://www.ign.es/wmts/pnoa-ma", IGN, "Ortofotografia aérea mais recente do Plano Nacional de Ortofotografia Aérea de Espanha.", COR_REAL),
+    OUT("es-ignbase", "Mapa IGN Base", "Espanha", "https://www.ign.es/wmts/ign-base", IGN, "Mapa base topográfico do Instituto Geográfico Nacional de Espanha.", { txt: "Mapa topográfico com a simbologia do IGN." }),
+    WMS("es-catastro", "Cadastro (Catastro)", "Espanha", "https://ovc.catastro.meh.es/cartografia/INSPIRE/spadgcwms.aspx", "CP.CadastralParcel", "Dirección General del Catastro", "Parcelas cadastrais de Espanha (INSPIRE), da Dirección General del Catastro."),
+    OUT("es-sigpac", "Recintos SIGPAC (uso agrícola)", "Espanha", "https://sigpac-hubcloud.es/", "SIGPAC, FEGA", "Recintos do SIGPAC, o sistema de identificação de parcelas agrícolas de Espanha, coloridos pelo uso declarado.",
+      { leg: [["#e0c36b", "TA · terra arável"], ["#e8d48a", "TH · horta"], ["#9bc46a", "PS · pastagem"], ["#b8d68c", "PR · pasto arbustivo"], ["#7fae55", "PA · pasto com arvoredo"], ["#3f7d3a", "FO · floresta"], ["#8a9a3c", "OV · olival"], ["#a0558a", "VI · vinha"], ["#c48a4a", "FY · frutos (frutales)"], ["#e39d3a", "CI · citrinos"], ["#9a9a9a", "IM · improdutivo"], ["#c9c9c9", "ZU · zona urbana"], ["#6aa6d8", "AG · água"], ["#bdbdbd", "CA · caminhos"], ["#d6cfa8", "outros usos"]] }),
+    WMS("es-limites", "Limites administrativos (Espanha)", "Espanha", "https://www.ign.es/wms-inspire/unidades-administrativas", "AU.AdministrativeBoundary", IGN, "Limites de comunidades autónomas, províncias e municípios de Espanha (INSPIRE)."),
+    WMS("es-natura", "Rede Natura 2000 (Espanha)", "Espanha", "https://bio.discomap.eea.europa.eu/arcgis/services/ProtectedSites/Natura2000Sites/MapServer/WMSServer", "0,1,2", "© Agência Europeia do Ambiente · CC BY 4.0", "Sítios da Rede Natura 2000 em Espanha, a partir da base de dados europeia da AEA."),
+    WMS("es-inund10", "Zona inundável T10 (Espanha)", "Espanha", "https://servicios.idee.es/wms-inspire/riesgos-naturales/inundaciones", "NZ.Flood.FluvialT10", "SNCZI, MITECO", "Zona inundável para um período de retorno de 10 anos (Sistema Nacional de Cartografía de Zonas Inundables)."),
+    WMS("es-inund100", "Zona inundável T100 (Espanha)", "Espanha", "https://servicios.idee.es/wms-inspire/riesgos-naturales/inundaciones", "NZ.Flood.FluvialT100", "SNCZI, MITECO", "Zona inundável para um período de retorno de 100 anos."),
+    WMS("es-inund500", "Zona inundável T500 (Espanha)", "Espanha", "https://servicios.idee.es/wms-inspire/riesgos-naturales/inundaciones", "NZ.Flood.FluvialT500", "SNCZI, MITECO", "Zona inundável para um período de retorno de 500 anos."),
+    WMS("es-pontosagua", "Pontos de água (IGME)", "Espanha", "https://mapas.igme.es/gis/services/BasesDatos/IGME_PuntosAgua/MapServer/WMSServer", "0,1", "IGME-CSIC · CC BY 4.0", "Inventário de pontos de água (furos, poços, nascentes) do Instituto Geológico y Minero de España."),
+    WMS("es-curvas", "Curvas de nível (IGN, Espanha)", "Espanha", "https://servicios.idee.es/wms-inspire/mdt", "EL.ContourLine", IGN, "Curvas de nível do modelo digital do terreno do IGN."),
+    // Mundo
+    OUT("ao-prov", "Regiões e províncias (mundo)", "Mundo · fontes globais", "https://tiles.openfreemap.org/planet", "© OpenStreetMap · OpenFreeMap", "Limites de regiões e províncias de qualquer país, a partir do OpenStreetMap.", { leg: [["#f2e6c9", "limite de região ou província", "L"]] }),
+    OUT("ao-mun", "Municípios e concelhos (mundo)", "Mundo · fontes globais", "https://tiles.openfreemap.org/planet", "© OpenStreetMap · OpenFreeMap", "Limites de municípios e concelhos de qualquer país, a partir do OpenStreetMap.", { leg: [["#e8dcc0", "limite de município", "d"]] }),
+    OUT("mu-viirs", "Imagem de satélite do dia", "Mundo · fontes globais", GIBS, "NASA EOSDIS GIBS (VIIRS)", "Imagem de satélite VIIRS de há dois dias, a 375 m: nuvens, fumo, cheias e cor da vegetação neste momento.", COR_REAL),
+    OUT("mu-luzes", "Luzes nocturnas", "Mundo · fontes globais", GIBS, "Black Marble 2016, NASA Earth Observatory", "Luzes nocturnas vistas de satélite (2016): povoamento e infra-estruturas.", { leg: [["#000000", "sem luz"], ["#f5d27a", "luz fraca"], ["#ffffff", "luz intensa"]] }),
+    OUT("mu-aster", "Relevo a cores (altitude e sombra)", "Mundo · fontes globais", GIBS, "ASTER GDEM, NASA e METI", "Altitude em cores, com sombra, a 30 m, para qualquer país.", { leg: [["#2a7a3a", "cotas baixas"], ["#d7c46a", "cotas médias"], ["#8b5a2b", "cotas altas"], ["#f2f2f2", "cumes"]] }),
+    OUT("mu-chuva", "Chuva · último dia", "Mundo · fontes globais", GIBS, "IMERG, NASA GPM, via GIBS", "Intensidade média da chuva no último dia disponível (satélites GPM, cerca de 10 km).", { leg: [["#a6d8ff", "chuva fraca"], ["#2b83ba", "moderada"], ["#fdae61", "forte"], ["#d7191c", "muito forte"]] }),
+    OUT("mu-temp", "Temperatura do ar · último mês", "Mundo · fontes globais", GIBS, "MERRA-2, NASA GMAO, via GIBS", "Temperatura média mensal a 2 m do solo, cerca de 50 km: o clima da região, não o do terreno.", { leg: [["#313695", "frio"], ["#ffffbf", "ameno"], ["#a50026", "quente"]] }),
+    OUT("mu-cheia", "Cheias · últimos 3 dias", "Mundo · fontes globais", GIBS, "NASA LANCE MODIS, via GIBS", "Água fora do sítio habitual detectada por satélite nos últimos 3 dias (cerca de 250 m).", { txt: "Água detectada fora do leito habitual (cheia) e água permanente, conforme a cor do produto MODIS da NASA." }),
+    OUT("mu-evi", "Vigor da vegetação · últimos 8 dias", "Mundo · fontes globais", GIBS, "NASA MODIS, via GIBS", "Índice de vegetação melhorado (EVI) a 250 m.", { leg: [["#d8c79a", "pouca vegetação"], ["#9cc35a", "vegetação moderada"], ["#1f6b2a", "vegetação muito activa"]] }),
+    OUT("mu-perda", "Perda de floresta 2001 a 2024", "Mundo · fontes globais", "https://tiles.globalforestwatch.org/", "Hansen/UMD/Google/USGS/NASA, via Global Forest Watch, CC BY 4.0", "Áreas onde o coberto arbóreo desapareceu entre 2001 e 2024 (Landsat, 30 m).", { txt: "Cor-de-rosa e vermelho: píxeis onde se perdeu coberto arbóreo (densidade de copa acima de 30 %); a cor muda com o ano da perda." }),
+    OUT("mu-altura", "Altura do coberto vegetal", "Mundo · fontes globais", GIBS, "GEDI, NASA e Universidade de Maryland, via GIBS", "Altura média das árvores medida por laser a partir da estação espacial (1 km; entre 52°N e 52°S).", { leg: [["#f7fcb9", "coberto baixo"], ["#78c679", "médio"], ["#004529", "árvores altas"]] }),
+    OUT("mu-biomassa", "Biomassa aérea", "Mundo · fontes globais", GIBS, "GEDI L4B, NASA, via GIBS", "Toneladas de biomassa aérea por hectare (1 km; entre 52°N e 52°S).", { leg: [["#ffffcc", "pouca biomassa"], ["#41ab5d", "média"], ["#00441b", "muita biomassa"]] }),
+    OUT("mu-pop", "Densidade de população 2020", "Mundo · fontes globais", GIBS, "GPWv4, NASA SEDAC / CIESIN, CC BY 4.0", "Pessoas por km², a cerca de 1 km.", { leg: [["#fff5eb", "muito pouca gente"], ["#fd8d3c", "média"], ["#7f2704", "muita gente"]] }),
+    OUT("mu-rcheia", "Frequência de cheias", "Mundo · fontes globais", GIBS, "Natural Disaster Hotspots, NASA SEDAC / CIESIN, Banco Mundial", "Cheias registadas de 1985 a 2003, em classes de frequência.", { leg: [["#c6dbef", "pouco frequentes"], ["#4292c6", "frequentes"], ["#08306b", "muito frequentes"]] }),
+    OUT("mu-rseca", "Frequência de secas", "Mundo · fontes globais", GIBS, "Natural Disaster Hotspots, NASA SEDAC / CIESIN, Banco Mundial", "Secas de 1980 a 2000, em classes de frequência.", { leg: [["#fee6ce", "pouco frequentes"], ["#fd8d3c", "frequentes"], ["#a63603", "muito frequentes"]] }),
+    OUT("mu-rdesl", "Perigo de deslizamentos", "Mundo · fontes globais", GIBS, "Natural Disaster Hotspots, NASA SEDAC / NGI, Banco Mundial", "Perigo de deslizamento de terras, em classes.", { leg: [["#fee0d2", "perigo baixo"], ["#fb6a4a", "médio"], ["#a50f15", "alto"]] }),
+    OUT("ao-lulc", "Ocupação do solo 10 m (Sentinel-2, 2024)", "Mundo · fontes globais", "https://ic.imagery1.arcgis.com/arcgis/rest/services/Sentinel2_10m_LandCover/ImageServer", "Impact Observatory, Microsoft e Esri (Sentinel-2 10 m), CC BY 4.0", "Ocupação do solo mundial a 10 m em 2024, em nove classes.",
+      { leg: [["#419bdf", "água"], ["#397d49", "árvores"], ["#7a87c6", "vegetação inundada"], ["#e49635", "culturas"], ["#c4281b", "área construída"], ["#a59b8f", "solo nu"], ["#a8ebff", "neve e gelo"], ["#616161", "nuvens"], ["#e3e2c3", "pastagem e mato"]] }),
+    OUT("ao-agua-oc", "Água superficial · frequência 1984 a 2021", "Mundo · fontes globais", "https://storage.googleapis.com/global-surface-water/", "Global Surface Water, EC JRC / Google (Pekel et al. 2016)", "Percentagem do tempo em que houve água em cada ponto, de 1984 a 2021 (Landsat).", { leg: [["#ffd9e6", "água rara"], ["#8c96c6", "água às vezes"], ["#0000ff", "água quase sempre"]] }),
+    OUT("ao-agua-saz", "Água superficial · sazonalidade", "Mundo · fontes globais", "https://storage.googleapis.com/global-surface-water/", "Global Surface Water, EC JRC / Google (Pekel et al. 2016)", "Número de meses por ano com água.", { leg: [["#99d9ea", "poucos meses"], ["#0000aa", "todo o ano"]] }),
+    WMS("ao-solo-c", "Carbono orgânico do solo (0-5 cm)", "Mundo · fontes globais", SGM + "soc.map", "soc_0-5cm_mean", "SoilGrids 2.0 © ISRIC, CC BY 4.0", "Carbono orgânico no solo, 0 a 5 cm, modelo mundial a 250 m: serve para comparar zonas, não substitui análise de solo."),
+    WMS("ao-solo-ph", "pH do solo (0-5 cm)", "Mundo · fontes globais", SGM + "phh2o.map", "phh2o_0-5cm_mean", "SoilGrids 2.0 © ISRIC, CC BY 4.0", "pH em água do solo, 0 a 5 cm, modelo mundial a 250 m."),
+    WMS("ao-solo-arg", "Argila (0-5 cm)", "Mundo · fontes globais", SGM + "clay.map", "clay_0-5cm_mean", "SoilGrids 2.0 © ISRIC, CC BY 4.0", "Teor de argila do solo, 0 a 5 cm, modelo mundial a 250 m."),
+    WMS("mu-solo-areia", "Areia (0-5 cm)", "Mundo · fontes globais", SGM + "sand.map", "sand_0-5cm_mean", "SoilGrids 2.0 © ISRIC, CC BY 4.0", "Teor de areia do solo, 0 a 5 cm, modelo mundial a 250 m."),
+    WMS("mu-solo-n", "Azoto total (0-5 cm)", "Mundo · fontes globais", SGM + "nitrogen.map", "nitrogen_0-5cm_mean", "SoilGrids 2.0 © ISRIC, CC BY 4.0", "Azoto total do solo, 0 a 5 cm, modelo mundial a 250 m."),
+    // Resultados dos simuladores (a legenda de cada resultado vem do motor e aparece no próprio painel)
+    OUT("sim-agua", "Resultado do simulador de água", "Simuladores IPR", "", "IPR · motor de simulação, sobre a Base Cartográfica (LiDAR DGT) e o número de escoamento", "Resultado calculado pelo simulador de água do IPR para este terreno: altura e velocidade máximas da água, onde a água pára ou pontos de inundação, conforme o cálculo escolhido. É uma simulação: indicativa, depende da chuva escolhida, do MDT e do CN.", { txt: "A escala de cores de cada resultado aparece por baixo dele, no painel do simulador, com os valores." }),
+    OUT("sim-fogo", "Resultado do simulador de fogo", "Simuladores IPR", "", "IPR · motor de simulação, sobre a Base Cartográfica e os modelos de combustível", "Resultado calculado pelo simulador de fogo do IPR: tempo de chegada, intensidade ou probabilidade de ardido, conforme o cenário. É uma simulação: indicativa, depende do vento, da humidade e dos combustíveis considerados.", { txt: "A escala de cores de cada resultado aparece por baixo dele, no painel do simulador, com os valores." })
+  ];
+  var EXT = {}; EXTRA.forEach(function (e) { EXT[e.id] = e; });
+  function catTudo() { var c = cat(); for (var k in EXT) if (!c[k]) c[k] = EXT[k]; return c; }
+
   var painel = null;
   function abrir(id) {
-    var e = cat()[id]; if (!e) return; css();
+    var e = catTudo()[id]; if (!e) return; css();
     if (!painel) {
       painel = D.createElement("div"); painel.id = "ipr-ii"; painel.setAttribute("role", "dialog"); painel.hidden = true; D.body.appendChild(painel);
       painel.addEventListener("click", function (ev) { if (ev.target.closest(".x")) fechar(); });
@@ -464,6 +560,17 @@
     [].forEach.call(D.querySelectorAll("li.ipr-it[data-id], li.ipr-cq-it[data-id]"), function (li) {
       var id = li.getAttribute("data-id"); if (!C[id] || li.querySelector(".ipr-ii-b")) return;
       var alvo = li.querySelector(".ipr-nome, .ipr-cq-n") || li; alvo.appendChild(botao(id));
+    });
+    // Grupos de fora do catálogo: Açores e Madeira, EDIA, Espanha, mundo, e resultados dos simuladores.
+    [["data-tilh", ""], ["data-tedia", ""], ["data-tes", ""], ["data-tao", ""]].forEach(function (a) {
+      [].forEach.call(D.querySelectorAll("input[" + a[0] + "]"), function (inp) {
+        var id = inp.getAttribute(a[0]), lb = inp.closest("label"); if (!EXT[id] || !lb || lb.querySelector(".ipr-ii-b")) return;
+        lb.appendChild(botao(id));
+      });
+    });
+    [].forEach.call(D.querySelectorAll("#ipr-as input[data-cam], #ipr-fs input[data-cam]"), function (inp) {
+      var lb = inp.closest("label"); if (!lb || lb.querySelector(".ipr-ii-b")) return;
+      lb.appendChild(botao(inp.closest("#ipr-fs") ? "sim-fogo" : "sim-agua"));
     });
     var box = D.getElementById("ipr-lgd"); if (!box || box.hidden) return;
     var porNome = {}; Object.keys(C).forEach(function (id) { var e = C[id]; porNome[nomeLeg(e.n)] = id; if (e.en) porNome[nomeLeg(e.en)] = id; });
