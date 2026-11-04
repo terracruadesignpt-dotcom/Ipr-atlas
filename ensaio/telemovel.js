@@ -37,7 +37,8 @@ function marcarES(){[].forEach.call(D.querySelectorAll("a[href]"),function(a){if
 function aberto(){
   var ipe=D.getElementById("ipe");
   if(ipe&&(ipe.classList.contains("esq-aberto")||!ipe.classList.contains("sem-dir")))return true;
-  var fm=D.getElementById("tcd_fmf");if(fm&&vis(fm)&&fm.getBoundingClientRect().height>200)return true;
+  // outra janela grande aberta por cima (Formiga, Atendimento, avisos): elemento fixo, clicável, a tapar mais de metade do ecrã
+  var kids=D.body?D.body.children:[];for(var i=0;i<kids.length;i++){var k=kids[i];if(k.id==="ipe"||k.id==="ipr-tm-f"||k.id==="ipr-tm-b"||k.id==="wpadminbar")continue;var c=W.getComputedStyle(k);if(c.position!=="fixed"||c.display==="none"||c.visibility==="hidden"||c.pointerEvents==="none"||+c.opacity<0.1)continue;var r=k.getBoundingClientRect();if(r.width*r.height>W.innerWidth*W.innerHeight*0.5)return true;}
   var p=D.getElementById("t393dp");if(p&&!p.hidden&&vis(p))return true;
   var ae=D.activeElement;if(ae&&/^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)&&!(F&&F.contains(ae)))return true;
   return false;
