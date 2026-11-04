@@ -12,6 +12,8 @@
       dela, e as outras linhas seguem a seguir. Carregar outra vez fecha-a. Só uma aberta de cada vez.
    3. Por baixo, usa o próprio bases-tipos.js: carregar numa linha carrega no botão escondido correspondente; os números
       são os desse botão. Não muda o tipo de nenhuma Base, não grava nada no servidor.
+   Cores do tema grafite (Bolito, decisão do Nuno de 04/11, 22h2x): linha aberta a preto com letra Verde IPR e filete
+   dourado; números em etiqueta escura com letra verde clara.
    Lembra a última escolha neste navegador (localStorage ipr_ac_fechado). Desligar: ?bacord=0 ou localStorage
    ipr_bacord_off = 1. */
 (function () {
@@ -29,19 +31,19 @@
     ".ipe-pane.ipr-ac-on #ipr-bt-f .abas,.ipe-pane.ipr-ac-on #ipr-bt-f label{display:none!important}" +
     ".ipe-pane.ipr-ac-on #ipr-bt-f{margin:0!important}" +
     ".ipe-pane.ipr-ac-fechado #ipr-pg-f,.ipe-pane.ipr-ac-fechado #ipr-px-f,.ipe-pane.ipr-ac-fechado #ipe-proj{display:none!important}" +
-    ".ipr-ac{margin:0;border-top:1px solid var(--ln,#3a3f30)}" +
+    ".ipr-ac{margin:0;border-top:1px solid var(--ln,#383A33)}" +
     ".ipr-ac.b{border-top:0;margin-top:6px}" +
-    ".ipr-ac button{all:unset;box-sizing:border-box;cursor:pointer;display:flex;align-items:center;gap:10px;width:100%;min-height:46px;padding:8px 10px 8px 6px;border-bottom:1px solid var(--ln,#3a3f30);color:var(--tx,#e9eadf);font:600 15px/1.25 Inter,system-ui,sans-serif}" +
-    ".ipr-ac button:hover{background:rgba(155,197,61,.08)}" +
-    ".ipr-ac button:focus-visible{outline:2px solid var(--ac,#9BC53D);outline-offset:-2px}" +
+    ".ipr-ac button{all:unset;box-sizing:border-box;cursor:pointer;display:flex;align-items:center;gap:10px;width:100%;min-height:46px;padding:8px 10px 8px 6px;border-bottom:1px solid var(--ln,#383A33);color:var(--tx,#F5F4EE);font:600 14px/1.25 Inter,system-ui,sans-serif}" +
+    ".ipr-ac button:hover{background:rgba(255,255,255,.04)}" +
+    ".ipr-ac button:focus-visible{outline:2px solid var(--ac,#94BE39);outline-offset:-2px}" +
     ".ipr-ac .seta{flex:0 0 auto;width:0;height:0;border-style:solid;border-width:5px 0 5px 7px;border-color:transparent transparent transparent currentColor;transition:transform .15s}" +
     ".ipr-ac button[aria-expanded=true] .seta{transform:rotate(90deg)}" +
-    ".ipr-ac button[aria-expanded=true]{background:rgba(155,197,61,.12);border-bottom-color:transparent}" +
+    ".ipr-ac button[aria-expanded=true]{background:#000;color:var(--ac,#94BE39);box-shadow:inset 3px 0 0 #B8A83A;border-bottom-color:transparent}" +
     ".ipr-ac .nome{flex:1 1 auto;min-width:0}" +
-    ".ipr-ac .n{flex:0 0 auto;min-width:22px;padding:2px 6px;border-radius:5px;text-align:center;font:600 12px/1.2 var(--mono,monospace);color:var(--mu,#a7ab98);border:1px solid var(--ln,#3a3f30)}" +
-    ".ipr-ac button[aria-expanded=true] .n{color:#0f1a08;background:var(--ac,#9BC53D);border-color:var(--ac,#9BC53D)}" +
+    ".ipr-ac .n{flex:0 0 auto;min-width:22px;padding:2px 6px;border-radius:5px;text-align:center;font:600 12px/1.2 var(--mono,monospace);color:#B5D86A;background:#0B0C0A;border:0}" +
+    ".ipr-ac button[aria-expanded=true] .n{color:#0B0C0A;background:var(--ac,#94BE39)}" +
     ".ipr-ac button.zero{opacity:.55}" +
-    ".ipe-pane.ipr-ac-on:not(.ipr-ac-fechado) #ipe-proj{padding-left:6px;border-left:2px solid var(--ac,#9BC53D);margin-left:2px}" +
+    ".ipe-pane.ipr-ac-on:not(.ipr-ac-fechado) #ipe-proj{padding-left:6px;border-left:2px solid var(--ac,#94BE39);margin-left:2px}" +
     "@media (prefers-reduced-motion:reduce){.ipr-ac .seta{transition:none}}";
   (D.head || D.documentElement).appendChild(css);
 

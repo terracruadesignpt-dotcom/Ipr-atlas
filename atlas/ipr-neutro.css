@@ -1,0 +1,149 @@
+/* IPR Atlas · tema escuro neutro (grafite) do sistema de design do Pedro Bolito (regenerativo.pt/interface/ajustes-atlas,
+   /interface e /atlas-design). Decisões do Nuno, 04/11/2026, 22h2x: «Grafite em tudo», legenda «Mínima», Formiga fora do
+   mapa, e os três ecrãs «Novo» (Comprar passo 1, Terreno e estimativa, painel da Base).
+   Carregado depois de camadas.css, viz.css, estudio.css, ipr-tema.css e bolito.css. O tema claro (.ipe.claro) não muda.
+   O ipr-neutro.js troca também as cores verdes fixas das outras folhas e dos estilos injectados, monta a legenda mínima e
+   acrescenta os textos dos ecrãs novos. Desligar tudo: ?neutro=0 ou localStorage ipr_neutro_off = 1 (põe
+   <html data-neutro-off>). Propriedade de IPR – Instituto de Planeamento Regenerativo, Lda.
+
+   Paleta: aplicação #141513 · painéis #1B1C19 · cartões #232420 · linhas #383A33 · texto #F5F4EE · secundário #C3C5BC ·
+   Verde IPR #94BE39 (só no activo e na acção principal) · etiquetas #0B0C0A com letra #B5D86A · dourado #B8A83A. */
+
+/* ── 1. Variáveis ── */
+:root:not([data-neutro-off]){--bg:#141513;--p1:#1B1C19;--p2:#232420;--p3:#2A2B26;--ln:#383A33;--ln2:#45473F;--tx:#F5F4EE;--mu:#C3C5BC;--mu2:#8A8C82;--ac:#94BE39;--ac2:#B5D86A;--acs:rgba(148,190,57,.14);--ouro:#B8A83A;--n5-et:#0B0C0A;--n5-etx:#B5D86A}
+html:not([data-neutro-off]) .ipe:not(.claro),html:not([data-neutro-off]) #ipe:not(.claro){--bg:#141513;--p1:#1B1C19;--p2:#232420;--p3:#2A2B26;--ln:#383A33;--ln2:#45473F;--tx:#F5F4EE;--mu:#C3C5BC;--mu2:#8A8C82;--ac:#94BE39;--ac2:#B5D86A;--acs:rgba(148,190,57,.14);--ok:#94BE39;--ar:#F5F4EE;--ouro:#B8A83A;
+  --b-ac:#94BE39;--b-ou:#B8A83A;--b-ol:#232420;--b-ol2:#383A33;--b-np:#0B0C0A;--b-vn:#1B1C19}
+html:not([data-neutro-off]) #ipe:not(.claro){background:#141513}
+html:not([data-neutro-off]) #ipe:not(.claro) .ipe-top,html:not([data-neutro-off]) #ipe:not(.claro) .ipe-esq,html:not([data-neutro-off]) #ipe:not(.claro) .ipe-dir,html:not([data-neutro-off]) #ipe:not(.claro) .ipe-st{background:#1B1C19}
+/* Texto corrido em Inter; o monoespaçado fica nos rótulos pequenos e nos números */
+html:not([data-neutro-off]) #ipe:not(.claro) .ipe-p,html:not([data-neutro-off]) #ipe:not(.claro) .ipe-small,html:not([data-neutro-off]) #ipe:not(.claro) .ipe-nota{font-family:Inter,system-ui,sans-serif}
+/* Botões secundários neutros; o principal continua Verde IPR */
+html:not([data-neutro-off]) #ipe:not(.claro) .ipe-b:not(.ipe-b--ac){background:#232420;border-color:#383A33;color:#F5F4EE}
+html:not([data-neutro-off]) #ipe:not(.claro) .ipe-b:not(.ipe-b--ac):hover{border-color:#94BE39}
+html:not([data-neutro-off]) #ipe:not(.claro) .ipe-in{background:#232420;border-color:#383A33;color:#F5F4EE}
+html:not([data-neutro-off]) #ipe:not(.claro) .ipe-in:focus{border-color:#94BE39;outline:none}
+html:not([data-neutro-off]) #ipe:not(.claro) input[type=checkbox],html:not([data-neutro-off]) #ipe:not(.claro) input[type=radio]{accent-color:#94BE39}
+/* Separador activo: peso 600 e linha verde */
+html:not([data-neutro-off]) #ipe:not(.claro) .ipe-tab{color:#C3C5BC}
+html:not([data-neutro-off]) #ipe:not(.claro) .ipe-tab[aria-selected=true]{color:#F5F4EE;font-weight:600}
+/* Contadores e etiquetas: quadrado escuro com letra verde clara */
+html:not([data-neutro-off]) #ipe:not(.claro) .ipr-n,html:not([data-neutro-off]) .ipe-nivel{background:#0B0C0A!important;color:#B5D86A!important;border:0!important}
+/* Opção escolhida: fundo preto, letra Verde IPR, filete dourado */
+html:not([data-neutro-off]) #ipe:not(.claro) .ipe-mb[aria-pressed=true],html:not([data-neutro-off]) #ipe:not(.claro) .ipe-chip.on{background:#000!important;color:#94BE39!important;box-shadow:inset 3px 0 0 #B8A83A}
+
+/* ── 2. Legenda «Mínima»: faixa estreita, filete Verde IPR, rampa do MDT, linhas como traço, nomes curtos ── */
+html:not([data-neutro-off]) #ipr-lgd.n5-min{background:rgba(11,12,10,.92)!important;border:0!important;border-left:3px solid #94BE39!important;border-radius:2px!important;box-shadow:0 4px 16px rgba(0,0,0,.35)!important;color:#F5F4EE!important;font:12px/1.25 Inter,system-ui,sans-serif!important;width:auto!important;min-width:0!important;max-width:240px!important;padding:8px 12px 8px 10px!important}
+html:not([data-neutro-off]) #ipr-lgd.n5-min>.h{all:unset;box-sizing:border-box;display:flex!important;align-items:center;gap:6px;width:100%;cursor:pointer;font:500 10px/1.2 'IBM Plex Mono',monospace!important;letter-spacing:.12em!important;text-transform:uppercase!important;color:#94BE39!important;padding:0 0 6px!important;border:0!important;background:none!important}
+html:not([data-neutro-off]) #ipr-lgd.n5-min>.h i{font-style:normal;color:#94BE39!important;font-weight:500}
+html:not([data-neutro-off]) #ipr-lgd.n5-min.min>.h{padding:0!important}
+html:not([data-neutro-off]) #ipr-lgd.n5-min .c{padding:0!important;max-height:52vh;overflow:auto}
+html:not([data-neutro-off]) #ipr-lgd.n5-min .gh,html:not([data-neutro-off]) #ipr-lgd.n5-min .ipr-ii-f,html:not([data-neutro-off]) #ipr-lgd.n5-min .ipr-ii-b{display:none!important}
+html:not([data-neutro-off]) #ipr-lgd .n5-nc,html:not([data-neutro-off]) #ipr-lgd .n5-rp{display:none}
+html:not([data-neutro-off]) #ipr-lgd.n5-min .c .one,html:not([data-neutro-off]) #ipr-lgd.n5-min .c .l{display:flex!important;align-items:center;gap:8px;padding:2px 0!important;font:400 12px/1.3 Inter,system-ui,sans-serif!important;color:#F5F4EE!important}
+html:not([data-neutro-off]) #ipr-lgd.n5-min .c .one>span:not(.n5-nc):not(.n5-rp),html:not([data-neutro-off]) #ipr-lgd.n5-min .c .one>small.d,html:not([data-neutro-off]) #ipr-lgd.n5-min .c .l>b,html:not([data-neutro-off]) #ipr-lgd.n5-min .c .l .r{display:none!important}
+html:not([data-neutro-off]) #ipr-lgd.n5-min .n5-nc{display:inline-flex;align-items:center;gap:8px;white-space:nowrap}
+html:not([data-neutro-off]) #ipr-lgd.n5-min .n5-nc small{font:400 11px/1.2 Inter,system-ui,sans-serif;color:#C3C5BC;margin-left:-3px}
+html:not([data-neutro-off]) #ipr-lgd.n5-min .c .one>s{flex:none;width:14px!important;height:10px!important;border-radius:1px!important;border:0!important;margin:0!important}
+html:not([data-neutro-off]) #ipr-lgd.n5-min .c .one.ln>s,html:not([data-neutro-off]) #ipr-lgd.n5-min .n5-nc>s.n5-tr{display:inline-block;height:0!important;width:14px!important;border:0!important;border-top:2px solid var(--b-cor,#fff)!important;background:none!important;border-radius:0!important;margin:0!important}
+html:not([data-neutro-off]) #ipr-lgd.n5-min .c .one.ln.fino>s{border-top-width:1px!important}
+/* Hipsometria: rampa vertical do MDT, «alto» em cima e «baixo» em baixo */
+html:not([data-neutro-off]) #ipr-lgd.n5-min .c .one.rampa{align-items:stretch!important}
+html:not([data-neutro-off]) #ipr-lgd.n5-min .c .one.rampa>s{width:8px!important;height:44px!important;border-radius:1px!important;background:linear-gradient(0deg,#3D6B3A,#CFE07A 35%,#E9C452 65%,#8A4A22)!important}
+html:not([data-neutro-off]) #ipr-lgd.n5-min .c .one.rampa .n5-rp{display:flex;flex-direction:column;justify-content:space-between;min-height:44px}
+html:not([data-neutro-off]) #ipr-lgd.n5-min .c .one.rampa .n5-rp small{font:400 11px/1.2 Inter,system-ui,sans-serif;color:#C3C5BC}
+
+/* ── 3. Formiga fora do mapa (continua no menu «⋯» do topo) ── */
+html.n5-atlas:not([data-neutro-off]) #tcdfmb{display:none!important}
+html:not([data-neutro-off]) #ipe .ipe-mais-m #n5-fm{display:flex;align-items:center;gap:8px;width:100%}
+
+/* Blocos do separador Processos: Verde IPR só na acção principal («Ver o projecto exemplo»); «Já é cliente? Entrar» passa a
+   ligação simples (atlas-design, ajuste 7); contornos dos blocos neutros */
+html:not([data-neutro-off]) #ipe:not(.claro) #tme,html:not([data-neutro-off]) #ipe:not(.claro) .ipr-x.ipr-x-s,html:not([data-neutro-off]) #ipe:not(.claro) #ipe-guia{border-color:#383A33!important;background:#232420!important}
+html:not([data-neutro-off]) #ipe:not(.claro) #tme h3{color:#F5F4EE}
+html:not([data-neutro-off]) #ipe:not(.claro) #tme p{color:#C3C5BC;font-family:Inter,system-ui,sans-serif}
+html:not([data-neutro-off]) #ipe:not(.claro) #tme .tme-b--s[data-tme=encomendar]{background:transparent!important;border:1px solid #45473F!important;color:#F5F4EE!important}
+html:not([data-neutro-off]) #ipe:not(.claro) #tme a.tme-b--s{background:none!important;border:0!important;padding:4px 0!important;color:#C3C5BC!important;text-decoration:underline;text-decoration-color:#B8A83A;text-underline-offset:3px;font-weight:500!important}
+html:not([data-neutro-off]) #ipe:not(.claro) #tme a.tme-b--s:hover{color:#F5F4EE!important}
+html:not([data-neutro-off]) #ipe:not(.claro) .ipr-x.ipr-x-s button{border-color:#383A33!important;background:#1B1C19!important;color:#F5F4EE!important}
+html:not([data-neutro-off]) #ipe:not(.claro) #ipr-proc-sel{border-color:#383A33!important;background:#232420!important}
+html:not([data-neutro-off]) #ipe:not(.claro) #ipr-proc-sel button{color:#C3C5BC!important;background:transparent!important}
+html:not([data-neutro-off]) #ipe:not(.claro) #ipr-proc-sel button.on{background:#000!important;color:#94BE39!important;box-shadow:inset 3px 0 0 #B8A83A!important}
+
+/* ── 4a. Comprar, passo 1 (proposta A) ── */
+html:not([data-neutro-off]) .ipr-cp-pn{background:#1B1C19!important;border:1px solid #383A33!important;color:#F5F4EE!important}
+html:not([data-neutro-off]) .ipr-cp-pn h2{font:400 17px/1.25 Outfit,Inter,sans-serif!important;letter-spacing:0!important;text-transform:none!important;color:#F5F4EE!important}
+html:not([data-neutro-off]) .ipr-cp-pn .ipr-cp-ps li{color:#C3C5BC}
+html:not([data-neutro-off]) .ipr-cp-pn .ipr-cp-ps li b{background:#0B0C0A!important;color:#B5D86A!important;border:0!important;font:500 10px/20px 'IBM Plex Mono',monospace!important}
+html:not([data-neutro-off]) .ipr-cp-pn .ipr-cp-ps li.on b{background:#94BE39!important;color:#0B0C0A!important}
+html:not([data-neutro-off]) .ipr-cp-pn .ipr-cp-ps li.on span{color:#F5F4EE}
+html:not([data-neutro-off]) .ipr-cp-pn .ipr-cp-i{background:#232420!important;border:1px solid #383A33!important;border-radius:2px!important;color:#F5F4EE!important;box-shadow:none!important}
+html:not([data-neutro-off]) .ipr-cp-pn .ipr-cp-i:hover,html:not([data-neutro-off]) .ipr-cp-pn .ipr-cp-i:focus-visible,html:not([data-neutro-off]) .ipr-cp-pn .ipr-cp-i[aria-pressed=true],html:not([data-neutro-off]) .ipr-cp-pn .ipr-cp-i.on{border-color:#94BE39!important;box-shadow:inset 3px 0 0 #94BE39!important;outline:none}
+html:not([data-neutro-off]) .ipr-cp-pn .ipr-cp-i>svg{color:#94BE39!important}
+html:not([data-neutro-off]) .ipr-cp-pn .ipr-cp-i b{font:600 14px/1.25 Inter,system-ui,sans-serif!important;color:#F5F4EE!important}
+html:not([data-neutro-off]) .ipr-cp-pn .ipr-cp-i span>small{font:400 12px/1.4 Inter,system-ui,sans-serif!important;color:#C3C5BC!important}
+html:not([data-neutro-off]) .ipr-cp-pn .ipr-cp-p{font:500 14px/1.2 'IBM Plex Mono',monospace!important;color:#F5F4EE!important;text-align:right}
+html:not([data-neutro-off]) .ipr-cp-pn .ipr-cp-p small{font:400 10px/1.2 'IBM Plex Mono',monospace!important;color:#C3C5BC!important}
+html:not([data-neutro-off]) .ipr-cp-pn .ipr-cp-p s{color:#8A8C82!important}
+html:not([data-neutro-off]) .ipr-cp-pn .ipr-cp-p .n5-iva{display:block;margin-top:2px;font:400 11px/1.2 'IBM Plex Mono',monospace;color:#B5D86A}
+html:not([data-neutro-off]) .n5-et{display:inline-block;padding:2px 6px;margin:6px 0 0;background:#0B0C0A;color:#B5D86A;font:500 10px/1.3 'IBM Plex Mono',monospace;letter-spacing:.08em;text-transform:uppercase;border-radius:1px;clip-path:polygon(0 0,100% 0,100% calc(100% - 5px),calc(100% - 5px) 100%,0 100%)}
+html:not([data-neutro-off]) .ipr-cp-pn .n5-mais{display:flex;flex-wrap:wrap;gap:6px 14px;margin:10px 0 2px}
+html:not([data-neutro-off]) .ipr-cp-pn .n5-mais a,html:not([data-neutro-off]) .ipr-cp-pn .n5-mais button{all:unset;cursor:pointer;font:500 12px/1.3 Inter,system-ui,sans-serif;color:#C3C5BC;text-decoration:underline;text-decoration-color:#B8A83A;text-underline-offset:3px}
+html:not([data-neutro-off]) .ipr-cp-pn .n5-mais a:hover,html:not([data-neutro-off]) .ipr-cp-pn .n5-mais button:hover{color:#F5F4EE}
+html:not([data-neutro-off]) .ipr-cp-pn .ipr-cp-n{color:#C3C5BC!important}
+html:not([data-neutro-off]) .ipr-cp-pn .ipr-cp-n a{color:#94BE39!important}
+
+/* ── 4b. Terreno e estimativa (9 pontos) ── */
+/* 1. fundo grafite, campos e cartões cinzento-escuro com contorno subtil, texto Inter quase branco: variáveis e §1 */
+/* 2. selector único dos modos; activo a preto com letra Verde IPR e filete dourado */
+html:not([data-neutro-off]) #ipe:not(.claro) .ipe-met{border-color:#383A33!important;background:#232420}
+html:not([data-neutro-off]) #ipe:not(.claro) .ipe-met .ipe-mb{color:#C3C5BC!important}
+html:not([data-neutro-off]) #ipe:not(.claro) .ipe-met .ipe-mb[aria-pressed=true]{background:#000!important;color:#94BE39!important;box-shadow:inset 3px 0 0 #B8A83A!important}
+/* 3 e 4. zona de arrastar e «ou» (bolito.js), nas cores novas */
+html:not([data-neutro-off]) #ipe-form .ipr-drop{border-color:#45473F!important;color:#C3C5BC!important;background:#232420}
+html:not([data-neutro-off]) #ipe-form .ipr-ou{color:#8A8C82!important}
+html:not([data-neutro-off]) #ipe-form .ipr-ou:before,html:not([data-neutro-off]) #ipe-form .ipr-ou:after{background:#383A33!important}
+/* 5. «Limpar terreno» como ligação discreta */
+html:not([data-neutro-off]) #ipe-form #ipe-limpar{all:unset;cursor:pointer;font:400 12px/1.3 Inter,system-ui,sans-serif;color:#C3C5BC;text-decoration:underline;text-decoration-color:#45473F;text-underline-offset:3px}
+html:not([data-neutro-off]) #ipe-form #ipe-limpar:hover:not(:disabled){color:#F5F4EE;text-decoration-color:#B8A83A}
+html:not([data-neutro-off]) #ipe-form #ipe-limpar:disabled{opacity:.45;cursor:default}
+html:not([data-neutro-off]) #ipe-form .ipe-acc:has(>#ipe-limpar){margin:-2px 0 8px;display:flex;justify-content:flex-end}
+/* 6. números de secção em Verde IPR mono, nomes em Inter, sobre um filete */
+html:not([data-neutro-off]) #ipe-form>h3.ipe-h{display:flex;align-items:baseline;gap:8px;margin:18px 0 10px;padding:0 0 6px;border-bottom:1px solid #383A33;font:600 14px/1.25 Inter,system-ui,sans-serif!important;color:#F5F4EE}
+html:not([data-neutro-off]) #ipe-form>h3.ipe-h>b{font:500 11px/1 'IBM Plex Mono',monospace!important;color:#94BE39!important;background:none!important;letter-spacing:.06em}
+/* 7. «a confirmar» sem ar de escolhido; preço em Verde IPR mono; ícones e caixa verdes */
+html:not([data-neutro-off]) #ipe-form .ipe-kpi{border:1px solid #383A33!important;background:#232420!important}
+html:not([data-neutro-off]) #ipe-form .ipe-kpi div{background:transparent!important;box-shadow:none!important;outline:0!important}
+html:not([data-neutro-off]) #ipe-form .ipe-kpi span{color:#C3C5BC!important}
+html:not([data-neutro-off]) #ipe-form .ipe-kpi #ipe-area{font:400 14px/1.3 Inter,system-ui,sans-serif!important;color:#F5F4EE!important}
+html:not([data-neutro-off]) #ipe-form .ipe-kpi #ipe-preco{font:500 18px/1.15 'IBM Plex Mono',monospace!important;color:#94BE39!important}
+html:not([data-neutro-off]) #ipe-form svg{color:#94BE39}
+/* 8. cartão da Leitura Territorial: o chamariz (contorno, filete Verde IPR, caixa maior, desconto em etiqueta, condicionantes em etiquetas) */
+html:not([data-neutro-off]) #ipe-form label.ipe-chk:has(#ipe-preco-l){display:flex;gap:12px;align-items:flex-start;padding:14px 14px 12px!important;border:1px solid #94BE39!important;box-shadow:inset 3px 0 0 #94BE39;border-radius:2px!important;background:#232420!important;color:#C3C5BC!important;font:400 12px/1.45 Inter,system-ui,sans-serif!important}
+html:not([data-neutro-off]) #ipe-form label.ipe-chk:has(#ipe-preco-l) input[type=checkbox]{width:20px;height:20px;margin:1px 0 0;flex:none;accent-color:#94BE39}
+html:not([data-neutro-off]) #ipe-form label.ipe-chk:has(#ipe-preco-l) strong{font-weight:600;color:#F5F4EE}
+html:not([data-neutro-off]) #ipe-form #ipe-preco-l{display:inline;margin:0 1px;padding:1px 6px;-webkit-box-decoration-break:clone;box-decoration-break:clone;background:#0B0C0A;color:#B5D86A!important;font:500 11px/1.3 'IBM Plex Mono',monospace;letter-spacing:.02em;clip-path:polygon(0 0,100% 0,100% calc(100% - 5px),calc(100% - 5px) 100%,0 100%)}
+html:not([data-neutro-off]) #ipe-form .n5-tags{display:flex;flex-wrap:wrap;gap:4px;margin:8px 0 0}
+html:not([data-neutro-off]) #ipe-form .n5-tags i{font:500 10px/1.3 'IBM Plex Mono',monospace;font-style:normal;letter-spacing:.06em;text-transform:uppercase;padding:2px 6px;border:1px solid #45473F;color:#C3C5BC;border-radius:1px}
+/* 9. nota final em três pontos curtos com o triângulo do IPR */
+html:not([data-neutro-off]) #ipe-form .ipr-nt{color:#C3C5BC;font:400 12px/1.45 Inter,system-ui,sans-serif}
+html:not([data-neutro-off]) #ipe-form .ipr-nt b{color:#F5F4EE}
+html:not([data-neutro-off]) #ipe-form .ipr-nt:before{background:#94BE39!important;width:6px!important;height:6px!important;top:5px!important}
+
+/* ── 4c. Painel da Base (5 pontos) ── */
+/* 1. painel #1B1C19, cartões #232420, contorno #383A33 */
+html:not([data-neutro-off]) #ipe .ipe-basecam{background:#232420!important;border:1px solid #383A33!important;border-radius:2px!important}
+html:not([data-neutro-off]) #ipe .ipe-fl2 li{background:#232420!important;border:1px solid #383A33!important;border-radius:2px!important}
+/* 2. títulos de secção em mono pequeno maiúsculo; texto em Inter quase branco e cinzento claro */
+html:not([data-neutro-off]) #ipe .ipe-basecam .ipe-h,html:not([data-neutro-off]) #ipe .ipe-dir h4.ipe-h{font:500 10.5px/1.3 'IBM Plex Mono',monospace!important;letter-spacing:.1em!important;text-transform:uppercase!important;color:#C3C5BC!important}
+html:not([data-neutro-off]) #ipe .ipe-basecam .ipe-h:after{background:#383A33!important}
+html:not([data-neutro-off]) #ipe .ipe-fl2 li .ipe-fl-t b{font:600 13px/1.3 Inter,system-ui,sans-serif;color:#F5F4EE}
+html:not([data-neutro-off]) #ipe .ipe-fl2 li .ipe-fl-t small{color:#C3C5BC!important}
+/* 3. camadas activas a preto com letra Verde IPR e filete dourado; inactivas só com contorno */
+html:not([data-neutro-off]) #ipe .ipe-basecam .ipe-chip{background:transparent!important;border:1px solid #383A33!important;border-left:1px solid #383A33!important;color:#C3C5BC!important;box-shadow:none!important}
+html:not([data-neutro-off]) #ipe .ipe-basecam .ipe-chip.on{background:#000!important;color:#94BE39!important;border-color:#000!important;box-shadow:inset 3px 0 0 #B8A83A!important;font-weight:600}
+/* 4. número de camadas e «.zip» em etiqueta IPR (quadrado escuro, letra verde clara) */
+html:not([data-neutro-off]) #ipe .ipe-basecam .ipe-h>b,html:not([data-neutro-off]) #ipe .ipe-fl2 .n5-zip{display:inline-block;padding:1px 6px;background:#0B0C0A;color:#B5D86A;font:500 10px/1.4 'IBM Plex Mono',monospace;letter-spacing:.04em;border-radius:1px}
+/* 5. Verde IPR só no pacote completo (filete e contorno) e em «Descarregar tudo»; QField e visita técnica neutros */
+html:not([data-neutro-off]) #ipe .ipe-fl2 li.ipe-fl-tudo{border-color:#94BE39!important;box-shadow:inset 3px 0 0 #94BE39!important}
+html:not([data-neutro-off]) #ipe .ipe-fl2 li:not(.ipe-fl-tudo)>a.ipe-b{background:#232420!important;border:1px solid #45473F!important;color:#F5F4EE!important}
+html:not([data-neutro-off]) #ipe .ipe-t--lbl[data-tool=visita],html:not([data-neutro-off]) #ipe a.ipe-b[href*="visita"]{background:#232420!important;border:1px solid #45473F!important;color:#F5F4EE!important}
