@@ -2,8 +2,9 @@
    Nuno, 04/11/2026, 22h09: «gostava mais de ter os separadores, tipo projetos entregues, pedidos, [...] parecido ao lado
    esquerdo, onde tu carregas e abres o que está para baixo. [...] O lado esquerdo está bom, com aquelas várias camadas, com
    a setinha, e depois carrega-se e tem-se as subcategorias, e eu quero igual desse lado.»
-   O que faz, no separador «Bases» do bloco direito (só onde o bases-tipos.js mostra os separadores em botões, ou seja na
-   equipa e em ecrãs com 600 px ou mais):
+   22h15: «é para aplicar para todos, estamos a falar do layout geral»: vale no computador e no telemóvel (onde o
+   bases-tipos.js põe uma lista de escolha, as linhas usam as opções dessa lista). Os tipos só existem para a equipa.
+   O que faz, no separador «Bases» do bloco direito:
    1. Esconde a fila de botões do bases-tipos.js (#ipr-bt-f .abas) e põe no lugar uma lista de linhas, uma por tipo (Todas,
       Pedidos, Dias abertos, Reuniões, Projectos, Projectos entregues, Implementação, Sem tipo), com a seta à esquerda e o
       número à direita, como os grupos de camadas do lado esquerdo.
@@ -25,7 +26,7 @@
 
   var css = D.createElement("style"); css.id = "ipr-ac-css";
   css.textContent =
-    ".ipe-pane.ipr-ac-on #ipr-bt-f .abas{display:none!important}" +
+    ".ipe-pane.ipr-ac-on #ipr-bt-f .abas,.ipe-pane.ipr-ac-on #ipr-bt-f label{display:none!important}" +
     ".ipe-pane.ipr-ac-on #ipr-bt-f{margin:0!important}" +
     ".ipe-pane.ipr-ac-fechado #ipr-pg-f,.ipe-pane.ipr-ac-fechado #ipr-px-f,.ipe-pane.ipr-ac-fechado #ipe-proj{display:none!important}" +
     ".ipr-ac{margin:0;border-top:1px solid var(--ln,#3a3f30)}" +
@@ -49,10 +50,16 @@
   function partes() {
     var pane = D.querySelector('#ipe .ipe-pane[data-pane="proj"]');
     var bar = D.getElementById("ipr-bt-f"), box = D.getElementById("ipe-proj");
-    var abas = bar && bar.querySelector(".abas");
+    var abas = bar && (bar.querySelector(".abas") || bar.querySelector("select[data-bt-s]"));
     return { pane: pane, bar: bar, box: box, abas: abas };
   }
   function opcoes(abas) {
+    if (abas.tagName === "SELECT") {
+      return [].map.call(abas.options, function (x) {
+        var m = /^(.*?)\s*\((\d+)\)\s*$/.exec(x.textContent || "");
+        return { k: x.value, nome: m ? m[1] : x.textContent, n: m ? m[2] : "", sel: x.selected, titulo: "", botao: null };
+      });
+    }
     return [].map.call(abas.querySelectorAll("button[data-bt]"), function (b) {
       var sm = b.querySelector("small"), n = sm ? sm.textContent.trim() : "", nome = (b.firstChild && b.firstChild.nodeType === 3 ? b.firstChild.nodeValue : b.textContent.replace(n, "")).trim();
       return { k: b.getAttribute("data-bt"), nome: nome, n: n, sel: b.getAttribute("aria-selected") === "true", titulo: b.title || "", botao: b };
@@ -73,10 +80,17 @@
     var b = e.target.closest("button[data-ac]"); if (!b) return;
     e.preventDefault();
     var k = b.getAttribute("data-ac"), p = partes(); if (!p.abas) return;
-    var alvo = p.abas.querySelector('button[data-bt="' + k + '"]');
     var jaAberta = b.getAttribute("aria-expanded") === "true";
     if (jaAberta) { FECHADO = true; ls("ipr_ac_fechado", "1"); }
-    else { FECHADO = false; ls("ipr_ac_fechado", ""); if (alvo && alvo.getAttribute("aria-selected") !== "true") alvo.click(); }
+    else {
+      FECHADO = false; ls("ipr_ac_fechado", "");
+      if (p.abas.tagName === "SELECT") {
+        if (p.abas.value !== k) { p.abas.value = k; p.abas.dispatchEvent(new Event("change", { bubbles: true })); }
+      } else {
+        var alvo = p.abas.querySelector('button[data-bt="' + k + '"]');
+        if (alvo && alvo.getAttribute("aria-selected") !== "true") alvo.click();
+      }
+    }
     CHAVE = ""; montar();
     var nova = D.querySelector('.ipr-ac button[data-ac="' + k + '"]'); if (nova) try { nova.focus({ preventScroll: true }); } catch (x) {}
   }
@@ -120,7 +134,7 @@
       if (x && x.closest && x.closest(".ipr-ac")) continue;
       vigia(); return;
     }
-  }).observe(D.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ["aria-selected"] });
+  }).observe(D.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ["aria-selected", "selected"] });
   W.addEventListener("resize", vigia);
   D.addEventListener("ipr:lingua", function () { CHAVE = ""; vigia(); });
   vigia();
