@@ -40,7 +40,7 @@
       desenhar: "Intervenções", faixa: "Faixa de gestão", fogo_controlado: "Fogo controlado", pastoreio: "Pastoreio", mosaico: "Mosaico ou cultura", caminho: "Caminho ou aceiro", charca: "Charca",
       desH: "Clique no mapa para marcar os vértices do polígono. Termine com duplo clique ou «Terminar». Esc cancela.", terminar: "Terminar", cancelar: "Cancelar",
       combD: "Combustível depois da intervenção", nenhuma: "Ainda não desenhou nenhuma intervenção.", apagar: "Apagar",
-      simular: "Simular", aSimular: "A simular…", fila: "Na fila", corre: "A calcular", falhou: "Não foi possível simular",
+      simular: "Simular", aSimular: "A simular…", fila: "Na fila", corre: "A calcular", falta: "faltam", quase: "quase a terminar…", ha: "a correr há", falhou: "Não foi possível simular",
       bloqueado: "Simulador bloqueado neste local.", emerg: "Em caso de incêndio, siga as indicações da Protecção Civil e ligue 112.",
       anteriores: "Simulações deste mapa", nenhumaSim: "Ainda não há simulações neste mapa.", ver: "Ver",
       resultados: "Resultados", opT: "Isto bate certo com o que conhece do terreno?", opSub: "Período de testes: a sua resposta fica guardada com a sua conta, esta Base e esta simulação, e serve para afinar o simulador.", op_certo: "Bate certo", op_parcial: "Em parte", op_errado: "Não bate certo", opTx: "O que viu ou sabe do terreno (por onde ardeu, quando, a que velocidade, o que travou o fogo)? Opcional.", opEnviar: "Enviar", opObrigado: "Obrigado. Ficou registado.", camadas: "No mapa", descargas: "Ficheiros (COG, GeoPackage, CSV)",
@@ -156,7 +156,7 @@
       "#ipr-fs .kv{display:grid;grid-template-columns:1fr auto;gap:2px 10px;font-size:13px;margin:0 0 6px}#ipr-fs .kv span:nth-child(2n){font:500 12px 'IBM Plex Mono',monospace;text-align:right}" +
       "#ipr-fs .cam label{display:flex;gap:6px;align-items:center;font-size:13px;margin:0 0 4px}#ipr-fs .leg{display:flex;height:8px;border-radius:4px;overflow:hidden;margin:2px 0 1px}#ipr-fs .leg i{flex:1}#ipr-fs .legv{display:flex;justify-content:space-between;font:500 10px 'IBM Plex Mono',monospace;color:var(--mu,#a3a690)}" +
       "#ipr-fs ul.fx{margin:0;padding-left:16px;font-size:13px}#ipr-fs ul.fx a{color:#e07a3f}" +
-      "#ipr-fs .prog{height:4px;border-radius:2px;background:var(--ln,#2b3024);overflow:hidden;margin:8px 0}#ipr-fs .prog i{display:block;height:100%;width:30%;background:#e07a3f;animation:iprfs 1.4s ease-in-out infinite}@keyframes iprfs{0%{margin-left:-30%}100%{margin-left:100%}}" +
+      "#ipr-fs .prog{height:4px;border-radius:2px;background:var(--ln,#2b3024);overflow:hidden;margin:8px 0}#ipr-fs .prog i{display:block;height:100%;width:30%;background:#e07a3f;animation:iprfs 1.4s ease-in-out infinite}#ipr-fs .prog.det{height:8px;border-radius:4px}#ipr-fs .prog.det i{animation:none;margin:0;transition:width .9s linear}#ipr-fs .progtx{display:flex;justify-content:space-between;gap:8px;font-size:12px;color:var(--mu,#a3a690)}#ipr-fs .progtx b{font:600 13px 'IBM Plex Mono',monospace;color:var(--tx,#ebe7d8)}@keyframes iprfs{0%{margin-left:-30%}100%{margin-left:100%}}" +
       "#ipr-fs .des{padding:8px 10px;border:1px dashed #e07a3f;border-radius:9px;margin:8px 0;font-size:13px}" +
       "#ipr-fs .faixa{margin:0 0 10px;padding:6px 9px;border-radius:8px;background:rgba(217,83,79,.16);border:1px solid #d9534f;font-size:12.5px;line-height:1.4;font-weight:500}" +
       "#ipr-fs .avbox{border:1px solid #d9534f;border-radius:10px;padding:10px;background:var(--p2,#1d2118)}#ipr-fs .avbox p{font-size:13px;margin:6px 0 10px}#ipr-fs .chk{display:flex;gap:8px;align-items:flex-start;font-size:13px}" +
@@ -216,7 +216,7 @@
     var corre = S.job && (S.job.estado === "accepted" || S.job.estado === "running" || S.job.enviar);
     h += '<div class="acc"><button class="b pri" data-fs="simular"' + (corre || S.des ? " disabled" : "") + ">" + esc(corre ? t("aSimular") : t("simular")) + "</button></div>";
     if (S.erro) h += '<div class="err">' + (S.bloq ? "<b>" + esc(t("bloqueado")) + "</b><br>" : "") + esc(S.erro) + (S.bloq ? "<br>" + esc(t("emerg")) : "") + "</div>";
-    if (corre) h += '<div class="prog"><i></i></div><p class="nota">' + esc(S.job.estado === "running" ? t("corre") : t("fila")) + "</p>";
+    if (corre) h += barraJob();
     if (S.res) h += resultados();
     h += anteriores();
     h += '<p class="av">' + esc(t("notaFim")) + " " + esc(t("emerg")) + "</p>";
@@ -444,6 +444,40 @@
   var timer = null;
   // 01/11/2026 (Nuno: «não subcarregar o site»): cada pergunta ao site custa um pedido ao WordPress. Pergunta-se mais vezes
   // no primeiro minuto e cada vez menos depois; com o separador escondido, de 30 em 30 s. Ao voltar ao separador, já.
+  // 04/11/2026 (Nuno: «tem que ser uma barra de progresso, com um princípio e um fim [...] uma estimativa de quanto tempo
+  // vai demorar e uma contagem decrescente»). O motor manda a percentagem e o tempo que falta (estimado pelas simulações
+  // anteriores e depois pelo andamento real); aqui a barra avança e o relógio desconta de segundo a segundo entre leituras.
+  function mmss(s) { s = Math.max(0, Math.round(s)); var h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = s % 60; return (h ? h + ":" + ("0" + m).slice(-2) : m) + ":" + ("0" + x).slice(-2); }
+  function faltaDe(msg) {
+    if (!msg) return null;
+    if (/menos de 1 min/.test(msg)) return 40;
+    var q = /faltam cerca de (?:(\d+) h )?(\d+) min/.exec(msg);
+    return q ? (+(q[1] || 0) * 3600 + +q[2] * 60) : null;
+  }
+  function pctAgora(j) {
+    if (j.pct == null) return 0;
+    if (!j.fim || !j.visto) return j.pct;
+    var tot = (j.fim - j.visto) / 1000, dec = (Date.now() - j.visto) / 1000;   // entre leituras, avança ao ritmo previsto
+    return Math.min(99, j.pct + (99 - j.pct) * Math.min(1, dec / Math.max(tot, 1)) * 0.9);
+  }
+  function textoJob(j) {
+    if (j.estado !== "running") return [t("fila"), ""];
+    var fase = (j.msg || t("corre")).split(" · ")[0], dir = "";
+    if (j.fim) { var f = (j.fim - Date.now()) / 1000; dir = f > 1 ? t("falta") + " <b>" + mmss(f) + "</b>" : esc(t("quase")); }
+    else if (j.t0) dir = t("ha") + " <b>" + mmss((Date.now() - j.t0) / 1000) + "</b>";
+    return [fase, dir];
+  }
+  function barraJob() {
+    var j = S.job, x = textoJob(j);
+    if (j.estado !== "running" || j.pct == null) return '<div class="prog"><i></i></div><div class="progtx" data-progtx><span>' + esc(x[0]) + "</span><span>" + x[1] + "</span></div>";
+    return '<div class="prog det"><i data-progbar style="width:' + pctAgora(j).toFixed(1) + '%"></i></div><div class="progtx" data-progtx><span>' + esc(x[0]) + "</span><span>" + x[1] + "</span></div>";
+  }
+  setInterval(function () {
+    var j = S.job; if (!j || j.estado !== "running" || !P) return;
+    var b = P.querySelector("[data-progbar]"), tx = P.querySelector("[data-progtx]");
+    if (b) b.style.width = pctAgora(j).toFixed(1) + "%";
+    if (tx && tx.children.length === 2) tx.children[1].innerHTML = textoJob(j)[1];
+  }, 1000);
   function intervalo(job) {
     if (document.hidden) return 30000;
     if (job.estado !== "running") return 10000;
@@ -460,6 +494,10 @@
       if (S.job !== job) return;                     // resposta de um acompanhamento antigo (outra simulação ou «Ver»)
       job.estado = r.estado;
       if (r.estado === "running" && !job.t0) job.t0 = Date.now();
+      if (r.estado === "running") {
+        job.pct = r.progresso > 0 ? +r.progresso : null; job.msg = r.mensagem || ""; job.visto = Date.now();
+        var fs = faltaDe(job.msg); job.fim = fs == null ? null : Date.now() + fs * 1000;
+      }
       if (r.estado === "successful") {
         S.res = r; if (!r.id) r.id = job.id; S.job = null;
         var v = (r.ficheiros || []).filter(function (f) { return f.nome === "vista/vista.json"; })[0];
