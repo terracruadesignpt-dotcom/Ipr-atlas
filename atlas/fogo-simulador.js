@@ -1,4 +1,4 @@
-/* IPR Atlas · Simulador de Fogo (painel «Simular fogo»). IPR – Instituto de Planeamento Regenerativo. «Sim» do Nuno a 27/10/2026.
+/* IPR Atlas · Simulador de Fogo (painel «Simular fogo»). 04/11/2026: hora do dia (início, temperatura, humidade, vento e rajadas ao longo da simulação). IPR – Instituto de Planeamento Regenerativo. «Sim» do Nuno a 27/10/2026.
    O botão só aparece com sessão iniciada e quando tcd/v1/fogo/aviso responde (motor ligado e chave no site).
    Decisões do Nuno, 27/10/2026: quatro funções (Cenário no tempo, Antes e depois, Muitas ignições, Fogo e primeira chuva),
    clientes com Base entregue, painel no tema «Fogo» do T62 (ajustes.js). Não mexe em nenhum ficheiro: liga-se pelo DOM
@@ -30,6 +30,12 @@
         D3L3: "Médio (D3L3)", D3L4: "Médio, vivos húmidos (D3L4)", D4L4: "Húmido (D4L4)" },
       m1h: "Mortos 1 h", m10h: "Mortos 10 h", m100h: "Mortos 100 h", mherb: "Vivos herbáceos", mwoody: "Vivos lenhosos",
       meteoNota: "Os dias típicos regionais e o dia observado entram quando houver fonte de dados com licença; por agora, valores dados por si.",
+      dia: "Hora do dia", diaChk: "Ter em conta a hora do dia (temperatura, humidade e vento mudam ao longo da simulação)",
+      hIni: "Começa às", data: "Dia", tmax: "Temperatura máxima", tmin: "Temperatura mínima", hrmin: "Humidade mínima do ar (à tarde)",
+      vMad: "Vento médio de madrugada", vMadPh: "metade do da tarde", hVmax: "Hora do vento mais forte", rajada: "Rajada máxima", rajPh: "1,5 × o vento médio",
+      aoSol: "Combustível ao sol (pior caso; desmarque para zonas à sombra)", das: "Das {a} às {b}", diaSeg: " do dia seguinte",
+      velDia: "Vento médio à hora de mais vento", humDia: "Com a hora do dia, os combustíveis mortos (1 h, 10 h, 100 h) são calculados hora a hora; do cenário ou dos valores livres só contam os vivos.",
+      diaR: "Ao longo da simulação", diaCol: ["Hora", "°C", "HR", "1 h", "Vento", "Rajada"], nascer: "Nascer e pôr do Sol",
       dur: "Duração", passo: "Intervalo das isócronas", limite: "Limite de vento de Rothermel (por omissão desligado, como o behave)",
       desenhar: "Intervenções", faixa: "Faixa de gestão", fogo_controlado: "Fogo controlado", pastoreio: "Pastoreio", mosaico: "Mosaico ou cultura", caminho: "Caminho ou aceiro", charca: "Charca",
       desH: "Clique no mapa para marcar os vértices do polígono. Termine com duplo clique ou «Terminar». Esc cancela.", terminar: "Terminar", cancelar: "Cancelar",
@@ -64,6 +70,12 @@
         D3L3: "Moderate (D3L3)", D3L4: "Moderate, live moist (D3L4)", D4L4: "Moist (D4L4)" },
       m1h: "Dead 1 h", m10h: "Dead 10 h", m100h: "Dead 100 h", mherb: "Live herbaceous", mwoody: "Live woody",
       meteoNota: "Regional typical days and the observed day will come with a licensed data source; for now, values set by you.",
+      dia: "Time of day", diaChk: "Take the time of day into account (temperature, humidity and wind change during the simulation)",
+      hIni: "Starts at", data: "Day", tmax: "Maximum temperature", tmin: "Minimum temperature", hrmin: "Minimum air humidity (afternoon)",
+      vMad: "Mean wind before dawn", vMadPh: "half the afternoon wind", hVmax: "Hour of strongest wind", rajada: "Maximum gust", rajPh: "1.5 × mean wind",
+      aoSol: "Fuel in the sun (worst case; untick for shaded areas)", das: "From {a} to {b}", diaSeg: " next day",
+      velDia: "Mean wind at the windiest hour", humDia: "With the time of day, dead fuels (1 h, 10 h, 100 h) are computed hour by hour; only the live fuels come from the scenario or free values.",
+      diaR: "During the simulation", diaCol: ["Time", "°C", "RH", "1 h", "Wind", "Gust"], nascer: "Sunrise and sunset",
       dur: "Duration", passo: "Isochrone interval", limite: "Rothermel wind limit (off by default, as in behave)",
       desenhar: "Interventions", faixa: "Fuel break", fogo_controlado: "Prescribed burning", pastoreio: "Grazing", mosaico: "Mosaic or crop", caminho: "Track or firebreak", charca: "Pond",
       desH: "Click on the map to add the polygon vertices. Finish with a double click or «Finish». Esc cancels.", terminar: "Finish", cancelar: "Cancel",
@@ -117,6 +129,7 @@
   var IC = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c3 4 6 6 6 10a6 6 0 0 1-12 0c0-3 2-5 3-7 1 2 2 3 3 3 0-2-1-4 0-6z"/></svg>';
   var S = { tab: "tempo", aviso: null, avisoTx: null, avisoChk: false, ign: [], zona: null, feats: [], des: null,
     vento: { kmh: 20, de: 315, campo: "uniforme" }, hum: { modo: "cenario", cenario: "D2L3", m1h: 6, m10h: 7, m100h: 8, mherb: 90, mwoody: 120 },
+    dia: { on: true, hora: "14:00", data: new Date().getFullYear() + "-08-01", tmax: 34, tmin: 17, hr: 20, vmad: "", hv: 17, raj: "", sol: true },
     dur: 2, passo: 30, limite: false, nIgn: 50, semente: 1, job: null, res: null, erro: "", bloq: false, lista: [], camadas: {} };
 
   // ───────────── estilos (os mesmos tokens do painel da água) ─────────────
@@ -132,13 +145,14 @@
       "#ipr-fs .fs-corpo{overflow:auto;padding:10px 12px 12px;flex:1 1 auto;min-height:0;overscroll-behavior:contain}#ipr-fs p.sub{margin:0 0 10px;color:var(--mu,#a3a690);font-size:13px}" +
       "#ipr-fs .fs-h{display:block;font:600 11.5px Inter,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--mu,#a3a690);margin:12px 0 6px}" +
       "#ipr-fs label.f{display:flex;flex-direction:column;gap:3px;margin:0 0 8px;font-size:13px}#ipr-fs .ln{display:flex;gap:6px;align-items:center}#ipr-fs .g2{display:grid;grid-template-columns:1fr 1fr;gap:0 8px}" +
-      "#ipr-fs input[type=number],#ipr-fs select{width:100%;min-width:0;height:36px;padding:4px 9px;border-radius:7px;border:1px solid var(--ln2,#3b4232);background:var(--bg,#121410);color:var(--tx,#ebe7d8);font:14px Inter,sans-serif}" +
+      "#ipr-fs input[type=time],#ipr-fs input[type=date],#ipr-fs input[type=number],#ipr-fs select{width:100%;min-width:0;height:36px;padding:4px 9px;border-radius:7px;border:1px solid var(--ln2,#3b4232);background:var(--bg,#121410);color:var(--tx,#ebe7d8);font:14px Inter,sans-serif}" +
       "#ipr-fs .un{font:500 11px 'IBM Plex Mono',monospace;color:var(--mu,#a3a690);min-width:28px}" +
       "#ipr-fs .b{font:500 14px Inter,sans-serif;padding:7px 11px;border-radius:8px;border:1px solid var(--ln2,#3b4232);background:transparent;color:var(--tx,#ebe7d8);cursor:pointer;min-height:38px}#ipr-fs .b:hover{border-color:#e07a3f}#ipr-fs .b.pri{background:#e07a3f;border-color:#e07a3f;color:#141814;font-weight:600}#ipr-fs .b:disabled{opacity:.45;cursor:default}" +
       "#ipr-fs .acc{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}#ipr-fs .nota{font-size:12.5px;color:var(--mu,#a3a690);margin:6px 0}" +
       "#ipr-fs .av{margin:10px 0 0;padding:7px 9px;border-left:3px solid #e07a3f;background:var(--p2,#1d2118);font-size:12.5px}" +
       "#ipr-fs .err{margin:8px 0;padding:7px 9px;border-left:3px solid #d9534f;background:var(--p2,#1d2118);font-size:13px}" +
       "#ipr-fs .it{border:1px solid var(--ln,#2b3024);border-radius:9px;padding:8px;margin:0 0 6px;background:var(--p2,#1d2118)}#ipr-fs .it b{font-size:12.5px}" +
+      "#ipr-fs table.dia{width:100%;border-collapse:collapse;font:500 12px 'IBM Plex Mono',monospace;margin:4px 0 8px}#ipr-fs table.dia th{font:600 11px Inter,sans-serif;color:var(--mu,#a3a690);text-align:right;padding:2px 4px;border-bottom:1px solid var(--ln,#2b3024)}#ipr-fs table.dia td{text-align:right;padding:2px 4px}#ipr-fs table.dia th:first-child,#ipr-fs table.dia td:first-child{text-align:left}" +
       "#ipr-fs .kv{display:grid;grid-template-columns:1fr auto;gap:2px 10px;font-size:13px;margin:0 0 6px}#ipr-fs .kv span:nth-child(2n){font:500 12px 'IBM Plex Mono',monospace;text-align:right}" +
       "#ipr-fs .cam label{display:flex;gap:6px;align-items:center;font-size:13px;margin:0 0 4px}#ipr-fs .leg{display:flex;height:8px;border-radius:4px;overflow:hidden;margin:2px 0 1px}#ipr-fs .leg i{flex:1}#ipr-fs .legv{display:flex;justify-content:space-between;font:500 10px 'IBM Plex Mono',monospace;color:var(--mu,#a3a690)}" +
       "#ipr-fs ul.fx{margin:0;padding-left:16px;font-size:13px}#ipr-fs ul.fx a{color:#e07a3f}" +
@@ -195,7 +209,7 @@
     }
     h += '<p class="sub">' + esc(t("d_" + S.tab)) + "</p>";
     h += S.tab === "muitas" ? formMuitas() : formIgnicao();
-    h += formVento() + formHum();
+    h += formDia() + formVento() + formHum();
     h += '<div class="g2">' + campo("dur", "dur", S.dur, "h", 0.1, 12, 0.1) + (S.tab === "muitas" ? "" : campo("passo", "passo", S.passo, "min", 5, 120, 5)) + "</div>";
     h += '<label class="chk"><input type="checkbox" data-k="limite"' + (S.limite ? " checked" : "") + "> " + esc(t("limite")) + "</label>";
     if (S.tab === "ad") h += formAD();
@@ -232,17 +246,39 @@
     return h;
   }
   function formVento() {
-    var v = S.vento, P8 = t("pontos"), h = '<span class="fs-h">' + esc(t("vento")) + '</span><div class="g2">' + campo("kmh", "vel", v.kmh, "km/h", 0, 150, 1);
+    var v = S.vento, P8 = t("pontos"), h = '<span class="fs-h">' + esc(t("vento")) + '</span><div class="g2">' + campo("kmh", S.dia.on ? "velDia" : "vel", v.kmh, "km/h", 0, 150, 1);
     h += '<label class="f">' + esc(t("dir")) + '<select data-k="de">' + Object.keys(P8).map(function (g) { return '<option value="' + g + '"' + (+g === +v.de ? " selected" : "") + ">" + esc(P8[g]) + " (" + g + "°)</option>"; }).join("") + "</select></label></div>";
     h += '<label class="f">' + esc(t("campo")) + '<select data-k="campoV"><option value="uniforme"' + (v.campo === "uniforme" ? " selected" : "") + ">" + esc(t("c_uni")) + '</option><option value="relevo"' + (v.campo === "relevo" ? " selected" : "") + ">" + esc(t("c_rel")) + "</option></select></label>";
     return h;
+  }
+  function hm(x) { x = ((x % 24) + 24) % 24; var m = Math.round(x * 60) % 1440; return ("0" + Math.floor(m / 60)).slice(-2) + ":" + ("0" + (m % 60)).slice(-2); }
+  function dasAs() {
+    var q = /^(\d{1,2}):(\d{2})$/.exec(S.dia.hora || ""); if (!q) return "";
+    var a = +q[1] + q[2] / 60, b = a + (+S.dur || 0);
+    return t("das").replace("{a}", hm(a)).replace("{b}", hm(b) + (b >= 24 ? t("diaSeg") : ""));
+  }
+  function formDia() {
+    var d = S.dia, h = '<span class="fs-h">' + esc(t("dia")) + "</span>";
+    h += '<label class="chk"><input type="checkbox" data-k="diaOn"' + (d.on ? " checked" : "") + "> " + esc(t("diaChk")) + "</label>";
+    if (!d.on) return h;
+    h += '<div class="g2"><label class="f">' + esc(t("hIni")) + '<input type="time" data-k="diaHora" value="' + esc(d.hora) + '" step="900"></label>' +
+      '<label class="f">' + esc(t("data")) + '<input type="date" data-k="diaData" value="' + esc(d.data) + '"></label></div>';
+    h += '<p class="nota" data-das>' + esc(dasAs()) + "</p>";
+    h += '<div class="g2">' + campo("diaTmax", "tmax", d.tmax, "°C", -10, 50, 1) + campo("diaTmin", "tmin", d.tmin, "°C", -10, 50, 1) +
+      campo("diaHr", "hrmin", d.hr, "%", 3, 100, 1) + campo("diaHv", "hVmax", d.hv, "h", 10, 22, 1) +
+      campoOpc("diaVmad", "vMad", d.vmad, "km/h", 0, 150, 1, t("vMadPh")) + campoOpc("diaRaj", "rajada", d.raj, "km/h", 0, 250, 1, t("rajPh")) + "</div>";
+    h += '<label class="chk"><input type="checkbox" data-k="diaSol"' + (d.sol ? " checked" : "") + "> " + esc(t("aoSol")) + "</label>";
+    return h;
+  }
+  function campoOpc(k, rot, v, un, mn, mx, st, ph) {
+    return '<label class="f">' + esc(t(rot)) + '<span class="ln"><input type="number" data-k="' + k + '" value="' + esc(v) + '" min="' + mn + '" max="' + mx + '" step="' + st + '" placeholder="' + esc(ph) + '"><span class="un">' + esc(un) + "</span></span></label>";
   }
   function formHum() {
     var m = S.hum, C = t("cen"), h = '<span class="fs-h">' + esc(t("hum")) + "</span>";
     h += '<label class="f"><select data-k="hmodo"><option value="cenario"' + (m.modo === "cenario" ? " selected" : "") + ">" + esc(t("h_cen")) + '</option><option value="livre"' + (m.modo === "livre" ? " selected" : "") + ">" + esc(t("h_livre")) + "</option></select></label>";
     if (m.modo === "cenario") h += '<label class="f"><select data-k="cenario">' + Object.keys(C).map(function (k) { return '<option value="' + k + '"' + (m.cenario === k ? " selected" : "") + ">" + esc(C[k]) + "</option>"; }).join("") + "</select></label>";
     else h += '<div class="g2">' + campo("m1h", "m1h", m.m1h, "%", 1, 40, 1) + campo("m10h", "m10h", m.m10h, "%", 1, 40, 1) + campo("m100h", "m100h", m.m100h, "%", 1, 40, 1) + campo("mherb", "mherb", m.mherb, "%", 30, 300, 5) + campo("mwoody", "mwoody", m.mwoody, "%", 30, 300, 5) + "</div>";
-    return h + '<p class="nota">' + esc(t("meteoNota")) + "</p>";
+    return h + (S.dia.on ? '<p class="nota">' + esc(t("humDia")) + "</p>" : "") + '<p class="nota">' + esc(t("meteoNota")) + "</p>";
   }
   function formAD() {
     var h = '<span class="fs-h">' + esc(t("desenhar")) + "</span>";
@@ -277,6 +313,14 @@
       if (r.processo === "fogo-chuva") h += '<p class="nota">' + esc(t("chuvaAg")) + "</p>";
     }
     var base = s.antes || s;
+    if (base.dia && base.dia.por_horas) {
+      var c = t("diaCol"), dd = base.dia;
+      h += '<span class="fs-h">' + esc(t("diaR")) + " · " + esc(t("das").replace("{a}", dd.hora_inicio).replace("{b}", dd.hora_fim)) + "</span>";
+      h += '<table class="dia"><tr>' + c.map(function (x) { return "<th>" + esc(x) + "</th>"; }).join("") + "</tr>" + dd.por_horas.filter(function (x, i, a) { return i % 2 === 0 || i === a.length - 1; }).map(function (x) {
+        return "<tr><td>" + esc(x.hora) + "</td><td>" + n(x.temp_c, 0) + "</td><td>" + n(x.hr_pc, 0) + " %</td><td>" + n(x.m1h_pc, 1) + " %</td><td>" + n(x.vento_kmh, 0) + "</td><td>" + n(x.rajada_kmh, 0) + "</td></tr>";
+      }).join("") + "</table>";
+      h += '<p class="nota">' + esc(t("nascer")) + ": " + esc(dd.nascer_sol) + " · " + esc(dd.por_sol) + (dd.pressupostos && dd.pressupostos.length ? " · " + esc(dd.pressupostos.join("; ")) : "") + "</p>";
+    }
     if (base.vento) h += '<p class="nota">' + esc(t("ventoR")) + ": " + esc(base.vento.origem || "") + (base.vento.meia_chama ? " · " + esc(base.vento.meia_chama) : "") + "</p>";
     if (base.humidade) h += '<p class="nota">' + esc(t("humR")) + ": " + esc(base.humidade.origem || "") + "</p>";
     (s.avisos || base.avisos || []).forEach(function (a) { h += '<p class="nota">' + esc(a) + "</p>"; });
@@ -356,16 +400,27 @@
     if (k === "avisoChk") { S.avisoChk = el.checked; pintar(); return; }
     if (k === "opTexto") { if (S.res && S.res.id && OPIN[S.res.id]) OPIN[S.res.id].texto = el.value; return; }
     if (k === "limite") { S.limite = el.checked; return; }
+    if (k === "diaOn") { S.dia.on = el.checked; pintar(); return; }
+    if (k === "diaSol") { S.dia.sol = el.checked; return; }
+    if (k === "diaHora" || k === "diaData") { S.dia[k === "diaHora" ? "hora" : "data"] = el.value; actDas(); return; }
+    if (/^dia(Tmax|Tmin|Hr|Hv|Vmad|Raj)$/.test(k)) { S.dia[{ diaTmax: "tmax", diaTmin: "tmin", diaHr: "hr", diaHv: "hv", diaVmad: "vmad", diaRaj: "raj" }[k]] = el.value === "" ? "" : +el.value; return; }
     if (k === "kmh" || k === "de") { S.vento[k] = +el.value; return; }
     if (k === "campoV") { S.vento.campo = el.value; return; }
     if (k === "hmodo") { S.hum.modo = el.value; pintar(); return; }
     if (k === "cenario") { S.hum.cenario = el.value; return; }
     if (/^m(1h|10h|100h|herb|woody)$/.test(k)) { S.hum[k] = +el.value; return; }
-    if (k === "dur" || k === "passo" || k === "nIgn" || k === "semente") { S[k] = +el.value; }
+    if (k === "dur" || k === "passo" || k === "nIgn" || k === "semente") { S[k] = +el.value; if (k === "dur") actDas(); }
+  }
+  function actDas() { var x = P && P.querySelector("[data-das]"); if (x) x.textContent = dasAs(); }
+  function entradaDia() {
+    var d = S.dia, o = { hora_inicio: d.hora, data: d.data || undefined, temp_max_c: d.tmax, temp_min_c: d.tmin, hr_min_pc: d.hr, hora_vento_max: d.hv, combustivel_ao_sol: !!d.sol };
+    if (d.vmad !== "" && d.vmad != null) o.vento_madrugada_m_s = Math.round(d.vmad / 3.6 * 100) / 100;
+    if (d.raj !== "" && d.raj != null) o.rajada_max_m_s = Math.round(d.raj / 3.6 * 100) / 100;
+    return o;
   }
   function entradas() {
     var ent = { epsg: 4326, duracao_h: S.dur, limite_vento: S.limite,
-      vento: { velocidade_10m_m_s: Math.round(S.vento.kmh / 3.6 * 100) / 100, direccao_de_graus: S.vento.de, campo: S.vento.campo },
+      vento: { velocidade_10m_m_s: Math.round(S.vento.kmh / 3.6 * 100) / 100, direccao_de_graus: S.vento.de, campo: S.vento.campo, dia: S.dia.on ? entradaDia() : undefined },
       humidade: S.hum.modo === "cenario" ? { cenario: S.hum.cenario } : { m1h: S.hum.m1h, m10h: S.hum.m10h, m100h: S.hum.m100h, mherb: S.hum.mherb, mwoody: S.hum.mwoody, origem: "valores dados pelo utilizador no Atlas" } };
     if (S.tab === "muitas") { ent.n = S.nIgn; ent.semente = S.semente; if (S.zona) ent.zona_ignicao = S.zona; return ent; }
     ent.passo_isocronas_min = S.passo;
