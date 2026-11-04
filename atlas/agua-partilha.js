@@ -249,10 +249,15 @@
     cartao();
     pedido.then(function () {
       cartao();
-      if (!R || !M) return;
-      por(); enquadrar();
-      if (!M.getSource("ipr-ap-0")) { var repor = function () { por(); if (M.getSource("ipr-ap-0")) { enquadrar(); M.off("idle", repor); } }; M.on("idle", repor); }
-      M.on("styledata", function () { if (C && R) { IDS = IDS.filter(function (sid) { return !!M.getSource(sid); }); por(); } });
+      if (!R) return;
+      // O mapa pode nascer depois do cartão (site lento): espera por ele até 90 s e só então põe as camadas.
+      var n = 0;
+      (function ligar() {
+        var M2 = mapa();
+        if (!M2 || !(M2.style && M2.style._loaded)) { if (++n < 180) setTimeout(ligar, 500); return; }
+        por(); enquadrar();
+        M2.on("styledata", function () { if (C && R) { IDS = IDS.filter(function (sid) { return !!M2.getSource(sid); }); por(); } });
+      })();
     });
   })();
   Doc.addEventListener("ipr:lingua", function () { if (C) cartao(); });
