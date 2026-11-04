@@ -280,9 +280,11 @@
   // ── Fonte, licença e atribuição ────────────────────────────────────────────────────────────────────────────────────
   // Por entidade (primeiro padrão que bater no texto da fonte ou no endereço do serviço). Verificado a 4/11/2026.
   var LIC = [
+    [/azores|SRAAC|Açores/i, "SRAAC, Secretaria Regional do Ambiente e Ação Climática (Governo dos Açores)", "CC BY 4.0, uso comercial sem autorização específica (resposta da SRAAC de 4/11/2026). Atribuição: «© SRAAC/GRA».", "https://idea.azores.gov.pt/"],
+    [/cnig|PNOA/i, "CNIG / IGN, Espanha (PNOA)", "CC BY 4.0 (scne.es). Citar como obra derivada do PNOA, com o produto e o ano.", "https://centrodedescargas.cnig.es/"],
     [/dgterritorio|DGT|SNIT|SRUP|CAOP/i, "DGT, Direção-Geral do Território", "Dados abertos da DGT, licença CC BY 4.0 (COS, LiDAR, ortofotos, CAOP confirmados nos metadados do SNIG). Atribuição: «Informação geográfica cedida pela Direção-Geral do Território».", "https://snig.dgterritorio.gov.pt/"],
     [/apambiente|APA|SNIRH|SNIAmb/i, "APA, Agência Portuguesa do Ambiente", "Serviço público de visualização do SNIAmb. Os metadados não indicam licença (só «© SNIRH» em várias camadas): citar a APA; para reproduzir em relatórios, confirmar com a APA.", "https://sniamb.apambiente.pt/"],
-    [/icnf|ICNF/i, "ICNF, Instituto da Conservação da Natureza e das Florestas", "Dados geográficos abertos do ICNF, com indicação da fonte.", "https://geocatalogo.icnf.pt/"],
+    [/icnf|ICNF/i, "ICNF, Instituto da Conservação da Natureza e das Florestas", "Propriedade do ICNF. Citar «Fonte: ICNF» e a data da versão. A pedido do ICNF (3/11/2026), estas camadas vão passar a ser servidas a partir de cópias do IPR, actualizadas periodicamente.", "https://geocatalogo.icnf.pt/"],
     [/dgadr|DGADR/i, "DGADR, Direção-Geral de Agricultura e Desenvolvimento Rural", "Metadados do SNIG da Carta dos Solos 1:25 000: «acesso público sem restrições», «uso sem condições», sem licença formal. Termos pedidos por escrito à DGADR a 4/11/2026.", "https://snisolos.dgadr.gov.pt/"],
     [/lneg|LNEG/i, "LNEG, Laboratório Nacional de Energia e Geologia", "Visualização no serviço do LNEG; só consulta, sem descarga nem redistribuição sem autorização.", "https://geoportal.lneg.pt/"],
     [/dgeg|DGEG/i, "DGEG, Direção-Geral de Energia e Geologia", "Serviço público de visualização da DGEG, com indicação da fonte.", "https://www.dgeg.gov.pt/"],
