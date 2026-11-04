@@ -1,8 +1,8 @@
 
 @media (max-width:600px){
 html.ipr-tm #tcdatdq-b,html.ipr-tm #tcdfmb,html.ipr-tm #tcd_dock,html.ipr-tm #t393d:not(.ipr-tm-ver),html.ipr-tm a.ipr-tm-es{display:none!important}
-html.ipr-tm .ipe-top .ipe-beta,html.ipr-tm .ipe-top #ipr-be-topo,html.ipr-tm .ipe-top #ipr-painel,html.ipr-tm .ipe-top #ipr-ms-app,html.ipr-tm .ipe-top #ipr-lg-topo{display:none!important}
-html.ipr-tm .ipe-top .ipe-tr{overflow:visible!important;flex-wrap:nowrap!important;gap:6px!important}
+html.ipr-tm body #ipe .ipe-top .ipe-beta,html.ipr-tm body #ipe .ipe-top #ipr-be-topo,html.ipr-tm body #ipe .ipe-top #ipr-be-topo *,html.ipr-tm body #ipe .ipe-top #ipr-painel,html.ipr-tm body #ipe .ipe-top #ipr-ms-app,html.ipr-tm body #ipe .ipe-top #ipr-lg-topo{display:none!important}
+html.ipr-tm body #ipe .ipe-top .ipe-tr{overflow:visible!important;flex-wrap:nowrap!important;gap:6px!important}
 html.ipr-tm .ipe-top .ipe-marca{max-width:96px;flex:0 1 auto;overflow:hidden}
 html.ipr-tm .ipe-top .ipe-marca svg{max-width:96px;height:auto}
 #ipr-tm-b{all:unset;box-sizing:border-box;position:fixed;right:max(12px,env(safe-area-inset-right));bottom:calc(var(--ipr-tm-baixo,16px) + env(safe-area-inset-bottom,0px));z-index:2147482600;width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;background:#232420;color:#F5F4EE;border:1px solid #383A33;box-shadow:0 4px 14px rgba(0,0,0,.35);font:700 20px/1 Inter,system-ui,sans-serif}
