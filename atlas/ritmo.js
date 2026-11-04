@@ -20,7 +20,8 @@
 
   var T0 = Date.now(), ULT = Date.now();
   var PAUSA = 5000, ARRANQUE = 15000, CALMO = 3000;
-  var saltos = 0, esticados = 0;
+  var saltos = 0, esticados = 0, NOMES = {};
+  function nota(fn, k) { var n = (fn && fn.name) || "(sem nome)"; var o = NOMES[n] || (NOMES[n] = { saltos: 0, esticadas: 0 }); o[k]++; }
   ["pointerdown", "pointermove", "keydown", "wheel", "touchstart", "input", "focusin"].forEach(function (ev) {
     try { W.addEventListener(ev, function () { ULT = Date.now(); }, { capture: true, passive: true }); } catch (e) {}
   });
@@ -38,7 +39,7 @@
     var extra = Array.prototype.slice.call(arguments, 2), ultima = 0;
     return SI.call(W, function () {
       var n = Date.now();
-      if (parado() && n - ultima < CALMO) { saltos++; return; }
+      if (parado() && n - ultima < CALMO) { saltos++; nota(fn, "saltos"); return; }
       ultima = n;
       return fn.apply(this, extra);
     }, d);
@@ -51,11 +52,12 @@
       if (!c || n - c.t > 10000) { c = { n: 0, t: n }; conta.set(fn, c); }
       c.n++;
       if (c.n >= 4 && parado()) {
-        var a = Array.prototype.slice.call(arguments); a[1] = CALMO; esticados++;
+        var a = Array.prototype.slice.call(arguments); a[1] = CALMO; esticados++; nota(fn, "esticadas");
         return ST.apply(W, a);
       }
     }
     return ST.apply(W, arguments);
   };
-  W.__iprRitmoDiag = function () { return { parado: parado(), semMexer_s: Math.round((Date.now() - ULT) / 1000), intervalosSaltados: saltos, voltasEsticadas: esticados }; };
+  W.__iprRitmoDiag = function () { return { parado: parado(), semMexer_s: Math.round((Date.now() - ULT) / 1000), intervalosSaltados: saltos, voltasEsticadas: esticados,
+    porFuncao: Object.keys(NOMES).map(function (k) { return [k, NOMES[k].saltos, NOMES[k].esticadas]; }).sort(function (a, b) { return (b[1] + b[2]) - (a[1] + a[2]); }).slice(0, 25) }; };
 })();
