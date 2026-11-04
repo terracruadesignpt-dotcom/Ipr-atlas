@@ -3,6 +3,9 @@
    navegador; no iPhone a sessão recomeça quase sempre, por isso aparecia em cada visita. Agora abre sozinho só na primeira
    visita deste navegador e nunca com sessão iniciada (conta da equipa ou de cliente). O botão do assistente continua no
    mapa. Carrega-se antes do assistente.js e só marca a chave que ele já respeita (sessionStorage ipr_as_auto).
+   v2 (04/11/2026, 01h45, Nuno, captura do iPhone com «Antes de começar, teste as camadas e a sua internet»: «Não quero ver
+   essa cena, remove para todos»): o lembrete dos testes do lembretes.js (secção 2) deixa de aparecer para toda a gente. Marca-se
+   a chave que ele já respeita (sessionStorage ipr_lb_seta). As outras partes do lembretes.js e os botões dos testes ficam.
    Desligar: localStorage ipr_menos_janelas_off = 1. Terracrua Design. */
 (function () {
   "use strict";
@@ -12,5 +15,6 @@
     var sessao = !!window.tcdNonce || /(^|;\s*)wordpress_logged_in_/.test(document.cookie);
     if (visto || sessao) sessionStorage.setItem("ipr_as_auto", "1");
     localStorage.setItem("ipr_as_visto", "1");
+    sessionStorage.setItem("ipr_lb_seta", "1");
   } catch (e) {}
 })();
