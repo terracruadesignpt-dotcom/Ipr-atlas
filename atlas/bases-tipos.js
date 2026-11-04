@@ -253,6 +253,7 @@
         var sg = D.getElementById("ipr-pg-s-" + id);
         item(M, T("Mudar de grupo", "Change group"), sg ? function () { fecharMenu(); try { sg.scrollIntoView({ block: "center", behavior: "smooth" }); } catch (x) {} sg.focus(); if (sg.showPicker) try { sg.showPicker(); } catch (x) {} } : null);
       }
+      if (W.__iprBAtalhos && W.__iprBAtalhos.menu) try { W.__iprBAtalhos.menu(M, c, item, fecharMenu); } catch (x) {} // atalhos do bases-atalhos.js (18h18)
       M.appendChild(el("hr"));
       var tabCloud = D.querySelector('.ipe-tab[data-tab="cloud"]');
       if (tabCloud && (!e || +e.cloud)) item(M, T("Abrir na IPR Cloud", "Open in IPR Cloud"), function () { fecharMenu(); abrirCloud(tabCloud, e && e.num); });
