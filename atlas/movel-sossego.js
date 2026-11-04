@@ -36,7 +36,10 @@
   // ------------------------------------------------------------ 1a. arranque sem Base aberta sozinha
   var pusModo = false;
   try {
-    if (!mapaUrl() && !/[?&]modo=/.test(location.search)) {
+    // 04/11/2026, 12h45 (Nuno, «implementa»): só com sessão. Sem sessão não há Base que abra sozinha, e o «modo»
+    // no endereço fazia o inicio.js esconder o ecrã de entrada a todos os visitantes desde as 07h55.
+    var b0 = D.body, comSessao = (b0 && /(^|\s)logged-in(\s|$)/.test(b0.className)) || !!W.tcdNonce || equipa();
+    if (comSessao && !mapaUrl() && !/[?&]modo=/.test(location.search)) {
       var q = location.search ? location.search + "&modo=encomenda" : "?modo=encomenda";
       history.replaceState(history.state, "", location.pathname + q + location.hash);
       pusModo = true;
