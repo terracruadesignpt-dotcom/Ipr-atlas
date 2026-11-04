@@ -803,7 +803,7 @@
     var it = intencao(txt), pr = null;
     try {
       switch (it && it.tipo) {
-        case "ajuda": R.lista(t("ajudaT"), t("ex"), true); if (!SR) R.txt(t("semVoz")); break;
+        case "ajuda": R.lista(t("ajudaT"), t("ex"), true); break;
         case "comprar": comprar(it.q, R); break;
         case "simagua": simularAgua(it.q, R); break;
         case "simfogo": R.txt(t("simFogo")); break;
@@ -861,9 +861,11 @@
   API.intencao = intencao; API.responder = function (s) { responder(s); };
 
   // ───────────────────────────── voz ─────────────────────────────
-  var SR = W.SpeechRecognition || W.webkitSpeechRecognition || null, REC = null, A_OUVIR = false;
+  // 04/11/2026 (Nuno): sem leitura em voz alta e sem microfone, que não activava; só texto.
+  var SR = null, REC = null, A_OUVIR = false;
   function lerVoz() { try { return W.localStorage.getItem("ipr_pergunte_voz") === "1"; } catch (e) { return false; } }
   function falar(s) {
+    return;
     if (!lerVoz() || !W.speechSynthesis || !W.SpeechSynthesisUtterance || !s) return;
     try {
       W.speechSynthesis.cancel();
@@ -967,7 +969,7 @@
       LOG = el("div", "log"); LOG.setAttribute("role", "log"); LOG.setAttribute("aria-live", "polite"); LOG.setAttribute("aria-relevant", "additions");
       var pe = el("div", "pe"), lv = el("label"), ck = el("input"); ck.type = "checkbox"; ck.id = "ipr-pa-voz"; ck.checked = lerVoz();
       ck.addEventListener("change", function () { try { W.localStorage.setItem("ipr_pergunte_voz", ck.checked ? "1" : "0"); } catch (e) {} if (!ck.checked && W.speechSynthesis) try { W.speechSynthesis.cancel(); } catch (e) {} });
-      lv.appendChild(ck); lv.appendChild(el("span")); if (W.speechSynthesis) pe.appendChild(lv);
+      lv.appendChild(ck); lv.appendChild(el("span")); /* leitura em voz alta retirada (04/11/2026) */
       pe.appendChild(el("span", "nota"));
       PN.appendChild(cab); PN.appendChild(f); PN.appendChild(es); PN.appendChild(LOG); PN.appendChild(pe);
       RAIZ.addEventListener("keydown", function (e) { if (e.key === "Escape" && !PN.hidden) { e.preventDefault(); e.stopPropagation(); abrirPainel(false); } });
@@ -999,7 +1001,7 @@
     if (!construir()) return;
     PN.hidden = !on; BT.setAttribute("aria-expanded", on ? "true" : "false"); RAIZ.classList.toggle("aberto", !!on);
     if (on) {
-      if (PRIMEIRA) { PRIMEIRA = false; if (!LOG.childNodes.length) { var r = novaResposta(); r.lista(t("ajudaT"), t("ex").slice(0, 6), true); if (!SR) r.txt(t("semVoz")); } }
+      if (PRIMEIRA) { PRIMEIRA = false; if (!LOG.childNodes.length) { var r = novaResposta(); r.lista(t("ajudaT"), t("ex").slice(0, 6), true); } }
       setTimeout(function () { var q = D.getElementById("ipr-pa-q"); if (q && W.innerWidth > 600) try { q.focus({ preventScroll: true }); } catch (e) {} }, 30);
     } else {
       if (A_OUVIR && REC) try { REC.stop(); } catch (e) {}
