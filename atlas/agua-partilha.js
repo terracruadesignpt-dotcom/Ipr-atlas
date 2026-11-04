@@ -64,7 +64,7 @@
       "[data-partilha] .ap-l{display:flex;gap:6px;align-items:center;margin:6px 0}[data-partilha] input{flex:1;min-width:0;height:30px;padding:3px 7px;border-radius:7px;border:1px solid var(--ln2,#3b4232);background:var(--bg,#121410);color:var(--tx,#ebe7d8);font:12px 'IBM Plex Mono',monospace}" +
       "[data-partilha] button{font:500 12px Inter,sans-serif;padding:6px 10px;border-radius:8px;border:1px solid var(--ln2,#3b4232);background:transparent;color:var(--tx,#ebe7d8);cursor:pointer;min-height:32px}[data-partilha] button.pri{background:var(--ac,#a8b878);border-color:var(--ac,#a8b878);color:#141814;font-weight:600}[data-partilha] button:disabled{opacity:.5}" +
       "[data-partilha] .ap-n{color:var(--mu,#a3a690);font-size:11.5px;margin:4px 0}[data-partilha] .ap-e{color:#e6a19e;margin:4px 0}" +
-      "#ipr-ap{position:absolute;z-index:43;top:12px;right:12px;width:340px;max-width:calc(100% - 24px);max-height:calc(100% - 24px);overflow:auto;background:var(--p1,#171a13);color:var(--tx,#ebe7d8);border:1px solid var(--ln2,#3b4232);border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.35);font:13px/1.45 Inter,system-ui,sans-serif}" +
+      "#ipr-ap{position:fixed;z-index:60;top:64px;right:56px;width:340px;max-width:calc(100% - 24px);max-height:calc(100vh - 90px);overflow:auto;background:var(--p1,#171a13);color:var(--tx,#ebe7d8);border:1px solid var(--ln2,#3b4232);border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.35);font:13px/1.45 Inter,system-ui,sans-serif}" +
       "#ipr-ap *{box-sizing:border-box}#ipr-ap .ap-cab{display:flex;align-items:center;gap:8px;padding:9px 10px 9px 12px;border-bottom:1px solid var(--ln,#2b3024);background:var(--p2,#1d2118)}#ipr-ap .ap-cab b{flex:1;font:600 13.5px Raleway,Inter,sans-serif}" +
       "#ipr-ap .ap-ib{border:0;background:transparent;color:var(--mu,#a3a690);cursor:pointer;width:30px;height:30px;border-radius:7px;font:600 15px Inter,sans-serif}#ipr-ap.min .ap-corpo{display:none}" +
       "#ipr-ap .ap-corpo{padding:10px 12px 12px}#ipr-ap p{margin:0 0 8px}#ipr-ap .sub{color:var(--mu,#a3a690);font-size:12px}#ipr-ap .h{display:block;font:600 10.5px Inter,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--mu,#a3a690);margin:10px 0 6px}" +
@@ -168,7 +168,7 @@
     css();
     if (!C) {
       C = Doc.createElement("div"); C.id = "ipr-ap"; C.setAttribute("role", "dialog"); C.setAttribute("aria-label", t("titulo"));
-      var M = mapa(), host = (M && M.getContainer && M.getContainer().parentNode) || Doc.body;
+      var host = Doc.body;
       host.appendChild(C);
       C.addEventListener("click", function (ev) {
         var b = ev.target.closest && ev.target.closest("[data-apc]"); if (!b) return; ev.preventDefault();
@@ -256,7 +256,10 @@
         var M2 = mapa();
         if (!M2 || !(M2.style && M2.style._loaded)) { if (++n < 180) setTimeout(ligar, 500); return; }
         por(); enquadrar();
-        M2.on("styledata", function () { if (C && R) { IDS = IDS.filter(function (sid) { return !!M2.getSource(sid); }); por(); } });
+        var subir = function () { var ls = (M2.getStyle() || {}).layers || []; var nossas = ls.filter(function (l) { return /^ipr-ap-/.test(l.id); }).length; if (!nossas || ls.slice(-nossas).every(function (l) { return /^ipr-ap-/.test(l.id); })) return; IDS.forEach(function (sid) { [sid + "-l", sid + "-c"].forEach(function (l) { try { if (M2.getLayer(l)) M2.moveLayer(l); } catch (e) {} }); }); };
+        subir();
+        M2.on("styledata", function () { if (C && R) { IDS = IDS.filter(function (sid) { return !!M2.getSource(sid); }); por(); subir(); } });
+        M2.on("idle", subir);
       })();
     });
   })();
