@@ -122,6 +122,9 @@
       "#ipr-as .av{margin:10px 0 0;padding:7px 9px;border-left:3px solid var(--ac2,#cdd6a8);background:var(--p2,#1d2118);font-size:11.5px}" +
       "#ipr-as .err{margin:8px 0;padding:7px 9px;border-left:3px solid #d9534f;background:var(--p2,#1d2118);font-size:12px}" +
       "#ipr-as .it{border:1px solid var(--ln,#2b3024);border-radius:9px;padding:8px;margin:0 0 6px;background:var(--p2,#1d2118)}#ipr-as .it b{font-size:12.5px}#ipr-as .it .ln input{height:28px}" +
+      "#ipr-as table.pti{width:100%;border-collapse:collapse;font-size:12px;margin:2px 0 6px}#ipr-as table.pti th{font-weight:500;text-align:right;opacity:.75;padding:2px 4px}#ipr-as table.pti th:first-child{text-align:left}" +
+      "#ipr-as table.pti td{padding:3px 4px;text-align:right;font:500 12px 'IBM Plex Mono',monospace;border-top:1px solid var(--ln,#2b3024)}#ipr-as table.pti td:first-child{text-align:left}#ipr-as table.pti tr[data-pti]{cursor:pointer}#ipr-as table.pti tr[data-pti]:hover td{background:rgba(255,255,255,.05)}" +
+      "#ipr-as i.pt{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;border:1px solid #fff;vertical-align:-1px;background:#f4d03f}#ipr-as i.pt.perigo{background:#e67e22}#ipr-as i.pt.grave{background:#922b21}" +
       "#ipr-as .kv{display:grid;grid-template-columns:1fr auto;gap:2px 10px;font-size:12px;margin:0 0 6px}#ipr-as .kv span:nth-child(2n){font:500 12px 'IBM Plex Mono',monospace;text-align:right}" +
       "#ipr-as .cam label{display:flex;gap:6px;align-items:center;font-size:12px;margin:0 0 4px}#ipr-as .leg{display:flex;height:8px;border-radius:4px;overflow:hidden;margin:2px 0 1px}#ipr-as .leg i{flex:1}#ipr-as .legv{display:flex;justify-content:space-between;font:500 10px 'IBM Plex Mono',monospace;color:var(--mu,#a3a690)}" +
       "#ipr-as ul.fx{margin:0;padding-left:16px;font-size:12px}#ipr-as ul.fx a{color:var(--ac,#a8b878)}" +
@@ -317,6 +320,7 @@
         else h += '<div class="kv"><span>' + esc(t("reducao")) + "</span><span>" + n(c.reducao_pico_pct) + " %</span><span>" + esc(t("atraso")) + "</span><span>" + n(c.atraso_pico_min, 0) + " min</span><span>" + esc(t("pico")) + "</span><span>" + n(c.pico_antes_m3s, 3) + " → " + n(c.pico_depois_m3s, 3) + " m³/s</span></div>";
       });
     }
+    h += pontosInundacao(s);
     if (r.vista && r.vista.camadas) {
       h += '<span class="as-h">' + esc(t("camadas")) + '</span><div class="cam">';
       r.vista.camadas.forEach(function (c) {
@@ -332,6 +336,30 @@
     var fx = (r.ficheiros || []).filter(function (f) { return !/^vista\//.test(f.nome); });
     if (fx.length) h += '<span class="as-h">' + esc(t("descargas")) + '</span><ul class="fx">' + fx.map(function (f) { return '<li><a href="' + esc(urlF(f.url)) + '" download>' + esc(f.nome) + "</a> <small>" + n(f.bytes / 1048576, 1) + " MB</small></li>"; }).join("") + "</ul>";
     if (r.id && !rx) h += opiniao(r.id);
+    return h;
+  }
+  // Pontos de inundação (motor, pontos.py): onde a água sobe e quanto, das zonas mais fundas para as menos fundas.
+  function pontosInundacao(s) {
+    var listas = [];
+    if (s.pontos_inundacao) listas.push(["", s.pontos_inundacao]);
+    ["antes", "depois"].forEach(function (k) { if (s[k] && s[k].pontos_inundacao) listas.push([k, s[k].pontos_inundacao]); });
+    var h = "";
+    listas.forEach(function (lp) {
+      var pi = lp[1]; if (!pi || !pi.pontos) return;
+      var en = L() === "en", nomeC = { grave: en ? "severe" : "grave", perigo: en ? "danger" : "perigo", atencao: en ? "watch" : "atenção" };
+      h += '<span class="as-h">' + esc(en ? "Flood points" : "Pontos de inundação") + (lp[0] ? " · " + esc(lp[0]) : "") + "</span>";
+      if (!pi.pontos.length) { h += '<p class="nota">' + esc(en ? "No area with water above " + n(pi.limiar_m, 2) + " m." : "Nenhuma zona com água acima de " + n(pi.limiar_m, 2) + " m.") + "</p>"; return; }
+      var pc = pi.por_classe || {};
+      h += '<p class="nota">' + esc((en ? "Zones with water above " : "Zonas com água acima de ") + n(pi.limiar_m, 2) + " m: " + n(pi.zonas, 0) + " (" + nomeC.grave + " " + (pc.grave || 0) + ", " + nomeC.perigo + " " + (pc.perigo || 0) + ", " + nomeC.atencao + " " + (pc.atencao || 0) + ")" + (pi.chuva_mm ? (en ? ", " : ", chuva de ") + n(pi.chuva_mm, 0) + " mm" : "") + ".") + "</p>";
+      h += '<table class="pti"><tr><th></th><th>' + esc(en ? "Rises" : "Sobe") + "</th><th>" + esc(en ? "Water level" : "Cota da água") + "</th><th>" + esc(en ? "Area" : "Área") + "</th></tr>";
+      pi.pontos.slice(0, 12).forEach(function (p) {
+        h += '<tr data-pti="' + esc(p.lon + "," + p.lat) + '" title="' + esc((en ? "Ground " : "Terreno ") + n(p.cota_terreno_m, 2) + " m" + (p.tempo_max_min != null ? (en ? " · peak at " : " · máximo aos ") + n(p.tempo_max_min, 0) + " min" : "") + (p.velocidade_max_ms != null ? " · " + n(p.velocidade_max_ms, 2) + " m/s" : "") + " · " + n(p.volume_m3, 0) + " m³") + '">'
+          + '<td><i class="pt ' + esc(p.classe) + '"></i>' + esc(p.id) + "</td><td><b>+" + n(p.altura_max_m, 2) + " m</b></td><td>" + n(p.cota_agua_m, 2) + " m</td><td>" + n(p.area_m2, 0) + " m²</td></tr>";
+      });
+      h += "</table>";
+      if (pi.pontos.length > 12) h += '<p class="nota">' + esc((en ? "Plus " : "Mais ") + (pi.pontos.length - 12) + (en ? " on the map." : " no mapa.")) + "</p>";
+      h += '<p class="nota">' + esc(en ? "«Rises» is the maximum water height above the ground at the deepest point of each zone; the level is that of the water surface. Model values: confirm on site." : pi.nota || "") + "</p>";
+    });
     return h;
   }
   // Período de testes (m90453): quem testa diz se o resultado bate certo; fica registado com a simulação.
@@ -360,6 +388,8 @@
 
   // ───────────── acções ─────────────
   function clique(e) {
+    var tr = e.target.closest && e.target.closest("[data-pti]");
+    if (tr && mapa()) { var ll = tr.getAttribute("data-pti").split(",").map(Number); mapa().flyTo({ center: ll, zoom: Math.max(mapa().getZoom(), 16) }); return; }
     var el = e.target.closest("button,a,[data-cam]"); if (!el) return;
     if (el.hasAttribute("data-cam")) return;
     e.preventDefault();
@@ -450,6 +480,7 @@
           S.res.vista = vj; S.res.fich = {}; (r.ficheiros || []).forEach(function (f) { S.res.fich[f.nome] = f.url; });
           var pri = vj.camadas.filter(function (c) { return /^(altura_max|retencao_|diferenca|depois__retencao_|depois__altura)/.test(c.id); })[0] || vj.camadas[0];
           if (pri) alternarCamada(pri.id, true);
+          vj.camadas.filter(function (c) { return c.tipo === "pontos" && c.n; }).forEach(function (c) { alternarCamada(c.id, true); });
           pintar();
         });
         pintar(); return;
@@ -502,6 +533,16 @@
       var u = r.fich["vista/" + c.imagem]; if (!u) return;
       M.addSource(sid, { type: "image", url: urlF(u), coordinates: c.cantos });
       M.addLayer({ id: sid + "-l", type: "raster", source: sid, paint: { "raster-opacity": 0.85, "raster-resampling": "nearest" } });
+    } else if (c.geojson && c.tipo === "pontos") {
+      // 04/11/2026 (Nuno: «evidenciar os pontos de inundação e a cota que sobe em cada local problemático»)
+      var gp = r.fich["vista/" + c.geojson]; if (!gp) return;
+      M.addSource(sid, { type: "geojson", data: urlF(gp) });
+      var cor = ["match", ["get", "classe"], "grave", "#922b21", "perigo", "#e67e22", "#f4d03f"];
+      M.addLayer({ id: sid + "-l", type: "circle", source: sid, paint: { "circle-color": cor, "circle-radius": ["interpolate", ["linear"], ["get", "altura_max_m"], 0.2, 5, 1, 9, 3, 14],
+        "circle-stroke-color": "#fff", "circle-stroke-width": 1.5, "circle-opacity": 0.95 } });
+      M.addLayer({ id: sid + "-c", type: "symbol", source: sid, layout: { "text-field": ["concat", ["get", "id"], "  +", ["number-format", ["get", "altura_max_m"], { "max-fraction-digits": 2, "locale": L() === "en" ? "en-GB" : "pt-PT" }], " m"],
+        "text-font": ["Noto Sans Regular"], "text-size": 11, "text-offset": [0, 1.4], "text-anchor": "top", "text-allow-overlap": false },
+        paint: { "text-color": "#1b2631", "text-halo-color": "rgba(255,255,255,.92)", "text-halo-width": 1.4 } });
     } else if (c.geojson) {
       var g = r.fich["vista/" + c.geojson]; if (!g) return;
       M.addSource(sid, { type: "geojson", data: urlF(g) });
