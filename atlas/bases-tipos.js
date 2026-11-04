@@ -6,7 +6,8 @@
    1. Separadores por tipo (só a equipa), por cima dos separadores de estado do projectos-grupos.js, que ficam por baixo
       como filtro. Escolhas do Nuno: o tipo é automático, com escolha manual que vale sempre:
         · Implementação: estado de implementação do m90553 «Em implementação», «Em acompanhamento» ou «Implementado»;
-        · Pedidos: encomenda paga feita no site (não é Base interna da equipa);
+        · Pedidos: encomenda paga por um cliente no site (v2, 16h30: cliente que não é da equipa e total acima de 0 €, ou
+          paga na loja com vale; as Bases de 0 € criadas pela equipa são internas, m90735 campo «pago»);
         · Projectos entregues: Base interna de um projecto da Terracrua Design, entregue;
         · Dias abertos, Reuniões e Projectos: escolhidos pela equipa no cartão;
         · Sem tipo: o resto (por exemplo Base interna ainda por entregar, ou encomenda por pagar).
@@ -49,7 +50,7 @@
   function nomeTipo(k, um) { var x = TIPOS.filter(function (t) { return t[0] === k; })[0]; if (!x) return T("Sem tipo", "No type"); return um ? T(x[3], x[4]) : T(x[1], x[2]); }
   var IMPL_K = { implementacao: 1, acompanhamento: 1, implementado: 1 };
 
-  var ES = null, ES_PED = false, IMPL = {}, IMPL_PED = false, IMPL_FEITO = false, MAN = {}, MAN_PED = false, MAN_OK = false, MAN_MUDAR = false, MAN_OFF = false, T0 = Date.now();
+  var ES = null, ES_PED = false, IMPL = {}, IMPL_PED = false, IMPL_FEITO = false, MAN = {}, MAN_PED = false, MAN_OK = false, MAN_MUDAR = false, MAN_OFF = false, PAGO = {}, T0 = Date.now();
   function ids() { var P = est(); return ((P && P.mapas) || []).map(function (m) { return String(m.id || ""); }).filter(function (x) { return /^\d+$/.test(x); }).slice(0, 300); }
   function lerES() {
     // a mesma resposta do m599/estado que o projectos-grupos.js guardou neste separador
@@ -77,13 +78,13 @@
     MAN_PED = true;
     api("m735/tipos?ids=" + l.join(",")).then(function (j) {
       MAN_PED = false; MAN_OK = true; MAN = {}; var t = (j && j.tipos) || {}; Object.keys(t).forEach(function (k) { if (t[k] && t[k].t) MAN[k] = t[k]; });
-      MAN_MUDAR = !!(j && j.mudar); tudo();
+      MAN_MUDAR = !!(j && j.mudar); PAGO = (j && j.pago) || {}; tudo();
     }).catch(function (x) { MAN_PED = false; MAN_OK = true; if (x && (x.status === 401 || x.status === 403 || x.status === 404)) MAN_OFF = true; });
   }
   function auto(m) {
     var id = String(m.id), e = ES && ES[id];
     if (IMPL_K[IMPL[id]]) return "impl";
-    var interna = e ? +e.interna === 1 : false;
+    var interna = (e ? +e.interna === 1 : false) || (id in PAGO && !+PAGO[id]);
     if (m.pagar || m.estado_k === "pending" || m.estado_k === "failed" || m.estado_k === "cancelled") return "";
     if (!interna) return e || !ES ? "pedido" : "";
     if (m.estado_k === "completed" && !m.rever) return "entregue";
