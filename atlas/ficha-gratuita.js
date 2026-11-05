@@ -85,7 +85,9 @@
       });
       out.sort(function (a, z) { return z.pct - a.pct; });
       var soma = out.reduce(function (s, g) { return s + g.pct; }, 0);
-      return { classes: out, solo: Object.keys(cls).map(function (k) { return { l: k, pct: Math.round(10 * Math.min(100, cls[k])) / 10 }; }).sort(function (a, z) { return z.pct - a.pct; }), coberto: Math.min(100, Math.round(soma)) };
+      var mu = {};
+      out.forEach(function (g) { var k = g.municipio; if (!mu[k]) mu[k] = { nome: k.toLowerCase().replace(/(^|[\s-])(\S)/g, function (a, b, c) { return b + c.toUpperCase(); }).replace(/ (De|Do|Da|Dos|Das|E) /g, function (a) { return a.toLowerCase(); }), pct: 0, data: g.data, situacao: g.situacao }; mu[k].pct += g.pct; });
+      return { muns: Object.keys(mu).map(function (k) { return mu[k]; }).sort(function (a, z) { return z.pct - a.pct; }), classes: out, solo: Object.keys(cls).map(function (k) { return { l: k, pct: Math.round(10 * Math.min(100, cls[k])) / 10 }; }).sort(function (a, z) { return z.pct - a.pct; }), coberto: Math.min(100, Math.round(soma)) };
     });
   }
 
@@ -156,8 +158,8 @@
               cel.push("até " + n(lim ? am.v : calc, 0) + " m² de " + (/implant|ocupa/i.test(p.tipo || "") ? "implantação" : "construção") + " <small>índice " + mostra(p, r.conf, "i") + " × " + n(base / 1e4, 2) + " ha" + (lim ? ", limitado pela área máxima" : "") + "</small>");
             } else if (s.area_max_m2) { var t = mostra(s.area_max_m2, r.conf, " m²"); if (t) cel.push("área máxima " + t); }
             var pm = s.predio_min_ha;
-            if (pm && pm.v != null && (pm.conf || r.conf) !== "baixa") cel.push((areaHa >= pm.v ? "cumpre" : "<b>abaixo do</b>") + " prédio mínimo de " + n(pm.v, 2) + " ha <small>(" + Math.round(100 * areaHa / pm.v) + " % do mínimo)</small>");
-            var ps = mostra(s.pisos, r.conf, ""); if (ps && ps !== "confirmar no regulamento") cel.push(ps + " pisos");
+            if (pm && pm.v != null && (pm.conf || r.conf) !== "baixa") cel.push((areaHa >= pm.v ? "cumpre o" : "<b>abaixo do</b>") + " prédio mínimo de " + n(pm.v, 2) + " ha" + (areaHa < 2 * pm.v ? " <small>(o terreno tem " + Math.round(100 * areaHa / pm.v) + " % do mínimo)</small>" : ""));
+            var ps = mostra(s.pisos, r.conf, ""); if (ps && ps !== "confirmar no regulamento") cel.push("pisos: " + ps);
             if (s.condicao_agricultor === true) cel.push("exige a condição de agricultor");
             if (cel.length) rows += linha(u[1] + " · " + c.designacao, cel.join("<br>") + "<small>" + esc(r.artigos && r.artigos.length ? "art. " + r.artigos.join(", ") : "artigo por confirmar") + " · confiança " + esc(r.conf === "media" ? "média" : r.conf) + "</small>");
           });
@@ -185,9 +187,8 @@
     Promise.all([crus(F, b, G, M, tot).catch(function () { return null; }), relevo(F, b).catch(function () { return null; }), regras(id)]).then(function (r) {
       var C = r[0], R = r[1], P = r[2], h = "<h4>PDM e números do terreno</h4>";
       if (C && C.classes.length) {
-        var c0 = C.classes[0];
         h += '<table class="ipe-tab2 ipe-res-t"><tbody>' +
-          linha("Concelho", esc(c0.municipio.charAt(0) + c0.municipio.slice(1).toLowerCase()) + "<small>PDM de origem " + esc(c0.data || "data por confirmar") + (c0.situacao ? " · " + esc(c0.situacao) : "") + "</small>") +
+          linha(C.muns.length > 1 ? "Concelhos" : "Concelho", C.muns.map(function (m) { return esc(m.nome) + (C.muns.length > 1 ? " " + n(m.pct, 1) + " %" : "") + "<small>carta de ordenamento de " + esc(m.data || "data por confirmar") + (m.situacao ? " · " + esc(m.situacao) : "") + "</small>"; }).join("")) +
           (C.solo.length ? linha("Classe do solo", C.solo.map(function (s) { return esc(s.l) + " " + n(s.pct, 1) + " %"; }).join("<br>")) : "") +
           C.classes.slice(0, 6).map(function (g) { return linha(g.designacao, n(g.pct, 1) + " % <small>" + n(g.ha, g.ha < 1 ? 2 : 1) + " ha" + (g.categoria && g.categoria !== g.designacao ? " · " + esc(g.categoria) : "") + "</small>"); }).join("") +
           "</tbody></table>";
