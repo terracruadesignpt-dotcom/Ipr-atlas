@@ -135,16 +135,17 @@
   }
   function htmlRegras(P, C, areaHa) {
     if (!P || !P.concelhos) return "";
-    var med = {}; (C && C.classes || []).forEach(function (g) { med[semAc(g.designacao)] = g; });
+    var med = {}, mun = {}; (C && C.classes || []).forEach(function (g) { med[semAc(g.designacao) + "|" + semAc(g.municipio)] = g; mun[semAc(g.municipio)] = 1; });
     var h = "";
     P.concelhos.forEach(function (g) {
+      var gm = semAc(g.municipio); if (C && C.classes.length && !mun[gm]) return; // concelho vizinho que só toca o envolvente
       if (g.estado === "em_preparacao") { h += '<p class="ipe-small">' + esc(g.municipio) + ": regras deste concelho ainda em preparação.</p>"; return; }
       var v = g.em_vigor || {};
       h += '<p class="ipe-small"><b>PDM de ' + esc(g.concelho) + "</b>: " + esc(v.diploma || "diploma por confirmar") + (g.alteracoes ? " · " + g.alteracoes + (g.alteracoes === 1 ? " alteração" : " alterações") : "") + "</p>";
       if (g.estado === "indicativo") { h += '<p class="ipe-small mau">O PDM foi revisto e a carta de ordenamento ainda tem o plano anterior: classes só indicativas. ' + esc(g.crus_nota || "") + "</p>"; return; }
       var rows = "";
       (g.classes || []).forEach(function (c) {
-        var m = med[semAc(c.designacao)]; if (!m) return;
+        var m = med[semAc(c.designacao) + "|" + gm]; if (!m) return;
         (c.regras || []).forEach(function (r) {
           if (r.conf === "baixa") { rows += linha(c.designacao, "valores a confirmar no regulamento <small>" + esc(r.artigos && r.artigos.length ? "art. " + r.artigos.join(", ") : "") + "</small>"); return; }
           [["hab", "Habitação"], ["apoio", "Apoio agrícola"], ["tur", "Turismo"]].forEach(function (u) {
