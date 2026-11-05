@@ -228,7 +228,7 @@
   function htmlBase(e, area) {
     var c = e.condicionantes || {}, l = c.natura, r = e.relevo, a = e.agua, f = e.fogo, s = e.solo;
     function pc(v) { return v == null || typeof v !== "number" ? "<i>sem dados agora</i>" : n(v, 1) + " %"; }
-    var h = '<div class="ipe-res-r"><p class="ipe-small">Área: ' + n(area, area < 1 ? 3 : 2) + " ha.</p><h4>Condicionantes</h4><table class=\"ipe-tab2 ipe-res-t\"><tbody>" +
+    var h = '<div class="ipe-res-r"><h4>Condicionantes</h4><table class="ipe-tab2 ipe-res-t"><tbody>' +
       linha("REN", pc(c.ren)) + linha("RAN", pc(c.ran)) +
       linha("Rede Natura 2000", l ? pc(l.pct) + (l.sitios && l.sitios.length ? "<small>" + esc(l.sitios.join(", ")) + "</small>" : "") : pc(null)) +
       linha("Faixa de 10 m das linhas de água", pc(c.dph) + "<small>estimativa do domínio hídrico</small>") + "</tbody></table>";
