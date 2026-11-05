@@ -153,6 +153,20 @@
     setTimeout(function () { try { var r = M.getBoundingClientRect(), H = W.innerHeight || 800; if (r.bottom > H - 8) M.style.top = Math.max(8, H - r.height - 8) + "px"; } catch (z) {} }, 0);
   }
 
+  // ---------- o separador chama-se «Bases» logo à primeira (Nuno, 09h59: «aparece-me sempre ali uma coisa a dizer projetos
+  // e depois é que muda para bases»). O projectos-grupos.js só o renomeia depois de receber os grupos do servidor; aqui o
+  // nome muda no mesmo instante em que o separador é desenhado (antes de o ecrã ser pintado). Só para a equipa, como lá.
+  function equipa() { var E = W.tcdEquipa; return !!(E && E.email && W.tcdNonce); }
+  function rotulo() {
+    if (!equipa()) return;
+    var b = D.querySelector('#ipe [data-tab="proj"]'); if (!b) return;
+    var tn = [].filter.call(b.childNodes, function (n) { return n.nodeType === 3 && /\S/.test(n.nodeValue); })[0];
+    if (tn) { if (/^\s*(Projectos|Projects)\s*$/.test(tn.nodeValue)) tn.nodeValue = "Bases"; }
+    else if (b.children.length === 0 && /^\s*(Projectos|Projects)\s*$/.test(b.textContent)) b.textContent = "Bases";
+  }
+  try { new MutationObserver(function () { try { rotulo(); } catch (e) {} }).observe(D.documentElement, { childList: true, subtree: true, characterData: true }); } catch (e) {}
+  rotulo();
+
   var t = 0;
   function vigia() { if (t) return; t = setTimeout(function () { t = 0; try { arrumar(); } catch (e) {} }, 120); }
   new MutationObserver(function (ms) {
