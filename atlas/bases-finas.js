@@ -124,7 +124,7 @@
     por(T("Ficheiros e AutoCAD", "Files and AutoCAD"), c.querySelector(".ipr-pfb"));
     por(T("Linha do projecto", "Project timeline"), c.querySelector('button[data-bp="l"]'));
     por(T("Ficha da propriedade", "Property sheet"), botaoPorTexto(c, T("Ver a ficha da propriedade", "View the property sheet")) || botaoPorTexto(c, T("Ficha da propriedade", "Property sheet")));
-    por(T("Planta de localização", "Location plan"), botaoPorTexto(c, T("Planta de localização", "Location plan")) || (tma && tma.querySelector('[data-a="planta"]')));
+    if (!ja[T("fazer planta", "make plan")]) por(T("Planta de localização", "Location plan"), botaoPorTexto(c, T("Planta de localização", "Location plan")) || (tma && tma.querySelector('[data-a="planta"]')));
     por(T("Descarregar tudo", "Download all"), botaoPorTexto(c, T("Descarregar tudo", "Download all")));
     por(T("Levar para o campo (QField)", "Take to the field (QField)"), c.querySelector(".ipr-qf-b"));
     sep();
