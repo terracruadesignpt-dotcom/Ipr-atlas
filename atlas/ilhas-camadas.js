@@ -112,13 +112,20 @@
   function guardar() { try { W.localStorage.setItem(CHAVE, JSON.stringify(ligados)); } catch (e) {} }
   function mapa() { return W.__ipe && W.__ipe.mapa ? W.__ipe.mapa : null; }
   function itemPor(id) { for (var g = 0; g < CAT.length; g++) for (var i = 0; i < CAT[g].itens.length; i++) if (CAT[g].itens[i].id === id) return { it: CAT[g].itens[i], reg: CAT[g].reg }; return null; }
-  function antes(I) { var L = (I.getStyle() && I.getStyle().layers) || []; for (var i = 0; i < L.length; i++) if (/^tme-|^gl-draw|^tcd-terreno|^iprv-l_|^ipr-ter/.test(L[i].id)) return L[i].id; return undefined; }
+  // 5/11/2026: as camadas entram por cima dos fundos do Atlas (iprv-f_*). Antes entravam antes de tme-pedidos, que fica por
+  // baixo do fundo, e não se viam. Ortofotomapas: logo acima do fundo; restantes: por baixo das curvas, do cadastro e do desenho.
+  function antes(I, fundo) {
+    var L = (I.getStyle() && I.getStyle().layers) || [], re = fundo ? /^ipr-longe-relevo|^iprv-s-raster|^iprv-r_|^iprv-s-fill/ : /^iprv-s-fill|^iprv-s-line|^iprv-r_curvas|^iprv-cad|^gl-draw|^tcd-terreno/;
+    for (var i = 0; i < L.length; i++) if (re.test(L[i].id)) return L[i].id;
+    for (var j = 0; j < L.length; j++) if (/^gl-draw|^tcd-terreno/.test(L[j].id)) return L[j].id;
+    return undefined;
+  }
   var falhas = {};
   function ligar(x) {
     var it = x.it, cx = REG[x.reg].cx, I = mapa(); if (!I || !I.getStyle) return;
     if (I.style ? I.style._loaded === false : (I.isStyleLoaded && !I.isStyleLoaded())) { if (I.once) I.once("styledata", function () { setTimeout(function () { if (ligados[it.id]) ligar(x); }, 0); }); return; }
     var partes = it.partes ? it.partes.map(function (p, i) { return { id: it.id + "-" + i, url: p.url, cx: p.cx }; }) : [{ id: it.id, url: it.url, cx: cx }];
-    var pos = antes(I);
+    var pos = antes(I, it.fundo);
     // Ortofotomapas por baixo das outras camadas das ilhas, para não as tapar
     if (it.fundo) { var L = (I.getStyle() && I.getStyle().layers) || []; for (var j = 0; j < L.length; j++) if (/^ilh-/.test(L[j].id) && !/^ilh-az-orto/.test(L[j].id)) { pos = L[j].id; break; } }
     partes.forEach(function (p) {
@@ -142,7 +149,7 @@
     ".tilh h5{margin:8px 0 3px;font:600 11.5px Inter,system-ui,sans-serif;color:var(--mu,#666);text-transform:uppercase;letter-spacing:.04em}" +
     ".tilh label{display:flex;gap:7px;align-items:flex-start;font:13px/1.35 Inter,system-ui,sans-serif;color:var(--tx,#222);padding:3px 0;cursor:pointer}.tilh label input{margin-top:2px}" +
     ".tilh small{display:block;margin-top:6px;font-size:11px;line-height:1.4;color:var(--mu,#777)}.tilh small a{color:inherit}" +
-    ".tilh .lg{display:block;margin:2px 0 6px 22px;font-size:10.5px;line-height:1.35;color:var(--mu,#777)}.tilh .lg img{display:block;max-width:100%;margin-top:3px;background:#fff;border-radius:3px;padding:2px}.tilh .lg[hidden]{display:none}" +
+    ".tilh .lg{display:block;margin:2px 0 6px 22px;font-size:10.5px;line-height:1.35;color:var(--mu,#777)}.tilh .lg img{display:block;max-width:100%;max-height:220px;object-fit:contain;object-position:left top;margin-top:3px;background:#fff;border-radius:3px;padding:2px}.tilh .lg[hidden]{display:none}" +
     ".tilh .av{display:none;margin-top:6px;font-size:11.5px;color:#b6432e}.tilh.falha .av{display:block}.tilh [data-reg][hidden]{display:none}";
   function montar() {
     var cam = D.getElementById("ipe-cam"); if (!cam) return false;
