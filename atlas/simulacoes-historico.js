@@ -6,14 +6,15 @@
       (#ipr-t62 > .ipr-sims, do fogo-simulador.js; sem esse bloco, numa caixa própria no topo do #ipr-t62) e no topo do
       Atlas, ao lado de «Oficina» (#ipr-painel-b), só quando esse botão existe e o ecrã é largo.
    2. Painel com as simulações de todas as Bases entregues da pessoa (no máximo 12 Bases), da mais recente para a mais
-      antiga: tipo, Base, data, estado, «Ver» e, na água, «Partilhar» (ligação só de ver do m90742, com copiar e revogar).
+      antiga: tipo, Base, data, estado, «Ver» e «Partilhar» (ligação só de ver, com copiar e revogar: água no m90742,
+      fogo no m90766 desde 05/11/2026, «Sim, é bem claro» do Nuno).
    3. «Ver» abre a Base no Atlas (cartão do próprio Atlas ou ?mapa=<id>), abre o painel do simulador certo (pelo
       simulador-base.js, se existir, ou por IPR_AGUA_SIM / IPR_FOGO_SIM) e carrega no «Ver» da lista «Simulações deste mapa».
    Carga (o site esteve a cair por carga): só pede quando se abre o painel; lista das Bases do próprio Atlas
    (__ipe.estado.mapas) ou um só GET meus-mapas; até 3 pedidos ao mesmo tempo; cache de 2 minutos em memória; estados
    consultados só para algumas simulações por abertura (os finais ficam guardados neste navegador e não se voltam a pedir).
    Só acrescenta: não mexe em nenhum ficheiro existente. Fala só com o site (tcd/v1: meus-mapas, agua/trabalhos,
-   agua/detalhe, fogo/trabalhos, fogo/trabalho, agua-partilha). Desliga-se com ?sim-historico=0 ou localStorage
+   agua/detalhe, fogo/trabalhos, fogo/trabalho, agua-partilha, fogo-partilha). Desliga-se com ?sim-historico=0 ou localStorage
    ipr_sim_hist_off=1. Terracrua Design. */
 (function (W) {
   "use strict";
@@ -159,7 +160,9 @@
   // ───────────── dados ─────────────
   var CACHE = null, EM_CURSO = null, ULT_CARGA = 0;
   var EST = {};                                   // "tipo:id" -> estado (memória desta página)
-  var PART = { ok: null, por: {} };               // partilhas activas da pessoa, por id do trabalho
+  var PART = { ok: null, okF: null, por: {} };    // partilhas activas da pessoa, por id do trabalho (ok: água, okF: fogo)
+  function rotaP(tipo) { return tipo === "fogo" ? "fogo-partilha" : "agua-partilha"; }
+  function partOk(tipo) { return (tipo === "fogo" ? PART.okF : PART.ok) !== false; }
   var PE = {};                                    // estado da interface da partilha, por id: {aberto, aCriar, erro, copiado, revogada}
   function estFinais() { try { return JSON.parse(lsLer(K_EST) || "{}") || {}; } catch (e) { return {}; } }
   function guardarFinal(tipo, id, e) {
@@ -238,11 +241,15 @@
 
   // Ligações já criadas (um pedido; sem a rota do m90742, a partilha fica escondida).
   function partilhas(c) {
-    if (!c.itens.some(function (x) { return x.tipo === "agua"; })) return Promise.resolve();
-    return api("agua-partilha/minhas").then(function (r) {
-      PART.ok = true; PART.por = {};
-      ((r && r.partilhas) || []).forEach(function (p) { if (p && p.tipo === "base" && p.ref && !PART.por[p.ref]) PART.por[p.ref] = p; });
-    }).catch(function (er) { PART.ok = er.estado === 404 ? false : PART.ok; });
+    PART.por = {};
+    return Promise.all(["agua", "fogo"].map(function (tipo) {
+      if (!c.itens.some(function (x) { return x.tipo === tipo; })) return null;
+      var k = tipo === "fogo" ? "okF" : "ok";
+      return api(rotaP(tipo) + "/minhas").then(function (r) {
+        PART[k] = true;
+        ((r && r.partilhas) || []).forEach(function (p) { if (p && p.tipo === "base" && p.ref && !PART.por[p.ref]) { p._t = tipo; PART.por[p.ref] = p; } });
+      }).catch(function (er) { PART[k] = er.estado === 404 ? false : PART[k]; });
+    }));
   }
 
   // Estados: só alguns por abertura, um de cada vez; os finais ficam guardados e não se voltam a pedir.
@@ -302,7 +309,7 @@
   function alternar() { if (P && !P.hidden) fechar(); else abrir(); }
 
   function rotProc(it) { var k = (PROC[it.tipo] || {})[it.processo]; return k ? t(k) : (it.processo || "–"); }
-  function podePartilhar(it, e) { return it.tipo === "agua" && PART.ok !== false && !(e && e !== "successful"); }
+  function podePartilhar(it, e) { return partOk(it.tipo) && !(e && e !== "successful"); }
 
   function pintar() {
     if (!P || P.hidden) return;
@@ -343,18 +350,18 @@
     return h;
   }
   function linha(it) {
-    var e = estadoDe(it), k = it.tipo + ":" + it.id, lig = it.tipo === "agua" ? PART.por[it.id] : null, pe = PE[it.id] || {};
+    var e = estadoDe(it), k = it.tipo + ":" + it.id, lig = PART.por[it.id] || null, pe = PE[it.id] || {};
     var h = '<li class="sh-it" data-k="' + esc(k) + '"><div class="sh-l1"><span class="sh-tp ' + it.tipo + '">' + esc(t(it.tipo)) + "</span><b>" + esc(rotProc(it)) + "</b></div>";
     h += '<div class="sh-l2">' + esc(it.base) + (it.num ? " <small>· " + esc(t("num")) + " " + esc(it.num) + "</small>" : "") + "</div>";
     h += '<div class="sh-l3">' + esc(it.criado ? quando(it.criado) : "–") + ' · <span class="sh-e ' + esc(e || "x") + '">' + esc(t("e_" + e)) + "</span></div>";
     h += '<div class="sh-ac"><button type="button" class="b pri" data-shv="' + esc(k) + '">' + esc(t("ver")) + "</button>";
-    if (it.tipo === "agua" && PART.ok !== false) {
+    if (partOk(it.tipo)) {
       var pode = podePartilhar(it, e);
       h += '<button type="button" class="b" data-shp="' + esc(it.id) + '" aria-expanded="' + (!!pe.aberto) + '"' + (pode || pe.aberto ? "" : ' disabled title="' + esc(t("soConcluidas")) + '"') + ">" + esc(pe.aberto ? t("fecharPart") : t("partilhar")) + "</button>";
       if (lig && !pe.aberto) h += '<span class="sh-lig">' + esc(t("ligacao")) + "</span>";
     }
     h += "</div>";
-    if (it.tipo === "agua" && pe.aberto) h += blocoPartilha(it, lig, pe);
+    if (pe.aberto) h += blocoPartilha(it, lig, pe);
     return h + "</li>";
   }
   function blocoPartilha(it, lig, pe) {
@@ -395,16 +402,17 @@
     }
   }
 
-  // ───────────── partilhar (só água; rotas do m90742) ─────────────
+  // ───────────── partilhar (água: rotas do m90742; fogo: rotas do m90766) ─────────────
   function criar(id) {
-    var it = item("agua:" + id), pe = PE[id] || (PE[id] = {});
+    var it = item("agua:" + id) || item("fogo:" + id), pe = PE[id] || (PE[id] = {});
     if (!it || pe.aCriar) return;
     pe.aCriar = true; pe.erro = ""; pe.revogada = false; pintar();
-    api("agua-partilha", { method: "POST", body: { tipo: "base", id: it.id, enc: +it.enc } }).then(function (r) {
-      pe.aCriar = false; if (r && r.partilha) PART.por[id] = r.partilha; pintar();
+    var corpo = it.tipo === "fogo" ? { id: it.id, enc: +it.enc } : { tipo: "base", id: it.id, enc: +it.enc };
+    api(rotaP(it.tipo), { method: "POST", body: corpo }).then(function (r) {
+      pe.aCriar = false; if (r && r.partilha) { r.partilha._t = it.tipo; PART.por[id] = r.partilha; } pintar();
     }).catch(function (er) {
       pe.aCriar = false; pe.erro = er.message;
-      if (er.estado === 404 && er.codigo === "rest_no_route") { PART.ok = false; pe.aberto = false; }
+      if (er.estado === 404 && er.codigo === "rest_no_route") { PART[it.tipo === "fogo" ? "okF" : "ok"] = false; pe.aberto = false; }
       pintar();
     });
   }
@@ -416,7 +424,7 @@
   }
   function revogar(id) {
     var lig = PART.por[id], pe = PE[id] || (PE[id] = {}); if (!lig) return;
-    api("agua-partilha/revogar", { method: "POST", body: { codigo: lig.codigo } }).then(function () {
+    api(rotaP(lig._t) + "/revogar", { method: "POST", body: { codigo: lig.codigo } }).then(function () {
       delete PART.por[id]; pe.revogada = true; pe.erro = ""; pintar();
     }).catch(function (er) { pe.erro = er.message; pintar(); });
   }
