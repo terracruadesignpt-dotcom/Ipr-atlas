@@ -43,6 +43,10 @@
     S + "input[type=range]::-moz-range-thumb{width:10px!important;height:10px!important}" +
     S + "input[type=range]::-webkit-slider-runnable-track{height:3px!important}" +
     S + "input[type=range]::-moz-range-track{height:3px!important}" +
+    S + ".ipr-mb-b.ab .ipr-mb-cam{max-height:min(340px,32vh);overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}" +
+    S + ".ipr-mb-it:has(> input[type=range]){display:flex;align-items:center}" +
+    S + ".ipr-mb-it:has(> input[type=range]) > label{flex:1 1 auto;min-width:0}" +
+    S + ".ipr-mb-it > input[type=range]{flex:0 0 64px;width:64px!important;margin:0 2px 0 4px!important}" +
     "#ipe-proj .ipe-card.ipr-ff-on .ipe-res--proj{scroll-margin-top:12px}";
   (D.head || D.documentElement).appendChild(css);
 
