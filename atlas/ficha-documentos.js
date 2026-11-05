@@ -29,12 +29,14 @@
     ".ipr-fdoc .ipr-fdoc-msg{margin-top:6px;font-size:12px;color:#e9a15a}";
   (D.head || D.documentElement).appendChild(css);
 
-  // Preço da Leitura para a área da Base: tabela do site (window.IPR_PRECOS, m90550), metade durante a promoção (m90430).
-  function precoLeitura(ha) {
-    var P = W.IPR_PRECOS, T = P && P.tabela; ha = +ha; if (!T || !ha) return "";
-    var l = null; for (var i = 0; i < T.length; i++) if (ha <= T[i][0]) { l = T[i][2]; break; } if (l == null) return "";
-    var promo = P.leitura_meia && P.leitura && P.leitura.promo_ate && new Date(P.leitura.promo_ate + "T23:59:59") >= new Date();
-    return (promo ? Math.round(l / 2) : l).toLocaleString("pt-PT") + " €" + (promo ? " (−50 %)" : "");
+  // Preço da Leitura para a área da Base, pelo próprio servidor (m90590, GET /tcd/v1/pedido-produto/preco?ha=): o mesmo
+  // valor que a encomenda vai cobrar, já com a promoção. Sem IVA.
+  var PL = {};
+  function precoLeitura(ha, alvo) {
+    ha = +ha; if (!ha) return;
+    var k = ha.toFixed(2);
+    if (!PL[k]) PL[k] = fetch("/wp-json/tcd/v1/pedido-produto/preco?ha=" + encodeURIComponent(k), { credentials: "same-origin" }).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; });
+    PL[k].then(function (j) { if (j && j.leitura && alvo) alvo.textContent = " · " + Math.round(j.leitura).toLocaleString("pt-PT") + " € + IVA"; });
   }
   // Pedir a Leitura de uma Base já feita: o limite da Base passa a ser o terreno escolhido no Atlas e segue pelo assistente
   // de compra (Leitura sem conta, m90590), o mesmo caminho de quem desenha um terreno.
@@ -79,11 +81,12 @@
     var h = '<h4>Documentos da propriedade</h4><ul>';
     h += "<li><span><b>Leitura Territorial</b> <small>" + (lt ? "PDF com o PDM, as condicionantes e as coordenadas" : m.leitura ? "em preparação" : "ainda não pedida") + "</small></span>" +
       (lt ? '<a class="ipe-b ipe-b--ac" target="_blank" rel="noopener" href="' + esc(lt.url) + '">Abrir</a>'
-        : m.leitura ? "" : '<button type="button" class="ipe-b ipe-b--ac" data-fdoc-lt="' + esc(id) + '">Pedir a Leitura Territorial' + (precoLeitura(m.area_ha) ? " · " + precoLeitura(m.area_ha) : "") + "</button>") + "</li>";
+        : m.leitura ? "" : '<button type="button" class="ipe-b ipe-b--ac" data-fdoc-lt="' + esc(id) + '">Pedir a Leitura Territorial<span class="ipr-fdoc-pr"></span></button>") + "</li>";
     if (rb) h += '<li><span><b>Relatório da Base Cartográfica</b> <small>PDF</small></span><a class="ipe-b" target="_blank" rel="noopener" href="' + esc(rb.url) + '">Abrir</a></li>';
     h += '<li class="ipr-fdoc-pl"><span><b>Plantas de Localização</b> <small>a ver…</small></span><button type="button" class="ipe-b ipe-b--ac" data-fdoc-pl="' + esc(id) + '">Fazer a Planta de Localização</button></li>';
     h += "</ul><div class=\"ipr-fdoc-msg\" hidden></div>";
     var d = D.createElement("div"); d.className = "ipr-fdoc"; d.setAttribute("data-fdoc", id); d.innerHTML = h;
+    var spr = d.querySelector(".ipr-fdoc-pr"); if (spr) precoLeitura(m.area_ha, spr);
     lista(d, id, false);
     return d;
   }
