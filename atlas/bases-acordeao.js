@@ -47,6 +47,64 @@
     "@media (prefers-reduced-motion:reduce){.ipr-ac .seta{transition:none}}";
   (D.head || D.documentElement).appendChild(css);
 
+  /* 05/11/2026, 09h14 (Nuno, sobre o separador «Bases»): «o projeto de demonstração [...] não faz sentido estar aqui, porque
+     já está a repetir a sub-bacia da Ribeira do Torgal. Depois tens esta cena de mostrar todas [...] não precisa disto para
+     nada. E o procurar, estado, dono, implementação, podes ter, mas quer só uma barra, isto ocupa muito espaço.»
+     1. Esconde a linha «Projecto de demonstração» (#ipr-demo783, m90783) só neste separador: o Torgal já está na barra de
+        cima e na lista, em «Projectos entregues».
+     2. Esconde a caixa «Todas / Prontas / Mostrar / … com tudo carregado» (#ipr-pg-f, projectos-grupos.js). Antes de a
+        esconder, repõe «Todas» e «Mostrar: todas», para nenhuma Base ficar escondida por uma escolha antiga que já não se
+        vê. O estado escolhe-se na barra de pesquisa. A etiqueta «Tudo carregado / Falta» de cada cartão fica.
+     3. A pesquisa e os filtros (#ipr-px-f, projectos-extra.js) ficam numa só linha baixa: campo de procura a ocupar o resto,
+        Estado, Dono e Implementação em listas curtas (a escolhida fica com contorno verde) e «×» para limpar.
+     Desligar só isto: ?bcomp=0 ou localStorage ipr_bcomp_off = 1. */
+  var COMP = true;
+  try { if (/[?&]bcomp=0(&|$)/.test(location.search) || W.localStorage.getItem("ipr_bcomp_off") === "1") COMP = false; } catch (e) {}
+  if (COMP) {
+    var P = '#ipe .ipe-pane[data-pane="proj"] ';
+    var c2 = D.createElement("style"); c2.id = "ipr-ac-comp-css";
+    c2.textContent =
+      P + "#ipr-demo783," + P + "#ipr-pg-f{display:none!important}" +
+      P + "#ipr-px-f{display:flex!important;flex-wrap:nowrap!important;gap:4px!important;align-items:center;margin:6px 0 8px!important;padding:0!important;border:0!important;background:none!important}" +
+      P + "#ipr-px-f[hidden]{display:none!important}" +
+      P + "#ipr-px-f input,#ipe .ipe-pane[data-pane=\"proj\"] #ipr-px-f select{min-height:32px!important;height:32px;margin:0!important;border:1px solid #383A33!important;border-radius:2px!important;background-color:#232420!important;color:#F5F4EE!important;font:400 12px/1.2 Inter,system-ui,sans-serif!important;box-sizing:border-box}" +
+      P + "#ipr-px-f input{flex:2 1 0!important;min-width:84px!important;width:auto!important;padding:0 8px!important}" +
+      P + "#ipr-px-f input::placeholder{color:#8E9186}" +
+      P + "#ipr-px-f select{flex:1 1 0!important;min-width:0!important;max-width:none!important;width:auto!important;padding:0 16px 0 6px!important;text-overflow:ellipsis;white-space:nowrap;overflow:hidden;cursor:pointer;-webkit-appearance:none;appearance:none;" +
+        "background-image:linear-gradient(45deg,transparent 50%,#C3C5BC 50%),linear-gradient(135deg,#C3C5BC 50%,transparent 50%)!important;background-position:calc(100% - 9px) 14px,calc(100% - 5px) 14px!important;background-size:4px 4px,4px 4px!important;background-repeat:no-repeat!important}" +
+      P + "#ipr-px-f select.ipr-ac-sel{border-color:#94BE39!important;color:#B5D86A!important}" +
+      P + "#ipr-px-f input:focus-visible," + P + "#ipr-px-f select:focus-visible{outline:1px solid #94BE39!important;outline-offset:0!important;border-color:#94BE39!important}" +
+      P + "#ipr-px-f .ipr-px-n{display:none!important}" +
+      P + "#ipr-px-f .ipr-px-l{flex:0 0 auto;min-height:32px!important;height:32px;width:32px;padding:0!important;border:1px solid #383A33!important;border-radius:2px!important;font:600 0/1 Inter,system-ui,sans-serif!important;color:transparent!important;position:relative;background:transparent!important}" +
+      P + "#ipr-px-f .ipr-px-l:after{content:'\\00d7';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:400 18px/1 Inter,system-ui,sans-serif;color:#F5F4EE}" +
+      P + "#ipr-px-f .ipr-px-l[hidden]{display:none!important}" +
+      "@media (max-width:600px){" + P + "#ipr-px-f input," + P + "#ipr-px-f select{font-size:16px!important;min-height:38px!important;height:38px}" + P + "#ipr-px-f select{background-position:calc(100% - 9px) 17px,calc(100% - 5px) 17px!important}" + P + "#ipr-px-f .ipr-px-l{height:38px;width:38px;min-height:38px!important}}";
+    (D.head || D.documentElement).appendChild(c2);
+  }
+  var CURTO = { e: ["Estado", "Status"], d: ["Dono", "Owner"], i: ["Implem.", "Implem."] };
+  function compactar() {
+    if (!COMP) return;
+    var pane = D.querySelector('#ipe .ipe-pane[data-pane="proj"]'); if (!pane) return;
+    // 2. repor «Todas» e «Mostrar: todas» na caixa escondida
+    var pg = D.getElementById("ipr-pg-f");
+    if (pg && pg.parentNode === pane) {
+      var aba = pg.querySelector('[data-aba][aria-selected="true"]');
+      if (aba && aba.getAttribute("data-aba") !== "") { var t0 = pg.querySelector('[data-aba=""]'); if (t0) t0.click(); }
+      var ver = pg.querySelector('select[data-pg="ver"]');
+      if (ver && ver.value !== "") { ver.value = ""; ver.dispatchEvent(new Event("change", { bubbles: true })); }
+    }
+    // 3. nomes curtos na primeira opção de cada lista e contorno na escolhida
+    var px = D.getElementById("ipr-px-f"); if (!px || px.parentNode !== pane) return;
+    [].forEach.call(px.querySelectorAll("select[data-px-f]"), function (s) {
+      var k = s.getAttribute("data-px-f"), c = CURTO[k], o = s.options[0];
+      if (c && o && o.value === "") { var nt = pt() ? c[0] : c[1]; if (o.textContent !== nt) { if (!s.title) s.title = s.getAttribute("aria-label") || ""; o.textContent = nt; } }
+      var on = s.value !== ""; if (s.classList.contains("ipr-ac-sel") !== on) s.classList.toggle("ipr-ac-sel", on);
+    });
+    var q = D.getElementById("ipr-px-q"), ph = pt() ? "Procurar" : "Search";
+    if (q && q.placeholder !== ph) { if (!q.title) q.title = q.placeholder; q.placeholder = ph; }
+  }
+  D.addEventListener("change", function (e) { if (e.target && e.target.closest && e.target.closest("#ipr-px-f")) setTimeout(compactar, 0); }, true);
+
   var FECHADO = ls("ipr_ac_fechado") === "1";
 
   function partes() {
@@ -129,7 +187,7 @@
   }
 
   var t = 0;
-  function vigia() { clearTimeout(t); t = setTimeout(function () { try { montar(); } catch (e) {} }, 120); }
+  function vigia() { clearTimeout(t); t = setTimeout(function () { try { montar(); } catch (e) {} try { compactar(); } catch (e) {} }, 120); }
   new MutationObserver(function (ms) {
     for (var i = 0; i < ms.length; i++) {
       var x = ms[i].target;
