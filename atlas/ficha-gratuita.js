@@ -13,6 +13,7 @@
         (/tcd/v1/meus-mapas?tcd_pdm=<id>, m90711): índice × área, área máxima, prédio mínimo comparado com o terreno, artigo
         e confiança. A tabela de regras não está neste ficheiro nem neste repositório.
       Fecho: «Quem decide é a Câmara, pelo Pedido de Informação Prévia (PIP).»
+   4. 3D no cartão aberto pelas linhas finas e secção do PDM também na ficha da equipa (.ipr-ficha-out), 05/11, 13h38.
    Desligar: ?fgrat=0 ou localStorage ipr_fgrat_off = 1. */
 (function () {
   "use strict";
@@ -306,10 +307,26 @@
   // ---------- 2. Cartões dos projectos: junta a secção à ficha já feita ----------
   function cartoes() {
     var E = W.__ipe && W.__ipe.estado; if (!E || !E.mapas) return;
-    [].forEach.call(D.querySelectorAll("#ipe-proj [data-res-out]"), function (o) {
-      var r = o.querySelector(".ipe-res-r"); if (!r || r.querySelector(".ipr-fg-pdm")) return;
-      var i = +o.getAttribute("data-res-out"), m = E.mapas[i]; if (!m || !m.geojson) return;
+    // A ficha está em [data-res-out] (clientes) ou em .ipr-ficha-out (equipa, ajustes.js).
+    [].forEach.call(D.querySelectorAll("#ipe-proj [data-res-out] .ipe-res-r, #ipe-proj .ipr-ficha-out .ipe-res-r"), function (r) {
+      if (r.querySelector(".ipr-fg-pdm")) return;
+      var o = r.closest("[data-res-out]"), c = r.closest(".ipe-card");
+      var i = o ? +o.getAttribute("data-res-out") : c ? +c.getAttribute("data-i") : NaN, m = E.mapas[i]; if (!m || !m.geojson) return;
       seccao(m.geojson, m.encomenda || m.id, r);
+    });
+    tres(E);
+  }
+  // 3D da propriedade no cartão aberto (Nuno, 13h38: «Onde é que está o 3D das bases? Antes aparecia tudo na ficha»). O §59
+  // do ajustes.js só o põe nos cartões com a classe «on»; as linhas finas (bases-finas.js) abrem o cartão sem ela.
+  function tres(E) {
+    if (typeof W.__iprVista3d !== "function") return;
+    [].forEach.call(D.querySelectorAll("#ipe-proj .ipe-card.ipr-fn-on, #ipe-proj .ipe-card.on"), function (c) {
+      if (!c.offsetParent || c.querySelector(".ipr-fx, .ipr-fg-3d")) return;
+      var m = E.mapas[+c.getAttribute("data-i")], id = m && +(m.encomenda || m.id); if (!id) return;
+      var d = D.createElement("div"); d.className = "ipr-fx ipr-fg-3d"; d.innerHTML = '<div class="ipr-fx-3"></div>';
+      var cx = c.querySelector(".ipe-cx"); if (!cx) return; cx.insertBefore(d, cx.firstChild);
+      d.addEventListener("click", function (e) { e.stopPropagation(); }, false);
+      try { W.__iprVista3d(d.firstChild, id, false, true); } catch (e) { d.remove(); }
     });
   }
 

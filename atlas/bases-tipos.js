@@ -1,4 +1,4 @@
-/* IPR Atlas · bases-tipos.js (04/11/2026). Terracrua Design. Só acrescenta; não mexe noutros ficheiros.
+/* IPR Atlas · bases-tipos.js (04/11/2026; v3 05/11 com «Imóveis»). Terracrua Design. Só acrescenta; não mexe noutros ficheiros.
    Nuno, 04/11/2026, 16h04: «aqui na coluna lateral, onde estão as bases, quero ter isto por tipo de bases, na perspectiva da
    Terracrua: bases que tenham sido só pedidos, bases que pertençam a dias abertos, ou reuniões, ou projectos, e bases de
    projectos entregues, e se calhar um separador também para a implementação.» 16h05: «cada base na listagem tem aqueles três
@@ -44,6 +44,7 @@
     ["dia_aberto", "Dias abertos", "Open days", "Dia aberto", "Open day"],
     ["reuniao", "Reuniões", "Meetings", "Reunião", "Meeting"],
     ["projecto", "Projectos", "Projects", "Projecto", "Project"],
+    ["imovel", "Imóveis", "Properties", "Imóvel", "Property"],
     ["entregue", "Projectos entregues", "Delivered projects", "Projecto entregue", "Delivered project"],
     ["impl", "Implementação", "Implementation", "Implementação", "Implementation"]
   ];
@@ -84,6 +85,9 @@
   function auto(m) {
     var id = String(m.id), e = ES && ES[id];
     if (IMPL_K[IMPL[id]]) return "impl";
+    // v3 (05/11/2026, 13h35, Nuno): «Imóveis»: as Bases dos imóveis da Azenhas e Castelos e as feitas para oferecer a
+    // agentes imobiliários. Automático pelo nome (AeC, Azenhas, URP); a escolha manual no cartão vale sempre.
+    if (/\bAeC\b|Azenhas|\bURP\d|imobili/i.test(String(m.local || "") + " " + String(m.nome || "") + " " + String(m.pedido || ""))) return "imovel";
     var interna = (e ? +e.interna === 1 : false) || (id in PAGO && !+PAGO[id]);
     if (m.pagar || m.estado_k === "pending" || m.estado_k === "failed" || m.estado_k === "cancelled") return "";
     if (!interna) return e || !ES ? "pedido" : "";

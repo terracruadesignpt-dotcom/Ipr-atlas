@@ -8,11 +8,13 @@
       também. A ficha é a do próprio cartão (botão «Ver a ficha da propriedade», app.js), que as linhas finas
       (bases-finas.js) deixavam escondida.
    5. «Ficha do terreno» e variantes passam a «Ficha da propriedade» também nas formas que o ficha-propriedade.js não apanha.
+   6. 05/11, 13h40: sem formas antigas a piscar no painel da direita (nomes e ordem acertados antes de pintar).
    Desligar: ?fficha=0 ou localStorage ipr_fficha_off = 1. */
 (function () {
   "use strict";
   var W = window, D = document;
   try { if (/[?&]fficha=0(&|$)/.test(location.search) || W.localStorage.getItem("ipr_fficha_off") === "1") return; } catch (e) {}
+  setTimeout(function () { D.documentElement.classList.add("ipr-ac-ok"); }, 8000); // nunca esconde para sempre
   if (W.__iprFFicha) return; W.__iprFFicha = 1;
 
   function pt() { return (W.IPR_LINGUA || "pt") !== "en"; }
@@ -47,7 +49,11 @@
     S + ".ipr-mb-it:has(> input[type=range]){display:flex;align-items:center}" +
     S + ".ipr-mb-it:has(> input[type=range]) > label{flex:1 1 auto;min-width:0}" +
     S + ".ipr-mb-it > input[type=range]{flex:0 0 64px;width:64px!important;margin:0 2px 0 4px!important}" +
-    "#ipe-proj .ipe-card.ipr-ff-on .ipe-res--proj{scroll-margin-top:12px}";
+    "#ipe-proj .ipe-card.ipr-ff-on .ipe-res--proj{scroll-margin-top:12px}" +
+    // 6. Sem formas antigas a piscar (Nuno, 13h34): a fila de botões do bases-tipos.js nunca aparece quando há o acordeão,
+    //    e o acordeão só se mostra depois de ter os nomes e a ordem certos.
+    (W.__iprBAcord ? "#ipr-bt-f .abas,#ipr-bt-f select[data-bt-s]{display:none!important}" : "") +
+    "html:not(.ipr-ac-ok) #ipr-ac-a,html:not(.ipr-ac-ok) #ipr-ac-b{visibility:hidden}";
   (D.head || D.documentElement).appendChild(css);
 
   // ---------- 2, 3 e 5. Textos ----------
@@ -60,13 +66,28 @@
     if (!equipa() && /Projecto Terracrua Design|Terracrua Design project/.test(t)) t = t.replace("Projecto Terracrua Design", "Projecto").replace("Terracrua Design project", "Project");
     if (t !== v) n.nodeValue = t;
   }
+  function ordem() {
+    var a = D.getElementById("ipr-ac-a"), rv = D.getElementById("ipr-rvb737"); if (!a || !rv) return;
+    var td = a.querySelector('button[data-ac=""]');
+    if (td && td.parentNode === a && td.nextSibling !== rv) a.insertBefore(rv, td.nextSibling);
+  }
+  var T0 = Date.now();
+  function pronto() {
+    if (D.documentElement.classList.contains("ipr-ac-ok")) return;
+    var a = D.getElementById("ipr-ac-a"); if (!a) return;
+    var p = a.querySelector('button[data-ac="projecto"]'), okNome = !p || !/Projectos/.test(p.textContent);
+    var okRv = !equipa() || D.getElementById("ipr-rvb737") || Date.now() - T0 > 4000;
+    if ((okNome && okRv) || Date.now() - T0 > 6000) D.documentElement.classList.add("ipr-ac-ok");
+  }
   function categoria() {
-    var b = D.querySelector('#ipr-ac-a button[data-ac="projecto"],#ipr-ac-b button[data-ac="projecto"]'); if (!b) return;
+    ordem();
+    var b = D.querySelector('#ipr-ac-a button[data-ac="projecto"],#ipr-ac-b button[data-ac="projecto"]'); if (!b) { pronto(); return; }
     var w = D.createTreeWalker(b, NodeFilter.SHOW_TEXT, null), n;
     while ((n = w.nextNode())) {
       if (/^\s*Projectos\s*$/.test(n.nodeValue)) n.nodeValue = n.nodeValue.replace("Projectos", "Em projecto");
       else if (/^\s*Projects\s*$/.test(n.nodeValue)) n.nodeValue = n.nodeValue.replace("Projects", "In design");
     }
+    pronto();
   }
   function varre(r) {
     if (!r) return;
@@ -137,6 +158,7 @@
     if (!D.body) return false;
     varre(D.body); categoria();
     new MutationObserver(function (ms) {
+      try { categoria(); } catch (e) {} // já, antes de pintar: sem «Projectos» nem ordem antiga visíveis
       for (var i = 0; i < ms.length; i++) {
         var m = ms[i];
         if (m.type === "characterData") agenda(m.target);
