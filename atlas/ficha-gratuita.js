@@ -176,42 +176,93 @@
   }
 
   // ---------- Secção «PDM e números do terreno» ----------
-  function seccao(geo, id, alvo) {
+  function medir(F) {
+    var b = bbox(F); if (!b) return null;
+    var G = grelha(b, 700), M = pinta(G, F.features.map(function (f) { return f.geometry; })), tot = conta(M);
+    if (!tot) return null;
+    return { b: b, G: G, M: M, tot: tot, areaHa: tot * G.pxM * G.pxM / 1e4 };
+  }
+  function extras(F, id) {
+    var m = medir(F); if (!m) return Promise.resolve(null);
+    return Promise.all([crus(F, m.b, m.G, m.M, m.tot).catch(function () { return null; }), relevo(F, m.b).catch(function () { return null; }), regras(id)])
+      .then(function (r) { return { C: r[0], R: r[1], P: r[2], areaHa: m.areaHa }; });
+  }
+  function htmlSeccao(X, id) {
+    var C = X.C, R = X.R, P = X.P, areaHa = X.areaHa, h = "<h4>PDM e números do terreno</h4>";
+    if (C && C.classes.length) {
+      h += '<table class="ipe-tab2 ipe-res-t"><tbody>' +
+        linha(C.muns.length > 1 ? "Concelhos" : "Concelho", C.muns.map(function (m) { return esc(m.nome) + (C.muns.length > 1 ? " " + n(m.pct, 1) + " %" : "") + "<small>carta de ordenamento de " + esc(m.data || "data por confirmar") + (m.situacao ? " · " + esc(m.situacao) : "") + "</small>"; }).join("")) +
+        (C.solo.length ? linha("Classe do solo", C.solo.map(function (s) { return esc(s.l) + " " + n(s.pct, 1) + " %"; }).join("<br>")) : "") +
+        C.classes.slice(0, 6).map(function (g) { return linha(g.designacao, n(g.pct, 1) + " % <small>" + n(g.ha, g.ha < 1 ? 2 : 1) + " ha" + (g.categoria && g.categoria !== g.designacao ? " · " + esc(g.categoria) : "") + "</small>"); }).join("") +
+        "</tbody></table>";
+      if (C.coberto < 95) h += '<p class="ipe-small">A carta de ordenamento cobre cerca de ' + C.coberto + " % do terreno; o resto pode ser outra classe ou estar fora da carta.</p>";
+      if (C.classes.length > 1) h += '<p class="ipe-small">O terreno tem ' + C.classes.length + " classes do PDM: as regras aplicam-se a cada parte.</p>";
+    } else {
+      h += '<p class="ipe-small">' + (C ? "A carta de ordenamento (CRUS) não tem classe neste limite." : "O serviço da carta de ordenamento (CRUS, DGT) não respondeu agora.") + "</p>";
+    }
+    if (P) h += htmlRegras(P, C, areaHa);
+    else h += '<p class="ipe-small">' + (id && W.tcdNonce ? "Regras do PDM deste concelho: ainda sem resposta." : "Os índices, o prédio mínimo e os artigos do regulamento para estas classes estão na Leitura Territorial e na Planta de Localização" + (W.tcdNonce ? " (guarde o terreno e abra a ficha no cartão do projecto para os ver aqui)." : ".")) + "</p>";
+    if (R) {
+      h += '<table class="ipe-tab2 ipe-res-t"><tbody>' +
+        linha("Área medida", n(areaHa, areaHa < 1 ? 3 : 2) + " ha <small>" + n(areaHa * 1e4, 0) + " m²</small>") +
+        linha("Altitude (P10 · mediana · P90)", n(R.alt[0], 0) + " · " + n(R.alt[1], 0) + " · " + n(R.alt[2], 0) + " m") +
+        (R.dec ? linha("Declive (P10 · mediana · P90)", n(R.dec[0], 1) + " · " + n(R.dec[1], 1) + " · " + n(R.dec[2], 1) + " %") : "") +
+        (R.d15 != null ? linha("Área com declive acima de 15 %", n(R.d15, 1) + " %") : "") +
+        (R.d25 != null ? linha("Área com declive acima de 25 %", n(R.d25, 1) + " % <small>declives fortes pesam na REN (áreas de elevado risco de erosão) e na implantação</small>") : "") +
+        "</tbody></table><p class=\"ipe-small\">P10 e P90: 10 % do terreno fica abaixo e 10 % acima desses valores. Modelo de elevação com cerca de " + n(R.res, 0) + " m por pixel; a Base Cartográfica usa o LiDAR da DGT, muito mais fino.</p>";
+    }
+    h += '<p class="ipe-small"><b>' + FECHO + "</b> Fonte: carta de regimes de uso do solo (CRUS, DGT, OGC API); regulamentos do PDM publicados em Diário da República e depositados no SNIT; relevo Mapterhorn.</p>";
+    return h;
+  }
+  function seccao(geo, id, alvo, pronto) {
     var F = fc(geo); if (!F) return;
-    var b = bbox(F); if (!b) return;
     var caixa = D.createElement("div"); caixa.className = "ipr-fg-pdm";
     caixa.innerHTML = '<h4>PDM e números do terreno</h4><p class="ipe-small">A medir a carta de ordenamento e o relevo dentro do limite…</p>';
     var nota = alvo.querySelector(".ipe-nota"); if (nota) alvo.insertBefore(caixa, nota); else alvo.appendChild(caixa);
-    var G = grelha(b, 700), M = pinta(G, F.features.map(function (f) { return f.geometry; })), tot = conta(M);
-    if (!tot) { caixa.remove(); return; }
-    var areaHa = tot * G.pxM * G.pxM / 1e4;
-    Promise.all([crus(F, b, G, M, tot).catch(function () { return null; }), relevo(F, b).catch(function () { return null; }), regras(id)]).then(function (r) {
-      var C = r[0], R = r[1], P = r[2], h = "<h4>PDM e números do terreno</h4>";
-      if (C && C.classes.length) {
-        h += '<table class="ipe-tab2 ipe-res-t"><tbody>' +
-          linha(C.muns.length > 1 ? "Concelhos" : "Concelho", C.muns.map(function (m) { return esc(m.nome) + (C.muns.length > 1 ? " " + n(m.pct, 1) + " %" : "") + "<small>carta de ordenamento de " + esc(m.data || "data por confirmar") + (m.situacao ? " · " + esc(m.situacao) : "") + "</small>"; }).join("")) +
-          (C.solo.length ? linha("Classe do solo", C.solo.map(function (s) { return esc(s.l) + " " + n(s.pct, 1) + " %"; }).join("<br>")) : "") +
-          C.classes.slice(0, 6).map(function (g) { return linha(g.designacao, n(g.pct, 1) + " % <small>" + n(g.ha, g.ha < 1 ? 2 : 1) + " ha" + (g.categoria && g.categoria !== g.designacao ? " · " + esc(g.categoria) : "") + "</small>"); }).join("") +
-          "</tbody></table>";
-        if (C.coberto < 95) h += '<p class="ipe-small">A carta de ordenamento cobre cerca de ' + C.coberto + " % do terreno; o resto pode ser outra classe ou estar fora da carta.</p>";
-        if (C.classes.length > 1) h += '<p class="ipe-small">O terreno tem ' + C.classes.length + " classes do PDM: as regras aplicam-se a cada parte.</p>";
-      } else {
-        h += '<p class="ipe-small">' + (C ? "A carta de ordenamento (CRUS) não tem classe neste limite." : "O serviço da carta de ordenamento (CRUS, DGT) não respondeu agora.") + "</p>";
-      }
-      if (P) h += htmlRegras(P, C, areaHa);
-      else h += '<p class="ipe-small">' + (id && W.tcdNonce ? "Regras do PDM deste concelho: ainda sem resposta." : "Os índices, o prédio mínimo e os artigos do regulamento para estas classes estão na Leitura Territorial e na Planta de Localização" + (W.tcdNonce ? " (guarde o terreno e abra a ficha no cartão do projecto para os ver aqui)." : ".")) + "</p>";
-      if (R) {
-        h += '<table class="ipe-tab2 ipe-res-t"><tbody>' +
-          linha("Área medida", n(areaHa, areaHa < 1 ? 3 : 2) + " ha <small>" + n(areaHa * 1e4, 0) + " m²</small>") +
-          linha("Altitude (P10 · mediana · P90)", n(R.alt[0], 0) + " · " + n(R.alt[1], 0) + " · " + n(R.alt[2], 0) + " m") +
-          (R.dec ? linha("Declive (P10 · mediana · P90)", n(R.dec[0], 1) + " · " + n(R.dec[1], 1) + " · " + n(R.dec[2], 1) + " %") : "") +
-          (R.d15 != null ? linha("Área com declive acima de 15 %", n(R.d15, 1) + " %") : "") +
-          (R.d25 != null ? linha("Área com declive acima de 25 %", n(R.d25, 1) + " % <small>declives fortes pesam na REN (áreas de elevado risco de erosão) e na implantação</small>") : "") +
-          "</tbody></table><p class=\"ipe-small\">P10 e P90: 10 % do terreno fica abaixo e 10 % acima desses valores. Modelo de elevação com cerca de " + n(R.res, 0) + " m por pixel; a Base Cartográfica usa o LiDAR da DGT, muito mais fino.</p>";
-      }
-      h += '<p class="ipe-small"><b>' + FECHO + "</b> Fonte: carta de regimes de uso do solo (CRUS, DGT, OGC API); regulamentos do PDM publicados em Diário da República e depositados no SNIT; relevo Mapterhorn.</p>";
-      caixa.innerHTML = h;
-    });
+    (pronto || extras(F, id)).then(function (X) { if (!X) { caixa.remove(); return; } caixa.innerHTML = htmlSeccao(X, id); });
+  }
+
+  // ---------- Ficha gratuita em cartões (Nuno, 05/11/2026, 15h10: «tem que ser uma cena super cativante [...] dar aquelas
+  // métricas todas que as pessoas querem ver [...] e depois quando já tem uma base [...] pedir planta de localização, leitura
+  // territorial, base cartográfica»). Abre sozinha ao escolher o terreno; os quadros completos ficam em «Ver todos os dados». ----------
+  function tom(v, a, b) { return v == null ? "" : v >= a ? "alto" : v >= b ? "medio" : "ok"; }
+  function cartao(k, t, v, f, cl) { return '<div class="ipr-c ' + (cl || "") + '" data-c="' + k + '"><span class="ipr-c-t">' + t + '</span><b class="ipr-c-v">' + v + '</b><span class="ipr-c-f">' + f + "</span></div>"; }
+  function pct(v) { return v == null || typeof v !== "number" ? "—" : n(v, v < 10 ? 1 : 0) + " %"; }
+  function htmlCartoes(e, area) {
+    var c = e.condicionantes || {}, l = c.natura || {}, r = e.relevo, a = e.agua, f = e.fogo, s = e.solo;
+    var fogoT = f ? (/muito alta|alta/i.test(f.predominante) ? "alto" : /m[eé]dia/i.test(f.predominante) ? "medio" : "ok") : "";
+    var h = '<div class="ipr-fn2-cab"><div><span class="ipr-fn2-lug" data-lugar>Terreno escolhido</span><b>' + n(area, area < 1 ? 2 : 1) + ' ha</b><small>' + n(area * 1e4, 0) + ' m²</small></div>' +
+      '<span class="ipr-fn2-sel">Ficha gratuita · dados públicos</span></div><div class="ipr-fn2-g">';
+    h += cartao("pdm", "PDM", "…", "a ler a carta de ordenamento", "ipr-c-lg");
+    h += cartao("ren", "REN", pct(c.ren), c.ren > 0 ? "Reserva Ecológica: usos condicionados" : "fora da REN", tom(c.ren, 50, 0.5));
+    h += cartao("ran", "RAN", pct(c.ran), c.ran > 0 ? "Reserva Agrícola: construção muito restrita" : "fora da RAN", tom(c.ran, 50, 0.5));
+    h += cartao("nat", "Natura 2000", pct(l.pct), l.sitios && l.sitios.length ? esc(l.sitios[0]) : (l.pct > 0 ? "área classificada" : "fora da Rede Natura"), tom(l.pct, 50, 0.5));
+    h += cartao("dec", "Declive", r && r.declive != null ? n(r.declive, 0) + " %" : "—", "médio; a medir a área íngreme…", r ? tom(r.declive, 25, 12) : "");
+    h += cartao("alt", "Altitude", r ? n(r.min, 0) + "–" + n(r.max, 0) + " m" : "—", r ? "média " + n(r.media, 0) + " m" : "", "");
+    h += cartao("fogo", "Incêndio", f ? esc(f.predominante) : "—", "perigosidade estrutural 2020–2030", fogoT);
+    h += cartao("agua", "Linhas de água", a ? (a.linhas ? n(a.comprimento, 0) + " m" : "nenhuma") : "—", a && a.linhas ? a.linhas + (a.linhas === 1 ? " linha" : " linhas") + " dentro do terreno" : "na rede da APA", "");
+    h += cartao("solo", "Ocupação", s && s.grupos && s.grupos[0] ? esc(s.grupos[0].l) : "—", s && s.grupos && s.grupos[0] ? n(s.grupos[0].p, 0) + " % do terreno · COS 2023" : "", "");
+    h += "</div>";
+    h += '<div class="ipr-fn2-esc"><h4>O que pode fazer neste terreno</h4><ol>' +
+      '<li><div><b>Planta de Localização</b><span>PDF à escala, em PT-TM06, com o PDM, a REN, a RAN e as coordenadas dos vértices</span></div><a class="ipe-b" href="/contacto/?tipo=' + encodeURIComponent("Planta de Localização") + '">Pedir</a></li>' +
+      '<li><div><b>Leitura Territorial</b><span>o que o PDM permite, as condicionantes e os riscos, explicado num relatório</span></div><a class="ipe-b" href="/contacto/?tipo=' + encodeURIComponent("Leitura Territorial") + '">Pedir</a></li>' +
+      '<li class="ipr-fn2-pri"><div><b>Base Cartográfica</b><span>LiDAR da DGT, curvas de nível, 3D do terreno e projecto QGIS pronto a usar</span></div><button type="button" class="ipe-b ipe-b--ac" data-res="enc">Encomendar</button></li>' +
+      '<li><div><b>Visita técnica</b><span>a equipa da Terracrua Design no terreno</span></div><a class="ipe-b" href="/contacto/?tipo=' + encodeURIComponent("Visita técnica") + '">Pedir</a></li></ol></div>';
+    h += '<details class="ipr-fn2-mais"><summary>Ver todos os dados</summary>' + htmlBase(e, area) + "</details>";
+    return h;
+  }
+  function encherCartoes(out, X) {
+    if (!X) return;
+    var C = X.C, R = X.R;
+    function por(k, v, f, cl) { var c = out.querySelector('.ipr-c[data-c="' + k + '"]'); if (!c) return; if (v != null) c.querySelector(".ipr-c-v").innerHTML = v; if (f != null) c.querySelector(".ipr-c-f").innerHTML = f; if (cl != null) { c.classList.remove("alto", "medio", "ok"); if (cl) c.classList.add(cl); } }
+    if (C && C.classes.length) {
+      var g = C.classes[0], rust = C.solo.filter(function (x) { return /r[uú]stico/i.test(x.l); })[0];
+      por("pdm", esc(g.designacao.replace(/^Solo R[uú]stico - /i, "")) + " <small>" + n(g.pct, 0) + " %</small>",
+        (rust ? "solo rústico " + n(rust.pct, 0) + " %: construção limitada pelas regras do PDM" : "solo urbano: regras do perímetro urbano") + (C.classes.length > 1 ? " · " + C.classes.length + " classes" : ""), rust && rust.pct > 50 ? "medio" : "ok");
+      var lug = out.querySelector("[data-lugar]"); if (lug) lug.textContent = C.muns.map(function (m) { return m.nome; }).join(" · ");
+    } else por("pdm", "—", C ? "sem classe na carta de ordenamento" : "a carta de ordenamento não respondeu agora", "");
+    if (R && R.dec) por("dec", n(R.dec[1], 0) + " %", "mediana · " + n(R.d25, 0) + " % do terreno acima de 25 %", tom(R.d25, 40, 15));
+    if (R) por("alt", n(R.alt[0], 0) + "–" + n(R.alt[2], 0) + " m", "mediana " + n(R.alt[1], 0) + " m", null);
   }
 
   // ---------- 1. Ficha para o terreno escolhido (sem guardar) ----------
@@ -247,14 +298,14 @@
   }
 
   var ultimo = "";
-  function abrir() {
+  function abrir(auto) {
     var sec = D.getElementById("ipe-res"), F = terreno();
     if (!sec || !F) return;
     var tab = D.querySelector('#ipe-tabs .ipe-tab[data-tab="enc"]'); if (tab && !tab.classList.contains("on") && sec.offsetParent === null) tab.click();
     var out = sec.querySelector(".ipr-fg-out");
     if (!out) { out = D.createElement("div"); out.className = "ipr-fg-out"; var acc = sec.querySelector(".ipe-acc"); sec.insertBefore(out, acc || null); }
     var k = chave(F);
-    setTimeout(function () { try { sec.scrollIntoView({ block: "start", behavior: "smooth" }); } catch (e) {} }, 120);
+    if (!auto) setTimeout(function () { try { sec.scrollIntoView({ block: "start", behavior: "smooth" }); } catch (e) {} }, 120);
     if (k === ultimo && out.children.length) return;
     ultimo = k;
     var bt = sec.querySelector(".ipr-fg-bt"); if (bt) { bt.disabled = true; bt.textContent = "A calcular a ficha…"; }
@@ -262,8 +313,10 @@
     var b = bbox(F), G = grelha(b, 700), area = conta(pinta(G, F.features.map(function (f) { return f.geometry; }))) * G.pxM * G.pxM / 1e4;
     (W.IPRDiag ? W.IPRDiag.calcular(F) : Promise.reject(new Error("sem IPRDiag"))).then(function (e) {
       if (ultimo !== k) return;
-      out.innerHTML = htmlBase(e, area);
-      seccao(F, null, out.querySelector(".ipe-res-r"));
+      var X = extras(F, null);
+      out.innerHTML = htmlCartoes(e, area);
+      X.then(function (x) { if (ultimo === k) encherCartoes(out, x); });
+      seccao(F, null, out.querySelector(".ipr-fn2-mais .ipe-res-r"), X);
       if (bt) { bt.disabled = false; bt.textContent = "Actualizar a ficha gratuita"; }
     }).catch(function () {
       out.innerHTML = '<p class="ipe-small mau">Não foi possível preparar a ficha agora. Tente de novo dentro de momentos.</p>';
@@ -280,7 +333,22 @@
     "#ipr-fg-flut small{font-weight:500;opacity:.8}#ipr-fg-flut.on{display:inline-flex}#ipr-fg-flut:hover{filter:brightness(1.06)}" +
     "#ipe-res .ipr-fg-bt{margin:6px 0 10px;width:100%;justify-content:center;font-weight:700}" +
     "#ipe-res .ipr-fg-out:empty{display:none}.ipr-fg-pdm{margin-top:10px}.ipr-fg-pdm h4{margin-top:12px}" +
-    "#ipe-res-t.ipr-fg-t{font-size:1.05em}";
+    "#ipe-res-t.ipr-fg-t{font-size:1.05em}" +
+    ".ipr-fn2-cab{display:flex;justify-content:space-between;align-items:flex-end;gap:8px;margin:4px 0 10px;flex-wrap:wrap}" +
+    ".ipr-fn2-cab>div{display:flex;flex-direction:column}.ipr-fn2-lug{font-size:12px;opacity:.8;text-transform:capitalize}" +
+    ".ipr-fn2-cab b{font:700 26px/1.1 Outfit,Inter,system-ui,sans-serif}.ipr-fn2-cab small{opacity:.7;font-size:11px}" +
+    ".ipr-fn2-sel{font-size:11px;padding:2px 8px;border-radius:99px;background:rgba(233,161,90,.16);color:#e9a15a}" +
+    ".ipr-fn2-g{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin-bottom:14px}" +
+    ".ipr-c{display:flex;flex-direction:column;gap:2px;padding:9px 10px;border-radius:9px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-left:4px solid rgba(255,255,255,.18);min-width:0}" +
+    ".ipr-c.ok{border-left-color:#7fb069}.ipr-c.medio{border-left-color:#e9c46a}.ipr-c.alto{border-left-color:#e76f51}" +
+    ".ipr-c-lg{grid-column:1/-1}.ipr-c-t{font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;opacity:.7}" +
+    ".ipr-c-v{font:700 17px/1.2 Outfit,Inter,system-ui,sans-serif;overflow-wrap:anywhere}.ipr-c-v small{font-weight:500;opacity:.75;font-size:12px}" +
+    ".ipr-c-f{font-size:11.5px;line-height:1.3;opacity:.8}" +
+    ".ipr-fn2-esc ol{list-style:none;margin:0 0 12px;padding:0;display:grid;gap:6px}" +
+    ".ipr-fn2-esc li{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;background:rgba(255,255,255,.04)}" +
+    ".ipr-fn2-esc li>div{display:flex;flex-direction:column;min-width:0}.ipr-fn2-esc li span{font-size:11.5px;opacity:.8}" +
+    ".ipr-fn2-esc li.ipr-fn2-pri{background:rgba(233,161,90,.12);border:1px solid rgba(233,161,90,.4)}" +
+    ".ipr-fn2-mais summary{cursor:pointer;font-weight:600;margin:6px 0}";
   (D.head || D.documentElement).appendChild(css);
 
   function botoes() {
@@ -293,6 +361,7 @@
       mapa.appendChild(fl);
     }
     if (fl) fl.classList.toggle("on", visivel);
+    if (visivel) { var Fv = terreno(), kv = Fv && chave(Fv); if (kv && kv !== ultimo) { if (botoes.k !== kv) { botoes.k = kv; botoes.t = Date.now(); } else if (Date.now() - botoes.t > 900) abrir(true); } }
     if (!sec) return;
     var t = D.getElementById("ipe-res-t");
     if (t && !t.classList.contains("ipr-fg-t")) { t.classList.add("ipr-fg-t"); t.innerHTML = "Ficha gratuita da propriedade <small>sem conta, indicativa</small>"; }
