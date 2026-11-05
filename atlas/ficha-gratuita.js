@@ -14,6 +14,7 @@
         e confiança. A tabela de regras não está neste ficheiro nem neste repositório.
       Fecho: «Quem decide é a Câmara, pelo Pedido de Informação Prévia (PIP).»
    4. 3D no cartão aberto pelas linhas finas e secção do PDM também na ficha da equipa (.ipr-ficha-out), 05/11, 13h38.
+   5. «Partilhar esta ficha»: /atlas/?ficha=<limite> abre o Atlas com o terreno e a ficha (05/11, 15h58).
    Desligar: ?fgrat=0 ou localStorage ipr_fgrat_off = 1. */
 (function () {
   "use strict";
@@ -267,7 +268,7 @@
     var c = e.condicionantes || {}, l = c.natura || {}, r = e.relevo, a = e.agua, f = e.fogo, s = e.solo;
     var fogoT = f ? (/muito alta|alta/i.test(f.predominante) ? "alto" : /m[eé]dia/i.test(f.predominante) ? "medio" : "ok") : "";
     var h = '<div class="ipr-fn2-cab"><div><span class="ipr-fn2-lug" data-lugar>Terreno escolhido</span><b>' + n(area, area < 1 ? 2 : 1) + ' ha</b><small>' + n(area * 1e4, 0) + ' m²</small></div>' +
-      '<span class="ipr-fn2-sel">Ficha gratuita · dados públicos</span></div><div class="ipr-fn2-g">';
+      '<span class="ipr-fn2-dir"><span class="ipr-fn2-sel">Ficha gratuita · dados públicos</span><button type="button" class="ipe-b ipr-fn2-sh" data-fg-partilhar>Partilhar esta ficha</button></span></div><p class="ipr-fn2-lk" hidden></p><div class="ipr-fn2-g">';
     h += cartao("pdm", "PDM", "…", "a ler a carta de ordenamento", "ipr-c-lg");
     h += cartao("ren", "REN", pct(c.ren), c.ren > 0 ? "Reserva Ecológica: usos condicionados" : "fora da REN", tom(c.ren, 50, 0.5));
     h += cartao("ran", "RAN", pct(c.ran), c.ran > 0 ? "Reserva Agrícola: construção muito restrita" : "fora da RAN", tom(c.ran, 50, 0.5));
@@ -380,6 +381,8 @@
     ".ipr-fn2-esc li>div{display:flex;flex-direction:column;min-width:0}.ipr-fn2-esc li span{font-size:11.5px;opacity:.8}" +
     ".ipr-fn2-esc li.ipr-fn2-pri{background:rgba(233,161,90,.12);border:1px solid rgba(233,161,90,.4)}" +
     ".ipr-fn2-mais summary{cursor:pointer;font-weight:600;margin:6px 0}" +
+    ".ipr-fn2-dir{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.ipr-fn2-sh{padding:3px 10px;font-size:12px}" +
+    ".ipr-fn2-lk{font-size:12px;margin:0 0 10px;display:flex;gap:6px;align-items:center}.ipr-fn2-in{flex:1;min-width:0;font-size:11px;padding:3px 6px}" +
     ".ipr-fn2-pr{font-style:normal;font-weight:600;color:#e9a15a;margin-left:6px;white-space:nowrap}";
   (D.head || D.documentElement).appendChild(css);
 
@@ -404,6 +407,54 @@
     }
     if (!visivel) { var o = sec.querySelector(".ipr-fg-out"); if (o && o.children.length && ultimo && chave(terreno() || { features: [] }) !== ultimo) { o.innerHTML = ""; ultimo = ""; var bb = sec.querySelector(".ipr-fg-bt"); if (bb) bb.textContent = "Ver a ficha gratuita da propriedade"; } }
   }
+
+  // ---------- Partilhar a ficha (Nuno, 05/11/2026, 15h58): /atlas/?ficha=<limite> abre o Atlas com o terreno e a ficha, sem
+  // conta. A ligação leva só o limite (coordenadas arredondadas a ~1 m), sem dados pessoais nem da conta. ----------
+  function b64u(t) { return btoa(unescape(encodeURIComponent(t))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, ""); }
+  function u64(t) { t = t.replace(/-/g, "+").replace(/_/g, "/"); while (t.length % 4) t += "="; return decodeURIComponent(escape(atob(t))); }
+  function codificar(F) {
+    var passo = 1, txt = "";
+    for (var tent = 0; tent < 6; tent++) {
+      txt = F.features.map(function (f) { return polis(f.geometry).map(function (p) { return p.map(function (r) {
+        var o = r.filter(function (q, i) { return i % passo === 0 || i === r.length - 1; });
+        return o.map(function (q) { return q[0].toFixed(5) + "," + q[1].toFixed(5); }).join(" "); }).join("|"); }).join("!"); }).join("!");
+      if (txt.length < 5000) break; passo *= 2;
+    }
+    return b64u(txt);
+  }
+  function descodificar(c) {
+    try {
+      var polys = u64(c).split("!").map(function (p) { return p.split("|").map(function (r) { return r.split(" ").map(function (q) { var v = q.split(","); return [+v[0], +v[1]]; }); }); });
+      polys = polys.filter(function (p) { return p[0] && p[0].length >= 4 && p[0].every(function (q) { return isFinite(q[0]) && isFinite(q[1]) && Math.abs(q[0]) <= 180 && Math.abs(q[1]) <= 90; }); });
+      return polys.length ? { type: "FeatureCollection", features: polys.map(function (p) { return { type: "Feature", properties: {}, geometry: { type: "Polygon", coordinates: p } }; }) } : null;
+    } catch (e) { return null; }
+  }
+  D.addEventListener("click", function (ev) {
+    var b = ev.target && ev.target.closest && ev.target.closest("[data-fg-partilhar]"); if (!b) return;
+    ev.preventDefault(); ev.stopPropagation();
+    var F = terreno(); if (!F) return;
+    var url = location.origin + "/atlas/?ficha=" + codificar(F);
+    var lk = b.closest(".ipr-fg-out") && b.closest(".ipr-fg-out").querySelector(".ipr-fn2-lk");
+    function mostra(t) { if (!lk) return; lk.hidden = false; lk.textContent = ""; var s1 = D.createElement("span"); s1.textContent = t + " "; var a = D.createElement("input"); a.readOnly = true; a.value = url; a.className = "ipr-fn2-in"; a.addEventListener("focus", function () { a.select(); }); lk.appendChild(s1); lk.appendChild(a); }
+    if (navigator.share && /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)) { navigator.share({ title: "Ficha da propriedade · IPR Atlas", url: url }).catch(function () {}); mostra("Ligação:"); return; }
+    try { navigator.clipboard.writeText(url).then(function () { mostra("Ligação copiada:"); }, function () { mostra("Copie a ligação:"); }); } catch (e) { mostra("Copie a ligação:"); }
+  }, true);
+  // Abrir uma ficha partilhada
+  (function abrirPartilhada() {
+    var m = /[?&]ficha=([A-Za-z0-9_-]{8,})/.exec(location.search); if (!m) return;
+    var F = descodificar(m[1]); if (!F) return;
+    var t0 = Date.now();
+    (function espera() {
+      var A = W.__ipe && W.__ipe.mapa, dr = A && (A._controls || []).filter(function (x) { return x && typeof x.getAll === "function"; })[0];
+      var tab = D.querySelector('#ipe-tabs .ipe-tab[data-tab="enc"]');
+      if (!A || !dr || !tab || !A.loaded || !A.loaded()) { if (Date.now() - t0 < 60000) setTimeout(espera, 500); return; }
+      tab.click();
+      var novos = []; F.features.forEach(function (f) { dr.add(f).forEach(function (k) { novos.push(dr.get(k)); }); });
+      A.fire("draw.create", { features: novos });
+      var b = bbox(F); try { A.fitBounds([[b[0], b[1]], [b[2], b[3]]], { padding: 60, duration: 0, maxZoom: 17 }); } catch (e) {}
+      setTimeout(function () { var sec = D.getElementById("ipe-res"); if (sec && sec.hidden) sec.hidden = false; abrir(); }, 2500);
+    })();
+  })();
 
   // ---------- 2. Cartões dos projectos: junta a secção à ficha já feita ----------
   function cartoes() {
