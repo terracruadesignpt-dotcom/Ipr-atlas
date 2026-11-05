@@ -79,7 +79,9 @@
       var cx = c.querySelector(".ipe-cx"); if (!cx) return;
       var m = E.mapas[+c.getAttribute("data-i")]; if (!m) return;
       var f = c.querySelector(".ipr-ficha-out"), r = c.querySelector(".ipe-res--proj");
-      var ficha = f && f.offsetParent !== null || (f && !r) ? f : r; if (!ficha) return;
+      // Equipa: a ficha está no .ipr-ficha-out e o .ipe-res--proj fica escondido (classe ipr-ficha-eq, ajustes.js).
+      var ficha = r && !r.classList.contains("ipr-ficha-eq") ? r : (f || r); if (!ficha) return;
+      [].forEach.call(c.querySelectorAll(".ipr-fdoc"), function (x) { if (!ficha.contains(x)) x.remove(); });
       var tres = cx.querySelector(":scope > .ipr-fx");
       var antes = tres ? tres.nextSibling : cx.firstChild;
       if (ficha.parentNode === cx && ficha !== antes && !(tres && ficha.previousSibling === tres)) cx.insertBefore(ficha, antes);
