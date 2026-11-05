@@ -66,20 +66,29 @@
     el.querySelector(".ipr-fp-b").addEventListener("click", function (e) { e.stopPropagation(); usar(A, f); });
   }
   function posicao(A) { if (!cartao || !alvo) return; var p = A.project(alvo.ll); cartao.style.left = p.x + "px"; cartao.style.top = p.y + "px"; }
-  function usar(A, f) {
+  // Passa ao separador Encomendar (no modo de projecto o Atlas recria o mapa, já com a ferramenta de desenho) e espera por ele.
+  function usar(A0, f) {
     fechar();
-    var dr = draw(A); if (!dr) return;
     var tab = D.querySelector('#ipe-tabs .ipe-tab[data-tab="enc"]'); if (tab) tab.click();
-    try { var ant = W.localStorage.getItem("ipe_terreno_v1"); if (ant) W.localStorage.setItem("ipe_terreno_v1_antes", ant); } catch (e) {}
-    try { dr.deleteAll(); A.fire("draw.delete", { features: [] }); } catch (e) {}
-    var polis = f.geometry.type === "MultiPolygon" ? f.geometry.coordinates : [f.geometry.coordinates];
-    var novos = [];
-    polis.forEach(function (c) { dr.add({ type: "Feature", properties: {}, geometry: { type: "Polygon", coordinates: c } }).forEach(function (k) { novos.push(dr.get(k)); }); });
-    A.fire("draw.create", { features: novos });
-    setTimeout(function () {
-      var sec = D.getElementById("ipe-res"); if (sec && sec.hidden) sec.hidden = false;
-      if (typeof W.__iprFichaGratuita === "function") W.__iprFichaGratuita();
-    }, 1500);
+    var t0 = Date.now();
+    (function espera() {
+      var A = mapa(), dr = A && draw(A);
+      if (!A || !dr || !(A._loaded || (A.loaded && A.loaded()))) { if (Date.now() - t0 < 30000) setTimeout(espera, 300); return; }
+      try { var ant = W.localStorage.getItem("ipe_terreno_v1"); if (ant) W.localStorage.setItem("ipe_terreno_v1_antes", ant); } catch (e) {}
+      try { dr.deleteAll(); A.fire("draw.delete", { features: [] }); } catch (e) {}
+      var polis = f.geometry.type === "MultiPolygon" ? f.geometry.coordinates : [f.geometry.coordinates];
+      var novos = [], b = [180, 90, -180, -90];
+      polis.forEach(function (c) {
+        c[0].forEach(function (q) { b[0] = Math.min(b[0], q[0]); b[1] = Math.min(b[1], q[1]); b[2] = Math.max(b[2], q[0]); b[3] = Math.max(b[3], q[1]); });
+        dr.add({ type: "Feature", properties: {}, geometry: { type: "Polygon", coordinates: c } }).forEach(function (k) { novos.push(dr.get(k)); });
+      });
+      A.fire("draw.create", { features: novos });
+      try { A.fitBounds([[b[0], b[1]], [b[2], b[3]]], { padding: 60, duration: 0, maxZoom: 17 }); } catch (e) {}
+      setTimeout(function () {
+        var sec = D.getElementById("ipe-res"); if (sec && sec.hidden) sec.hidden = false;
+        if (typeof W.__iprFichaGratuita === "function") W.__iprFichaGratuita();
+      }, 1500);
+    })();
   }
   function clique(e) {
     var A = mapa(); if (!A || !e || !e.lngLat) return;
