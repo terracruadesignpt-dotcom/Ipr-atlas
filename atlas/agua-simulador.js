@@ -255,6 +255,16 @@
   }
   function hora(iso) { try { return new Date(iso).toLocaleTimeString(L() === "en" ? "en-GB" : "pt-PT", { hour: "2-digit", minute: "2-digit" }); } catch (e) { return ""; } }
   function nomeProc(p) { return t("tab_" + ({ "retencao-rapida": "ret", "simulacao-2d": "2d", "antes-depois": "ad" }[p] || "ret")); }
+  // 05/11/2026 (Nuno: «uma barra de progresso, com um princípio e um fim [...] e uma contagem decrescente»): o motor manda a
+  // fase e «faltam cerca de N min» (estimativa pelas simulações anteriores e depois pelo andamento do SFINCS); aqui conta
+  // de segundo a segundo até à leitura seguinte. Sem essa mensagem (motor antigo), fica tudo como antes.
+  function fimDe(msg) {
+    if (!msg) return null;
+    if (/menos de 1 min/.test(msg)) return Date.now() + 40000;
+    var q = /faltam cerca de (?:(\d+) h )?(\d+) min/.exec(msg);
+    return q ? Date.now() + (+(q[1] || 0) * 3600 + +q[2] * 60) * 1000 : null;
+  }
+  function mmss(s) { s = Math.max(0, Math.round(s)); var h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = s % 60; return (h ? h + ":" + ("0" + m).slice(-2) : m) + ":" + ("0" + x).slice(-2); }
   function estadoJob() {
     var j = S.job, d = j.det || {}, h = "";
     if (j.enviar) return '<div class="prog"><i></i></div><p class="nota">' + esc(t("aSimular")) + "</p>";
@@ -264,7 +274,9 @@
       var pr = typeof d.progresso === "number" && d.progresso > 0 ? d.progresso : null;
       h += pr ? '<div class="prog det"><i style="width:' + pr + '%"></i></div>' : '<div class="prog"><i></i></div>';
       h += '<p class="nota"><b>' + esc(t("corre")) + "</b>" + (pr ? " · " + pr + " %" : "") + " · " + esc(t("haTempo").replace("{t}", dur(dt))) + (d.iniciado ? " (" + esc(t("desde").replace("{h}", hora(d.iniciado))) + ")" : "") + "</p>";
-      if (TIPICO[proc]) {
+      var fase = d.mensagem ? String(d.mensagem).split(" · ")[0] : "";
+      if (fase) h += '<p class="nota">' + esc(fase) + (j.fimEst ? " · " + (L() === "en" ? "time left " : "faltam ") + "<b>" + (j.fimEst - Date.now() > 1000 ? mmss((j.fimEst - Date.now()) / 1000) : (L() === "en" ? "almost done…" : "quase a terminar…")) + "</b>" : "") + "</p>";
+      if (TIPICO[proc] && !j.fimEst) {
         if (dt > TIPICO[proc] * 60000) h += '<p class="faixa">' + esc(t("lento")) + "</p>";
         else h += '<p class="nota">' + esc(t("estimado").replace("{t}", "~" + TIPICO[proc] + " min")) + "</p>";
       }
@@ -597,7 +609,7 @@
     var enc = encodeURIComponent(a.id);
     api("agua/detalhe?enc=" + enc + "&id=" + job.id).catch(function () { return null; }).then(function (d) {
       if (S.job !== job) return null;
-      if (d) { job.det = d; job.estado = d.estado; S.estados[job.id] = d.estado; }
+      if (d) { job.det = d; job.estado = d.estado; S.estados[job.id] = d.estado; job.fimEst = fimDe(d.mensagem); }
       if (d && d.estado !== "successful" && d.estado !== "failed" && d.estado !== "dismissed") return d;
       return api("agua/trabalho/" + job.id + "?enc=" + enc);
     }).then(function (r) {
