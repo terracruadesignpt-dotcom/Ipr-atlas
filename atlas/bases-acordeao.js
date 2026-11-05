@@ -57,6 +57,8 @@
         vê. O estado escolhe-se na barra de pesquisa. A etiqueta «Tudo carregado / Falta» de cada cartão fica.
      3. A pesquisa e os filtros (#ipr-px-f, projectos-extra.js) ficam numa só linha baixa: campo de procura a ocupar o resto,
         Estado, Dono e Implementação em listas curtas (a escolhida fica com contorno verde) e «×» para limpar.
+     Com o m90790 (outra sessão, 09h44: «Filtros» recolhe esta linha), a linha só aparece quando se abre «Filtros»; aqui
+     não se força a mostrar.
      Desligar só isto: ?bcomp=0 ou localStorage ipr_bcomp_off = 1. */
   var COMP = true;
   try { if (/[?&]bcomp=0(&|$)/.test(location.search) || W.localStorage.getItem("ipr_bcomp_off") === "1") COMP = false; } catch (e) {}
@@ -65,7 +67,7 @@
     var c2 = D.createElement("style"); c2.id = "ipr-ac-comp-css";
     c2.textContent =
       P + "#ipr-demo783," + P + "#ipr-pg-f{display:none!important}" +
-      P + "#ipr-px-f{display:flex!important;flex-wrap:nowrap!important;gap:4px!important;align-items:center;margin:6px 0 8px!important;padding:0!important;border:0!important;background:none!important}" +
+      P + "#ipr-px-f{display:flex;flex-wrap:nowrap!important;gap:4px!important;align-items:center;margin:6px 0 8px!important;padding:0!important;border:0!important;background:none!important}" +
       P + "#ipr-px-f[hidden]{display:none!important}" +
       P + "#ipr-px-f input,#ipe .ipe-pane[data-pane=\"proj\"] #ipr-px-f select{min-height:32px!important;height:32px;margin:0!important;border:1px solid #383A33!important;border-radius:2px!important;background-color:#232420!important;color:#F5F4EE!important;font:400 12px/1.2 Inter,system-ui,sans-serif!important;box-sizing:border-box}" +
       P + "#ipr-px-f input{flex:2 1 0!important;min-width:84px!important;width:auto!important;padding:0 8px!important}" +
