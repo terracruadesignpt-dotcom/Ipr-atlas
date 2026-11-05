@@ -450,7 +450,7 @@
     (function espera() {
       var A = W.__ipe && W.__ipe.mapa, dr = A && (A._controls || []).filter(function (x) { return x && typeof x.getAll === "function"; })[0];
       var tab = D.querySelector('#ipe-tabs .ipe-tab[data-tab="enc"]');
-      if (!A || !dr || !tab || !A.loaded || !A.loaded()) { if (Date.now() - t0 < 60000) setTimeout(espera, 500); return; }
+      if (!A || !dr || !tab || !(A._loaded || (A.loaded && A.loaded()))) { if (Date.now() - t0 < 60000) setTimeout(espera, 500); return; }
       tab.click();
       // O terreno guardado da última visita (ipe_terreno_v1) é reposto pelo Atlas: a ficha partilhada substitui-o, para não somar dois terrenos.
       try { dr.deleteAll(); } catch (e) {}
