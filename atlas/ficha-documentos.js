@@ -4,7 +4,7 @@
    1. A ficha da propriedade sobe para logo a seguir ao 3D do cartão (antes ficava no fundo, depois das descargas).
    2. No topo da ficha, «Documentos da propriedade»: a Leitura Territorial (abrir o PDF, ou em preparação, ou pedir), o
       relatório da Base e as Plantas de Localização guardadas, com o botão para fazer uma nova.
-   3. Cada Planta de Localização gerada (ajustes.js, plantaDialogo → doc.save) é guardada também nos ficheiros do projecto
+   3. Cada Planta de Localização gerada (ajustes.js, plantaDialogo → doc.save, apanhada na descarga <a download>) é guardada também nos ficheiros do projecto
       (m90381, POST /tcd/v1/pfich/parte, pasta 0.4 Entregáveis), se quem a fez puder escrever no projecto. A descarga no
       computador continua igual.
    Desligar: ?fdoc=0 ou localStorage ipr_fdoc_off = 1. */
@@ -117,17 +117,23 @@
       });
     }).catch(function () { msg(id, "A Planta foi descarregada, mas não ficou guardada na ficha. Pode carregá-la à mão nos ficheiros do projecto."); });
   }
+  // O jsPDF 2.5 define save() em cada documento e descarrega por uma ligação <a download> com um blob: apanha-se aí.
+  var vistos = {};
+  function apanha(a) {
+    try {
+      var nome = String(a.download || ""), href = String(a.href || "");
+      var m = /-(\d{3,})-1-[^\/]*\.pdf$/i.exec(nome);
+      if (!m || !/plan|localiza/i.test(nome) || href.indexOf("blob:") !== 0 || vistos[href] || !mapa(m[1])) return;
+      vistos[href] = 1;
+      fetch(href).then(function (r) { return r.blob(); }).then(function (bl) { guardar(m[1], nome, bl); });
+    } catch (e) {}
+  }
   function ligarPdf() {
-    var J = W.jspdf && W.jspdf.jsPDF; if (!J || !J.API || J.API.__iprFDoc) return !!(J && J.API && J.API.__iprFDoc);
-    var orig = J.API.save; if (typeof orig !== "function") return false;
-    J.API.save = function (nome) {
-      try {
-        var m = /-(\d{3,})-1-[^\/]*\.pdf$/i.exec(String(nome || ""));
-        if (m && /plan|localiza/i.test(String(nome)) && mapa(m[1])) guardar(m[1], String(nome), this.output("blob"));
-      } catch (e) {}
-      return orig.apply(this, arguments);
-    };
-    J.API.__iprFDoc = 1;
+    var A = W.HTMLAnchorElement && W.HTMLAnchorElement.prototype; if (!A || A.__iprFDoc) return true;
+    var oc = A.click, od = A.dispatchEvent;
+    A.click = function () { apanha(this); return oc.apply(this, arguments); };
+    A.dispatchEvent = function (ev) { if (ev && ev.type === "click") apanha(this); return od.apply(this, arguments); };
+    A.__iprFDoc = 1;
     return true;
   }
 
