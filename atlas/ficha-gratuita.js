@@ -228,6 +228,41 @@
   function tom(v, a, b) { return v == null ? "" : v >= a ? "alto" : v >= b ? "medio" : "ok"; }
   function cartao(k, t, v, f, cl) { return '<div class="ipr-c ' + (cl || "") + '" data-c="' + k + '"><span class="ipr-c-t">' + t + '</span><b class="ipr-c-v">' + v + '</b><span class="ipr-c-f">' + f + "</span></div>"; }
   function pct(v) { return v == null || typeof v !== "number" ? "—" : n(v, v < 10 ? 1 : 0) + " %"; }
+  // Preços e compra pelos caminhos que já existem (05/11, 15h50, Nuno: «Tudo tem que bater certo [...] estar tudo ligado.
+  // Não podemos perder clientes, nem dificultar a entrada nem a compra»): Base e Leitura com o preço que o próprio Atlas
+  // calcula para este terreno (#ipe-preco, #ipe-preco-l, com a promoção do promo.js); Planta com window.IPR_PRECOS
+  // (m90550, 19 €); a compra segue pelo assistente (assistente.js, window.iprAssistenteComprar: Planta e Leitura sem conta
+  // pelo m90590, Base com conta pelo formulário de encomenda). Visita técnica: produto 14533 da loja.
+  function precoDom(id) { var x = D.getElementById(id); var t = x && (x.textContent || "").trim(); return t && /\d/.test(t) ? t : ""; }
+  function escada() {
+    var P = W.IPR_PRECOS || {}, pl = P.planta && P.planta.preco ? n(P.planta.preco, 0) + " €" : "";
+    var pb = precoDom("ipe-preco") || (P.base && P.base.desde ? "desde " + n(P.base.desde, 0) + " €" : "");
+    var plt = precoDom("ipe-preco-l") || (P.leitura && P.leitura.desde ? "desde " + n(P.leitura.desde, 0) + " €" : "");
+    function li(k, tit, txt, preco, bt, pri) {
+      return '<li' + (pri ? ' class="ipr-fn2-pri"' : "") + '><div><b>' + tit + (preco ? ' <em class="ipr-fn2-pr" data-pr="' + k + '">' + esc(preco) + "</em>" : "") + "</b><span>" + txt + "</span></div>" + bt + "</li>";
+    }
+    function bt(k, rot, ac) { return '<button type="button" class="ipe-b' + (ac ? " ipe-b--ac" : "") + '" data-fg-compra="' + k + '">' + rot + "</button>"; }
+    return '<div class="ipr-fn2-esc"><h4>O que pode fazer neste terreno</h4><ol>' +
+      li("planta", "Planta de Localização", "PDF à escala, em PT-TM06, com o PDM, a REN, a RAN e as coordenadas dos vértices · sem conta", pl, bt("planta", "Comprar")) +
+      li("leitura", "Leitura Territorial", "o que o PDM permite, as condicionantes e os riscos, explicado num relatório · sem conta", plt, bt("leitura", "Comprar")) +
+      li("base", "Base Cartográfica", "LiDAR da DGT, curvas de nível, 3D do terreno e projecto QGIS pronto a usar", pb, bt("base", "Encomendar", true), true) +
+      li("visita", "Visita técnica", "a equipa da Terracrua Design no terreno", "350 €", '<a class="ipe-b" href="/carrinho/?add-to-cart=14533">Marcar</a>') +
+      "</ol></div>";
+  }
+  D.addEventListener("click", function (ev) {
+    var b = ev.target && ev.target.closest && ev.target.closest("[data-fg-compra]"); if (!b) return;
+    ev.preventDefault(); ev.stopPropagation();
+    var k = b.getAttribute("data-fg-compra");
+    if (typeof W.iprAssistenteComprar === "function" && W.iprAssistenteComprar(k) !== false) return;
+    if (k === "base") { var e = D.querySelector('#ipe-res [data-res="enc"]'); if (e) { e.click(); return; } }
+    location.href = "/contacto/?tipo=" + encodeURIComponent(k === "planta" ? "Planta de Localização" : k === "leitura" ? "Leitura Territorial" : "Base Cartográfica");
+  }, true);
+  // os preços do Atlas chegam depois da área: actualiza-os enquanto a ficha está aberta
+  setInterval(function () {
+    var pb = precoDom("ipe-preco"), pl = precoDom("ipe-preco-l");
+    [].forEach.call(D.querySelectorAll('.ipr-fn2-pr[data-pr="base"]'), function (x) { if (pb && x.textContent !== pb) x.textContent = pb; });
+    [].forEach.call(D.querySelectorAll('.ipr-fn2-pr[data-pr="leitura"]'), function (x) { if (pl && x.textContent !== pl) x.textContent = pl; });
+  }, 1500);
   function htmlCartoes(e, area) {
     var c = e.condicionantes || {}, l = c.natura || {}, r = e.relevo, a = e.agua, f = e.fogo, s = e.solo;
     var fogoT = f ? (/muito alta|alta/i.test(f.predominante) ? "alto" : /m[eé]dia/i.test(f.predominante) ? "medio" : "ok") : "";
@@ -241,13 +276,9 @@
     h += cartao("alt", "Altitude", r ? n(r.min, 0) + "–" + n(r.max, 0) + " m" : "—", r ? "média " + n(r.media, 0) + " m" : "", "");
     h += cartao("fogo", "Incêndio", f ? esc(f.predominante) : "—", "perigosidade estrutural 2020–2030", fogoT);
     h += cartao("agua", "Linhas de água", a ? (a.linhas ? n(a.comprimento, 0) + " m" : "nenhuma") : "—", a && a.linhas ? a.linhas + (a.linhas === 1 ? " linha" : " linhas") + " dentro do terreno" : "na rede da APA", "");
-    h += cartao("solo", "Ocupação", s && s.grupos && s.grupos[0] ? esc(s.grupos[0].l) : "—", s && s.grupos && s.grupos[0] ? n(s.grupos[0].p, 0) + " % do terreno · COS 2023" : "", "");
+    if (s && s.grupos && s.grupos[0]) h += cartao("solo", "Ocupação", s && s.grupos && s.grupos[0] ? esc(s.grupos[0].l) : "—", s && s.grupos && s.grupos[0] ? n(s.grupos[0].p, 0) + " % do terreno · COS 2023" : "", "");
     h += "</div>";
-    h += '<div class="ipr-fn2-esc"><h4>O que pode fazer neste terreno</h4><ol>' +
-      '<li><div><b>Planta de Localização</b><span>PDF à escala, em PT-TM06, com o PDM, a REN, a RAN e as coordenadas dos vértices</span></div><a class="ipe-b" href="/contacto/?tipo=' + encodeURIComponent("Planta de Localização") + '">Pedir</a></li>' +
-      '<li><div><b>Leitura Territorial</b><span>o que o PDM permite, as condicionantes e os riscos, explicado num relatório</span></div><a class="ipe-b" href="/contacto/?tipo=' + encodeURIComponent("Leitura Territorial") + '">Pedir</a></li>' +
-      '<li class="ipr-fn2-pri"><div><b>Base Cartográfica</b><span>LiDAR da DGT, curvas de nível, 3D do terreno e projecto QGIS pronto a usar</span></div><button type="button" class="ipe-b ipe-b--ac" data-res="enc">Encomendar</button></li>' +
-      '<li><div><b>Visita técnica</b><span>a equipa da Terracrua Design no terreno</span></div><a class="ipe-b" href="/contacto/?tipo=' + encodeURIComponent("Visita técnica") + '">Pedir</a></li></ol></div>';
+    h += escada();
     h += '<details class="ipr-fn2-mais"><summary>Ver todos os dados</summary>' + htmlBase(e, area) + "</details>";
     return h;
   }
@@ -348,7 +379,8 @@
     ".ipr-fn2-esc li{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;background:rgba(255,255,255,.04)}" +
     ".ipr-fn2-esc li>div{display:flex;flex-direction:column;min-width:0}.ipr-fn2-esc li span{font-size:11.5px;opacity:.8}" +
     ".ipr-fn2-esc li.ipr-fn2-pri{background:rgba(233,161,90,.12);border:1px solid rgba(233,161,90,.4)}" +
-    ".ipr-fn2-mais summary{cursor:pointer;font-weight:600;margin:6px 0}";
+    ".ipr-fn2-mais summary{cursor:pointer;font-weight:600;margin:6px 0}" +
+    ".ipr-fn2-pr{font-style:normal;font-weight:600;color:#e9a15a;margin-left:6px;white-space:nowrap}";
   (D.head || D.documentElement).appendChild(css);
 
   function botoes() {

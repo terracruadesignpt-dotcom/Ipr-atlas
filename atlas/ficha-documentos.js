@@ -29,6 +29,39 @@
     ".ipr-fdoc .ipr-fdoc-msg{margin-top:6px;font-size:12px;color:#e9a15a}";
   (D.head || D.documentElement).appendChild(css);
 
+  // Preço da Leitura para a área da Base: tabela do site (window.IPR_PRECOS, m90550), metade durante a promoção (m90430).
+  function precoLeitura(ha) {
+    var P = W.IPR_PRECOS, T = P && P.tabela; ha = +ha; if (!T || !ha) return "";
+    var l = null; for (var i = 0; i < T.length; i++) if (ha <= T[i][0]) { l = T[i][2]; break; } if (l == null) return "";
+    var promo = P.leitura_meia && P.leitura && P.leitura.promo_ate && new Date(P.leitura.promo_ate + "T23:59:59") >= new Date();
+    return (promo ? Math.round(l / 2) : l).toLocaleString("pt-PT") + " €" + (promo ? " (−50 %)" : "");
+  }
+  // Pedir a Leitura de uma Base já feita: o limite da Base passa a ser o terreno escolhido no Atlas e segue pelo assistente
+  // de compra (Leitura sem conta, m90590), o mesmo caminho de quem desenha um terreno.
+  function pedirLeitura(id) {
+    var m = mapa(id), A = W.__ipe && W.__ipe.mapa; if (!m || !m.geojson || !A) return false;
+    var dr = (A._controls || []).filter(function (x) { return x && typeof x.getAll === "function"; })[0]; if (!dr) return false;
+    var g = m.geojson, fs = g.type === "FeatureCollection" ? g.features : [g.type === "Feature" ? g : { type: "Feature", properties: {}, geometry: g }];
+    var tab = D.querySelector('#ipe-tabs .ipe-tab[data-tab="enc"]'); if (tab) tab.click();
+    try { var velhos = dr.getAll().features; dr.deleteAll(); if (velhos.length) A.fire("draw.delete", { features: velhos }); } catch (e) {}
+    var novos = [];
+    fs.forEach(function (f) { if (f && f.geometry && /Polygon/.test(f.geometry.type)) { var ids = dr.add({ type: "Feature", properties: {}, geometry: f.geometry }); ids.forEach(function (k) { novos.push(dr.get(k)); }); } });
+    if (!novos.length) return false;
+    A.fire("draw.create", { features: novos });
+    var t0 = Date.now();
+    (function espera() {
+      var a = D.getElementById("ipe-area");
+      if ((a && /\d/.test(a.textContent || "")) || Date.now() - t0 > 6000) { if (typeof W.iprAssistenteComprar === "function") W.iprAssistenteComprar("leitura"); return; }
+      setTimeout(espera, 300);
+    })();
+    return true;
+  }
+  D.addEventListener("click", function (e) {
+    var b = e.target && e.target.closest && e.target.closest("[data-fdoc-lt]"); if (!b) return;
+    e.preventDefault(); e.stopPropagation();
+    if (!pedirLeitura(b.getAttribute("data-fdoc-lt"))) location.href = "/contacto/?tipo=" + encodeURIComponent("Leitura Territorial") + "&base=" + encodeURIComponent(b.getAttribute("data-fdoc-lt"));
+  }, true);
+
   var cache = {};
   function plantas(id, forcar) {
     if (!W.tcdNonce) return Promise.resolve({ ficheiros: [], pode: false });
@@ -46,7 +79,7 @@
     var h = '<h4>Documentos da propriedade</h4><ul>';
     h += "<li><span><b>Leitura Territorial</b> <small>" + (lt ? "PDF com o PDM, as condicionantes e as coordenadas" : m.leitura ? "em preparação" : "ainda não pedida") + "</small></span>" +
       (lt ? '<a class="ipe-b ipe-b--ac" target="_blank" rel="noopener" href="' + esc(lt.url) + '">Abrir</a>'
-        : m.leitura ? "" : '<a class="ipe-b ipe-b--ac" href="/contacto/?tipo=' + encodeURIComponent("Leitura Territorial") + "&base=" + encodeURIComponent(id) + '">Pedir a Leitura Territorial</a>') + "</li>";
+        : m.leitura ? "" : '<button type="button" class="ipe-b ipe-b--ac" data-fdoc-lt="' + esc(id) + '">Pedir a Leitura Territorial' + (precoLeitura(m.area_ha) ? " · " + precoLeitura(m.area_ha) : "") + "</button>") + "</li>";
     if (rb) h += '<li><span><b>Relatório da Base Cartográfica</b> <small>PDF</small></span><a class="ipe-b" target="_blank" rel="noopener" href="' + esc(rb.url) + '">Abrir</a></li>';
     h += '<li class="ipr-fdoc-pl"><span><b>Plantas de Localização</b> <small>a ver…</small></span><button type="button" class="ipe-b ipe-b--ac" data-fdoc-pl="' + esc(id) + '">Fazer a Planta de Localização</button></li>';
     h += "</ul><div class=\"ipr-fdoc-msg\" hidden></div>";
