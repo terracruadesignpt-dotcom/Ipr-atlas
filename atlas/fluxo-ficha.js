@@ -115,8 +115,8 @@
     var h = ev.target && ev.target.closest && ev.target.closest("#ipe-proj .ipe-card .ipr-fn-h");
     if (!h || (ev.target.closest && ev.target.closest(".ipr-bt-b,[aria-haspopup],a[href]"))) return;
     var c = h.closest(".ipe-card");
-    setTimeout(function () { if (c.classList.contains("ipr-fn-on")) mostrarFicha(c); else c.classList.remove("ipr-ff-on"); }, 60);
-  }, false);
+    setTimeout(function () { if (c.classList.contains("ipr-fn-on")) mostrarFicha(c); else c.classList.remove("ipr-ff-on"); }, 120);
+  }, true); // captura: o bases-finas.js pára a propagação
 
   // Botão «Ficha da propriedade» da esquerda (minhas-bases.js: só mudava de separador).
   D.addEventListener("click", function (ev) {
@@ -127,7 +127,7 @@
     if (!id && li.classList.contains("actual") && E && E.actual) id = E.actual.id;
     if (!id) return;
     setTimeout(function () { abrirFicha(id); }, 200);
-  }, false);
+  }, true);
 
   // ---------- arranque ----------
   var t = 0, fila = [];
