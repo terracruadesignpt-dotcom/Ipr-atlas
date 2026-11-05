@@ -450,10 +450,13 @@
       var tab = D.querySelector('#ipe-tabs .ipe-tab[data-tab="enc"]');
       if (!A || !dr || !tab || !A.loaded || !A.loaded()) { if (Date.now() - t0 < 60000) setTimeout(espera, 500); return; }
       tab.click();
-      var novos = []; F.features.forEach(function (f) { dr.add(f).forEach(function (k) { novos.push(dr.get(k)); }); });
+      // O terreno guardado da última visita (ipe_terreno_v1) é reposto pelo Atlas: a ficha partilhada substitui-o, para não somar dois terrenos.
+      try { dr.deleteAll(); } catch (e) {}
+      var novos = [], ids = {}; F.features.forEach(function (f) { dr.add(f).forEach(function (k) { ids[k] = 1; novos.push(dr.get(k)); }); });
       A.fire("draw.create", { features: novos });
+      setTimeout(function () { try { var fora = dr.getAll().features.filter(function (f) { return !ids[f.id]; }).map(function (f) { return f.id; }); if (fora.length) { dr.delete(fora); A.fire("draw.delete", { features: [] }); A.fire("draw.update", { features: novos, action: "move" }); } } catch (e) {} }, 3000);
       var b = bbox(F); try { A.fitBounds([[b[0], b[1]], [b[2], b[3]]], { padding: 60, duration: 0, maxZoom: 17 }); } catch (e) {}
-      setTimeout(function () { var sec = D.getElementById("ipe-res"); if (sec && sec.hidden) sec.hidden = false; abrir(); }, 2500);
+      setTimeout(function () { var sec = D.getElementById("ipe-res"); if (sec && sec.hidden) sec.hidden = false; abrir(); }, 3800);
     })();
   })();
 
