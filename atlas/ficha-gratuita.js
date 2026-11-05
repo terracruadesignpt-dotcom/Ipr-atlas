@@ -341,8 +341,8 @@
     if (k === ultimo && out.children.length) return;
     ultimo = k;
     var bt = sec.querySelector(".ipr-fg-bt"); if (bt) { bt.disabled = true; bt.textContent = "A calcular a ficha…"; }
-    out.innerHTML = '<p class="ipe-small">A cruzar o terreno com os dados públicos. Leva cerca de 10 segundos.</p>';
     var b = bbox(F), G = grelha(b, 700), area = conta(pinta(G, F.features.map(function (f) { return f.geometry; }))) * G.pxM * G.pxM / 1e4;
+    progresso(out, area, k);
     (W.IPRDiag ? W.IPRDiag.calcular(F) : Promise.reject(new Error("sem IPRDiag"))).then(function (e) {
       if (ultimo !== k) return;
       var X = extras(F, null);
@@ -355,6 +355,33 @@
       if (bt) { bt.disabled = false; bt.textContent = "Ver a ficha gratuita da propriedade"; }
       ultimo = "";
     });
+  }
+  // Espera com progresso (Nuno, 5/11/2026): a área aparece logo e uma barra avança pelas fontes que estão a ser cruzadas,
+  // em vez de 10 segundos de texto parado. A barra é indicativa (não mede o servidor); pára nos 92 % até chegar a ficha.
+  function progresso(out, area, k) {
+    var FONTES = ["PDM e classes de espaço", "REN e RAN", "Rede Natura 2000", "Relevo, altitude e declive", "Perigosidade de incêndio", "Linhas de água", "Ocupação do solo"];
+    var ha = area >= 100 ? Math.round(area).toLocaleString("pt-PT") : area.toLocaleString("pt-PT", { maximumFractionDigits: 2 });
+    out.innerHTML = '<div class="ipr-fg-pr" role="status" aria-live="polite"><b>' + ha + ' ha</b><span class="ipr-fg-pr-t">A cruzar o terreno com os dados públicos…</span>' +
+      '<div class="ipr-fg-pr-b"><i></i></div><ul>' + FONTES.map(function (f) { return "<li>" + f + "</li>"; }).join("") + "</ul></div>";
+    if (!D.getElementById("ipr-fg-pr-css")) {
+      var st = D.createElement("style"); st.id = "ipr-fg-pr-css";
+      st.textContent = ".ipr-fg-pr{padding:12px 0}.ipr-fg-pr b{display:block;font:600 26px/1.1 Outfit,Inter,system-ui,sans-serif;margin-bottom:4px}" +
+        ".ipr-fg-pr-t{display:block;font-size:12.5px;opacity:.8;margin-bottom:10px}.ipr-fg-pr-b{height:6px;border-radius:3px;background:rgba(127,127,127,.25);overflow:hidden}" +
+        ".ipr-fg-pr-b i{display:block;height:100%;width:3%;background:var(--ac,#8bc34a);border-radius:3px;transition:width .6s ease}" +
+        ".ipr-fg-pr ul{list-style:none;margin:10px 0 0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:3px 12px;font-size:12px}" +
+        ".ipr-fg-pr li{opacity:.45;padding-left:16px;position:relative}.ipr-fg-pr li::before{content:\"○\";position:absolute;left:0}" +
+        ".ipr-fg-pr li.ok{opacity:.95}.ipr-fg-pr li.ok::before{content:\"✓\";color:var(--ac,#8bc34a)}";
+      D.head.appendChild(st);
+    }
+    var t0 = Date.now(), caixa = out.querySelector(".ipr-fg-pr"), barra = caixa.querySelector(".ipr-fg-pr-b i"), itens = caixa.querySelectorAll("li");
+    (function passo() {
+      if (ultimo !== k || !caixa.isConnected) return;
+      var s = (Date.now() - t0) / 1000, p = 92 * (1 - Math.exp(-s / 5));
+      barra.style.width = Math.max(3, p).toFixed(1) + "%";
+      var n = Math.min(itens.length, Math.floor(p / 92 * (itens.length + 0.5)));
+      for (var i = 0; i < n; i++) itens[i].classList.add("ok");
+      setTimeout(passo, 400);
+    })();
   }
   W.__iprFichaGratuita = abrir;
 
