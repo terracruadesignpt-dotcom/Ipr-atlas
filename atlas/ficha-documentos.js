@@ -81,7 +81,7 @@
     var h = '<h4>Documentos da propriedade</h4><ul>';
     h += "<li><span><b>Leitura Territorial</b> <small>" + (lt ? "PDF com o PDM, as condicionantes e as coordenadas" : m.leitura ? "em preparação" : "ainda não pedida") + "</small></span>" +
       (lt ? '<a class="ipe-b ipe-b--ac" target="_blank" rel="noopener" href="' + esc(lt.url) + '">Abrir</a>'
-        : m.leitura ? "" : '<button type="button" class="ipe-b ipe-b--ac" data-fdoc-lt="' + esc(id) + '">Pedir a Leitura Territorial<span class="ipr-fdoc-pr"></span></button>") + "</li>";
+        : m.leitura ? "" : '<button type="button" class="ipe-b ipe-b--ac" data-fdoc-lt="' + esc(id) + '">Pedir a Leitura Territorial<span class="ipr-fdoc-pr"></span></button>') + "</li>";
     if (rb) h += '<li><span><b>Relatório da Base Cartográfica</b> <small>PDF</small></span><a class="ipe-b" target="_blank" rel="noopener" href="' + esc(rb.url) + '">Abrir</a></li>';
     h += '<li class="ipr-fdoc-pl"><span><b>Plantas de Localização</b> <small>a ver…</small></span><button type="button" class="ipe-b ipe-b--ac" data-fdoc-pl="' + esc(id) + '">Fazer a Planta de Localização</button></li>';
     h += "</ul><div class=\"ipr-fdoc-msg\" hidden></div>";
