@@ -18,6 +18,7 @@
     ".ipr-fp::after{content:\"\";position:absolute;left:50%;bottom:-6px;width:10px;height:10px;background:inherit;border-right:inherit;border-bottom:inherit;transform:translateX(-50%) rotate(45deg)}" +
     ".ipr-fp b{display:block;font-weight:600;margin-bottom:2px}.ipr-fp small{display:block;color:var(--mu,#a9b0a0);font-size:11.5px;margin-bottom:8px}" +
     ".ipr-fp .ipr-fp-b{display:block;width:100%;border:0;border-radius:7px;padding:8px 10px;background:var(--ac,#8bc34a);color:#10160c;font:600 13px Inter,system-ui,sans-serif;cursor:pointer}" +
+    ".ipr-fp-in{display:block;width:100%;margin-top:10px;border:0;border-radius:7px;padding:8px 10px;background:var(--ac,#8bc34a);color:#10160c;font:600 13px Inter,system-ui,sans-serif;cursor:pointer}" +
     ".ipr-fp .ipr-fp-x{position:absolute;top:4px;right:6px;border:0;background:none;color:inherit;opacity:.6;font-size:16px;cursor:pointer;padding:2px 4px}";
   var cartao = null, pedido = null, alvo = null;
   function mapa() { return W.__ipe && W.__ipe.mapa ? W.__ipe.mapa : null; }
@@ -40,7 +41,18 @@
     return polis.some(function (pl) { return dentro(p, pl[0]) && !pl.slice(1).some(function (b) { return dentro(p, b); }); });
   }
   function fechar() { if (cartao) { cartao.remove(); cartao = null; } alvo = null; }
-  function mostrar(A, ll, f) {
+  // Se o Atlas abriu o seu cartão de identificação (iprv-pop) com o cadastro, o botão entra nesse cartão; senão, cartão próprio.
+  function mostrar(A, ll, f, n) {
+    n = n || 0;
+    var pop = D.querySelector(".maplibregl-popup.iprv-pop .maplibregl-popup-content");
+    if (pop && /NIC|Cadastro predial|cadastral/i.test(pop.textContent)) {
+      fechar();
+      if (pop.querySelector(".ipr-fp-b")) return;
+      var bt = D.createElement("button"); bt.type = "button"; bt.className = "ipr-fp-b ipr-fp-in"; bt.textContent = t("Ver a ficha da propriedade", "See the property sheet");
+      bt.addEventListener("click", function (e) { e.stopPropagation(); var pp = bt.closest(".maplibregl-popup"); if (pp) pp.remove(); usar(A, f); });
+      pop.appendChild(bt); return;
+    }
+    if (n < 4) { setTimeout(function () { mostrar(A, ll, f, n + 1); }, 200); return; }
     fechar();
     var pr = f.properties || {}, nic = pr.nationalcadastralreference || pr.label || "";
     var ha = pr.areavalue ? (Number(pr.areavalue) / 1e4) : null;
