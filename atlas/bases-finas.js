@@ -167,8 +167,63 @@
   try { new MutationObserver(function () { try { rotulo(); } catch (e) {} }).observe(D.documentElement, { childList: true, subtree: true, characterData: true }); } catch (e) {}
   rotulo();
 
+  // ---------- arrastar uma Base para outra pasta (Nuno, 10h12/10h17: «quero poder facilmente, arrastando, movê-las para
+  // outras pastas»). Só a equipa, com rato (no telemóvel fica «⋯ › Mudar de tipo»). Larga-se a linha da Base em cima do
+  // título da pasta (Pedidos, Dias abertos, Reuniões, Projectos, Projectos entregues, Implementação). Grava pela rota de
+  // sempre (m735/tipo, a mesma de «Mudar de tipo»), que vale para a equipa toda; o resto da casa reage a essa gravação.
+  var ARR = null, PASTAS = { pedido: 1, dia_aberto: 1, reuniao: 1, projecto: 1, entregue: 1, impl: 1 };
+  var cssArr = el("style"); cssArr.id = "ipr-fn-arr-css";
+  cssArr.textContent =
+    "html.ipr-fn-eq .ipr-fn-h{cursor:grab}html.ipr-fn-arr .ipr-fn-h{cursor:grabbing}" +
+    ".ipe-card.ipr-fn-a{opacity:.45}" +
+    "html.ipr-fn-arr .ipr-ac button[data-ac]:not([data-ac='']):not([data-ac='sem']){outline:1px dashed #5E6157;outline-offset:-3px}" +
+    "html.ipr-fn-arr .ipr-ac button.ipr-fn-alvo{outline:2px solid #94BE39!important;background:rgba(148,190,57,.12)!important}" +
+    "#ipr-fn-msg{position:fixed;z-index:100002;left:50%;bottom:24px;transform:translateX(-50%);padding:8px 14px;border-radius:2px;background:#232420;border:1px solid #383A33;border-left:3px solid #94BE39;color:#F5F4EE;font:500 13px/1.3 Inter,system-ui,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.4)}";
+  (D.head || D.documentElement).appendChild(cssArr);
+  function msg(t, mau) {
+    var m = D.getElementById("ipr-fn-msg"); if (!m) { m = el("div"); m.id = "ipr-fn-msg"; m.setAttribute("role", "status"); D.body.appendChild(m); }
+    m.textContent = t; m.style.borderLeftColor = mau ? "#E0705A" : "#94BE39"; clearTimeout(msg.t); msg.t = setTimeout(function () { m.remove(); }, 3500);
+  }
+  function nomePasta(b) { var n = b.querySelector(".nome"); return n ? n.textContent.trim() : b.textContent.trim(); }
+  D.addEventListener("dragstart", function (e) {
+    var h = e.target && e.target.closest && e.target.closest(".ipr-fn-h"); if (!h || !equipa()) return;
+    var c = h.closest(".ipe-card[data-i]"), id = c && c.getAttribute("data-ec-id"); if (!id) return;
+    ARR = { id: id, c: c, nome: (h.querySelector(".t") || h).textContent.trim() };
+    try { e.dataTransfer.setData("text/plain", "ipr-base:" + id); e.dataTransfer.effectAllowed = "move"; } catch (x) {}
+    c.classList.add("ipr-fn-a"); D.documentElement.classList.add("ipr-fn-arr");
+  }, true);
+  D.addEventListener("dragend", function () {
+    if (ARR && ARR.c) ARR.c.classList.remove("ipr-fn-a"); ARR = null; D.documentElement.classList.remove("ipr-fn-arr");
+    [].forEach.call(D.querySelectorAll(".ipr-fn-alvo"), function (b) { b.classList.remove("ipr-fn-alvo"); });
+  }, true);
+  function alvo(e) { var b = e.target && e.target.closest && e.target.closest(".ipr-ac button[data-ac]"); return b && PASTAS[b.getAttribute("data-ac")] ? b : null; }
+  D.addEventListener("dragover", function (e) {
+    if (!ARR) return; var b = alvo(e);
+    [].forEach.call(D.querySelectorAll(".ipr-fn-alvo"), function (x) { if (x !== b) x.classList.remove("ipr-fn-alvo"); });
+    if (!b) return; e.preventDefault(); try { e.dataTransfer.dropEffect = "move"; } catch (x) {} b.classList.add("ipr-fn-alvo");
+  }, true);
+  D.addEventListener("drop", function (e) {
+    if (!ARR) return; var b = alvo(e); if (!b) return;
+    e.preventDefault(); e.stopPropagation();
+    var a = ARR, k = b.getAttribute("data-ac"), pasta = nomePasta(b);
+    msg(T("A mover «" + a.nome + "» para " + pasta + "…", "Moving «" + a.nome + "» to " + pasta + "…"));
+    fetch("/wp-json/tcd/v1/m735/tipo", { method: "POST", credentials: "same-origin", headers: { "X-WP-Nonce": W.tcdNonce || "", "Content-Type": "application/json" }, body: JSON.stringify({ enc: +a.id, tipo: k }) })
+      .then(function (r) { return r.json().then(function (j) { if (!r.ok || !j.ok) throw new Error((j && j.message) || r.status); return j; }); })
+      .then(function () {
+        msg(T("«" + a.nome + "» passou para " + pasta + ".", "«" + a.nome + "» moved to " + pasta + "."));
+        try { if (W.__iprBTipos && W.__iprBTipos.actualizar) W.__iprBTipos.actualizar(); } catch (x) {}
+        try { D.dispatchEvent(new CustomEvent("ipr:base-pasta", { detail: { enc: +a.id, tipo: k } })); } catch (x) {}
+      })
+      .catch(function (x) { msg(T("Não foi possível mover: ", "Could not move: ") + (x && x.message || ""), true); });
+  }, true);
+  function arrastaveis() {
+    var eq = equipa(); D.documentElement.classList.toggle("ipr-fn-eq", eq);
+    if (!eq || (W.innerWidth || 1000) < 600) return;
+    [].forEach.call(D.querySelectorAll(".ipr-fn-h:not([draggable])"), function (h) { h.setAttribute("draggable", "true"); h.title = (h.title ? h.title + " · " : "") + T("arraste para outra pasta", "drag to another folder"); });
+  }
+
   var t = 0;
-  function vigia() { if (t) return; t = setTimeout(function () { t = 0; try { arrumar(); } catch (e) {} }, 120); }
+  function vigia() { if (t) return; t = setTimeout(function () { t = 0; try { arrumar(); } catch (e) {} try { arrastaveis(); } catch (e) {} }, 120); }
   new MutationObserver(function (ms) {
     for (var i = 0; i < ms.length; i++) {
       var a = ms[i].addedNodes;
