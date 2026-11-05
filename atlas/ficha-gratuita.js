@@ -437,7 +437,8 @@
     var lk = b.closest(".ipr-fg-out") && b.closest(".ipr-fg-out").querySelector(".ipr-fn2-lk");
     function mostra(t) { if (!lk) return; lk.hidden = false; lk.textContent = ""; var s1 = D.createElement("span"); s1.textContent = t + " "; var a = D.createElement("input"); a.readOnly = true; a.value = url; a.className = "ipr-fn2-in"; a.addEventListener("focus", function () { a.select(); }); lk.appendChild(s1); lk.appendChild(a); }
     if (navigator.share && /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)) { navigator.share({ title: "Ficha da propriedade · IPR Atlas", url: url }).catch(function () {}); mostra("Ligação:"); return; }
-    try { navigator.clipboard.writeText(url).then(function () { mostra("Ligação copiada:"); }, function () { mostra("Copie a ligação:"); }); } catch (e) { mostra("Copie a ligação:"); }
+    mostra("Copie a ligação:");
+    try { navigator.clipboard.writeText(url).then(function () { mostra("Ligação copiada:"); }, function () {}); } catch (e) {}
   }, true);
   // Abrir uma ficha partilhada
   (function abrirPartilhada() {
