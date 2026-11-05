@@ -444,6 +444,8 @@
   (function abrirPartilhada() {
     var m = /[?&]ficha=([A-Za-z0-9_-]{8,})/.exec(location.search); if (!m) return;
     var F = descodificar(m[1]); if (!F) return;
+    // O app.js repõe ipe_terreno_v1 no arranque do mapa; com uma ficha partilhada, guarda-se à parte para não se somar.
+    try { var ant = localStorage.getItem("ipe_terreno_v1"); if (ant) { localStorage.setItem("ipe_terreno_v1_antes", ant); localStorage.removeItem("ipe_terreno_v1"); } } catch (e) {}
     var t0 = Date.now();
     (function espera() {
       var A = W.__ipe && W.__ipe.mapa, dr = A && (A._controls || []).filter(function (x) { return x && typeof x.getAll === "function"; })[0];
@@ -454,7 +456,8 @@
       try { dr.deleteAll(); } catch (e) {}
       var novos = [], ids = {}; F.features.forEach(function (f) { dr.add(f).forEach(function (k) { ids[k] = 1; novos.push(dr.get(k)); }); });
       A.fire("draw.create", { features: novos });
-      setTimeout(function () { try { var fora = dr.getAll().features.filter(function (f) { return !ids[f.id]; }).map(function (f) { return f.id; }); if (fora.length) { dr.delete(fora); A.fire("draw.delete", { features: [] }); A.fire("draw.update", { features: novos, action: "move" }); } } catch (e) {} }, 3000);
+      setTimeout(function () { try { var fora = dr.getAll().features.filter(function (f) { return !ids[f.id]; }).map(function (f) { return f.id; }); if (fora.length) { dr.delete(fora); A.fire("draw.delete", { features: [] }); A.fire("draw.update", { features: novos, action: "move" }); } } catch (e) {}
+        try { var c = A.getCenter(); if (c.lng < b[0] || c.lng > b[2] || c.lat < b[1] || c.lat > b[3]) A.fitBounds([[b[0], b[1]], [b[2], b[3]]], { padding: 60, duration: 0, maxZoom: 17 }); } catch (e) {} }, 3000);
       var b = bbox(F); try { A.fitBounds([[b[0], b[1]], [b[2], b[3]]], { padding: 60, duration: 0, maxZoom: 17 }); } catch (e) {}
       setTimeout(function () { var sec = D.getElementById("ipe-res"); if (sec && sec.hidden) sec.hidden = false; abrir(); }, 3800);
     })();
