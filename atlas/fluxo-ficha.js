@@ -93,8 +93,11 @@
     var cx = c.querySelector(".ipe-cx"); if (cx && getComputedStyle(cx).display === "none") cx.style.setProperty("display", "block", "important");
     var b = c.querySelector("[data-res-proj]"), out = b && c.querySelector('[data-res-out="' + b.getAttribute("data-res-proj") + '"]');
     if (b && !b.disabled && (!out || !out.children.length)) b.click();
-    var alvo = c.querySelector(".ipe-res--proj") || c;
-    setTimeout(function () { try { alvo.scrollIntoView({ block: "start", behavior: "smooth" }); } catch (e) {} }, 150);
+    setTimeout(function () {
+      var o = c.querySelector("[data-res-out]"), r = c.querySelector(".ipe-res--proj");
+      var alvo = (o && o.offsetParent) ? o : (r && r.offsetParent) ? r : c;
+      try { alvo.scrollIntoView({ block: "start", behavior: "smooth" }); } catch (e) {}
+    }, 400);
     return true;
   }
   function abrirFicha(id) {
