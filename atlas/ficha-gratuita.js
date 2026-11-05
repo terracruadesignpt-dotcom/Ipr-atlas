@@ -56,10 +56,10 @@
   }
   function pinta(G, geoms) {
     var c = D.createElement("canvas"); c.width = G.W; c.height = G.H;
-    var x = c.getContext("2d", { willReadFrequently: true }); x.fillStyle = "#000"; x.beginPath();
-    geoms.forEach(function (g) { polis(g).forEach(function (p) { p.forEach(function (r) { r.forEach(function (q, i) {
-      var px = (mx(q[0]) - G.x0) / G.w * G.W, py = (my(q[1]) - G.y0) / G.h * G.H; if (i) x.lineTo(px, py); else x.moveTo(px, py); }); x.closePath(); }); }); });
-    x.fill("evenodd");
+    var x = c.getContext("2d", { willReadFrequently: true }); x.fillStyle = "#000";
+    // Cada polígono pintado à parte (furos com evenodd dentro dele); polígonos repetidos ou sobrepostos somam-se, não se anulam.
+    geoms.forEach(function (g) { polis(g).forEach(function (p) { x.beginPath(); p.forEach(function (r) { r.forEach(function (q, i) {
+      var px = (mx(q[0]) - G.x0) / G.w * G.W, py = (my(q[1]) - G.y0) / G.h * G.H; if (i) x.lineTo(px, py); else x.moveTo(px, py); }); x.closePath(); }); x.fill("evenodd"); }); });
     var d = x.getImageData(0, 0, G.W, G.H).data, m = new Uint8Array(G.W * G.H);
     for (var i = 0; i < m.length; i++) m[i] = d[i * 4 + 3] > 127 ? 1 : 0;
     return m;
