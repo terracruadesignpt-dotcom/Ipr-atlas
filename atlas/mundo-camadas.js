@@ -130,7 +130,8 @@
       R("mu-solo-areia", "Areia", SG("sand", "sand_0-5cm_mean"), 3, 22, 0.7, "SoilGrids 2.0 © ISRIC, CC BY 4.0", "", 1),
       R("mu-solo-n", "Azoto total", SG("nitrogen", "nitrogen_0-5cm_mean"), 3, 22, 0.7, "SoilGrids 2.0 © ISRIC, CC BY 4.0", "", 1)
     ]]
-  ];
+  ];  window.IPR_MUNDO_CAT = CAT;   /* arrumo.js: as camadas raster passam para o catálogo arrumado por tipo */
+
   function itens() { var r = []; CAT.forEach(function (g) { r = r.concat(g[1]); }); return r; }
   function itemPor(id) { var l = itens(); for (var i = 0; i < l.length; i++) if (l[i].id === id) return l[i]; return null; }
   var CHAVE = "tcd_atlas_mundo", ligados = {};
@@ -139,6 +140,7 @@
   function mapa() { return window.__ipe && window.__ipe.mapa ? window.__ipe.mapa : null; }
   function antes(I) { var Ls = (I.getStyle() && I.getStyle().layers) || []; for (var i = 0; i < Ls.length; i++) if (/^tme-|^gl-draw|^tcd-terreno/.test(Ls[i].id)) return Ls[i].id; return undefined; }
   function ligar(it) {
+    if (window.IPR_ARRUMO && !it.vec) return;   /* no modo arrumado o viz.js desenha esta camada (mx-…) */
     var I = mapa(); if (!I || !I.getStyle) return;
     if (I.isStyleLoaded && !I.isStyleLoaded() && I.style && I.style._loaded === false) { I.once("styledata", function () { setTimeout(function () { if (ligados[it.id]) ligar(it); }, 0); }); return; }
     try {
@@ -169,6 +171,11 @@
     return '<label><input type="checkbox" data-tao="' + it.id + '"' + (ligados[it.id] ? " checked" : "") + "><span>" + it.nome + (it.nota ? "<i>" + it.nota + "</i>" : "") + "</span></label>";
   }
   function preencher(d) {
+    if (window.IPR_ARRUMO) {   /* camadas arrumadas por tipo: aqui só ficam os limites do mundo (vectoriais) */
+      var hv = "<h4>Limites administrativos · mundo</h4>";
+      CAT.forEach(function (g) { g[1].forEach(function (it) { if (it.vec) hv += caixa(it); }); });
+      d.innerHTML = hv; return;
+    }
     var h = "<h4>Mundo · fontes globais</h4>";
     CAT.forEach(function (g) { h += "<h5>" + g[0] + "</h5>"; g[1].forEach(function (it) { h += caixa(it); }); });
     h += "<small>Fontes abertas de cobertura mundial, para qualquer país. As de clima, cheias e vegetação actualizam-se sozinhas com a última data publicada. Os fundos de satélite, o relevo, o OpenStreetMap, a biodiversidade (GBIF) e a água e clima (NASA) do Atlas também cobrem o mundo. Informação indicativa: a referência vinculativa é a dos organismos de cada país.</small>";
