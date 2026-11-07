@@ -21,8 +21,8 @@
 
   var WMS = "https://cartografia.dgterritorio.gov.pt/wms/";
   var ANOS = [
-    { a: 1995, s: "ortos1995", l: "Ortos1995-FalsaCor", t: "1995 · infravermelho" },
-    { a: 2005, s: "ortos2004-2006", l: "Ortos2004-2006-RGB", t: "2004 a 2006" },
+    { a: 1995, s: "ortos1995", l: "Ortos1995-FalsaCor", t: "1995 · infravermelho", te: "1995 · infrared" },
+    { a: 2005, s: "ortos2004-2006", l: "Ortos2004-2006-RGB", t: "2004 a 2006", te: "2004 to 2006" },
     { a: 2015, s: "ortos2015", l: "Ortos2015-RGB", t: "2015" },
     { a: 2025, s: "ortos2025", l: "Ortos2025-RGB", t: "2025" }
   ];
@@ -167,7 +167,9 @@
       '</li><li data-k="agua">' + T("A medir a água à superfície…", "Measuring surface water…") + "</li></ul>" +
       '<p class="ipe-small">' + T("Ortofotos da DGT; áreas ardidas do ICNF; perda de coberto arbóreo Hansen / UMD / Global Forest Watch (30 m); água à superfície JRC Global Surface Water (30 m). Medições por satélite são indicativas. A Cronologia do Atlas mostra todos os anos sobre o mapa.",
         "DGT orthophotos; ICNF burnt areas; tree cover loss Hansen / UMD / Global Forest Watch (30 m); surface water JRC Global Surface Water (30 m). Satellite measurements are indicative. The Atlas Timeline shows every year on the map.") + "</p>";
-    caixaPdm.parentNode.insertBefore(s, caixaPdm.nextSibling);
+    var mais = caixaPdm.closest("details.ipr-fn2-mais");
+    if (mais) mais.parentNode.insertBefore(s, mais); else caixaPdm.parentNode.insertBefore(s, caixaPdm.nextSibling);
+    caixaPdm.__ftEl = s;
     var fx = s.querySelector(".ipr-ft-f");
     ANOS.forEach(function (A) {
       var f = D.createElement("figure"); f.innerHTML = '<div class="ipr-ft-i"></div><figcaption>' + esc(A.t) + "</figcaption>"; fx.appendChild(f);
@@ -200,8 +202,9 @@
   function corre() {
     t = 0;
     [].forEach.call(D.querySelectorAll(".ipr-fg-pdm"), function (p) {
-      if (p.__ft || !p.offsetParent) return;
-      var nx = p.nextElementSibling; if (nx && nx.classList.contains("ipr-ft")) { p.__ft = 1; return; }
+      if (p.__ft || !(p.offsetParent || p.closest("details"))) return;
+      var nx = p.nextElementSibling, md = p.closest("details.ipr-fn2-mais"), ant = md && md.previousElementSibling;
+      if ((nx && nx.classList.contains("ipr-ft")) || (ant && ant.classList.contains("ipr-ft"))) { p.__ft = 1; return; }
       var F = geoDe(p); if (!F || !caixa(F)) return;
       p.__ft = 1; montar(p, F);
     });
