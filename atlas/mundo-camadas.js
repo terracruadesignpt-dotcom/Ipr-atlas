@@ -5,7 +5,14 @@
    terracruadesign.pt (resposta 200, imagem com conteúdo, CORS aberto). Os fundos de satélite (Sentinel-2 sem nuvens,
    Esri), o relevo e as camadas do OpenStreetMap do Atlas já cobrem Angola e não se repetem aqui.
    Fica de fora, por licença ou por falta de CORS: WDPA (uso comercial não permitido), Digital Earth Africa (sem CORS),
-   ESA WorldCover pela Terrascope (servidor não responde do navegador). Não mexe no app.js: usa window.__ipe.mapa. */
+   ESA WorldCover pela Terrascope (servidor não responde do navegador). Não mexe no app.js: usa window.__ipe.mapa.
+   7/11/2026 (Nuno, 20h48: «executa tudo, para o país todo e para a Europa toda, desde que não torne o site pesado»):
+   cheias pelo radar Sentinel-1 (Copernicus EMS, GFM), humidade do solo na zona das raízes (SMAP) e o grupo «Europa ·
+   Copernicus (10 m)» com as camadas de alta resolução do Copernicus Land (EEA): pastagens 2018 e mudança 2015-2018,
+   sebes e pequenos bosquetes 2021 (densidade e linhas a 5 m), vegetação lenhosa 2021, perda e ganho de copa 2015-2018,
+   água e zonas húmidas 2018. Testadas a 7/11 da origem terracruadesign.pt (200, imagem com conteúdo, CORS aberto).
+   Nada se descarrega enquanto a camada não for ligada. Ficam de fora por falta de CORS: Terrascope (VITO), European
+   Drought Observatory; e o Google Earth Engine, por exigir licença comercial. */
 (function () {
   "use strict";
   var EXPL = window.IPR_NIVEL === "explorer";
@@ -17,6 +24,10 @@
   function R(id, nome, url, min, max, op, attr, nota, intel) { return { id: id, nome: nome, url: url, min: min, max: max, op: op, attr: attr, nota: nota || "", intel: !!intel }; }
   function V(id, nome, nivel, cor, largura, attr) { return { id: id, nome: nome, vec: true, nivel: nivel, cor: cor, w: largura, attr: attr }; }
   var SG = function (mapa, camada) { return wms("https://maps.isric.org/mapserv?map=/map/" + mapa + ".map", camada); };
+  var CLMS = "https://image.discomap.eea.europa.eu/arcgis/rest/services/GioLandPublic/";
+  function HRL(svc) { return CLMS + svc + "/ImageServer/exportImage?bbox={bbox-epsg-3857}&bboxSR=3857&imageSR=3857&size=256,256&format=png32&transparent=true&f=image"; }
+  var CLMS_A = "© União Europeia, Copernicus Land Monitoring Service (EEA)";
+  var GFM = "https://geoserver.gfm.eodc.eu/geoserver/gfm/wms";
   var LULC = "https://ic.imagery1.arcgis.com/arcgis/rest/services/Sentinel2_10m_LandCover/ImageServer/exportImage?bbox={bbox-epsg-3857}&bboxSR=3857&imageSR=3857&size=256,256&format=png&transparent=true&f=image&time=1704067200000,1735689599000";
   var CAT = [
     ["Limites", [
@@ -39,7 +50,11 @@
       R("mu-temp", "Temperatura do ar · último mês", GIBS + "MERRA2_2m_Air_Temperature_Monthly/default/default/GoogleMapsCompatible_Level6/{z}/{y}/{x}.png", 0, 6, 0.6,
         "MERRA-2: NASA GMAO, via GIBS", "Média mensal a 2 m do solo, cerca de 50 km: dá o clima da região, não o do terreno."),
       R("mu-cheia", "Cheias · últimos 3 dias", GIBS + "MODIS_Combined_Flood_3-Day/default/default/GoogleMapsCompatible_Level9/{z}/{y}/{x}.png", 0, 9, 0.85,
-        "Cheias: NASA LANCE MODIS, via GIBS", "Água fora do sítio habitual detectada por satélite (cerca de 250 m).")
+        "Cheias: NASA LANCE MODIS, via GIBS", "Água fora do sítio habitual detectada por satélite (cerca de 250 m)."),
+      R("mu-cheia-s1", "Cheias · radar Sentinel-1 (20 m)", wms(GFM, "observed_flood_extent"), 5, 22, 0.85,
+        "Global Flood Monitoring: © União Europeia, Copernicus Emergency Management Service", "Água de cheia vista pelo radar do Sentinel-1 na última passagem, mesmo com nuvens (20 m). Serve para confirmar onde a água se acumula de facto."),
+      R("mu-humid", "Humidade do solo na zona das raízes", GIBS + "SMAP_L4_Analyzed_Root_Zone_Soil_Moisture/default/default/GoogleMapsCompatible_Level6/{z}/{y}/{x}.png", 0, 6, 0.6,
+        "SMAP L4: NASA, via GIBS", "Água no solo até cerca de 1 m de profundidade, no último dia disponível (9 km). Mostra a seca ou a saturação da região, não do terreno.", 1)
     ]],
     ["Vegetação e floresta", [
       R("mu-evi", "Vigor da vegetação · últimos 8 dias", GIBS + "MODIS_Terra_EVI_8Day/default/default/GoogleMapsCompatible_Level9/{z}/{y}/{x}.png", 0, 9, 0.7,
@@ -62,6 +77,22 @@
         "Natural Disaster Hotspots: NASA SEDAC / CIESIN, Banco Mundial", "Secas de 1980 a 2000, em classes.", 1),
       R("mu-rdesl", "Perigo de deslizamentos", GIBS + "NDH_Landslide_Hazard_Distribution_2000/default/GoogleMapsCompatible_Level7/{z}/{y}/{x}.png", 0, 7, 0.7,
         "Natural Disaster Hotspots: NASA SEDAC / NGI, Banco Mundial", "Perigo de deslizamento de terras, em classes.", 1)
+    ]],
+    ["Europa · Copernicus (10 m)", [
+      R("eu-past", "Pastagens permanentes 2018", HRL("HRL_Grassland_2018"), 6, 22, 0.7, CLMS_A,
+        "Pastagens e prados que não foram lavrados (10 m, só Europa). Ajuda a separar pastagem permanente de terra mobilizada.", 1),
+      R("eu-past-mud", "Pastagens · mudança 2015 a 2018", HRL("HRL_GrasslandChange_15_18"), 6, 22, 0.75, CLMS_A,
+        "Onde a pastagem apareceu ou desapareceu entre 2015 e 2018 (só Europa): sinal de lavoura, abandono ou reconversão.", 1),
+      R("eu-sebes", "Sebes e pequenos bosquetes · densidade 2021", HRL("HRL_SmallWoodyFeaturesDensity_2021_100m"), 6, 13, 0.7, CLMS_A,
+        "Percentagem de sebes, alinhamentos de árvores e pequenos bosquetes por hectare (só Europa). Conectividade ecológica e quebra-ventos.", 1),
+      R("eu-sebes5", "Sebes e pequenos bosquetes · linhas 2021 (5 m)", HRL("HRL_SmallWoodyFeatures_2021_005m"), 13, 22, 0.85, CLMS_A,
+        "Cada sebe e pequeno bosquete desenhado a 5 m (só Europa). Aparece a partir do zoom 13.", 1),
+      R("eu-lenhosa", "Vegetação lenhosa 2021", HRL("HRL_WoodyVegetationLayer_2021"), 6, 22, 0.7, CLMS_A,
+        "Toda a vegetação lenhosa, árvores e arbustos, a 10 m (só Europa).", 1),
+      R("eu-copa-mud", "Copa arbórea · perda e ganho 2015 a 2018", HRL("HRL_TreeCoverChangeMask_15_18"), 6, 22, 0.8, CLMS_A,
+        "Onde o coberto arbóreo diminuiu ou aumentou entre 2015 e 2018 (só Europa): cortes, incêndios e regeneração.", 1),
+      R("eu-humidas", "Água e zonas húmidas 2018", HRL("HRL_WaterWetness_2018"), 6, 22, 0.8, CLMS_A,
+        "Água permanente e temporária e zonas húmidas, permanentes ou temporárias, a 10 m (só Europa). Charcas, lagoas temporárias e baixas encharcadas.", 1)
     ]],
     ["Ocupação do solo", [
       R("ao-lulc", "Ocupação do solo 10 m (Sentinel-2, 2024)", LULC, 4, 22, 0.65,
