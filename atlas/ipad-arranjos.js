@@ -13,7 +13,7 @@
    3. Chrome e Safari no iPad: quando a barra do navegador recolhe ou o ecrã é arrastado, a página inteira subia e a barra
       de cima do Atlas desaparecia, ficando uma faixa preta em baixo. Com o Atlas aberto e sem campo de texto activo, a
       página volta sempre ao topo e o Atlas acompanha a parte visível do ecrã.
-   4. Barra de cima no iPad (901 a 1440 px): a parte da direita encolhe e desliza na horizontal; «Comprar» sempre à vista.
+   4. Barra de cima no iPad (600 a 1440 px, ao alto e ao baixo): a parte da direita encolhe e desliza na horizontal; «Comprar» sempre à vista.
    Desligar: ?ipad=0 ou localStorage ipr_ipad_off = 1. */
 (function () {
   "use strict";
@@ -32,9 +32,9 @@
       "#ipr-sb .sb-fx:focus-visible{outline:2px solid var(--ac2,#B3D466);outline-offset:2px}" +
       "#ipr-sb .sb-a{flex:0 0 auto}" +
       "#ipe #ipe-esq #ipr-mb{overflow-y:auto!important;overflow-x:hidden}" +
-      // 4. barra de cima entre 901 e 1440 px (iPad): os botões da direita saíam do ecrã («As minhas simulações», «Vista
+      // 4. barra de cima entre 600 e 1440 px (iPad ao alto e deitado): os botões da direita saíam do ecrã («As minhas simulações», «Vista
       //    simples», nome, «Comprar»). A parte da direita encolhe e desliza na horizontal; «Comprar» fica sempre à vista.
-      "@media (min-width:901px) and (max-width:1440px){" +
+      "@media (min-width:600px) and (max-width:1440px){" +
       "#ipe .ipe-top>*{zoom:1!important}" +
       "#ipe .ipe-top .ipe-vsep{display:none!important}" +
       "#ipe .ipe-top #ipr-be-topo{max-width:170px!important;min-width:0!important;overflow:hidden!important}" +
