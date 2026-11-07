@@ -13,6 +13,7 @@
    3. Chrome e Safari no iPad: quando a barra do navegador recolhe ou o ecrã é arrastado, a página inteira subia e a barra
       de cima do Atlas desaparecia, ficando uma faixa preta em baixo. Com o Atlas aberto e sem campo de texto activo, a
       página volta sempre ao topo e o Atlas acompanha a parte visível do ecrã.
+   4. Barra de cima no iPad (901 a 1440 px): a parte da direita encolhe e desliza na horizontal; «Comprar» sempre à vista.
    Desligar: ?ipad=0 ou localStorage ipr_ipad_off = 1. */
 (function () {
   "use strict";
@@ -30,7 +31,18 @@
       "#ipr-sb .sb-fx{position:absolute;top:8px;right:8px;width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center;border-radius:2px;border:1px solid var(--ln2,#3C4B32);background:transparent;color:var(--tx,#E4E2D8);font:600 20px/1 system-ui,sans-serif;cursor:pointer}" +
       "#ipr-sb .sb-fx:focus-visible{outline:2px solid var(--ac2,#B3D466);outline-offset:2px}" +
       "#ipr-sb .sb-a{flex:0 0 auto}" +
-      "#ipe #ipe-esq #ipr-mb{overflow-y:auto!important;overflow-x:hidden}";
+      "#ipe #ipe-esq #ipr-mb{overflow-y:auto!important;overflow-x:hidden}" +
+      // 4. barra de cima entre 901 e 1440 px (iPad): os botões da direita saíam do ecrã («As minhas simulações», «Vista
+      //    simples», nome, «Comprar»). A parte da direita encolhe e desliza na horizontal; «Comprar» fica sempre à vista.
+      "@media (min-width:901px) and (max-width:1440px){" +
+      "#ipe .ipe-top>*{zoom:1!important}" +
+      "#ipe .ipe-top .ipe-vsep{display:none!important}" +
+      "#ipe .ipe-top #ipr-be-topo{max-width:170px!important;min-width:0!important;overflow:hidden!important}" +
+      "#ipe .ipe-top .ipe-tr{flex:0 1 auto!important;min-width:0!important;overflow-x:auto!important;overflow-y:hidden!important;scrollbar-width:none;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}" +
+      "#ipe .ipe-top .ipe-tr::-webkit-scrollbar{display:none}" +
+      "#ipe .ipe-top .ipe-tr>*{flex-shrink:0}" +
+      "#ipe .ipe-top #ipr-cp-b{position:sticky!important;right:0;z-index:3;box-shadow:-10px 0 10px -4px var(--p0,#0E140B)}" +
+      "}";
     (D.head || D.documentElement).appendChild(s);
   }
 
