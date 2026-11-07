@@ -13,6 +13,7 @@
    3. Chrome e Safari no iPad: quando a barra do navegador recolhe ou o ecrã é arrastado, a página inteira subia e a barra
       de cima do Atlas desaparecia, ficando uma faixa preta em baixo. Com o Atlas aberto e sem campo de texto activo, a
       página volta sempre ao topo e o Atlas acompanha a parte visível do ecrã.
+   3b. Causa do ponto 3: scrollIntoView e focus rolavam a página e o próprio #ipe; passam a rolar só a caixa certa.
    4. Barra de cima no iPad (600 a 1440 px, ao alto e ao baixo): a parte da direita encolhe e desliza na horizontal; «Comprar» sempre à vista.
    Desligar: ?ipad=0 ou localStorage ipr_ipad_off = 1. */
 (function () {
@@ -91,6 +92,54 @@
     }
   }
 
+  // ---------- 3b. a causa: scrollIntoView e focus no iPad deslocam o ecrã inteiro ----------
+  // (Nuno, 23h49: «não aparece logo; aparece assim que se carrega noutra função, por exemplo a ficha da propriedade»).
+  // No Safari e no Chrome do iPad, scrollIntoView() e focus() rolam também a página e os contentores com overflow
+  // hidden (o próprio #ipe), mesmo com a página presa: a barra de cima sai do ecrã e fica uma faixa preta em baixo.
+  // Com o Atlas aberto, num aparelho de toque: scrollIntoView só rola a caixa com barra de rolar mais próxima;
+  // focus() não rola; e qualquer contentor que não devia rolar (overflow hidden ou clip) volta logo à posição 0.
+  function rolavel(e) { var s = getComputedStyle(e); return /(auto|scroll)/.test(s.overflowY) && e.scrollHeight > e.clientHeight + 1; }
+  function patchRolar() {
+    if (!toque || Element.prototype.__iprSiv) return;
+    var siv = Element.prototype.scrollIntoView;
+    Element.prototype.scrollIntoView = function (op) {
+      if (!D.documentElement.classList.contains("ipe-on") || !this.closest || !this.closest("#ipe")) return siv.apply(this, arguments);
+      var p = this.parentElement; while (p && p !== D.body && !rolavel(p)) p = p.parentElement;
+      if (!p || p === D.body) return;
+      var r = this.getBoundingClientRect(), rp = p.getBoundingClientRect(), bloco = op && typeof op === "object" ? op.block : (op === false ? "end" : "start");
+      var alvo = p.scrollTop + (r.top - rp.top);
+      if (bloco === "center") alvo -= (p.clientHeight - r.height) / 2;
+      else if (bloco === "end") alvo -= p.clientHeight - r.height;
+      else if (bloco === "nearest") { if (r.top >= rp.top && r.bottom <= rp.bottom) return; if (r.bottom > rp.bottom) alvo -= p.clientHeight - r.height; }
+      try { p.scrollTo({ top: Math.max(0, alvo), behavior: op && op.behavior === "smooth" ? "smooth" : "auto" }); } catch (e) { p.scrollTop = Math.max(0, alvo); }
+      setTimeout(topo, 50);
+    };
+    Element.prototype.__iprSiv = 1;
+    var fo = HTMLElement.prototype.focus;
+    HTMLElement.prototype.focus = function (op) {
+      if (D.documentElement.classList.contains("ipe-on") && this.closest && this.closest("#ipe") && !(this.tagName === "INPUT" || this.tagName === "TEXTAREA")) {
+        var o = op && typeof op === "object" ? op : {}; o.preventScroll = true; return fo.call(this, o);
+      }
+      return fo.apply(this, arguments);
+    };
+  }
+  function semRolar(e) {
+    var t = e.target;
+    if (t === D || t === D.documentElement || t === D.body) { topo(); return; }
+    if (!t || t.nodeType !== 1 || !(t.scrollTop || t.scrollLeft)) return;
+    var s = getComputedStyle(t);
+    if (/(hidden|clip)/.test(s.overflowY) && /(hidden|clip)/.test(s.overflowX)) { t.scrollTop = 0; t.scrollLeft = 0; }
+  }
+  function vigiarFixos() {
+    // o scroll de um contentor com overflow hidden nem sempre dispara evento: verificação periódica dos principais
+    ["ipe", "ipe-mapa", "ipe-esq", "ipe-dir"].forEach(function (id) {
+      var e = D.getElementById(id); if (!e || !(e.scrollTop || e.scrollLeft)) return;
+      var s = getComputedStyle(e); if (/(hidden|clip)/.test(s.overflowY)) { e.scrollTop = 0; e.scrollLeft = 0; }
+    });
+    var q = D.querySelector("#ipe .ipe-top"); if (q && q.parentElement && (q.parentElement.scrollTop)) q.parentElement.scrollTop = 0;
+    var se = D.scrollingElement; if (se && se.scrollTop && !campo()) se.scrollTop = 0;
+  }
+
   // ---------- 2b. qualquer bloco das barras laterais com altura máxima que transborde passa a deslizar ----------
   function blocos() {
     [].forEach.call(D.querySelectorAll("#ipe-esq *, #ipe-dir *"), function (e) {
@@ -111,6 +160,7 @@
     new MutationObserver(agenda).observe(D.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["hidden", "class"] });
     W.addEventListener("resize", function () { agenda(); topo(); });
     W.addEventListener("scroll", topo, { passive: true });
+    if (toque) { patchRolar(); D.addEventListener("scroll", semRolar, true); setInterval(vigiarFixos, 400); D.addEventListener("click", function () { setTimeout(vigiarFixos, 60); setTimeout(vigiarFixos, 700); setTimeout(topo, 700); }, true); }
     if (W.visualViewport) { W.visualViewport.addEventListener("resize", function () { agenda(); topo(); }); W.visualViewport.addEventListener("scroll", topo); }
     D.addEventListener("focusout", function () { setTimeout(topo, 300); });
     setInterval(function () { topo(); }, 1500);
