@@ -9,6 +9,7 @@
       - a barra do janelas.js dessa camada de fundo fica escondida (a caixa já tem «×» e «Cancelar»).
    2. Bloco do projecto aberto (#ipr-mb) na barra da esquerda: tem altura máxima mas o conteúdo transbordava por cima
       do bloco seguinte («Fundo»), com textos sobrepostos. Passa a deslizar dentro do próprio bloco.
+   2b. O mesmo para qualquer outro bloco das barras laterais com altura máxima cujo conteúdo a ultrapasse.
    3. Chrome e Safari no iPad: quando a barra do navegador recolhe ou o ecrã é arrastado, a página inteira subia e a barra
       de cima do Atlas desaparecia, ficando uma faixa preta em baixo. Com o Atlas aberto e sem campo de texto activo, a
       página volta sempre ao topo e o Atlas acompanha a parte visível do ecrã.
@@ -78,8 +79,20 @@
     }
   }
 
-  var t1 = 0;
-  function agenda() { if (!t1) t1 = setTimeout(function () { t1 = 0; try { caixaSim(); } catch (e) {} }, 60); }
+  // ---------- 2b. qualquer bloco das barras laterais com altura máxima que transborde passa a deslizar ----------
+  function blocos() {
+    [].forEach.call(D.querySelectorAll("#ipe-esq *, #ipe-dir *"), function (e) {
+      if (e.__iprRol || !e.firstElementChild) return;
+      var s = getComputedStyle(e);
+      if (s.maxHeight === "none" || s.overflowY !== "visible" || s.position === "absolute" || s.position === "fixed") return;
+      if (e.scrollHeight > e.clientHeight + 4) { e.__iprRol = 1; e.style.setProperty("overflow-y", "auto", "important"); e.style.setProperty("overflow-x", "hidden", "important"); }
+    });
+  }
+  var t1 = 0, t2 = 0;
+  function agenda() {
+    if (!t1) t1 = setTimeout(function () { t1 = 0; try { caixaSim(); } catch (e) {} }, 60);
+    if (!t2) t2 = setTimeout(function () { t2 = 0; try { blocos(); } catch (e) {} }, 400);
+  }
   function ligar() {
     if (!D.body) return false;
     css();
