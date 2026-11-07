@@ -6,7 +6,7 @@
       ano, só da caixa do terreno: é leve.
    2. Três linhas de história, medidas dentro do limite:
       - fogo: anos em que o terreno ardeu, de 1975 a 2025 (ICNF, áreas ardidas, consulta por geometria ao MapServer público);
-      - árvores: área onde o coberto arbóreo desapareceu, por período 2001 a 2008, 2009 a 2016 e 2017 a 2024
+      - árvores: área onde o coberto arbóreo desapareceu entre 2001 e 2024
         (Hansen / UMD / Global Forest Watch, 30 m, contagem de pixels nos mosaicos);
       - água: área onde houve água à superfície em algum momento desde 1984 e área com água em mais de metade do tempo
         (JRC Global Surface Water, 30 m).
@@ -131,12 +131,11 @@
       return o;
     });
   }
+  // O mosaico dinâmico do GFW não filtra por anos (testado a 07/11: três períodos davam a mesma área): mede-se o total 2001 a 2024.
   function arvores(F) {
     F = fc(F);
-    var P = [[2001, 2008], [2009, 2016], [2017, 2024]];
-    return Promise.all(P.map(function (p) {
-      return amostra(GFC.replace("{a}", p[0]).replace("{b}", p[1]), F, function (r, g, b, a) { return a > 60 ? "s" : 0; });
-    })).then(function (L) { return { ha: L[0].ha, per: P.map(function (p, i) { return { de: p[0], a: p[1], ha: L[i].s || 0 }; }) }; });
+    return amostra(GFC.replace("{a}", 2001).replace("{b}", 2024), F, function (r, g, b, a) { return a > 60 ? "s" : 0; })
+      .then(function (o) { return { ha: o.ha, perda: o.s || 0 }; });
   }
   // Ocorrência JRC: rampa de 1 % (rosa claro) a 100 % (azul); o azul domina a partir de cerca de metade do tempo.
   function agua(F) {
@@ -153,10 +152,8 @@
     return T("Ardeu em ", "Burnt in ") + L.join(", ").replace(/, (\d+)$/, T(" e ", " and ") + "$1") + ".";
   }
   function linhaArv(A) {
-    var t = A.per.reduce(function (s, p) { return s + p.ha; }, 0);
-    if (t < 0.05) return T("Sem perda de coberto arbóreo detectada entre 2001 e 2024.", "No tree cover loss detected between 2001 and 2024.");
-    return T("Perda de coberto arbóreo em ", "Tree cover lost on ") + n(t) + " ha (" + n(100 * t / Math.max(A.ha, 0.01), 0) + " %): " +
-      A.per.filter(function (p) { return p.ha >= 0.05; }).map(function (p) { return p.de + "–" + String(p.a).slice(2) + " " + n(p.ha) + " ha"; }).join(" · ") + ".";
+    if (A.perda < 0.05) return T("Sem perda de coberto arbóreo detectada entre 2001 e 2024.", "No tree cover loss detected between 2001 and 2024.");
+    return T("Perda de coberto arbóreo entre 2001 e 2024 em ", "Tree cover lost between 2001 and 2024 on ") + n(A.perda) + " ha (" + n(100 * A.perda / Math.max(A.ha, 0.01), 0) + T(" % do terreno; inclui cortes e fogos).", " % of the land; includes felling and fires).");
   }
   function linhaAgua(A) {
     if (A.alguma < 0.05) return T("Sem água à superfície detectada por satélite desde 1984 (charcas e ribeiras estreitas podem não aparecer a 30 m).", "No surface water detected by satellite since 1984 (small ponds and narrow streams may not show at 30 m).");
