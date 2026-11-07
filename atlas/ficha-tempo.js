@@ -160,11 +160,20 @@
     return T("Houve água à superfície em ", "Surface water on ") + n(A.alguma) + " ha " + T("desde 1984", "since 1984") +
       (A.metade >= 0.05 ? T(", dos quais ", ", of which ") + n(A.metade) + T(" ha com água em mais de metade do tempo", " ha wet more than half of the time") : "") + ".";
   }
+  function centro(F) {
+    var b = caixa(F); if (!b) return "";
+    var x = (b[0] + b[2]) / 2, y = (b[1] + b[3]) / 2, lo = x / R * 180 / Math.PI, la = Math.atan(Math.sinh(y / R)) * 180 / Math.PI;
+    return la.toFixed(5) + ", " + lo.toFixed(5);
+  }
   function montar(caixaPdm, F) {
     var s = D.createElement("div"); s.className = "ipr-ft";
     s.innerHTML = "<h4>" + T("O terreno ao longo do tempo", "The land over time") + '</h4><div class="ipr-ft-f"></div>' +
       '<ul class="ipr-ft-l"><li data-k="fogo">' + T("A ler as áreas ardidas…", "Reading burnt areas…") + '</li><li data-k="arv">' + T("A medir o coberto arbóreo…", "Measuring tree cover…") +
       '</li><li data-k="agua">' + T("A medir a água à superfície…", "Measuring surface water…") + "</li></ul>" +
+      '<p class="ipr-ft-a">' + T("<b>Antes de 1995</b> há fotografias aéreas de arquivo, que não são ortofotos: os voos da DGT desde os anos 1940, na ", "<b>Before 1995</b> there are archive aerial photographs (not orthophotos): DGT flights since the 1940s, in the ") +
+        '<a href="https://cgpr.dgterritorio.pt/Fototeca/index.html" target="_blank" rel="noopener">WebFototeca</a>' +
+        T(", e a cobertura do país inteiro da RAF de 1947 e da USAF de 1958 a 1960, no CIGeoE, pedidas por coordenadas. Coordenadas do centro do terreno: ", ", and the whole-country RAF 1947 and USAF 1958–60 coverages at CIGeoE, requested by coordinates. Centre of the land: ") +
+        '<span class="ipr-ft-c">' + centro(F) + "</span>" + T(". A cópia certificada pede-se à entidade que guarda a fotografia.", ". Certified copies are requested from the archive holding the photograph.") + "</p>" +
       '<p class="ipe-small">' + T("Ortofotos da DGT; áreas ardidas do ICNF; perda de coberto arbóreo Hansen / UMD / Global Forest Watch (30 m); água à superfície JRC Global Surface Water (30 m). Medições por satélite são indicativas. A Cronologia do Atlas mostra todos os anos sobre o mapa.",
         "DGT orthophotos; ICNF burnt areas; tree cover loss Hansen / UMD / Global Forest Watch (30 m); surface water JRC Global Surface Water (30 m). Satellite measurements are indicative. The Atlas Timeline shows every year on the map.") + "</p>";
     var mais = caixaPdm.closest("details.ipr-fn2-mais");
@@ -172,7 +181,7 @@
     caixaPdm.__ftEl = s;
     var fx = s.querySelector(".ipr-ft-f");
     ANOS.forEach(function (A) {
-      var f = D.createElement("figure"); f.innerHTML = '<div class="ipr-ft-i"></div><figcaption>' + esc(A.t) + "</figcaption>"; fx.appendChild(f);
+      var f = D.createElement("figure"); f.innerHTML = '<div class="ipr-ft-i"></div><figcaption>' + esc(en() && A.te ? A.te : A.t) + "</figcaption>"; fx.appendChild(f);
       imagem(F, A, 180).then(function (c) { f.firstChild.appendChild(c); }).catch(function () { f.firstChild.innerHTML = "<span>" + T("sem imagem agora", "no image now") + "</span>"; });
     });
     function por(k, p, fn) { p.then(function (v) { s.querySelector('[data-k="' + k + '"]').textContent = fn(v); }).catch(function () { s.querySelector('[data-k="' + k + '"]').textContent = T("Não foi possível ler agora.", "Could not be read now."); }); }
@@ -216,7 +225,7 @@
     s.textContent = ".ipr-ft{margin:14px 0 6px}.ipr-ft-f{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:6px 0 8px}" +
       ".ipr-ft-f figure{margin:0}.ipr-ft-i{aspect-ratio:1;background:rgba(127,127,127,.15);border-radius:4px;overflow:hidden;display:flex;align-items:center;justify-content:center}" +
       ".ipr-ft-i canvas{width:100%;height:100%;display:block}.ipr-ft-i span{font-size:11px;opacity:.6}.ipr-ft-f figcaption{font-size:11px;opacity:.8;margin-top:3px;text-align:center}" +
-      ".ipr-ft-l{margin:0 0 6px;padding-left:18px;font-size:13px;line-height:1.45}@media (max-width:520px){.ipr-ft-f{grid-template-columns:repeat(2,1fr)}}";
+      ".ipr-ft-a{font-size:12.5px;line-height:1.45;margin:4px 0 6px}.ipr-ft-c{font-family:\"IBM Plex Mono\",monospace;user-select:all}.ipr-ft-l{margin:0 0 6px;padding-left:18px;font-size:13px;line-height:1.45}@media (max-width:520px){.ipr-ft-f{grid-template-columns:repeat(2,1fr)}}";
     D.head.appendChild(s);
   }
   function ligar() {
