@@ -4,7 +4,7 @@
       levam agora o ponto do terreno (?tcd_ll=lat,lon e ?tcd_local=), para a visita entrar no carrinho com a deslocação
       calculada (m90989). Sem terreno escolhido, usa o centro do mapa só se o mapa estiver aproximado (zoom 13 ou mais);
       senão, deixa a ligação como está e o site manda escolher o terreno.
-   2. Chegada com ?visita=1 (o site mandou escolher o terreno para a visita): aviso no mapa com o que fazer.
+   2. Camadas ligadas duas vezes seguidas deixam de mostrar o erro técnico «already exists».
    Desligar: ?funil=0 ou localStorage ipr_funil_off = 1. */
 (function () {
   "use strict";
@@ -40,16 +40,16 @@
     if (lug && lug.textContent.trim()) u.searchParams.set("tcd_local", lug.textContent.trim().slice(0, 80));
     a.href = u.href;
   }, true);
-  if (/[?&]visita=1(&|$)/.test(location.search)) {
-    var mostrar = function () {
-      if (!D.body) return setTimeout(mostrar, 300);
-      var d = D.createElement("div"); d.setAttribute("role", "status");
-      d.style.cssText = "position:fixed;left:50%;top:calc(70px + env(safe-area-inset-top));transform:translateX(-50%);z-index:100045;max-width:min(92vw,520px);padding:10px 14px;background:rgba(18,22,15,.96);color:#E4E2D8;border:1px solid #94BE39;border-radius:2px;font:500 14px/1.4 Inter,system-ui,sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.4)";
-      d.innerHTML = T("<b>Visita técnica</b>: procure o seu terreno e escolha as parcelas (ou desenhe o limite). Na Ficha da propriedade, carregue em «Marcar» na visita técnica: a deslocação é calculada para esse sítio.", "<b>Site visit</b>: find your land and pick the parcels (or draw the boundary). In the Property sheet, tap «Book» on the site visit: travel is calculated for that place.") +
-        ' <button type="button" style="margin-left:8px;background:transparent;border:1px solid #3C4B32;color:#E4E2D8;border-radius:2px;padding:2px 8px;cursor:pointer" aria-label="' + T("Fechar", "Close") + '">×</button>';
-      d.querySelector("button").onclick = function () { d.remove(); };
-      D.body.appendChild(d); setTimeout(function () { if (d.isConnected) d.remove(); }, 20000);
-    };
-    setTimeout(mostrar, 2500);
-  }
+  // 2. (8/11) Camadas ligadas duas vezes depressa (ex.: «Hipsometria (DGT)») davam ao cliente o erro técnico «Source
+  //    "…" already exists». Se a fonte ou a camada já existe, o mapa usa a que lá está em vez de falhar.
+  (function sossegoFontes() {
+    var M = W.maplibregl && W.maplibregl.Map;
+    if (!M) return setTimeout(sossegoFontes, 500);
+    var P = M.prototype; if (P.__iprDup) return; P.__iprDup = 1;
+    var aS = P.addSource, aL = P.addLayer;
+    P.addSource = function (id, src) { try { if (this.getSource && this.getSource(id)) return this; } catch (e) {} return aS.apply(this, arguments); };
+    P.addLayer = function (ly) { try { if (ly && ly.id && this.getLayer && this.getLayer(ly.id)) return this; } catch (e) {} return aL.apply(this, arguments); };
+  })();
+  // (8/11) O aviso de ?visita=1 saiu: o app.js já abre a ferramenta da visita com a sua própria instrução e as duas
+  // mensagens contradiziam-se.
 })();
