@@ -134,6 +134,7 @@
     }).observe(D.body, { childList: true, characterData: true, subtree: true });
     D.addEventListener("change", function (e) { if (e.target && e.target.name === "leitura" && e.target.closest("#ipe-form")) nota(); }, true);
     agendar();
+    setInterval(agendar, 2000); // segurança: o app.js pode reescrever o preço antes de este observador existir
   })();
   // (8/11) O aviso de ?visita=1 saiu: o app.js já abre a ferramenta da visita com a sua própria instrução e as duas
   // mensagens contradiziam-se.
