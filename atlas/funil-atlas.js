@@ -91,9 +91,9 @@
   //    136 €. Agora o preço mostrado vem do servidor (GET /tcd/v1/pedido-produto/preco, rota que já existe).
   //    E, com a Leitura marcada, aparece o Pacote dos três (m90990): Planta incluída e 20 % de desconto no conjunto.
   (function precoLeitura() {
-    var form = D.getElementById("ipe-form"), pl = D.getElementById("ipe-preco-l"), ar = D.getElementById("ipe-area");
-    if (!form || !pl || !ar) return setTimeout(precoLeitura, 1000);
-    var cache = {}, pedido = 0, PLANTA = 19, ultimo = "";
+    if (!D.body) return setTimeout(precoLeitura, 500);
+    var cache = {}, pedido = 0, PLANTA = 19, ultimo = "", agendado = 0;
+    function el(id) { return D.getElementById(id); }
     function num(t) { var m = String(t || "").replace(/\./g, "").replace(",", ".").match(/-?\d+(\.\d+)?/); return m ? parseFloat(m[0]) : 0; }
     function eur(v) { return v.toLocaleString(EN ? "en-GB" : "pt-PT", { maximumFractionDigits: v % 1 ? 2 : 0, minimumFractionDigits: v % 1 ? 2 : 0 }) + " €"; }
     function preco(ha) {
@@ -102,26 +102,38 @@
       return fetch("/wp-json/tcd/v1/pedido-produto/preco?ha=" + k, { credentials: "same-origin" }).then(function (r) { return r.json(); }).then(function (j) { if (j && j.leitura) { cache[k] = j; if (j.planta) PLANTA = +j.planta; } return j; });
     }
     function nota() {
-      var n = D.getElementById("ipr-pacote"), chk = form.querySelector('input[name="leitura"]');
-      var b = num((D.getElementById("ipe-preco") || {}).textContent), l = num(pl.textContent), ha = num(ar.textContent);
-      if (!chk || !chk.checked || !(ha > 0) || !(b > 0) || !(l > 0)) { if (n) n.remove(); return; }
+      var form = el("ipe-form"), pl = el("ipe-preco-l"), ar = el("ipe-area"); if (!form || !pl || !ar) return;
+      var n = el("ipr-pacote"), chk = form.querySelector('input[name="leitura"]');
+      var b = num((el("ipe-preco") || {}).textContent), l = num(pl.textContent), ha = num(ar.textContent);
+      if (!chk || !chk.checked || !(ha > 0) || !(b > 0) || !(l > 0) || pl.textContent !== ultimo) { if (n) n.remove(); return; }
       var d = Math.round((0.2 * (b + l) - 0.8 * PLANTA) * 100) / 100; if (d <= 0) { if (n) n.remove(); return; }
+      var txt = T("Pacote dos três: com a Leitura, a Planta de Localização vai incluída e o conjunto fica com 20 % de desconto (menos " + eur(d) + ", sem IVA). Total: " + eur(b + l - d) + " + IVA.", "Three-pack: with the Land report, the Location plan is included and the set is 20 % off (" + eur(d) + " less, before VAT). Total: " + eur(b + l - d) + " + VAT.");
       if (!n) { n = D.createElement("p"); n.id = "ipr-pacote"; n.style.cssText = "margin:6px 0 10px;padding:8px 10px;border:1px solid #94BE39;border-radius:2px;font-size:13px;line-height:1.4"; var lab = chk.closest("label"); (lab || chk).parentNode.insertBefore(n, (lab || chk).nextSibling); }
-      n.textContent = T("Pacote dos três: com a Leitura, a Planta de Localização vai incluída e o conjunto fica com 20 % de desconto (menos " + eur(d) + ", sem IVA). Total: " + eur(b + l - d) + " + IVA.", "Three-pack: with the Land report, the Location plan is included and the set is 20 % off (" + eur(d) + " less, before VAT). Total: " + eur(b + l - d) + " + VAT.");
+      if (n.textContent !== txt) n.textContent = txt;
     }
     function acertar() {
-      var ha = num(ar.textContent), meu = ++pedido;
+      agendado = 0;
+      var pl = el("ipe-preco-l"), ar = el("ipe-area"); if (!pl || !ar) return;
+      if (pl.textContent === ultimo && pl.dataset.iprHa === ar.textContent) { nota(); return; }
+      var ha = num(ar.textContent), meu = ++pedido, haTxt = ar.textContent;
       preco(ha).then(function (j) {
         if (meu !== pedido || !j || !j.leitura) return;
+        var p2 = el("ipe-preco-l"); if (!p2) return;
         var t = (ha > 0 ? "" : T("desde ", "from ")) + eur(+j.leitura);
-        ultimo = t; if (pl.textContent !== t) pl.textContent = t;
+        ultimo = t; p2.dataset.iprHa = haTxt;
+        if (p2.textContent !== t) p2.textContent = t;
         nota();
       }).catch(function () {});
     }
-    new MutationObserver(acertar).observe(ar, { childList: true, characterData: true, subtree: true });
-    new MutationObserver(function () { if (pl.textContent !== ultimo) acertar(); }).observe(pl, { childList: true, characterData: true, subtree: true });
-    form.addEventListener("change", function (e) { if (e.target && e.target.name === "leitura") nota(); });
-    acertar();
+    function agendar() { if (!agendado) agendado = setTimeout(acertar, 120); }
+    new MutationObserver(function (ms) {
+      for (var i = 0; i < ms.length; i++) {
+        var t = ms[i].target, e = t.nodeType === 3 ? t.parentNode : t;
+        if (e && (e.id === "ipe-preco-l" || e.id === "ipe-area" || e.id === "ipe-preco" || (e.closest && e.closest("#ipe-preco-l,#ipe-area,#ipe-preco")) || (e.querySelector && e.querySelector("#ipe-form")))) { agendar(); return; }
+      }
+    }).observe(D.body, { childList: true, characterData: true, subtree: true });
+    D.addEventListener("change", function (e) { if (e.target && e.target.name === "leitura" && e.target.closest("#ipe-form")) nota(); }, true);
+    agendar();
   })();
   // (8/11) O aviso de ?visita=1 saiu: o app.js já abre a ferramenta da visita com a sua própria instrução e as duas
   // mensagens contradiziam-se.
