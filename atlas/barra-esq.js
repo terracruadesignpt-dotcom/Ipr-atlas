@@ -35,7 +35,7 @@
 
   function lingua() { var l = W.IPR_LINGUA || (/^(en|es)/i.exec(H.lang || "") || ["pt"])[0]; l = String(l).slice(0, 2).toLowerCase(); return l === "en" || l === "es" ? l : "pt"; }
   var TX = {
-    pt: { produtos: "Produtos", planta: "Planta de Localização", ficha: "Ficha gratuita", leitura: "Leitura do Terreno", base: "Base Cartográfica",
+    pt: { produtos: "Produtos", planta: "Planta de Localização", ficha: "Ficha gratuita", leitura: "Leitura Territorial", base: "Base Cartográfica",
       plantaT: "Planta à escala para a Câmara, o banco ou uma escritura", fichaT: "Indicar o terreno no mapa e ver a ficha gratuita",
       leituraT: "Relatório do terreno: o que permite, os riscos e o potencial", baseT: "Relevo, água e limites do terreno a partir do LiDAR",
       pesquisar: "Pesquisar locais", activas: "Camadas ligadas", fechar: "Fechar" },
