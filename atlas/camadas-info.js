@@ -383,7 +383,23 @@
     });
     return out.length ? out : null;
   }
+  // 9/11 (Miguel: «a legenda não bate certo com as cores da imagem»). Camadas da NASA GIBS: a legenda vem do mapa de
+  // cores oficial da própria camada (colormaps v1.3), lido no navegador. Se não vier, fica a legenda escrita.
+  var GIBSID = { "mu-chuva": "IMERG_Precipitation_Rate" }, GIBSC = {};
+  function legendaGibs(e, alvo) {
+    var id = GIBSID[e.id]; if (!id || !W.fetch || !W.DOMParser) return;
+    var p = GIBSC[id] || (GIBSC[id] = fetch("https://gibs.earthdata.nasa.gov/colormaps/v1.3/" + id + ".xml").then(function (r) { if (!r.ok) throw 0; return r.text(); }).then(function (t) {
+      var x = new DOMParser().parseFromString(t, "text/xml"), L = [].slice.call(x.getElementsByTagName("LegendEntry"));
+      var cor = function (n) { var v = String(n.getAttribute("rgb") || "").split(",").map(Number); return v.length === 3 ? "#" + v.map(function (k) { return ("0" + Math.max(0, Math.min(255, k)).toString(16)).slice(-2); }).join("") : ""; };
+      var rows = L.map(function (n) { return [cor(n), n.getAttribute("tooltip") || n.getAttribute("label") || ""]; }).filter(function (r) { return r[0] && r[1]; });
+      if (rows.length > 9) { var s = []; for (var i = 0; i < 9; i++) s.push(rows[Math.round(i * (rows.length - 1) / 8)]); rows = s; }
+      return rows;
+    }));
+    p.then(function (rows) { if (rows && rows.length && alvo.isConnected) alvo.innerHTML = htmlLinhas(rows) + '<p class="ii-m">' + (en() ? "Colours as drawn by NASA GIBS for this layer." : "Cores tal como a NASA GIBS desenha esta camada.") + "</p>"; }).catch(function () { delete GIBSC[id]; });
+  }
   function legendaHtml(e, alvo) {
+    legendaGibs(e, alvo);
+    if (e.id === "r_hipso") setTimeout(function () { if (alvo.isConnected && !alvo.querySelector(".ii-hip")) { var n = D.createElement("p"); n.className = "ii-m ii-hip"; n.textContent = en() ? "Official DGT scale. The first class runs from 0 to 50 m." : "Escala oficial da DGT. A primeira classe vai de 0 a 50 m."; alvo.appendChild(n); } }, 0);
     var L = LEG[e.id], leg = parse(e.leg);
     if (L && L.leg) leg = L.leg;
     if ((!leg || !leg.length) && e.dyn) leg = dynLeg(e);
@@ -429,7 +445,14 @@
     "#ipr-ii dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:3px 10px;font-size:12px}#ipr-ii dt{color:var(--mu,#9aa08f)}#ipr-ii dd{margin:0;overflow-wrap:anywhere}" +
     ".ipr-ii-b{flex:0 0 auto;width:18px;height:18px;border-radius:50%;border:1px solid currentColor;background:none;color:var(--mu,#9aa08f);font:italic 600 11px/16px Georgia,serif;text-align:center;cursor:pointer;padding:0;margin-left:4px;opacity:.8}.ipr-ii-b:hover{opacity:1;color:var(--tx,#e9eadf)}" +
     "#ipr-lgd .ipr-ii-f{display:block;font-size:10.5px;color:var(--mu,#9aa08f);margin:-1px 0 3px;font-weight:400}#ipr-lgd .ipr-ii-b{width:15px;height:15px;font-size:9.5px;line-height:13px;vertical-align:1px}" +
-    "@media (max-width:700px){#ipr-ii{right:8px;left:8px;width:auto;top:auto;bottom:70px;max-height:60vh}}";
+    // 9/11 (Miguel): «i» alinhados à direita nas listas; ao passar no «i» realça-se a linha a que pertence.
+    "label:has(> .ipr-ii-b){position:relative;padding-right:26px!important}label > .ipr-ii-b{position:absolute;right:4px;top:3px;margin:0}" +
+    "label:has(> .ipr-ii-b:hover),label:has(> .ipr-ii-b:focus-visible){background:rgba(148,190,57,.14);border-radius:6px;box-shadow:inset 2px 0 0 #94BE39}" +
+    // 9/11 (Miguel): legenda da hipsometria da DGT desfocada (a imagem do serviço era esticada); mostra-se no tamanho próprio.
+    "img[src*='hipsometria' i]{width:auto!important;max-width:100%!important;height:auto!important;image-rendering:auto}" +
+    // 9/11 (Miguel): escala gráfica duplicada e sobreposta; onde há a escala do Atlas (.ipe-escg) sai a do MapLibre.
+    "body:has(.ipe-escg) .maplibregl-ctrl-scale{display:none!important}" +
+    "@media (max-width:700px){#ipr-ii{right:8px!important;left:8px!important;width:auto;top:auto!important;bottom:70px;max-height:60vh}}";
   function css() { if (D.getElementById("ipr-ii-css")) return; var s = D.createElement("style"); s.id = "ipr-ii-css"; s.textContent = CSS; (D.head || D.documentElement).appendChild(s); }
   // ── Camadas de fora do catálogo (4/11/2026, 18h12: «para a frente com isso tudo»): Açores e Madeira (ilhas-camadas.js),
   //    EDIA (edia-camadas.js), Espanha (es-camadas.js), mundo (mundo-camadas.js) e resultados dos simuladores. Cada uma
@@ -488,7 +511,7 @@
     OUT("mu-viirs", "Imagem de satélite do dia", "Mundo · fontes globais", GIBS, "NASA EOSDIS GIBS (VIIRS)", "Imagem de satélite VIIRS de há dois dias, a 375 m: nuvens, fumo, cheias e cor da vegetação neste momento.", COR_REAL),
     OUT("mu-luzes", "Luzes nocturnas", "Mundo · fontes globais", GIBS, "Black Marble 2016, NASA Earth Observatory", "Luzes nocturnas vistas de satélite (2016): povoamento e infra-estruturas.", { leg: [["#000000", "sem luz"], ["#f5d27a", "luz fraca"], ["#ffffff", "luz intensa"]] }),
     OUT("mu-aster", "Relevo a cores (altitude e sombra)", "Mundo · fontes globais", GIBS, "ASTER GDEM, NASA e METI", "Altitude em cores, com sombra, a 30 m, para qualquer país.", { leg: [["#2a7a3a", "cotas baixas"], ["#d7c46a", "cotas médias"], ["#8b5a2b", "cotas altas"], ["#f2f2f2", "cumes"]] }),
-    OUT("mu-chuva", "Chuva · último dia", "Mundo · fontes globais", GIBS, "IMERG, NASA GPM, via GIBS", "Intensidade média da chuva no último dia disponível (satélites GPM, cerca de 10 km).", { leg: [["#a6d8ff", "chuva fraca"], ["#2b83ba", "moderada"], ["#fdae61", "forte"], ["#d7191c", "muito forte"]] }),
+    OUT("mu-chuva", "Chuva · último dia", "Mundo · fontes globais", GIBS, "IMERG, NASA GPM, via GIBS", "Intensidade média da chuva no último dia disponível (satélites GPM, cerca de 10 km).", { txt: "A escala de cores é a da NASA GIBS para esta camada (mm por hora). Se a legenda oficial não carregar, compare as cores com o mapa: as mais claras são chuva fraca, as mais intensas chuva forte." }),
     OUT("mu-temp", "Temperatura do ar · último mês", "Mundo · fontes globais", GIBS, "MERRA-2, NASA GMAO, via GIBS", "Temperatura média mensal a 2 m do solo, cerca de 50 km: o clima da região, não o do terreno.", { leg: [["#313695", "frio"], ["#ffffbf", "ameno"], ["#a50026", "quente"]] }),
     OUT("mu-cheia", "Cheias · últimos 3 dias", "Mundo · fontes globais", GIBS, "NASA LANCE MODIS, via GIBS", "Água fora do sítio habitual detectada por satélite nos últimos 3 dias (cerca de 250 m).", { txt: "Água detectada fora do leito habitual (cheia) e água permanente, conforme a cor do produto MODIS da NASA." }),
     OUT("mu-evi", "Vigor da vegetação · últimos 8 dias", "Mundo · fontes globais", GIBS, "NASA MODIS, via GIBS", "Índice de vegetação melhorado (EVI) a 250 m.", { leg: [["#d8c79a", "pouca vegetação"], ["#9cc35a", "vegetação moderada"], ["#1f6b2a", "vegetação muito activa"]] }),
@@ -539,7 +562,19 @@
       "</dl><h4>" + (E ? "Legend" : "Legenda") + '</h4><div class="ii-leg"></div>';
     painel.innerHTML = h; painel.hidden = false;
     legendaHtml(e, painel.querySelector(".ii-leg"));
+    junto(painel, origem);
     var b = painel.querySelector(".x"); if (b) b.focus();
+  }
+  // 9/11 (Miguel): a ficha abre ao lado do «i» em que se tocou, não no canto de cima à direita por cima do painel.
+  var origem = null;
+  function junto(p, b) {
+    p.style.left = p.style.right = p.style.top = "";
+    if (!b || !b.getBoundingClientRect || W.innerWidth <= 700) return;
+    var r = b.getBoundingClientRect(), w = p.offsetWidth || 380, h = p.offsetHeight || 300, vw = W.innerWidth, vh = W.innerHeight;
+    if (!r.width && !r.height) return;
+    var x = r.right + 14; if (x + w > vw - 8) x = r.left - w - 14; if (x < 8) x = Math.max(8, vw - w - 16);
+    var y = Math.min(Math.max(56, r.top - 24), Math.max(56, vh - h - 16));
+    p.style.left = x + "px"; p.style.right = "auto"; p.style.top = y + "px";
   }
   function fechar() { if (painel) painel.hidden = true; }
   W.__iprInfoAbrir = abrir;
@@ -552,7 +587,7 @@
   }
   D.addEventListener("click", function (ev) {
     var b = ev.target.closest && ev.target.closest(".ipr-ii-b"); if (!b) return;
-    ev.preventDefault(); ev.stopPropagation(); abrir(b.dataset.ii);
+    ev.preventDefault(); ev.stopPropagation(); origem = b; abrir(b.dataset.ii);
   }, true);
   function nomeLeg(t) { return String(t || "").trim(); }
   function decorar() {

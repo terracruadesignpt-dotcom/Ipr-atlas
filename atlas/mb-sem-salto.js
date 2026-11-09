@@ -145,7 +145,7 @@
       if (e.childElementCount !== 0) return;
       var t = e.textContent.trim();
       if (t === "f_sub") e.textContent = NSUB;
-      else if (t === "aoi") e.textContent = (W.IPR_LINGUA === "en") ? "Site boundary" : "Limite do terreno";
+      else if (t === "aoi") e.textContent = (W.IPR_LINGUA === "en") ? "Study area boundary" : "Limite da área de estudo";
       else if (/^ent\d+$/.test(t)) { var li = D.querySelector('#ipr-mb li[data-mb-c="' + t + '"] .ipr-mb-n'); if (li) e.textContent = li.textContent.trim(); }
     }); } catch (e) {}
   }, 700);

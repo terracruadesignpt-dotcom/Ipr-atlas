@@ -27,12 +27,12 @@
     pt: { titulo: "Os meus projectos", camadas: "camadas", camada: "camada", partilhado: "partilhado consigo", rever: "para rever",
       prep: "Em preparação", sem: "Sem camadas para o mapa nesta entrega.", ligar: "Ligar todas", desligar: "Desligar todas",
       ficha: "Ficha do projecto", ver: "Ver", verT: "Enquadrar esta Base no mapa", abrir: "Abrir no mapa",
-      fora: "Esta Base não está aberta no mapa. Abra-a para ligar as camadas.", op: "Opacidade de ", limite: "Limite do terreno",
+      fora: "Esta Base não está aberta no mapa. Abra-a para ligar as camadas.", op: "Opacidade de ", limite: "Limite da área de estudo",
       entrega: "Da entrega", aberta: "aberta no mapa", semNome: "Terreno sem nome" },
     en: { titulo: "My projects", camadas: "layers", camada: "layer", partilhado: "shared with you", rever: "to review",
       prep: "Being prepared", sem: "No map layers in this delivery.", ligar: "Turn all on", desligar: "Turn all off",
       ficha: "Project sheet", ver: "View", verT: "Fit this Base on the map", abrir: "Open on the map",
-      fora: "This Base is not open on the map. Open it to turn the layers on.", op: "Opacity of ", limite: "Site boundary",
+      fora: "This Base is not open on the map. Open it to turn the layers on.", op: "Opacity of ", limite: "Study area boundary",
       entrega: "From the delivery", aberta: "open on the map", semNome: "Unnamed site" }
   };
   function t(k) { var l = (window.IPR_LINGUA || "pt") === "en" ? "en" : "pt"; return TX[l][k] || TX.pt[k]; }
