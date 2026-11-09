@@ -3333,6 +3333,31 @@
   function plNome(e) { return PLG === "en" ? (PL_EN[e.id] || e.en || e.n) : e.n; }
   function plCls(t) { return PLG === "en" && PL_CLS_EN[t] ? PL_CLS_EN[t] : t; }
   function plLoc() { return PLG === "en" ? "en-GB" : "pt-PT"; }
+  var PM_LETRAS_URL = "https://cdn.jsdelivr.net/gh/terracruadesignpt-dotcom/Ipr-atlas@9d83e49168e8f25c2f21d9619bdba1d75874f4b3/atlas/marca/v6/fontes/";
+  var PM_LETRAS = [["Inter-400.ttf", "helvetica", "normal"], ["Inter-700.ttf", "helvetica", "bold"], ["Inter-400-italico.ttf", "helvetica", "italic"],
+    ["Inter-700-italico.ttf", "helvetica", "bolditalic"], ["IBMPlexMono-400.ttf", "courier", "normal"]];
+  // Põe Inter no lugar da Helvetica e IBM Plex Mono no da Courier, no documento acabado de criar. Os caracteres que estas
+  // letras (subconjunto latino) não têm passam a equivalentes simples, para não saírem quadrados vazios.
+  var PM_TROCAS = { "\u2265": ">=", "\u2264": "<=", "\u2192": "->", "\u2190": "<-", "\u2713": "v", "\u2715": "x", "\u2248": "~", "\u2260": "!=" };
+  function pmSimples(t) {
+    if (typeof t === "string") return t.replace(/[^\u0000-\u024F\u2010-\u2027\u2030-\u203A\u2044\u20AC\u2122\u2212]/g, function (c) { return PM_TROCAS[c] || ""; });
+    if (Array.isArray(t)) return t.map(pmSimples);
+    return t;
+  }
+  function pmLetras(doc) {
+    var L = PL.letrasOk;
+    if (!L) return;
+    {
+      try {
+        L.forEach(function (f) { doc.addFileToVFS(f[0], f[1]); doc.addFont(f[0], f[2], f[3]); });
+        var tx = doc.text, sp = doc.splitTextToSize, gw = doc.getTextWidth;
+        doc.text = function (t) { var a = Array.prototype.slice.call(arguments); a[0] = pmSimples(t); return tx.apply(doc, a); };
+        doc.splitTextToSize = function (t) { var a = Array.prototype.slice.call(arguments); a[0] = pmSimples(t); return sp.apply(doc, a); };
+        doc.getTextWidth = function (t) { return gw.call(doc, pmSimples(t)); };
+        doc.setFont("helvetica", "normal");
+      } catch (e) {}
+    }
+  }
   function plLibs() {
     if (PL.libs) return PL.libs;
     function carregar(u) { return new Promise(function (ok, ko) { var s = document.createElement("script"); s.src = u; s.onload = ok; s.onerror = function () { ko(new Error("Não foi possível carregar " + u)); }; document.head.appendChild(s); }); }
@@ -3340,6 +3365,15 @@
       window.proj4.defs("EPSG:3763", "+proj=tmerc +lat_0=39.66825833333333 +lon_0=-8.133108333333334 +k=1 +x_0=0 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");
     });
     PL.libs.catch(function () { PL.libs = null; });
+    // Letras da marca do IPR (Pedro Bolito, regenerativo.pt/export/planta-de-localizacao: «Letra Inter; referências e
+    // coordenadas em monoespaçada»), 05/11/2026. Se não carregarem, a Planta sai como antes, com as letras do jsPDF.
+    if (!PL.letras) PL.letras = Promise.all(PM_LETRAS.map(function (f) {
+      return fetch(PM_LETRAS_URL + f[0]).then(function (r) { if (!r.ok) throw new Error(r.status); return r.arrayBuffer(); }).then(function (b) {
+        var u = new Uint8Array(b), t = "", i; for (i = 0; i < u.length; i += 32768) t += String.fromCharCode.apply(null, u.subarray(i, i + 32768));
+        return [f[0], btoa(t), f[1], f[2]];
+      });
+    })).then(function (L) { PL.letrasOk = L; return L; }).catch(function () { return null; });
+    PL.libs = PL.libs.then(function (x) { return PL.letras.then(function () { return x; }); });
     return PL.libs;
   }
   function plGeo(id) {
@@ -4141,6 +4175,7 @@
       }).then(function (R) {
         msg(plT("compor"));
         var J = window.jspdf.jsPDF, orient = W > H ? "landscape" : "portrait", fmt = A3 ? "a3" : "a4", doc = new J({ orientation: orient, unit: "mm", format: fmt, compress: true });
+        pmLetras(doc); // marca do IPR: Inter e IBM Plex Mono (05/11/2026)
         var folhas = [];
         function mm(p) { return [M + (p[0] - caixa[0]) / gw * fw, M + (caixa[3] - p[1]) / gh * fh]; }
         // 1 · localização
