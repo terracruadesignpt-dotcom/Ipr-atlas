@@ -218,7 +218,7 @@
   }
 
   // ───────── peças ─────────
-  function entrarLink() { var a = $('ipe-entrar'); return a ? { href: a.getAttribute('href') || '/conta/', txt: (a.textContent || '').trim() } : { href: '/conta/?redirect_to=%2Fatlas%2F', txt: '' }; }
+  function entrarLink() { var a = $('ipe-user') || $('ipe-entrar'); return a ? { href: a.getAttribute('href') || '/conta/', txt: (a.textContent || '').trim() } : { href: '/conta/?redirect_to=%2Fatlas%2F', txt: '' }; }
   function topo() {
     var b = D.createElement('header'); b.id = 'ipr-exd-top'; b.className = 'ipr-exd-ui';
     var en = entrarLink(), logado = D.body.classList.contains('logged-in');
@@ -638,7 +638,7 @@
   var SAIR = '/conta/customer-logout/';
   function botaoSair() {
     if (!D.body || !D.body.classList.contains('logged-in')) return;
-    var en = $('ipe-entrar');
+    var en = $('ipe-user') || $('ipe-entrar'); // com sessão o Atlas mostra #ipe-user («Conta»); sem sessão, #ipe-entrar
     if (en && en.parentNode && !$('ipr-sair-topo')) {
       var a = D.createElement('a'); a.id = 'ipr-sair-topo'; a.href = SAIR; a.className = en.className; a.textContent = T('Sair', 'Sign out');
       a.title = T('Terminar a sessão', 'Sign out'); a.style.marginLeft = '6px';
