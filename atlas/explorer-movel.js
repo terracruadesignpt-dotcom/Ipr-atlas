@@ -73,7 +73,7 @@
       'html.ipr-exm .ipe-top,html.ipr-exm #ipe-esq,html.ipr-exm #ipe-dir,html.ipr-exm .ipe-tools,html.ipr-exm #ipe-st,html.ipr-exm #ipr-tri,html.ipr-exm #ipr-as-b,html.ipr-exm .ipe-tour,html.ipr-exm #ipr-lingueta,html.ipr-exm #ipr-pb-barra,html.ipr-exm .maplibregl-ctrl-top-right,html.ipr-exm .maplibregl-ctrl-bottom-right .maplibregl-ctrl-scale{display:none!important}' +
       'html.ipr-exm .ipe-mapa{position:fixed!important;top:56px!important;left:0!important;right:0!important;bottom:60px!important;width:auto!important;height:auto!important;margin:0!important}' +
       '.ipr-exm-ui{--vn:#10170d;--vn2:#18221400;--p1:#161e13;--p2:#1f2a1a;--ln:#2e3a28;--tx:#eef0e6;--mu:#a7ae9b;--ac:#94BE39;font:15px/1.45 Inter,system-ui,sans-serif;color:var(--tx);letter-spacing:normal}.ipr-exm-ui *{letter-spacing:inherit}' +
-      'html.ipr-exm #tcdck{z-index:2147480400!important}html.ipr-exm #tcdatdq-b{top:66px!important;bottom:auto!important}html.ipr-exm #tcdatdq{top:116px!important;bottom:auto!important}' +
+      'html.ipr-exm #tcdck{z-index:2147480400!important}html.ipr-exm #tcdatdq-b{top:66px!important;bottom:auto!important}html.ipr-exm #tcdatdq{top:116px!important;bottom:auto!important}html.ipr-exm #tcdck *{letter-spacing:0!important}html.ipr-exm #tcdck p{font-size:12px!important;line-height:1.35!important;margin:2px 0 8px!important}html.ipr-exm #tcdck h2,html.ipr-exm #tcdck h3,html.ipr-exm #tcdck strong:first-child{font-size:13px!important;margin:0 0 2px!important}html.ipr-exm #tcdck .tcdck-c{padding:10px 12px!important}html.ipr-exm #tcdck button{min-height:40px!important;padding:8px 10px!important}html.ipr-exm body:has(#ipr-exm-bv:not([hidden])) #ipr-ca,html.ipr-exm body:has(#ipr-exm-pf:not([hidden])) #ipr-ca{display:none!important}' +
       '.ipr-exm-ui h1,.ipr-exm-ui h2,.ipr-exm-ui h3{font-family:Outfit,Inter,sans-serif;font-weight:600;letter-spacing:-.01em;margin:0}' +
       '.ipr-exm-ui button{font:inherit;color:inherit;cursor:pointer}' +
       '#ipr-exm-top{position:fixed;left:0;right:0;top:0;height:56px;z-index:2147480100;display:flex;align-items:center;gap:8px;padding:0 10px;background:var(--vn);border-bottom:1px solid var(--ln)}' +
@@ -81,7 +81,7 @@
       '#ipr-exm-top form{flex:1;min-width:0}#ipr-exm-top input{width:100%;height:38px;border-radius:10px;border:1px solid var(--ln);background:var(--p1);color:var(--tx);padding:0 10px;font:16px Inter,sans-serif}' +
       '.ipr-exm-ac{background:var(--ac);color:#14200F!important;border:0;border-radius:10px;font-weight:600!important;padding:0 14px;min-height:44px}' +
       '.ipr-exm-ol{background:transparent;border:1px solid var(--ln);border-radius:10px;padding:0 14px;min-height:44px}' +
-      '#ipr-exm-bv,#ipr-exm-pf{position:fixed;inset:0;z-index:2147480300;background:rgba(10,14,8,.94);overflow:auto;-webkit-overflow-scrolling:touch;padding:24px 16px 32px}' +
+      '#ipr-exm-bv,#ipr-exm-pf{position:fixed;inset:0;z-index:2147480300;background:#0f140c;overflow:auto;-webkit-overflow-scrolling:touch;padding:24px 16px 32px}' +
       '#ipr-exm-bv[hidden],#ipr-exm-pf[hidden],#ipr-exm-sh[hidden],#ipr-exm-res[hidden]{display:none}' +
       '.ipr-exm-k{font:500 11px Inter,sans-serif;letter-spacing:.1em;text-transform:uppercase;color:var(--ac);margin:0 0 6px}' +
       '#ipr-exm-bv h1{font-size:28px;line-height:1.15;margin-bottom:8px}#ipr-exm-bv .sub{color:var(--mu);margin:0 0 18px}' +
@@ -198,10 +198,28 @@
     } else {
       el.innerHTML = '<p>' + esc(T('Toque no seu terreno no mapa (as parcelas do cadastro aparecem ao aproximar) ou desenhe o limite.', 'Tap your land on the map (cadastre parcels appear as you zoom in) or draw the boundary.')) + '</p><div class="ipr-exm-alt" style="margin:0"><button type="button" class="ipr-exm-ol" data-x="desenhar">' + esc(T('Desenhar o limite', 'Draw the boundary')) + '</button><button type="button" class="ipr-exm-ol" data-x="ficheiro">' + esc(T('Carregar ficheiro', 'Upload file')) + '</button></div>';
       if (est) est.textContent = T('Toque no seu terreno', 'Tap your land');
+      perto();
       var f = D.getElementById('ipr-exm-ficha'); if (f) f.innerHTML = '';
     }
   }
   // O terreno fica à vista por cima do painel de baixo («Voltar ao terreno» sem afastar e arrastar).
+  // Longe de mais para haver parcelas: dizê-lo, e um toque no mapa aproxima até lá.
+  function perto() {
+    var m = mapa(), est = D.getElementById('ipr-exm-est'); if (!m || !est || temTerreno()) return;
+    var longe = m.getZoom() < 14;
+    est.textContent = longe ? T('Aproxime-se do terreno', 'Zoom in to your land') : T('Toque no seu terreno', 'Tap your land');
+  }
+  function ligarPerto() {
+    var m = mapa(); if (!m || m.__iprExmPerto) return; m.__iprExmPerto = 1;
+    m.on('zoomend', perto);
+    m.on('click', function (e) {
+      if (temTerreno() || m.getZoom() >= 13) return;
+      var bv = D.getElementById('ipr-exm-bv'), pf = D.getElementById('ipr-exm-pf');
+      if ((bv && !bv.hidden) || (pf && !pf.hidden)) return;
+      try { m.flyTo({ center: e.lngLat, zoom: 16, duration: 900, essential: true }); } catch (x) {}
+      toast(T('Aproximámos. Agora toque na parcela do seu terreno.', 'Zoomed in. Now tap the parcel of your land.'));
+    });
+  }
   function enquadrar() {
     var m = mapa(), a = desenho(); if (!m || !a) return;
     var x0 = 180, y0 = 90, x1 = -180, y1 = -90;
@@ -229,8 +247,13 @@
   function cadastro() { limparRelevo(); if (!ligadas.cad) ligarCam('cad', true); setTimeout(modoParcelas, 300); }
   function voar(r) {
     var m = mapa(); if (!m) return;
-    var b = r.boundingbox;
-    try { if (b) m.fitBounds([[+b[2], +b[0]], [+b[3], +b[1]]], { maxZoom: 16, padding: 40 }); else m.flyTo({ center: [+r.lon, +r.lat], zoom: 16 }); } catch (e) {}
+    // Ao ponto do lugar, já com as parcelas à vista (o cadastro só aparece a partir do zoom 13; a caixa do Nominatim de
+    // uma aldeia é muitas vezes a freguesia inteira e deixava a pessoa no zoom 10, sem parcelas para tocar).
+    var t = String(r.addresstype || r.type || ''), z = 16;
+    if (/^(house|building|road|residential|postcode|farm|farmyard|isolated_dwelling|allotments)$/.test(t)) z = 17;
+    else if (/^(town|city|suburb|borough|quarter)$/.test(t)) z = 15;
+    else if (/^(municipality|county|state|region|province|administrative|country)$/.test(t)) z = 14;
+    try { m.flyTo({ center: [+r.lon, +r.lat], zoom: z, duration: 1200, essential: true }); } catch (e) {}
     cadastro();
   }
   function porApp(txt) { // NIC e coordenadas: a pesquisa do próprio Atlas sabe tratar
@@ -356,7 +379,7 @@
     D.addEventListener('click', cliques, true);
     // 10/11 (Nuno: «curvas de nível e cadastro tudo da mesma cor, não tem leitura»): só fotografia e cadastro (limparRelevo).
     pintarTerreno();
-    setInterval(function () { if (!D.hidden) { pintarTerreno(); var bv = D.getElementById('ipr-exm-bv'), pf = D.getElementById('ipr-exm-pf'); if ((!bv || bv.hidden) && (!pf || pf.hidden)) modoParcelas(); limparRelevo(); } }, 1200);
+    setInterval(function () { if (!D.hidden) { pintarTerreno(); var bv = D.getElementById('ipr-exm-bv'), pf = D.getElementById('ipr-exm-pf'); if ((!bv || bv.hidden) && (!pf || pf.hidden)) modoParcelas(); limparRelevo(); ligarPerto(); } }, 1200);
     // quem roda o telemóvel para o lado ou alarga a janela volta ao Atlas normal ao recarregar; aqui só se mantém
     gtag('exm_entrada');
     return true;
