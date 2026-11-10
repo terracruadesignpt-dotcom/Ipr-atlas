@@ -71,9 +71,9 @@
     var s = D.createElement('style'); s.id = 'ipr-exm-css';
     s.textContent =
       'html.ipr-exm .ipe-top,html.ipr-exm #ipe-esq,html.ipr-exm #ipe-dir,html.ipr-exm .ipe-tools,html.ipr-exm #ipe-st,html.ipr-exm #ipr-tri,html.ipr-exm #ipr-as-b,html.ipr-exm .ipe-tour,html.ipr-exm #ipr-lingueta,html.ipr-exm #ipr-pb-barra,html.ipr-exm .maplibregl-ctrl-top-right,html.ipr-exm .maplibregl-ctrl-bottom-right .maplibregl-ctrl-scale{display:none!important}' +
-      'html.ipr-exm .ipe-mapa{position:fixed!important;top:56px!important;left:0!important;right:0!important;bottom:0!important;width:auto!important;height:auto!important;margin:0!important}' +
+      'html.ipr-exm .ipe-mapa{position:fixed!important;top:56px!important;left:0!important;right:0!important;bottom:60px!important;width:auto!important;height:auto!important;margin:0!important}' +
       '.ipr-exm-ui{--vn:#10170d;--vn2:#18221400;--p1:#161e13;--p2:#1f2a1a;--ln:#2e3a28;--tx:#eef0e6;--mu:#a7ae9b;--ac:#94BE39;font:15px/1.45 Inter,system-ui,sans-serif;color:var(--tx);letter-spacing:normal}.ipr-exm-ui *{letter-spacing:inherit}' +
-      'html.ipr-exm #tcdck{z-index:2147480400!important}' +
+      'html.ipr-exm #tcdck{z-index:2147480400!important}html.ipr-exm #tcdatdq-b{top:66px!important;bottom:auto!important}html.ipr-exm #tcdatdq{top:116px!important;bottom:auto!important}' +
       '.ipr-exm-ui h1,.ipr-exm-ui h2,.ipr-exm-ui h3{font-family:Outfit,Inter,sans-serif;font-weight:600;letter-spacing:-.01em;margin:0}' +
       '.ipr-exm-ui button{font:inherit;color:inherit;cursor:pointer}' +
       '#ipr-exm-top{position:fixed;left:0;right:0;top:0;height:56px;z-index:2147480100;display:flex;align-items:center;gap:8px;padding:0 10px;background:var(--vn);border-bottom:1px solid var(--ln)}' +
@@ -218,7 +218,15 @@
 
   // ───────── acções ─────────
   function ligarCam(id, on) { var v = viz(); if (!v) return; try { v.ligar(id, on); ligadas[id] = on; } catch (e) {} }
-  function cadastro() { if (!ligadas.cad) ligarCam('cad', true); }
+  // O «mapa simples» do Atlas (mapa-simples.js) liga curvas e hipsometria ao entrar na escolha de parcelas. No Explorer ficam
+  // desligadas até a pessoa carregar em «Relevo e curvas de nível» (querRelevo).
+  var querRelevo = false;
+  function limparRelevo() {
+    var v = viz(); if (querRelevo || !v || !v.activas) return;
+    ['r_curvas', 'r_hipso', 'r_cdgt'].forEach(function (id) { if (v.activas().indexOf(id) >= 0) ligarCam(id, false); });
+    [].forEach.call(D.querySelectorAll('#ipr-exm-sh [data-cam]'), function (b) { b.setAttribute('aria-pressed', v.activas().indexOf(b.getAttribute('data-cam')) >= 0 ? 'true' : 'false'); });
+  }
+  function cadastro() { limparRelevo(); if (!ligadas.cad) ligarCam('cad', true); setTimeout(modoParcelas, 300); }
   function voar(r) {
     var m = mapa(); if (!m) return;
     var b = r.boundingbox;
@@ -268,20 +276,25 @@
     if (typeof W.__iprAssistenteAbrir === 'function') { try { W.__iprAssistenteAbrir(produto); return; } catch (e) {} }
     location.href = '/documentos/';
   }
+  // 10/11 (Nuno, 08h27: «não consigo carregar no cadastro»): no Atlas, tocar numa parcela só a escolhe com a ferramenta
+  // «parcelas» activa (a barra de ferramentas está escondida neste modo). Liga-se aqui sempre que ainda não há terreno.
+  function ferramenta(t) { var b = D.querySelector('.ipe-tools [data-tool="' + t + '"]'); if (!b) return false; var e = ipe() && ipe().estado; if (e && e.tool === t) return true; b.click(); return true; }
+  function modoParcelas() { var e = ipe() && ipe().estado; if (!e || temTerreno()) return; if (e.tool === 'nav') ferramenta('parcelas'); }
   function clicarFerramenta(re) {
     var b = [].filter.call(D.querySelectorAll('.ipe-tools button,[data-tool]'), function (x) { return re.test(x.getAttribute('aria-label') || x.title || x.textContent || ''); })[0];
     if (b) { b.click(); return true; } return false;
   }
   function desenhar() {
     fecharEntrada(); abrirPainel(false);
-    if (!clicarFerramenta(/Desenhar o terreno|Draw the land|Draw/i)) comprar();
+    if (!ferramenta('desenhar') && !clicarFerramenta(/Desenhar o terreno|Draw the land|Draw/i)) comprar();
     toast(T('Toque no mapa para marcar cada canto do terreno. Toque no primeiro ponto para fechar.', 'Tap the map at each corner. Tap the first point to close.'));
   }
   function ficheiro() { fecharEntrada(); var i = D.getElementById('ipe-file'); if (i) i.click(); else comprar(); }
   function trocar() {
     var m = mapa(), cs = (m && m._controls) || [];
     cs.forEach(function (c) { if (c && typeof c.deleteAll === 'function') try { c.deleteAll(); m.fire('draw.delete', { features: [] }); } catch (e) {} });
-    ultimoTer = null; pintarTerreno();
+    ultimoTer = null; pintarTerreno(); cadastro();
+    toast(T('Toque na parcela do seu terreno. Pode tocar em várias para as juntar.', 'Tap your parcel. You can tap several to join them.'));
   }
   function ficha() {
     gtag('exm_ficha');
@@ -308,11 +321,11 @@
     if (gl) { e.preventDefault(); e.stopPropagation(); var c = CAM.filter(function (x) { return x.id === gl.getAttribute('data-gl'); })[0], box = D.getElementById('ipr-exm-gl'); if (c && box) box.innerHTML = box.getAttribute('data-id') === c.id ? '' : '<div class="ipr-exm-gl">' + esc(EN() ? c.g[1] : c.g[0]) + '</div>'; if (box) box.setAttribute('data-id', box.innerHTML ? c.id : ''); return; }
     var b = e.target.closest('[data-x],[data-cam],[data-fundo],[data-pf]'); if (!b || !b.closest('.ipr-exm-ui')) return;
     var x = b.getAttribute('data-x');
-    if (b.hasAttribute('data-cam')) { var id = b.getAttribute('data-cam'), on = b.getAttribute('aria-pressed') !== 'true'; b.setAttribute('aria-pressed', on ? 'true' : 'false'); ligarCam(id, on); gtag('exm_camada', { id: id, on: on }); return; }
+    if (b.hasAttribute('data-cam')) { var id = b.getAttribute('data-cam'), on = b.getAttribute('aria-pressed') !== 'true'; if (id === 'r_curvas') querRelevo = on; b.setAttribute('aria-pressed', on ? 'true' : 'false'); ligarCam(id, on); gtag('exm_camada', { id: id, on: on }); return; }
     if (b.hasAttribute('data-fundo')) { var v = viz(); if (v && typeof v.fundo === 'function') try { v.fundo(b.getAttribute('data-fundo')); } catch (er) {} [].forEach.call(b.parentNode.children, function (s) { s.setAttribute('aria-pressed', s === b ? 'true' : 'false'); }); return; }
     if (b.hasAttribute('data-pf')) {
       var pf = b.getAttribute('data-pf'); D.getElementById('ipr-exm-pf').hidden = true; gtag('exm_perfil', { p: pf });
-      if (pf === 'conhecer') { cadastro(); abrirPainel(true); toast(T('Aproxime e toque no seu terreno. A ficha aparece no painel de baixo.', 'Zoom in and tap your land. The sheet appears in the bottom panel.')); }
+      if (pf === 'conhecer') { cadastro(); abrirPainel(false); toast(T('Aproxime e toque na parcela do seu terreno. Pode tocar em várias para as juntar. A ficha aparece em baixo.', 'Zoom in and tap your parcel. You can tap several. The sheet appears below.')); }
       else if (pf === 'planta') comprar('planta');
       else if (pf === 'planear') comprar('base');
       else irCompleto();
@@ -341,8 +354,9 @@
     var visto = false; try { visto = sessionStorage.getItem('ipr_exm_bv') === '1'; } catch (e) {}
     if (visto || /[?&](mapa|ficha|servico|assistente)=/.test(location.search)) bv.hidden = true;
     D.addEventListener('click', cliques, true);
+    // 10/11 (Nuno: «curvas de nível e cadastro tudo da mesma cor, não tem leitura»): só fotografia e cadastro (limparRelevo).
     pintarTerreno();
-    setInterval(function () { if (!D.hidden) pintarTerreno(); }, 1200);
+    setInterval(function () { if (!D.hidden) { pintarTerreno(); var bv = D.getElementById('ipr-exm-bv'), pf = D.getElementById('ipr-exm-pf'); if ((!bv || bv.hidden) && (!pf || pf.hidden)) modoParcelas(); limparRelevo(); } }, 1200);
     // quem roda o telemóvel para o lado ou alarga a janela volta ao Atlas normal ao recarregar; aqui só se mantém
     gtag('exm_entrada');
     return true;
