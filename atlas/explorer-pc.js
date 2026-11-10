@@ -226,6 +226,7 @@
       '<form role="search"><input id="ipr-exd-q" type="search" autocomplete="off" placeholder="' + esc(T('Procurar local, morada, coordenadas ou artigo (NIC)', 'Search place, address, coordinates or parcel ID')) + '" aria-label="' + esc(T('Procurar', 'Search')) + '"></form>' +
       '<div class="d"><button type="button" class="ipr-exd-ol" id="ipr-exd-fform" data-x="fecharform">' + esc(T('Fechar o formulário', 'Close the form')) + '</button><button type="button" class="ipr-exd-ol" data-x="lingua" lang="' + (EN() ? 'pt' : 'en') + '">' + (EN() ? 'PT' : 'EN') + '</button>' +
       '<a class="ipr-exd-ol" href="' + esc(en.href) + '">' + esc(en.txt || (logado ? T('A minha conta', 'My account') : T('Entrar', 'Sign in'))) + '</a>' +
+      (logado ? '<a class="ipr-exd-ol" href="' + esc(SAIR) + '">' + esc(T('Sair', 'Sign out')) + '</a>' : '') +
       '<button type="button" class="ipr-exd-ac" data-x="comprar">' + esc(T('Comprar', 'Buy')) + '</button></div>';
     b.querySelector('form').addEventListener('submit', function (e) { e.preventDefault(); procurar(b.querySelector('input').value, null); });
     return b;
@@ -632,15 +633,33 @@
     }
     ['pointerdown', 'mousedown', 'touchstart', 'pointerup', 'mouseup', 'click'].forEach(function (ev) { W.addEventListener(ev, parar, true); });
   }
+  // Botão «Sair» ao lado do nome (Nuno, 10/11, 16h00), no Atlas completo e no topo do telemóvel, para quem tem sessão.
+  // Usa a saída do site (m90935: fecha a sessão no servidor e volta à página inicial).
+  var SAIR = '/conta/customer-logout/';
+  function botaoSair() {
+    if (!D.body || !D.body.classList.contains('logged-in')) return;
+    var en = $('ipe-entrar');
+    if (en && en.parentNode && !$('ipr-sair-topo')) {
+      var a = D.createElement('a'); a.id = 'ipr-sair-topo'; a.href = SAIR; a.className = en.className; a.textContent = T('Sair', 'Sign out');
+      a.title = T('Terminar a sessão', 'Sign out'); a.style.marginLeft = '6px';
+      en.parentNode.insertBefore(a, en.nextSibling);
+    }
+    var mt = $('ipr-exm-top');
+    if (mt && !$('ipr-sair-movel')) {
+      var b = D.createElement('a'); b.id = 'ipr-sair-movel'; b.href = SAIR; b.textContent = T('Sair', 'Sign out');
+      b.style.cssText = 'margin-left:6px;font:500 13px/1 Inter,system-ui,sans-serif;color:#a7ae9b;text-decoration:underline;white-space:nowrap';
+      mt.appendChild(b);
+    }
+  }
+  (function sairCiclo(n) { try { botaoSair(); } catch (e) {} if (n < 40) setTimeout(function () { sairCiclo(n + 1); }, 1500); })(0);
   function arrancar(n) {
     if (MOVEL) { if (EXPLORER) trava(); return; }
     if (!n && EXPLORER) trava();
     if (!forcar && TRABALHO.test(location.search)) return; // endereços de trabalho (Bases, partilhas, convites): Atlas completo, com a trava
     // O «Comprar passo a passo» não abre sozinho por cima da entrada deste modo (abre pelo Comprar e pelos documentos).
     if (!n && !intel() && !equipa()) try { sessionStorage.setItem('ipr_as_auto', '1'); } catch (e) {}
-    var logado = D.body && D.body.classList.contains('logged-in');
-    // Com conta, espera-se pela resposta das Bases (#ipe.cli) antes de simplificar, para não esconder as Bases de um cliente.
-    if (logado && n < 16 && !forcar) { setTimeout(function () { arrancar(n + 1); }, 250); return; }
+    // Com conta: monta já; se a resposta das Bases marcar a conta como cliente (#ipe.cli), o relógio desmonta e volta o Atlas
+    // completo. (Esperar com vários setTimeout não servia: o ritmo.js pára os temporizadores quando a página está quieta.)
     if (montar()) return;
     if (n < 160) setTimeout(function () { arrancar(n + 1); }, 250);
   }
