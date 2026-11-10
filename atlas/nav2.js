@@ -243,10 +243,11 @@
   }
   function cabecalhos(e) {
     e.querySelectorAll('.ipr-sub small').forEach(function (s) {
-      if (/ligadas$/.test(s.textContent)) return;
+      if (/(ligadas| on)$/.test(s.textContent)) return;
       var b = s.querySelector('b'); if (!b) return;
       var tot = parseInt(s.textContent, 10); if (isNaN(tot)) return;
-      s.textContent = b.textContent + ' de ' + tot + ' ligadas';
+      var ing = String(window.IPR_LINGUA || 'pt').toLowerCase().indexOf('pt') !== 0;
+      s.textContent = b.textContent + (ing ? ' of ' : ' de ') + tot + (ing ? ' on' : ' ligadas');
     });
   }
   var pend = false;
