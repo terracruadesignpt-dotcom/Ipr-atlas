@@ -352,7 +352,9 @@
     gtag('exm_completo');
     location.href = location.pathname + (location.search.replace(/[?&]simples=1/, '') || '') + location.hash;
   }
+  var modoCompra = false; // quem escolheu comprar (perfil ou botão «Comprar») vê o cartão de preços; quem veio conhecer vê a ficha
   function comprar(produto) {
+    modoCompra = true;
     gtag('exm_comprar', { produto: produto || '' });
     if (typeof W.__iprAssistenteAbrir === 'function') { try { W.__iprAssistenteAbrir(produto); return; } catch (e) {} }
     location.href = '/documentos/';
@@ -391,7 +393,11 @@
     var c = D.getElementById('ipr-cp-ct');
     if (!c) { cartaoVisto = null; return; }
     if (c === cartaoVisto) return; cartaoVisto = c;
-    abrirPainel(false); // o painel do Explorer e o cartão de compra não ficam abertos ao mesmo tempo
+    // O painel do Explorer e o cartão de compra não ficam abertos ao mesmo tempo (no telemóvel tapavam quase o ecrã todo).
+    // Quem veio conhecer o terreno fica com o painel e a Ficha gratuita (que tem os botões de compra); quem veio comprar,
+    // com o cartão de preços.
+    if (!modoCompra) { cartaoVisto = null; if (typeof W.iprFecharCartao === 'function') try { W.iprFecharCartao(); } catch (e) {} return; }
+    abrirPainel(false);
     var m = mapa(), a = desenho();
     if (m && a && a.features.length) {
       var x0 = 180, y0 = 90, x1 = -180, y1 = -90;
@@ -412,6 +418,21 @@
       toast(T('Toque nas parcelas vizinhas para as juntar. Tocar numa já escolhida retira-a. Depois carregue em «Ver os preços».', 'Tap neighbouring parcels to add them. Tapping a chosen one removes it. Then tap «See prices».'));
       gtag('exm_juntar');
     }, true);
+  }
+  // 10/11, 23h25 (Nuno: «Botão Encomendar na ficha grátis»): no fim da ficha, quem gostou do que viu tem logo à mão a
+  // Planta de Localização para o mesmo terreno. O botão só carrega no «Comprar» da Planta que a ficha já tem (mesmo caminho).
+  function botaoFicha() {
+    var f = D.getElementById('ipr-exm-ficha'); if (!f) return;
+    var out = f.querySelector('.ipr-fg-out'); if (!out || out.querySelector('[data-x="enc-planta"]')) return;
+    var alvo = out.querySelector('[data-fg-compra="planta"]'); if (!alvo) return;
+    var w = D.createElement('div'); w.style.cssText = 'margin:14px 0 6px;padding:12px;border:1px solid #94BE39;border-radius:4px';
+    var p = D.createElement('p'); p.style.cssText = 'margin:0 0 8px;font-size:14px;line-height:1.4';
+    p.textContent = T('Precisa de entregar na câmara, no banco ou no notário? A Planta de Localização deste terreno custa 19 € + IVA e sai em PDF logo após o pagamento. Sem conta.', 'Need it for the council, the bank or the notary? The Location plan for this land is 19 € + VAT and comes as a PDF right after payment. No account needed.');
+    var b = D.createElement('button'); b.type = 'button'; b.className = 'ipr-exm-ac'; b.setAttribute('data-x', 'enc-planta'); b.style.width = '100%';
+    b.textContent = T('Encomendar a Planta · 19 € + IVA', 'Order the Location plan · 19 € + VAT');
+    b.addEventListener('click', function (e) { e.preventDefault(); e.stopPropagation(); gtag('exm_ficha_planta'); var a2 = out.querySelector('[data-fg-compra="planta"]'); if (a2) a2.click(); }, true);
+    w.appendChild(p); w.appendChild(b);
+    var lk = out.querySelector('.ipr-fn2-g'); if (lk && lk.parentNode) lk.parentNode.insertBefore(w, lk.nextSibling); else out.appendChild(w);
   }
   function ficha() {
     gtag('exm_ficha');
@@ -475,7 +496,7 @@
     D.addEventListener('click', cliques, true);
     // 10/11 (Nuno: «curvas de nível e cadastro tudo da mesma cor, não tem leitura»): só fotografia e cadastro (limparRelevo).
     pintarTerreno();
-    setInterval(function () { if (!D.hidden) { pintarTerreno(); var bv = D.getElementById('ipr-exm-bv'), pf = D.getElementById('ipr-exm-pf'); if ((!bv || bv.hidden) && (!pf || pf.hidden)) { modoParcelas(); manterCadastro(); juntarParcela(); } limparRelevo(); ligarPerto(); } }, 1200);
+    setInterval(function () { if (!D.hidden) { pintarTerreno(); var bv = D.getElementById('ipr-exm-bv'), pf = D.getElementById('ipr-exm-pf'); if ((!bv || bv.hidden) && (!pf || pf.hidden)) { modoParcelas(); manterCadastro(); juntarParcela(); } botaoFicha(); limparRelevo(); ligarPerto(); } }, 1200);
     // quem roda o telemóvel para o lado ou alarga a janela volta ao Atlas normal ao recarregar; aqui só se mantém
     gtag('exm_entrada');
     return true;
