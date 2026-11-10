@@ -16,8 +16,10 @@
  *  3. Escolher o terreno (parcelas do cadastro, desenhar ou ficheiro) abre à direita a Ficha da propriedade, grátis, e os
  *     três documentos com preço, que abrem o assistente de compra do Atlas (o mesmo carrinho e o mesmo checkout).
  *  4. Entrada na primeira visita da sessão, com pesquisa, escolha do terreno e os documentos.
- *  5. «Abrir o mapa completo» sai deste modo e fica lembrado (localStorage ipr_exm = completo, a mesma chave do telemóvel);
- *     no mapa completo aparece um botão pequeno «Explorer simples» para voltar.
+ *  5. Decisão do Nuno (10/11, 15h12): «quem é Explorer não abre estúdio nem simuladores; só vê as coisas básicas, para vender
+ *     muito; não complicar». Por isso não há saída para o mapa completo (nem aqui nem no telemóvel: a preferência antiga
+ *     ipr_exm = completo é apagada para quem é Explorer), e os botões de simuladores e estúdio abrem o cartão do
+ *     Intelligence em vez da ferramenta, também nas ligações de trabalho (?mapa=, ?ficha=…) que continuam no Atlas completo.
  * Desligar: ?simples=0, localStorage ipr_exd_off = 1, ou window.IPR_EXD_OFF. Forçar: ?simples=1.
  * Propriedade de IPR – Instituto de Planeamento Regenerativo, Lda. Terracrua Design. */
 (function () {
@@ -31,11 +33,15 @@
     if (/[?&]completo=1(&|$)/.test(q)) localStorage.setItem('ipr_exm', 'completo');
   } catch (e) {}
   function largo() { return W.innerWidth > 700; }
-  if (!largo()) return; // o telemóvel é do explorer-movel.js
   function intel() { return String(W.IPR_NIVEL || '').toLowerCase() === 'intelligence'; }
   function equipa() { return !!(W.tcdEquipa || W.tcdAdmin); }
-  function completo() { try { return localStorage.getItem('ipr_exm') === 'completo'; } catch (e) { return false; } }
-  var TRABALHO = /[?&](mapa|ficha|servico|org_camada|ll|assistente|modo|projecto|simulador|base|partilha|convite|camada|camadas|org)=/;
+  var EXPLORER = !intel() && !equipa();
+  if (EXPLORER) {
+    try { if (localStorage.getItem('ipr_exm') === 'completo') localStorage.removeItem('ipr_exm'); } catch (e) {}
+    try { var s0 = D.createElement('style'); s0.id = 'ipr-exd-sem-completo'; s0.textContent = '.ipr-exm-ui [data-x="completo"],.ipr-exm-ui [data-pf="profissional"]{display:none!important}'; (D.head || H).appendChild(s0); } catch (e) {}
+  }
+  var MOVEL = !largo(); // o telemóvel é do explorer-movel.js; aqui só a trava
+  var TRABALHO = /[?&](mapa|ficha|servico|org_camada|projecto|base|partilha|convite|camada|camadas|org)=/;
   var EN = function () { return W.IPR_LINGUA === 'en'; };
   function T(pt, en) { return EN() ? en : pt; }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
@@ -248,7 +254,7 @@
         '<li>' + esc(T('Imagens de satélite, perfis e vista 3D', 'Satellite imagery, profiles and 3D view')) + '</li>' +
         '<li>' + esc(T('Exportar para QGIS e levar para o campo no QField', 'Export to QGIS and take it to the field in QField')) + '</li>' +
         '</ul><button type="button" class="ipr-exd-ol" data-x="intel">' + esc(T('Conhecer o Intelligence · ', 'About Intelligence · ') + eur(ip.mes) + T('/mês', '/month')) + '</button></section>' +
-      '<button type="button" class="ipr-exd-lnk" data-x="completo">' + esc(T('Já trabalho com mapas: abrir o mapa completo', 'I work with maps: open the full map')) + '</button>';
+      '';
     return o;
   }
   function direita() {
@@ -281,7 +287,7 @@
       '<p class="err" hidden></p><ul class="res" id="ipr-exd-res" hidden></ul>' +
       '<div class="alt"><button type="button" class="ipr-exd-ol" data-x="escolher">' + esc(T('Escolher no mapa', 'Pick on the map')) + '</button><button type="button" class="ipr-exd-ol" data-x="desenhar">' + esc(T('Desenhar o limite', 'Draw the boundary')) + '</button><button type="button" class="ipr-exd-ol" data-x="ficheiro">' + esc(T('Carregar ficheiro', 'Upload a file')) + '</button></div>' +
       '<h3>' + esc(T('Ou peça já um documento', 'Or order a document now')) + '</h3><div class="ipr-exd-doc">' + docs() + '</div>' +
-      '<div class="pe"><button type="button" class="ipr-exd-ol" data-x="fecharbv">' + esc(T('Só quero explorar o mapa', 'I just want to explore the map')) + '</button><button type="button" class="ipr-exd-lnk" data-x="completo">' + esc(T('Já trabalho com mapas: mapa completo', 'I work with maps: full map')) + '</button></div></div>';
+      '<div class="pe"><button type="button" class="ipr-exd-ol" data-x="fecharbv">' + esc(T('Só quero explorar o mapa', 'I just want to explore the map')) + '</button><button type="button" class="ipr-exd-lnk" data-x="intel">' + esc(T('Trabalha com território? Conheça o Intelligence', 'Working with land? Meet Intelligence')) + '</button></div></div>';
     o.addEventListener('click', function (e) { if (e.target === o) fecharEntrada(); });
     o.querySelector('form').addEventListener('submit', function (e) { e.preventDefault(); procurar(o.querySelector('#ipr-exd-q2').value, o); });
     return o;
@@ -411,11 +417,6 @@
     try { if (produto && typeof W.iprAssistenteComprar === 'function' && W.iprAssistenteComprar(produto) !== false) return; } catch (e) {}
     if (typeof W.__iprAssistenteAbrir === 'function') { try { W.__iprAssistenteAbrir(produto); return; } catch (e) {} }
     location.href = '/atlas/?assistente=' + (produto || '1');
-  }
-  function irCompleto() {
-    try { localStorage.setItem('ipr_exm', 'completo'); } catch (e) {}
-    gtag('exd_completo');
-    location.reload();
   }
   function lingua() {
     var b = D.querySelector('.ipe-top [data-lg="' + (EN() ? 'pt' : 'en') + '"]');
@@ -551,7 +552,6 @@
     if (b.hasAttribute('data-doc')) { comprar(b.getAttribute('data-doc')); return; }
     var x = b.getAttribute('data-x'), m = mapa();
     if (x === 'comprar') comprar();
-    else if (x === 'completo') irCompleto();
     else if (x === 'lingua') lingua();
     else if (x === 'intel') janelaIntel();
     else if (x === 'fecharin') { var i = $('ipr-exd-in'); if (i) i.hidden = true; }
@@ -612,18 +612,30 @@
       verAssistente(); limparRelevo(); pintarTerreno(); pintarFe(); lerCam(); pintarCam();
     }, 1200);
     gtag('exd_entrada');
+    if (/[?&]modo=encomenda/.test(location.search)) setTimeout(function () { fecharEntrada(); mostrarForm(true); }, 1500);
+    if (/[?&]assistente=/.test(location.search)) fecharEntrada();
+    if (/[?&]simulador=/.test(location.search)) setTimeout(function () { fecharEntrada(); janelaIntel(); }, 1500);
     return true;
   }
-  // No Atlas completo (escolhido pela pessoa), um botão pequeno para voltar ao Explorer simples.
-  function botaoVolta() {
-    if ($('ipr-exd-volta') || intel() || equipa()) return;
-    var b = D.createElement('button'); b.type = 'button'; b.id = 'ipr-exd-volta'; b.textContent = T('Explorer simples', 'Simple Explorer');
-    b.addEventListener('click', function () { try { localStorage.removeItem('ipr_exm'); } catch (e) {} gtag('exd_volta'); location.reload(); });
-    css(); D.body.appendChild(b);
+  // Trava do Explorer (Nuno, 10/11, 15h12): simuladores e estúdio são do Intelligence. Um clique nesses botões abre o cartão
+  // do Intelligence em vez da ferramenta. Não mexe em mais nada (desenhar o terreno, medir e comprar ficam como estão).
+  var RE_INT = /^(simular (a )?água|simular (o )?fogo|simulate (water|fire|wildfire)|simulador de (água|fogo)|water simulator|fire simulator|abrir o simulador|estúdio|studio|desenho de projecto|project design|keyline)/i;
+  function trava() {
+    if (W.__iprExdTrava) return; W.__iprExdTrava = 1;
+    function parar(e) {
+      if (!EXPLORER || intel() || (($('ipe') || {}).classList || { contains: function () { return false; } }).contains('cli')) return;
+      var b = e.target && e.target.closest && e.target.closest('button,a,[role=button]'); if (!b || b.closest('.ipr-exd-ui')) return;
+      var t = (b.getAttribute('aria-label') || b.textContent || b.title || '').trim().replace(/\s+/g, ' ');
+      if (!RE_INT.test(t)) return;
+      e.preventDefault(); e.stopPropagation(); if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+      if (e.type === 'click') { gtag('exd_trava', { t: t.slice(0, 40) }); css(); janelaIntel(); }
+    }
+    ['pointerdown', 'mousedown', 'touchstart', 'pointerup', 'mouseup', 'click'].forEach(function (ev) { W.addEventListener(ev, parar, true); });
   }
   function arrancar(n) {
-    if (completo() && !forcar) { if ($('ipe') && D.body) { if (!(($('ipe').classList || {}).contains('cli'))) botaoVolta(); } else if (n < 120) setTimeout(function () { arrancar(n + 1); }, 250); return; }
-    if (!forcar && TRABALHO.test(location.search)) return; // endereços de trabalho (Bases, partilhas, assistente): Atlas completo
+    if (MOVEL) { if (EXPLORER) trava(); return; }
+    if (!n && EXPLORER) trava();
+    if (!forcar && TRABALHO.test(location.search)) return; // endereços de trabalho (Bases, partilhas, convites): Atlas completo, com a trava
     // O «Comprar passo a passo» não abre sozinho por cima da entrada deste modo (abre pelo Comprar e pelos documentos).
     if (!n && !intel() && !equipa()) try { sessionStorage.setItem('ipr_as_auto', '1'); } catch (e) {}
     var logado = D.body && D.body.classList.contains('logged-in');
