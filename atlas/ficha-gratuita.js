@@ -248,7 +248,7 @@
       li("leitura", "Leitura Territorial", "o que o PDM permite, as condicionantes e os riscos, explicado num relatório · sem conta", plt, bt("leitura", "Comprar")) +
       li("base", "Base Cartográfica", "LiDAR da DGT, curvas de nível, 3D do terreno e projecto QGIS pronto a usar", pb, bt("base", "Encomendar", true), true) +
       li("visita", "Visita técnica", "a equipa da Terracrua Design no terreno", "350 €", '<a class="ipe-b" href="/carrinho/?add-to-cart=14533">Marcar</a>') +
-      '</ol><p class="ipe-small">Preços sem IVA (23 %), calculados para a área deste terreno. Planta e Leitura compram-se sem conta; a Base pede conta, que se cria no momento.</p></div>';
+      '</ol><p class="ipe-small">Preços sem IVA (23 %), calculados para a área deste terreno. Planta, Leitura e Base compram-se sem conta: basta o nome e o e-mail.</p></div>';
   }
   D.addEventListener("click", function (ev) {
     var b = ev.target && ev.target.closest && ev.target.closest("[data-fg-compra]"); if (!b) return;
