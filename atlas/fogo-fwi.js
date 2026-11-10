@@ -2,7 +2,8 @@
    21h27: «do fogo executa»). Quando o painel «Simular fogo» mostra a escolha do cenário de humidade, lê no EFFIS
    (Copernicus EMS) a classe do índice FWI previsto para hoje no centro do mapa e propõe o cenário de Scott e Burgan
    correspondente. Se o utilizador já escolheu um cenário, não mexe. Mostra a origem por baixo da escolha.
-   Classes do EFFIS → cenário: muito baixo D4L4 · baixo D3L4 · moderado D3L3 · alto D2L2 · muito alto D1L2 · extremo D1L1.
+   Classes do EFFIS → cenário: muito baixo D4L4 · baixo D4L4 · moderado D3L3 · alto D2L2 · muito alto D1L2 · extremo D1L1.
+   10/11/2026: «baixo» passa de D3L4 a D4L4, como no email de 07/11 (baixo e muito baixo = mortos 12/13/14 %).
    A classe lê-se pela cor do mapa do EFFIS no ponto (o serviço não devolve o valor por consulta). Não mexe no
    fogo-simulador.js: liga-se pelo DOM (select[data-k=cenario]). Desligar: localStorage ipr_fogo_fwi_off = 1. */
 (function (W, D) {
@@ -11,7 +12,7 @@
   var EN = W.IPR_LINGUA === "en" || W.IPR_LANG === "en";
   var CL = [
     { rgb: [156, 255, 192], cen: "D4L4", pt: "muito baixo", en: "very low" },
-    { rgb: [205, 226, 78], cen: "D3L4", pt: "baixo", en: "low" },
+    { rgb: [205, 226, 78], cen: "D4L4", pt: "baixo", en: "low" },
     { rgb: [230, 172, 0], cen: "D3L3", pt: "moderado", en: "moderate" },
     { rgb: [217, 112, 16], cen: "D2L2", pt: "alto", en: "high" },
     { rgb: [173, 6, 14], cen: "D1L2", pt: "muito alto", en: "very high" },
