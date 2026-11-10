@@ -13,6 +13,13 @@
       Descarregar tudo, Levar para o campo (QField), Partilhar, Convidar, Juntar à organização, Pedir visita técnica,
       Arquivar e Apagar. Cada uma carrega no botão que a página já tem (no cartão ou na lista curta «Os meus projectos»),
       com as confirmações de sempre; nada se apaga sem a pergunta do próprio botão.
+   10/11/2026 (Nuno, chamada com o Norbert: «a ficha quando se abre e se fecha já não se consegue abrir»):
+   - o cartão da Base aberta no mapa (ipr-actual) abre e fecha pelo app.js/ajustes.js, que apanham o clique antes desta linha
+     e mudam a classe «on»; a linha fina passa a seguir essa classe (aberto = ipr-fn-on ou on), em vez de ficar fechada com
+     o conteúdo à vista;
+   - o app.js volta a desenhar o cartão depois de o abrir; a linha aberta é lembrada pelo número da encomenda (antes pela
+     marca data-ec-id, que o cartão novo ainda não tinha, e a linha voltava fechada);
+   - ao fechar, sai o display:block que o fluxo-ficha.js põe no conteúdo para o mostrar.
    Desligar: ?bfinas=0 ou localStorage ipr_bfinas_off = 1. */
 (function () {
   "use strict";
@@ -30,7 +37,7 @@
   function guardar() { ls("ipr_bfinas_abertas", Object.keys(ABERTAS).slice(-30).join(",")); }
 
   var C = '#ipe-proj .ipe-card.ipr-fn';
-  var F = C + ':not(.ipr-fn-on)';
+  var F = C + ':not(.ipr-fn-on):not(.on)';
   var css = el("style"); css.id = "ipr-fn-css";
   css.textContent =
     C + " .ipe-ct{position:relative}" +
@@ -46,20 +53,21 @@
     ".ipr-fn-h:hover{background:rgba(255,255,255,.04)}" +
     ".ipr-fn-h:focus-visible{outline:2px solid #94BE39;outline-offset:-2px}" +
     ".ipr-fn-h .s{flex:0 0 auto;width:0;height:0;border-style:solid;border-width:4px 0 4px 6px;border-color:transparent transparent transparent #C3C5BC;transition:transform .15s}" +
-    ".ipr-fn-on .ipr-fn-h .s{transform:rotate(90deg)}" +
+    ".ipr-fn-on .ipr-fn-h .s,#ipe-proj .ipe-card.ipr-fn.on .ipr-fn-h .s{transform:rotate(90deg)}" +
     ".ipr-fn-h .d{flex:0 0 auto;width:7px;height:7px;border-radius:50%;background:#D9A441}" +
     ".ipr-fn-h .d.ok{background:#94BE39}" +
     ".ipr-fn-h .t{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}" +
     ".ipr-fn-h .a{flex:0 0 auto;font:400 11px/1 'IBM Plex Mono',ui-monospace,monospace;color:#8E9186}" +
-    "#ipe-proj .ipe-card.ipr-fn.ipr-fn-on{margin:2px 0 8px!important}" +
-    ".ipr-fn-on .ipr-fn-h{color:#94BE39;margin-bottom:4px;border-bottom:1px solid #383A33}" +
+    "#ipe-proj .ipe-card.ipr-fn.ipr-fn-on,#ipe-proj .ipe-card.ipr-fn.on{margin:2px 0 8px!important}" +
+    ".ipr-fn-on .ipr-fn-h,#ipe-proj .ipe-card.ipr-fn.on .ipr-fn-h{color:#94BE39;margin-bottom:4px;border-bottom:1px solid #383A33}" +
     "#ipr-bt-m button.ipr-fn-del{color:#E0705A}" +
     "@media (max-width:600px){.ipr-fn-h{min-height:44px;font-size:14px}}" +
     "@media (prefers-reduced-motion:reduce){.ipr-fn-h .s{transition:none}}";
   (D.head || D.documentElement).appendChild(css);
 
-  function idDe(c) { return c.getAttribute("data-ec-id") || ("i" + c.getAttribute("data-i")); }
   function mapaDe(c) { var P = est(), i = +c.getAttribute("data-i"); return P && P.mapas && P.mapas[i] || null; }
+  function idDe(c) { var m = mapaDe(c); return (m && m.id ? String(m.id) : "") || c.getAttribute("data-ec-id") || ("i" + c.getAttribute("data-i")); }
+  function aberto(c) { return c.classList.contains("ipr-fn-on") || c.classList.contains("on"); }
 
   function cabeca(c) {
     var ct = c.querySelector(".ipe-ct"); if (!ct) return null;
@@ -84,7 +92,7 @@
     return h;
   }
   function alternar(c, abrir) {
-    var k = idDe(c), on = abrir === undefined ? !c.classList.contains("ipr-fn-on") : !!abrir;
+    var k = idDe(c), on = abrir === undefined ? !aberto(c) : !!abrir;
     c.classList.toggle("ipr-fn-on", on);
     if (on) ABERTAS[k] = 1; else delete ABERTAS[k];
     var h = c.querySelector(".ipr-fn-h"); if (h) h.setAttribute("aria-expanded", on ? "true" : "false");
@@ -93,7 +101,11 @@
   function arrumar() {
     [].forEach.call(D.querySelectorAll("#ipe-proj .ipe-card[data-i]"), function (c) {
       if (!c.classList.contains("ipr-fn")) { c.classList.add("ipr-fn"); if (ABERTAS[idDe(c)]) c.classList.add("ipr-fn-on"); }
-      var h = cabeca(c); if (h) h.setAttribute("aria-expanded", c.classList.contains("ipr-fn-on") ? "true" : "false");
+      var ab = aberto(c);
+      if (c.classList.contains("on") && !c.classList.contains("ipr-fn-on")) c.classList.add("ipr-fn-on");
+      // 10/11: fechado, o conteúdo volta a esconder-se (o fluxo-ficha.js deixava-o à vista com display:block)
+      if (!ab) { var cx = c.querySelector(":scope > .ipe-cx"); if (cx && cx.style.display) cx.style.removeProperty("display"); }
+      var h = cabeca(c), v = ab ? "true" : "false"; if (h && h.getAttribute("aria-expanded") !== v) h.setAttribute("aria-expanded", v); // 05/11: só quando muda (antes 53 escritas a cada mudança na página)
     });
   }
 
@@ -236,6 +248,25 @@
       vigia();
     }
   }).observe(D.body || D.documentElement, { childList: true, subtree: true });
+  // 10/11: quem decide se o cartão está aberto é o ajustes.js (classe «on», um só cartão aberto de cada vez); na Base que já
+  // está aberta no mapa ele apanhava o clique antes de chegar aqui e a linha ficava fora de passo (aberta com o conteúdo
+  // escondido, ou fechada com tudo à vista). Depois de cada clique na linha, a linha segue o «on».
+  function seguir(i) {
+    var c = D.querySelector('#ipe-proj .ipe-card[data-i="' + i + '"]'); if (!c) return;
+    var on = c.classList.contains("on"), k = idDe(c);
+    if (c.classList.contains("ipr-fn-on") !== on) c.classList.toggle("ipr-fn-on", on);
+    if (on) ABERTAS[k] = 1; else { delete ABERTAS[k]; c.classList.remove("ipr-ff-on"); var cx = c.querySelector(":scope > .ipe-cx"); if (cx && cx.style.display) cx.style.removeProperty("display"); }
+    guardar();
+    var h = c.querySelector(".ipr-fn-h"); if (h) h.setAttribute("aria-expanded", on ? "true" : "false");
+  }
+  W.addEventListener("click", function (e) {
+    var h = e.target && e.target.closest && e.target.closest("#ipe-proj .ipe-card.ipr-fn .ipr-fn-h");
+    if (!h || e.target.closest(".ipr-bt-b,[aria-haspopup],a[href]")) return;
+    var i = h.closest(".ipe-card").getAttribute("data-i");
+    setTimeout(function () { seguir(i); }, 220); setTimeout(function () { seguir(i); }, 700);
+  }, true);
+  // 10/11: os cliques que abrem ou fecham o cartão mudam só a classe (sem mudança de filhos): arrumar logo a seguir
+  D.addEventListener("click", function (e) { if (e.target && e.target.closest && e.target.closest("#ipe-proj .ipe-card")) setTimeout(vigia, 60); }, true);
   D.addEventListener("ipr:lingua", function () { [].forEach.call(D.querySelectorAll(".ipr-fn-h"), function (h) { h.dataset.k = ""; }); vigia(); });
   vigia();
 })();

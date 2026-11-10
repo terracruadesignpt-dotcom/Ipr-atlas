@@ -9,6 +9,8 @@
       (bases-finas.js) deixavam escondida.
    5. «Ficha do terreno» e variantes passam a «Ficha da propriedade» também nas formas que o ficha-propriedade.js não apanha.
    6. 05/11, 13h40: sem formas antigas a piscar no painel da direita (nomes e ordem acertados antes de pintar).
+   7. 10/11/2026: a ficha conta como aberta também quando o cartão tem a classe «on» (aberto pelo app.js); antes carregava
+      outra vez na linha fina, o que no cartão da Base aberta no mapa fechava o cartão em vez de o abrir.
    Desligar: ?fficha=0 ou localStorage ipr_fficha_off = 1. */
 (function () {
   "use strict";
@@ -108,7 +110,7 @@
   function mostrarFicha(c) {
     if (!c) return false;
     c.classList.add("ipr-ff-on");
-    if (c.classList.contains("ipr-fn") && !c.classList.contains("ipr-fn-on")) {
+    if (c.classList.contains("ipr-fn") && !c.classList.contains("ipr-fn-on") && !c.classList.contains("on")) {
       var h = c.querySelector(".ipr-fn-h"); if (h) h.click(); else c.classList.add("ipr-fn-on");
     }
     var cx = c.querySelector(".ipe-cx"); if (cx && getComputedStyle(cx).display === "none") cx.style.setProperty("display", "block", "important");
@@ -136,7 +138,11 @@
     var h = ev.target && ev.target.closest && ev.target.closest("#ipe-proj .ipe-card .ipr-fn-h");
     if (!h || (ev.target.closest && ev.target.closest(".ipr-bt-b,[aria-haspopup],a[href]"))) return;
     var c = h.closest(".ipe-card");
-    setTimeout(function () { if (c.classList.contains("ipr-fn-on")) mostrarFicha(c); else c.classList.remove("ipr-ff-on"); }, 120);
+    setTimeout(function () {
+      // o app.js pode ter desenhado o cartão outra vez: segue o que está agora na página
+      if (!c.isConnected) { var i = c.getAttribute("data-i"); c = D.querySelector('#ipe-proj .ipe-card[data-i="' + i + '"]') || c; }
+      if (c.classList.contains("ipr-fn-on") || c.classList.contains("on")) mostrarFicha(c); else c.classList.remove("ipr-ff-on");
+    }, 120);
   }, true); // captura: o bases-finas.js pára a propagação
 
   // Botão «Ficha da propriedade» da esquerda (minhas-bases.js: só mudava de separador).
