@@ -381,6 +381,38 @@
     ultimoTer = null; pintarTerreno(); cadastro();
     toast(T('Toque na parcela do seu terreno. Pode tocar em várias para as juntar.', 'Tap your parcel. You can tap several to join them.'));
   }
+  // 10/11, 23h28 (Nuno: «aqui só deixa escolher uma parcela»): com o cartão de compra aberto, a parcela escolhida enchia o
+  // pouco mapa que sobra e as vizinhas ficavam por baixo do cartão; tocar de novo dentro da parcela retirava-a. O cartão passa
+  // a ter «+ Juntar outra parcela»: fecha o cartão (o Atlas mostra «Ver os preços» para voltar), afasta o mapa um nível para
+  // as vizinhas aparecerem e explica que se toca nelas para as juntar e numa escolhida para a retirar. Ao abrir o cartão, o
+  // terreno fica enquadrado na parte do mapa que o cartão não tapa.
+  var cartaoVisto = null;
+  function juntarParcela() {
+    var c = D.getElementById('ipr-cp-ct');
+    if (!c) { cartaoVisto = null; return; }
+    if (c === cartaoVisto) return; cartaoVisto = c;
+    abrirPainel(false); // o painel do Explorer e o cartão de compra não ficam abertos ao mesmo tempo
+    var m = mapa(), a = desenho();
+    if (m && a && a.features.length) {
+      var x0 = 180, y0 = 90, x1 = -180, y1 = -90;
+      a.features.forEach(function (f) { var g = f.geometry; if (!g || !/Polygon/.test(g.type)) return; JSON.stringify(g.coordinates).replace(/\[(-?[\d.]+),(-?[\d.]+)\]/g, function (_, x, y) { x = +x; y = +y; if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; return _; }); });
+      var hb = Math.round(Math.min(c.offsetHeight || 380, W.innerHeight * 0.62));
+      if (x0 <= x1) setTimeout(function () { try { m.fitBounds([[x0, y0], [x1, y1]], { padding: { top: 70, left: 40, right: 40, bottom: hb + 30 }, maxZoom: 16, duration: 500 }); } catch (e) {} }, 250);
+    }
+    if (c.querySelector('[data-x="juntar"]')) return;
+    var b = D.createElement('button'); b.type = 'button'; b.className = 'ipr-cp-a'; b.setAttribute('data-x', 'juntar');
+    b.textContent = T('+ Juntar outra parcela', '+ Add another parcel');
+    b.style.cssText = 'width:100%;margin:8px 0 4px';
+    var nv = c.querySelector('.ipr-cp-nv'); if (nv && nv.parentNode) nv.parentNode.insertBefore(b, nv.nextSibling); else c.appendChild(b);
+    b.addEventListener('click', function (e) {
+      e.preventDefault(); e.stopPropagation();
+      var mu = c.querySelector('[data-cp="mudar"]'); if (mu) mu.click(); else if (typeof W.iprFecharCartao === 'function') W.iprFecharCartao();
+      modoParcelas();
+      var mm = mapa(); if (mm) setTimeout(function () { try { mm.easeTo({ zoom: Math.max(14, mm.getZoom() - 1), duration: 500 }); } catch (er) {} }, 200);
+      toast(T('Toque nas parcelas vizinhas para as juntar. Tocar numa já escolhida retira-a. Depois carregue em «Ver os preços».', 'Tap neighbouring parcels to add them. Tapping a chosen one removes it. Then tap «See prices».'));
+      gtag('exm_juntar');
+    }, true);
+  }
   function ficha() {
     gtag('exm_ficha');
     if (typeof W.__iprFichaGratuita !== 'function' || !temTerreno()) return;
@@ -443,7 +475,7 @@
     D.addEventListener('click', cliques, true);
     // 10/11 (Nuno: «curvas de nível e cadastro tudo da mesma cor, não tem leitura»): só fotografia e cadastro (limparRelevo).
     pintarTerreno();
-    setInterval(function () { if (!D.hidden) { pintarTerreno(); var bv = D.getElementById('ipr-exm-bv'), pf = D.getElementById('ipr-exm-pf'); if ((!bv || bv.hidden) && (!pf || pf.hidden)) { modoParcelas(); manterCadastro(); } limparRelevo(); ligarPerto(); } }, 1200);
+    setInterval(function () { if (!D.hidden) { pintarTerreno(); var bv = D.getElementById('ipr-exm-bv'), pf = D.getElementById('ipr-exm-pf'); if ((!bv || bv.hidden) && (!pf || pf.hidden)) { modoParcelas(); manterCadastro(); juntarParcela(); } limparRelevo(); ligarPerto(); } }, 1200);
     // quem roda o telemóvel para o lado ou alarga a janela volta ao Atlas normal ao recarregar; aqui só se mantém
     gtag('exm_entrada');
     return true;
