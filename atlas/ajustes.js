@@ -3333,6 +3333,31 @@
   function plNome(e) { return PLG === "en" ? (PL_EN[e.id] || e.en || e.n) : e.n; }
   function plCls(t) { return PLG === "en" && PL_CLS_EN[t] ? PL_CLS_EN[t] : t; }
   function plLoc() { return PLG === "en" ? "en-GB" : "pt-PT"; }
+  var PM_LETRAS_URL = "https://cdn.jsdelivr.net/gh/terracruadesignpt-dotcom/Ipr-atlas@9d83e49168e8f25c2f21d9619bdba1d75874f4b3/atlas/marca/v6/fontes/";
+  var PM_LETRAS = [["Inter-400.ttf", "helvetica", "normal"], ["Inter-700.ttf", "helvetica", "bold"], ["Inter-400-italico.ttf", "helvetica", "italic"],
+    ["Inter-700-italico.ttf", "helvetica", "bolditalic"], ["IBMPlexMono-400.ttf", "courier", "normal"]];
+  // Põe Inter no lugar da Helvetica e IBM Plex Mono no da Courier, no documento acabado de criar. Os caracteres que estas
+  // letras (subconjunto latino) não têm passam a equivalentes simples, para não saírem quadrados vazios.
+  var PM_TROCAS = { "\u2265": ">=", "\u2264": "<=", "\u2192": "->", "\u2190": "<-", "\u2713": "v", "\u2715": "x", "\u2248": "~", "\u2260": "!=" };
+  function pmSimples(t) {
+    if (typeof t === "string") return t.replace(/[^\u0000-\u024F\u2010-\u2027\u2030-\u203A\u2044\u20AC\u2122\u2212]/g, function (c) { return PM_TROCAS[c] || ""; });
+    if (Array.isArray(t)) return t.map(pmSimples);
+    return t;
+  }
+  function pmLetras(doc) {
+    var L = PL.letrasOk;
+    if (!L) return;
+    {
+      try {
+        L.forEach(function (f) { doc.addFileToVFS(f[0], f[1]); doc.addFont(f[0], f[2], f[3]); });
+        var tx = doc.text, sp = doc.splitTextToSize, gw = doc.getTextWidth;
+        doc.text = function (t) { var a = Array.prototype.slice.call(arguments); a[0] = pmSimples(t); return tx.apply(doc, a); };
+        doc.splitTextToSize = function (t) { var a = Array.prototype.slice.call(arguments); a[0] = pmSimples(t); return sp.apply(doc, a); };
+        doc.getTextWidth = function (t) { return gw.call(doc, pmSimples(t)); };
+        doc.setFont("helvetica", "normal");
+      } catch (e) {}
+    }
+  }
   function plLibs() {
     if (PL.libs) return PL.libs;
     function carregar(u) { return new Promise(function (ok, ko) { var s = document.createElement("script"); s.src = u; s.onload = ok; s.onerror = function () { ko(new Error("Não foi possível carregar " + u)); }; document.head.appendChild(s); }); }
@@ -3340,6 +3365,15 @@
       window.proj4.defs("EPSG:3763", "+proj=tmerc +lat_0=39.66825833333333 +lon_0=-8.133108333333334 +k=1 +x_0=0 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");
     });
     PL.libs.catch(function () { PL.libs = null; });
+    // Letras da marca do IPR (Pedro Bolito, regenerativo.pt/export/planta-de-localizacao: «Letra Inter; referências e
+    // coordenadas em monoespaçada»), 05/11/2026. Se não carregarem, a Planta sai como antes, com as letras do jsPDF.
+    if (!PL.letras) PL.letras = Promise.all(PM_LETRAS.map(function (f) {
+      return fetch(PM_LETRAS_URL + f[0]).then(function (r) { if (!r.ok) throw new Error(r.status); return r.arrayBuffer(); }).then(function (b) {
+        var u = new Uint8Array(b), t = "", i; for (i = 0; i < u.length; i += 32768) t += String.fromCharCode.apply(null, u.subarray(i, i + 32768));
+        return [f[0], btoa(t), f[1], f[2]];
+      });
+    })).then(function (L) { PL.letrasOk = L; return L; }).catch(function () { return null; });
+    PL.libs = PL.libs.then(function (x) { return PL.letras.then(function () { return x; }); });
     return PL.libs;
   }
   function plGeo(id) {
@@ -4141,6 +4175,7 @@
       }).then(function (R) {
         msg(plT("compor"));
         var J = window.jspdf.jsPDF, orient = W > H ? "landscape" : "portrait", fmt = A3 ? "a3" : "a4", doc = new J({ orientation: orient, unit: "mm", format: fmt, compress: true });
+        pmLetras(doc); // marca do IPR: Inter e IBM Plex Mono (05/11/2026)
         var folhas = [];
         function mm(p) { return [M + (p[0] - caixa[0]) / gw * fw, M + (caixa[3] - p[1]) / gh * fh]; }
         // 1 · localização
@@ -4500,8 +4535,8 @@
       v_campo: "Mapa leve para usar no terreno: cadastro, curvas, caminhos, vedações, pontos de água e nomes. Marque notas com o marcador e leve o projecto para o QField.",
       v_ecologia: "Habitats, Rede Natura 2000, áreas protegidas, árvores isoladas e sebes, densidade de copa e registos de espécies (GBIF). Mostra a estrutura natural à volta do terreno.",
       v_org: "Camadas de trabalho da sua organização por cima do relevo, da água e do cadastro.",
-      p_leitura: "Leitura do Terreno", p_planta: "Planta de Localização", p_base: "Base Cartográfica", p_intel: "Acesso Intelligence", p_org: "Abrir a organização",
-      pr_leitura: "desde 250 € + IVA", pr_base: "desde 99 € + IVA",
+      p_leitura: "Leitura Territorial", p_planta: "Planta de Localização", p_base: "Base Cartográfica", p_intel: "Acesso Intelligence", p_org: "Abrir a organização",
+      pr_leitura: "desde 79 € + IVA", pr_base: "desde 99 € + IVA",
       m_cadastro: "Parcelas do cadastro", m_desenhar: "Desenhar no mapa", m_ficheiro: "Carregar ficheiro", m_artigo: "Artigo matricial ou caderneta", mh_cadastro: "Clique nas parcelas do seu terreno no mapa.", mh_desenhar: "Clique nos cantos do terreno; termine no primeiro ponto.", mh_ficheiro: "KML, KMZ, GeoJSON, Shapefile ou GPX.", mh_artigo: "Sem mapa? Indique o concelho, a freguesia e o artigo; nós localizamos.", mfalta: "Abra o separador Processos à direita e escolha a forma de indicar o terreno.", f_busca: "Procurar local", f_desenhar: "Desenhar o terreno", f_parcelas: "Escolher parcelas", f_importar: "Carregar ficheiro",
       f_area: "Medir área", f_regua: "Medir distância", f_perfil: "Perfil de elevação", f_3d: "Vista 3D", f_sol: "Sol e sombra",
       f_historico: "Imagens antigas", f_marcador: "Nota no mapa", f_gps: "A minha posição", f_qfield: "QField",
@@ -4531,7 +4566,7 @@
       s2t: "Desenhe ou escolha o terreno", s2h: "Pode desenhar o limite clicando nos cantos do terreno, escolher as parcelas do cadastro quando existem, ou carregar um ficheiro (KML, KMZ, GeoJSON, Shapefile).",
       s3t: "Veja a ficha rápida", s3h: "Com o terreno fechado, aparece à direita a «Ficha do terreno», gratuita: área, altitude, declive, ocupação do solo e as principais condicionantes que tocam no terreno. É indicativa, feita a partir de dados públicos.",
       s3b: "Mostrar a ficha", s3sem: "Ainda não há terreno desenhado. Volte ao passo anterior e desenhe ou escolha o terreno.",
-      s4t_conhecer: "Se quiser ir mais fundo: Leitura do Terreno",
+      s4t_conhecer: "Se quiser ir mais fundo: Leitura Territorial",
       s4h_conhecer: "Relatório em PDF feito pela nossa equipa: condicionantes (REN, RAN, PDM, Rede Natura, água e fogo), ocupação do solo e extractos de mapas, com interpretação técnica do que permitem e do que limitam.",
       s4t_planta: "A Planta de Localização",
       s4h_planta: "PDF à escala (1:1 000 a 1:25 000), em A4 ou A3, sobre o ortofotomapa da DGT, com quadrícula, norte, escala e quadro de vértices em PT-TM06, e extractos das condicionantes. Faz-se a partir de um terreno guardado num projecto. Não é uma peça municipal certificada: confirme com a câmara o que o seu processo exige.",
@@ -4540,7 +4575,7 @@
       s4t_prof: "Para profissionais: Intelligence",
       s4h_prof: "Abre o resto do Atlas: condicionantes, água, solo e vegetação, as camadas da sua Base Cartográfica, as ferramentas de análise e o trabalho em equipa. Abre com qualquer serviço contratado à Terracrua Design ou por assinatura.",
       preco: "Preço", precoSob: "Preço a anunciar.",
-      s4b_leitura: "Pedir a Leitura do Terreno", s4b_planta: "Fazer a planta", s4b_base: "Encomendar a Base Cartográfica", s4b_intel: "Ver o Intelligence",
+      s4b_leitura: "Pedir a Leitura Territorial", s4b_planta: "Fazer a planta", s4b_base: "Encomendar a Base Cartográfica", s4b_intel: "Ver o Intelligence",
       plantaSem: "Abra o separador Projectos, escolha o projecto e carregue em «Planta de localização». Se ainda não tem projecto, guarde primeiro o terreno.",
       s5t: "Continue no tema certo", s5h: "Os temas ligam as camadas que interessam para o seu caso e explicam o que está no mapa. Pode mudar de tema quando quiser, no painel das camadas.",
       s5b: "Abrir o tema «{t}»"
@@ -4566,7 +4601,7 @@
       v_ecologia: "Habitats, Natura 2000, protected areas, isolated trees and hedgerows, canopy density and species records (GBIF). Shows the natural structure around the plot.",
       v_org: "Your organisation's working layers on top of terrain, water and land registry.",
       p_leitura: "Land Reading", p_planta: "Location Plan", p_base: "Base Map", p_intel: "Intelligence access", p_org: "Open the organisation",
-      pr_leitura: "from €250 + VAT", pr_base: "from €99 + VAT",
+      pr_leitura: "from €79 + VAT", pr_base: "from €99 + VAT",
       m_cadastro: "Land registry parcels", m_desenhar: "Draw on the map", m_ficheiro: "Upload a file", m_artigo: "Tax article or title deed", mh_cadastro: "Click the parcels of your land on the map.", mh_desenhar: "Click the corners of the land; finish on the first point.", mh_ficheiro: "KML, KMZ, GeoJSON, Shapefile or GPX.", mh_artigo: "No map? Give the municipality, parish and article; we will locate it.", mfalta: "Open the Processes tab on the right and choose how to indicate the land.", f_busca: "Search a place", f_desenhar: "Draw the plot", f_parcelas: "Pick parcels", f_importar: "Upload a file",
       f_area: "Measure area", f_regua: "Measure distance", f_perfil: "Elevation profile", f_3d: "3D view", f_sol: "Sun and shade",
       f_historico: "Older imagery", f_marcador: "Note on the map", f_gps: "My position", f_qfield: "QField",
@@ -6028,7 +6063,7 @@
     "Concelho e freguesia *": "Municipality and parish *", "Artigo matricial e secção": "Tax article and section", "Caderneta predial ou certidão": "Title deed or certificate",
     "Basta o artigo ou a caderneta.": "The article or the deed is enough.", "Ex.: Almodôvar, Santa Clara-a-Nova": "E.g. Almodôvar, Santa Clara-a-Nova", "Ex.: artigo 20, secção FFF": "E.g. article 20, section FFF",
     "Limpar terreno": "Clear plot", "Guardar terreno": "Save plot", "Guardar este limite nos seus terrenos": "Save this boundary to your plots", "Estimativa": "Estimate",
-    "desde 99 €": "from €99", "desde 250 €": "from €250", "Juntar a": "Add the", "Leitura Territorial": "Land Reading",
+    "desde 99 €": "from €99", "desde 250 €": "from €250", "desde 79 €": "from €79", "Juntar a": "Add the", "Leitura Territorial": "Land Reading",
     "): relatório PDF com condicionantes (REN, RAN, PDM, Rede Natura, água e fogo), ocupação do solo e extractos de mapas para interpretação.": "): PDF report with constraints (REN, RAN, PDM, Natura Network, water and fire), land cover and map extracts for interpretation.",
     "Ficha do terreno": "Plot summary", "gratuita": "free", "Ficha do terreno (indicativa)": "Plot summary (indicative)", "Ver a ficha do terreno": "See the plot summary",
     "Leitura rápida e indicativa dos serviços públicos para este terreno: REN, RAN, Rede Natura, relevo, linhas de água, perigosidade de incêndio e ocupação do solo.": "A quick, indicative reading of public services for this plot: REN, RAN, Natura Network, relief, watercourses, fire hazard and land cover.",
