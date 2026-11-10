@@ -302,7 +302,11 @@
   // 10/11 (Nuno, 08h27: «não consigo carregar no cadastro»): no Atlas, tocar numa parcela só a escolhe com a ferramenta
   // «parcelas» activa (a barra de ferramentas está escondida neste modo). Liga-se aqui sempre que ainda não há terreno.
   function ferramenta(t) { var b = D.querySelector('.ipe-tools [data-tool="' + t + '"]'); if (!b) return false; var e = ipe() && ipe().estado; if (e && e.tool === t) return true; b.click(); return true; }
-  function modoParcelas() { var e = ipe() && ipe().estado; if (!e || temTerreno()) return; if (e.tool === 'nav') ferramenta('parcelas'); }
+  // 10/11 09h25 (Nuno: «não vejo o cadastro, não consigo seleccionar o terreno»): depois de escolher uma parcela, o Atlas
+  // desligava o cadastro e voltava à navegação; ao recarregar, o terreno guardado deixava o mapa sem parcelas e sem toque.
+  // Agora o modo de parcelas e o cadastro mantêm-se sempre (tocar noutra parcela junta-a; «Trocar terreno» recomeça).
+  function modoParcelas() { var e = ipe() && ipe().estado; if (!e) return; if (e.tool === 'nav') ferramenta('parcelas'); }
+  function manterCadastro() { var v = viz(); if (!v || !v.activas) return; if (v.activas().indexOf('cad') < 0) ligarCam('cad', true); }
   function clicarFerramenta(re) {
     var b = [].filter.call(D.querySelectorAll('.ipe-tools button,[data-tool]'), function (x) { return re.test(x.getAttribute('aria-label') || x.title || x.textContent || ''); })[0];
     if (b) { b.click(); return true; } return false;
@@ -379,7 +383,7 @@
     D.addEventListener('click', cliques, true);
     // 10/11 (Nuno: «curvas de nível e cadastro tudo da mesma cor, não tem leitura»): só fotografia e cadastro (limparRelevo).
     pintarTerreno();
-    setInterval(function () { if (!D.hidden) { pintarTerreno(); var bv = D.getElementById('ipr-exm-bv'), pf = D.getElementById('ipr-exm-pf'); if ((!bv || bv.hidden) && (!pf || pf.hidden)) modoParcelas(); limparRelevo(); ligarPerto(); } }, 1200);
+    setInterval(function () { if (!D.hidden) { pintarTerreno(); var bv = D.getElementById('ipr-exm-bv'), pf = D.getElementById('ipr-exm-pf'); if ((!bv || bv.hidden) && (!pf || pf.hidden)) { modoParcelas(); manterCadastro(); } limparRelevo(); ligarPerto(); } }, 1200);
     // quem roda o telemóvel para o lado ou alarga a janela volta ao Atlas normal ao recarregar; aqui só se mantém
     gtag('exm_entrada');
     return true;
