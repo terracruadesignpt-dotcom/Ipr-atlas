@@ -461,7 +461,7 @@
   var AGS = function (id, n, sub, base, ids, fonte, d, x) { var o = { id: id, n: n, sub: sub, t: "ags", url: base, layers: "show:" + ids, fonte: fonte, lic: "v" }; for (var k in x || {}) o[k] = x[k]; DESC[id] = d; return o; };
   var OUT = function (id, n, sub, url, fonte, d, leg, x) { var o = { id: id, n: n, sub: sub, t: "xyz", url: url, fonte: fonte, lic: "v" }; for (var k in x || {}) o[k] = x[k]; DESC[id] = d; if (leg) LEG[id] = leg; return o; };
   var IGN = "IGN / CNIG (Espanha), CC BY 4.0 scne.es", GIBS = "https://gibs.earthdata.nasa.gov/", SGM = "https://maps.isric.org/mapserv?map=/map/";
-  var EDIA_S = "https://sigims2.edia.pt/ediaags2/rest/services/publico/EDIA_DadosAbertos/MapServer", EEA_N2K = "https://bio.discomap.eea.europa.eu/arcgis/rest/services/ProtectedSites/Natura2000Sites/MapServer";
+  var EEA_N2K = "https://bio.discomap.eea.europa.eu/arcgis/rest/services/ProtectedSites/Natura2000Sites/MapServer";
   var COR_REAL = { txt: "Imagem em cor real: não tem classes." }, IV = { txt: "Falsa-cor de infravermelho: vegetação viva em vermelho, água em azul-escuro, solo nu e construído em tons claros." };
   var EXTRA = [
     // Açores e Madeira
@@ -479,19 +479,7 @@
     WMS("ilh-az-nitr", "Zonas vulneráveis a nitratos", "Açores · água e riscos", "https://wssig3.azores.gov.pt/geoserver/am/wms", "AM.NitrateVulnerableZone", "© SRAAC/GRA · CC BY 4.0", "Zonas vulneráveis à poluição por nitratos de origem agrícola (bacias de lagoas), com regras de fertilização."),
     WMS("ilh-md-cosram", "Ocupação do solo COSRAM 2018", "Madeira e Porto Santo", "https://geoservices.madeira.gov.pt/geoserver/LC_COSRAM_2018/wms", "LC.LandCoverSurfaces", "© DROTe, Governo Regional da Madeira · CC BY 4.0", "Carta de Ocupação do Solo da Região Autónoma da Madeira de 2018."),
     AGS("ilh-md-n2000", "Rede Natura 2000 (Agência Europeia do Ambiente)", "Madeira e Porto Santo", EEA_N2K, "0,1,2", "© Agência Europeia do Ambiente (Natura 2000) · CC BY 4.0", "Sítios da Rede Natura 2000 na Madeira, a partir da base de dados europeia da AEA."),
-    // EDIA (Alqueva)
-    AGS("edia-2025", "Ortofotomapa 2025 · cor real (EDIA)", "Alqueva (EDIA)", EDIA_S, "75", "© EDIA, S.A. · CC BY 4.0", "Ortofotomapa de 2025, 25 cm, em cor real, da área do Empreendimento de Fins Múltiplos de Alqueva."),
-    AGS("edia-2025iv", "Ortofotomapa 2025 · infravermelho (EDIA)", "Alqueva (EDIA)", EDIA_S, "73", "© EDIA, S.A. · CC BY 4.0", "Ortofotomapa de 2025 em falsa-cor de infravermelho: ajuda a ver vegetação viva, regadio e linhas de água."),
-    AGS("edia-2022", "Ortofotomapa 2022 (EDIA)", "Alqueva (EDIA)", EDIA_S, "56", "© EDIA, S.A. · CC BY 4.0", "Ortofotomapa de 2022 da área do Alqueva."),
-    AGS("edia-2022iv", "Ortofotomapa 2022 · infravermelho (EDIA)", "Alqueva (EDIA)", EDIA_S, "70", "© EDIA, S.A. · CC BY 4.0", "Ortofotomapa de 2022 em falsa-cor de infravermelho."),
-    AGS("edia-2019", "Ortofotomapa 2019 (EDIA)", "Alqueva (EDIA)", EDIA_S, "28", "© EDIA, S.A. · CC BY 4.0", "Ortofotomapa de 2019 da área do Alqueva."),
-    AGS("edia-2019iv", "Ortofotomapa 2019 · infravermelho (EDIA)", "Alqueva (EDIA)", EDIA_S, "37", "© EDIA, S.A. · CC BY 4.0", "Ortofotomapa de 2019 em falsa-cor de infravermelho."),
-    AGS("edia-2017", "Ortofotomapa 2017 (EDIA)", "Alqueva (EDIA)", EDIA_S, "4", "© EDIA, S.A. · CC BY 4.0", "Ortofotomapa de 2017 da área do Alqueva."),
-    AGS("edia-2015", "Ortofotomapa 2015 (EDIA)", "Alqueva (EDIA)", EDIA_S, "12", "© EDIA, S.A. · CC BY 4.0", "Ortofotomapa de 2015 da área do Alqueva."),
-    AGS("edia-2004", "Ortofotomapa 2004 (EDIA)", "Alqueva (EDIA)", EDIA_S, "13", "© EDIA, S.A. · CC BY 4.0", "Ortofotomapa de 2004: a paisagem antes do enchimento completo e do regadio."),
-    AGS("edia-1995", "Ortofotomapa 1995 (EDIA)", "Alqueva (EDIA)", EDIA_S, "14", "© EDIA, S.A. · CC BY 4.0", "Ortofotomapa de 1995: a paisagem antes da barragem de Alqueva."),
-    AGS("edia-aptidao", "Carta de aptidão ao regadio (EDIA)", "Alqueva (EDIA)", EDIA_S, "17", "© EDIA, S.A. · CC BY 4.0", "Aptidão dos solos ao regadio na área do Alqueva, em classes."),
-    AGS("edia-curvas", "Curvas de nível 1995, 1:5000 (EDIA)", "Alqueva (EDIA)", EDIA_S, "1", "© EDIA, S.A. · CC BY 4.0", "Curvas de nível da cartografia 1:5000 de 1995 da EDIA."),
+    // EDIA (Alqueva): retiradas a 10/11/2026 a pedido da EDIA (os serviços de mapas da EDIA não são para uso público por terceiros)
     // Espanha
     OUT("es-pnoa", "Ortofoto PNOA (IGN)", "Espanha", "https://www.ign.es/wmts/pnoa-ma", IGN, "Ortofotografia aérea mais recente do Plano Nacional de Ortofotografia Aérea de Espanha.", COR_REAL),
     OUT("es-ignbase", "Mapa IGN Base", "Espanha", "https://www.ign.es/wmts/ign-base", IGN, "Mapa base topográfico do Instituto Geográfico Nacional de Espanha.", { txt: "Mapa topográfico com a simbologia do IGN." }),
