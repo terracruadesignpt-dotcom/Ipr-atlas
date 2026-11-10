@@ -15,6 +15,10 @@
    Nuno, 21h51: «A ideia com isto de desenhar no Atlas é aproximar o Atlas do que é [o Q]Field.» As notas têm os campos das
    notas de campo do QField (texto, tipo: observação, problema, foto, medição; autor; data) e há «Nota na minha posição»
    (GPS do aparelho), como no campo.
+   22h00: «as notas que temos no [Q]Field para as pessoas que podem desenhar estradas, água, tudo isso [...] no
+   Intelligence». A barra tem as camadas de desenho dos projectos no QGIS/QField (00 Notas, 02 Água, 03 Acessos,
+   04 Zonamento, 05 Vegetação estrutural, 06 Plantações, 07 Edificado), com a geometria de cada uma, cor e medidas
+   (área, comprimento). As de desenho são do Intelligence (e da equipa); as notas e as extremas são para quem edita.
    Desligar: ?bdes=0 ou localStorage ipr_bdes_off = 1. */
 (function () {
   "use strict";
@@ -48,10 +52,47 @@
   var TIPOS = [["observacao", "Observação", "Observation"], ["problema", "Problema", "Problem"], ["foto", "Foto", "Photo"], ["medicao", "Medição", "Measurement"]];
   function tipoNome(k) { var t = TIPOS.filter(function (x) { return x[0] === k; })[0] || TIPOS[0]; return T(t[1], t[2]); }
   var CORES = ["#e8b84a", "#e0705a", "#94be39", "#4a9fe0", "#b06ad8", "#ffffff"];
+  // Camadas de desenho dos projectos da Terracrua Design no QGIS e no QField (padrão de 28/10/2026,
+  // atlas/amostra-projectos-qgis-padrao-2026-10-28.md): grupo, tabela (o mesmo nome que no GeoPackage do projecto),
+  // geometrias (P ponto, L linha, A área) e cor. Nuno, 22h00: «as notas que temos no [Q]Field para as pessoas que podem
+  // desenhar estradas, água, tudo isso [...] no Intelligence».
+  var CAMADAS = [
+    ["00 Notas de campo", "notas", "Notas", "Notes", "PLA", "#e8b84a"],
+    ["02 Água", "agua_retencoes", "Retenções de água", "Water retention", "AP", "#2f7fd8"],
+    ["02 Água", "agua_paredoes", "Paredões de barragem", "Dam walls", "A", "#8a6d3b"],
+    ["02 Água", "agua_micro_intervencoes", "Micro-intervenções de água", "Water flow points", "P", "#4fc3f7"],
+    ["02 Água", "agua_micro_modelacoes", "Micro-modelações e valas", "Runoff control and swales", "L", "#1e88e5"],
+    ["02 Água", "agua_pontos", "Pontos de água (poço, furo, cisterna)", "Water points (well, borehole, tank)", "PA", "#00acc1"],
+    ["02 Água", "agua_distribuicao", "Distribuição de água e rega", "Water distribution and irrigation", "L", "#0277bd"],
+    ["02 Água", "agua_passagens", "Passagens hidráulicas", "Culverts", "PL", "#5c6bc0"],
+    ["03 Acessos e circulação", "acessos_eixos", "Eixos de acesso", "Access axes", "L", "#c9771d"],
+    ["03 Acessos e circulação", "acessos_areas", "Acessos (áreas)", "Access (areas)", "A", "#d9a441"],
+    ["03 Acessos e circulação", "acessos_estacionamento", "Estacionamento", "Parking", "A", "#9e9e9e"],
+    ["04 Zonamento", "zonamento_zonas", "Zonas (Z0 a Z5)", "Zones (Z0 to Z5)", "A", "#b06ad8"],
+    ["04 Zonamento", "zonamento_conservacao", "Áreas de conservação", "Conservation areas", "A", "#43a047"],
+    ["05 Vegetação estrutural", "vegetacao_sebes", "Sebes", "Hedges", "AL", "#558b2f"],
+    ["05 Vegetação estrutural", "vegetacao_galerias", "Galerias ripícolas", "Riparian galleries", "A", "#2e7d32"],
+    ["05 Vegetação estrutural", "vegetacao_estrutural", "Vegetação estrutural", "Structural vegetation", "A", "#7cb342"],
+    ["06 Plantações e produção", "plantacoes_linhas", "Linhas de plantação (keyline)", "Planting lines (keyline)", "L", "#94be39"],
+    ["06 Plantações e produção", "producao_areas", "Áreas de produção", "Production areas", "AP", "#cddc39"],
+    ["07 Edificado e infra-estruturas", "edificado", "Edificado", "Buildings", "AP", "#e0705a"],
+    ["07 Edificado e infra-estruturas", "energia", "Energia", "Energy", "LP", "#fdd835"],
+    ["07 Edificado e infra-estruturas", "vedacoes", "Vedações, muros e portões", "Fences, walls and gates", "LPA", "#bdbdbd"]
+  ];
+  function camadaDe(k) { return CAMADAS.filter(function (c) { return c[1] === k; })[0] || CAMADAS[0]; }
+  function camadaNome(k) { var c = camadaDe(k); return T(c[2], c[3]); }
+  function intelOk() { if (String(W.IPR_NIVEL || "").toLowerCase() === "intelligence") return true; var q = W.tcdEquipa; return !!(q && typeof q === "object" && q.email); }
+  function medir(g) {
+    function d(a, b) { var R = 6371008.8, r = Math.PI / 180, x = (b[0] - a[0]) * r * Math.cos((a[1] + b[1]) / 2 * r), y = (b[1] - a[1]) * r; return Math.sqrt(x * x + y * y) * R; }
+    function comp(c) { var t = 0; for (var i = 1; i < c.length; i++) t += d(c[i - 1], c[i]); return t; }
+    if (g.type === "LineString") { var m = comp(g.coordinates); return m >= 1000 ? (m / 1000).toLocaleString(en() ? "en-GB" : "pt-PT", { maximumFractionDigits: 2 }) + " km" : Math.round(m) + " m"; }
+    if (g.type === "Polygon") { var h = haDe({ features: [{ geometry: g }] }); return h >= 1 ? ha(h) : Math.round(h * 10000).toLocaleString(en() ? "en-GB" : "pt-PT") + " m²"; }
+    return "";
+  }
 
   // ---------- estado ----------
   var S = { enc: 0, i: -1, nome: "", editar: false, notas: { type: "FeatureCollection", features: [] }, versoes: [], vigor: 0,
-    modo: "", limite: null, sujo: false, sujoNotas: false, nova: null, encaixar: true, arr: null };
+    modo: "", camada: "notas", limite: null, sujo: false, sujoNotas: false, nova: null, encaixar: true, arr: null };
 
   // ---------- camadas no mapa ----------
   var SRC_N = "ipr-bd-notas", SRC_E = "ipr-bd-ed";
@@ -77,7 +118,7 @@
   function popup(e) {
     if (S.modo) return; var f = e.features && e.features[0]; if (!f || !W.maplibregl) return;
     var p = f.properties || {}, h = "<div style='font:13px/1.4 Inter,sans-serif;max-width:240px;color:#1b1d18'>" + (p.texto ? esc(p.texto).replace(/\n/g, "<br>") : "<i>" + esc(T("Nota sem texto", "Note without text")) + "</i>") +
-      "<div style='opacity:.6;font-size:11px;margin-top:4px'>" + esc(tipoNome(p.tipo) + (p.quem ? " · " + p.quem : "") + (p.quando ? " · " + new Date(p.quando * 1000).toLocaleDateString(en() ? "en-GB" : "pt-PT") : "")) + "</div>" + "</div>";
+      "<div style='opacity:.6;font-size:11px;margin-top:4px'>" + esc((p.camada && p.camada !== "notas" ? camadaNome(p.camada) + (p.type ? " · " + p.type : "") : tipoNome(p.tipo)) + (p.quem ? " · " + p.quem : "") + (p.quando ? " · " + new Date(p.quando * 1000).toLocaleDateString(en() ? "en-GB" : "pt-PT") : "")) + "</div>" + "</div>";
     new W.maplibregl.Popup({ closeButton: true, maxWidth: "260px" }).setLngLat(e.lngLat).setHTML(h).addTo(mapa());
   }
   function pintarNotas() { var m = mapa(); if (m && m.getSource(SRC_N)) m.getSource(SRC_N).setData(S.notas); }
@@ -177,7 +218,7 @@
     pintarEdicao(); barra();
   }
   function novaNota(g) {
-    var f = { type: "Feature", properties: { id: "n" + Date.now().toString(36), texto: "", tipo: S.tipo || "observacao", cor: S.cor || CORES[0], quando: Math.round(Date.now() / 1000) }, geometry: g };
+    var f = { type: "Feature", properties: { id: "n" + Date.now().toString(36), camada: S.camada, type: "", texto: "", tipo: S.camada === "notas" ? (S.tipo || "observacao") : "", cor: S.camada === "notas" ? (S.cor || CORES[0]) : camadaDe(S.camada)[5], quando: Math.round(Date.now() / 1000) }, geometry: g };
     S.notas.features.push(f); S.sujoNotas = true; pintarNotas(); barra(); editarTexto(f.properties.id);
   }
   function editarTexto(id) { S.aEditar = id; barra(); setTimeout(function () { var t = D.querySelector("#ipr-bd textarea"); if (t) t.focus(); }, 30); }
@@ -205,8 +246,14 @@
     if (!b) { b = D.createElement("div"); b.id = "ipr-bd"; b.setAttribute("role", "dialog"); D.body.appendChild(b); b.addEventListener("click", acao); b.addEventListener("input", entrada); b.addEventListener("change", entrada); }
     var md = S.modo, h = "<h4><span>" + esc(T("Desenho · ", "Drawing · ") + S.nome) + "</span><button type='button' class='x' data-a='fechar' aria-label='" + esc(T("Fechar", "Close")) + "'>×</button></h4>";
     if (S.editar) {
-      h += "<div class='row'>" + [["limite", T("Extremas", "Boundary")], ["ponto", T("Nota", "Note")], ["linha", T("Linha", "Line")], ["area", T("Área", "Area")]].map(function (x) {
-        return "<button type='button' data-m='" + x[0] + "' class='" + (md === x[0] ? "on" : "") + "'>" + esc(x[1]) + "</button>"; }).join("") +
+      var cam = camadaDe(S.camada), io = intelOk(), grp = "";
+      h += "<div class='row'><label>" + esc(T("Camada", "Layer")) + " <select data-a='camada'>" + CAMADAS.map(function (c) {
+        var o = (c[0] !== grp ? (grp ? "</optgroup>" : "") + "<optgroup label='" + esc(c[0]) + "'>" : "") + "<option value='" + c[1] + "'" + (c[1] === S.camada ? " selected" : "") + (c[1] !== "notas" && !io ? " disabled" : "") + ">" + esc(T(c[2], c[3]) + (c[1] !== "notas" && !io ? " · Intelligence" : "")) + "</option>";
+        grp = c[0]; return o; }).join("") + "</optgroup></select></label></div>";
+      if (!io) h += "<p class='aj'>" + esc(T("As camadas de desenho (água, acessos, zonas, sebes, plantações, edificado) são do IPR Atlas Intelligence. As notas e as extremas estão sempre disponíveis.", "Design layers (water, access, zones, hedges, planting, buildings) are part of IPR Atlas Intelligence. Notes and the boundary are always available.")) + "</p>";
+      h += "<div class='row'><button type='button' data-m='limite' class='" + (md === "limite" ? "on" : "") + "'>" + esc(T("Extremas", "Boundary")) + "</button>" +
+        [["ponto", "P", T("Ponto", "Point")], ["linha", "L", T("Linha", "Line")], ["area", "A", T("Área", "Area")]].filter(function (x) { return cam[4].indexOf(x[1]) >= 0; }).map(function (x) {
+        return "<button type='button' data-m='" + x[0] + "' class='" + (md === x[0] ? "on" : "") + "'>" + esc(x[2]) + "</button>"; }).join("") +
         (S.nova ? "<button type='button' data-a='terminar' class='pri'>" + esc(T("Terminar", "Finish")) + "</button>" : "") +
         "<button type='button' data-a='gps'>" + esc(T("◎ Nota na minha posição", "◎ Note at my position")) + "</button></div>";
       if (md === "limite") {
@@ -219,25 +266,29 @@
           "</select></label><button type='button' data-a='repor'>" + esc(T("Pôr em vigor", "Make current")) + "</button></div>";
       } else if (md) {
         h += "<p class='aj'>" + esc(md === "ponto" ? T("Carregue no mapa onde quer a nota.", "Click the map where you want the note.") : T("Carregue no mapa ponto a ponto. Duplo clique, Enter ou «Terminar» para acabar; Esc cancela.", "Click the map point by point. Double-click, Enter or «Finish» to end; Esc cancels.")) + "</p>" +
-          "<div class='row'><span class='cores'>" + CORES.map(function (c) { return "<i data-cor='" + c + "' class='" + ((S.cor || CORES[0]) === c ? "on" : "") + "' style='background:" + c + "'></i>"; }).join("") + "</span></div>";
+          (S.camada !== "notas" ? "" : "<div class='row'><span class='cores'>" + CORES.map(function (c) { return "<i data-cor='" + c + "' class='" + ((S.cor || CORES[0]) === c ? "on" : "") + "' style='background:" + c + "'></i>"; }).join("") + "</span></div>");
       }
     } else h += "<p class='aj'>" + esc(T("Tem acesso só de leitura a esta Base: vê as notas, mas não pode desenhar.", "You have read-only access to this Base: you can see the notes but not draw.")) + "</p>";
     var ed = S.aEditar && S.notas.features.filter(function (f) { return f.properties.id === S.aEditar; })[0];
-    if (ed) h += "<div class='row'><label>" + esc(T("Tipo", "Type")) + " <select data-a='tipo'>" + TIPOS.map(function (x) { return "<option value='" + x[0] + "'" + ((ed.properties.tipo || "observacao") === x[0] ? " selected" : "") + ">" + esc(T(x[1], x[2])) + "</option>"; }).join("") + "</select></label></div>" +
+    if (ed) h += "<div class='row'><b>" + esc(camadaNome(ed.properties.camada || "notas")) + "</b> <span style='opacity:.7'>" + esc(medir(ed.geometry)) + "</span></div>" +
+      ((ed.properties.camada || "notas") === "notas" ? "<div class='row'><label>" + esc(T("Tipo", "Type")) + " <select data-a='tipo'>" + TIPOS.map(function (x) { return "<option value='" + x[0] + "'" + ((ed.properties.tipo || "observacao") === x[0] ? " selected" : "") + ">" + esc(T(x[1], x[2])) + "</option>"; }).join("") + "</select></label></div>"
+        : "<div class='row'><label style='flex:1'>" + esc(T("Tipo ou nome", "Type or name")) + " <input data-a='type' maxlength='60' style='flex:1;font:13px Inter,sans-serif;background:#24271f;color:#f5f4ee;border:1px solid #4a4d43;border-radius:7px;padding:6px' value='" + esc(ed.properties.type || "") + "' placeholder='" + esc(T("ex.: charca de sela, Z2, sebe ripícola", "e.g. saddle pond, Z2, riparian hedge")) + "'></label></div>") +
       "<textarea data-a='texto' placeholder='" + esc(T("Escreva a nota…", "Write the note…")) + "'>" + esc(ed.properties.texto || "") + "</textarea><div class='row'><button type='button' data-a='ok-texto' class='pri'>OK</button></div>";
     if (S.notas.features.length) h += "<ul>" + S.notas.features.map(function (f) {
-      var g = f.geometry.type, tipo = tipoNome(f.properties.tipo) + (g === "LineString" ? T(" · linha", " · line") : g === "Polygon" ? T(" · área", " · area") : "");
+      var g = f.geometry.type, ck = f.properties.camada || "notas", tipo = (ck === "notas" ? tipoNome(f.properties.tipo) + (g === "LineString" ? T(" · linha", " · line") : g === "Polygon" ? T(" · área", " · area") : "") : camadaNome(ck) + (f.properties.type ? " · " + f.properties.type : "")) + (medir(f.geometry) ? " · " + medir(f.geometry) : "");
       return "<li><i style='background:" + esc(f.properties.cor || CORES[0]) + "'></i><span class='t'>" + esc(tipo + (f.properties.texto ? " · " + f.properties.texto : "")) + "</span><button type='button' data-ir='" + esc(f.properties.id) + "'>" + esc(T("Ver", "Show")) + "</button>" +
         (S.editar ? "<button type='button' data-ed='" + esc(f.properties.id) + "'>" + esc(T("Texto", "Text")) + "</button><button type='button' data-del='" + esc(f.properties.id) + "'>" + esc(T("Apagar", "Delete")) + "</button>" : "") + "</li>"; }).join("") + "</ul>";
     if (S.editar) h += "<div class='row'><button type='button' class='pri' data-a='gravar-notas'" + (S.sujoNotas ? "" : " disabled") + ">" + esc(T("Guardar notas", "Save notes")) + "</button></div>";
     if (S.msg) h += "<p class='msg" + (S.msgBom ? " ok" : "") + "'>" + esc(S.msg) + "</p>";
-    var foco = D.activeElement && b.contains(D.activeElement) && D.activeElement.tagName === "TEXTAREA";
+    var foco = D.activeElement && b.contains(D.activeElement) && (D.activeElement.tagName === "TEXTAREA" || (D.activeElement.tagName === "INPUT" && D.activeElement.type === "text"));
     if (foco) return; // não apagar o que se está a escrever
     b.innerHTML = h;
   }
   function entrada(e) {
     var a = e.target.getAttribute("data-a");
     if (a === "encaixar") { S.encaixar = e.target.checked; }
+    if (a === "camada") { S.camada = e.target.value; var cm = camadaDe(S.camada); if (S.modo && S.modo !== "limite" && cm[4].indexOf({ ponto: "P", linha: "L", area: "A" }[S.modo]) < 0) modoAte(""); else barra(); return; }
+    if (a === "type") { var fz = S.notas.features.filter(function (x) { return x.properties.id === S.aEditar; })[0]; if (fz) { fz.properties.type = e.target.value.slice(0, 60); S.sujoNotas = true; } return; }
     if (a === "tipo") { var f0 = S.notas.features.filter(function (x) { return x.properties.id === S.aEditar; })[0]; if (f0) { f0.properties.tipo = e.target.value; S.tipo = e.target.value; S.sujoNotas = true; pintarNotas(); } return; }
     if (a === "texto") { var f = S.notas.features.filter(function (x) { return x.properties.id === S.aEditar; })[0]; if (f) { f.properties.texto = e.target.value.slice(0, 1000); S.sujoNotas = true; pintarNotas(); } }
   }
