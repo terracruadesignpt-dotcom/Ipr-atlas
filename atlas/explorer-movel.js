@@ -82,7 +82,7 @@
       '.ipr-exm-ac{background:var(--ac);color:#14200F!important;border:0;border-radius:10px;font-weight:600!important;padding:0 14px;min-height:44px}' +
       '.ipr-exm-ol{background:transparent;border:1px solid var(--ln);border-radius:10px;padding:0 14px;min-height:44px}' +
       '#ipr-exm-bv,#ipr-exm-pf{position:fixed;inset:0;z-index:2147480300;background:#0f140c;overflow:auto;-webkit-overflow-scrolling:touch;padding:24px 16px 32px}' +
-      '#ipr-exm-bv[hidden],#ipr-exm-pf[hidden],#ipr-exm-sh[hidden],#ipr-exm-res[hidden]{display:none}' +
+      '#ipr-exm-bv[hidden],#ipr-exm-pf[hidden],#ipr-exm-sh[hidden],#ipr-exm-res[hidden]{display:none}.ipr-exm-sug{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:5;list-style:none;margin:0;padding:0;background:#151b11;border:1px solid var(--ln);border-radius:12px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.45);max-height:60vh;overflow-y:auto}.ipr-exm-sug[hidden]{display:none}.ipr-exm-sug li[role=option]{padding:11px 14px;min-height:48px;border-bottom:1px solid var(--ln);cursor:pointer;color:#ecebe2}.ipr-exm-sug li[role=option] b{display:block;font-weight:600;font-size:15px}.ipr-exm-sug li[role=option] small{display:block;opacity:.7;font-size:12.5px;margin-top:2px}.ipr-exm-sug li[aria-selected=true],.ipr-exm-sug li[role=option]:hover{background:rgba(148,190,57,.16)}.ipr-exm-sug .cr{font-size:10.5px;opacity:.5;padding:5px 14px;text-align:right}' +
       '.ipr-exm-k{font:500 11px Inter,sans-serif;letter-spacing:.1em;text-transform:uppercase;color:var(--ac);margin:0 0 6px}' +
       '#ipr-exm-bv h1{font-size:28px;line-height:1.15;margin-bottom:8px}#ipr-exm-bv .sub{color:var(--mu);margin:0 0 18px}' +
       '.ipr-exm-f{display:flex;gap:8px;margin-bottom:6px}.ipr-exm-f input{flex:1;min-width:0;height:48px;border-radius:12px;border:1px solid var(--ln);background:var(--p1);color:var(--tx);padding:0 12px;font:16px Inter,sans-serif}' +
@@ -282,6 +282,64 @@
       })
       .catch(function () { if (err) { err.textContent = T('A pesquisa não respondeu. Tente outra vez ou use coordenadas.', 'Search did not respond. Try again or use coordinates.'); err.hidden = false; } });
   }
+  // ───────── sugestões ao escrever (Nuno, 10/11: «auto preenchimento no nome/localização de terrenos») ─────────
+  // Photon (OpenStreetMap, feito para escrever e sugerir; o Nominatim não permite sugestões ao escrever). Só Portugal.
+  // Inclui herdades, quintas e lugares. Se falhar, a pesquisa normal (Enter / Procurar) continua igual.
+  var TIPO = { farm: ['Herdade ou quinta', 'Farm'], farmyard: ['Herdade ou quinta', 'Farm'], isolated_dwelling: ['Lugar', 'Place'], locality: ['Lugar', 'Place'],
+    hamlet: ['Aldeia', 'Hamlet'], village: ['Aldeia ou vila', 'Village'], town: ['Vila', 'Town'], city: ['Cidade', 'City'], suburb: ['Bairro', 'Suburb'],
+    neighbourhood: ['Bairro', 'Neighbourhood'], quarter: ['Bairro', 'Quarter'], peak: ['Serra ou monte', 'Peak'], stream: ['Ribeira', 'Stream'], river: ['Rio', 'River'],
+    administrative: ['Concelho ou freguesia', 'Municipality or parish'], residential: ['Rua', 'Street'], tertiary: ['Rua', 'Street'], secondary: ['Estrada', 'Road'],
+    unclassified: ['Caminho', 'Road'], track: ['Caminho', 'Track'], primary: ['Estrada', 'Road'], house: ['Morada', 'Address'] };
+  function zTipo(v, k) { if (/^(farm|farmyard|isolated_dwelling|house|residential|tertiary|unclassified|track|locality)$/.test(v) || k === 'highway' || k === 'building') return 'farm'; if (/^(city|town|suburb|quarter|borough)$/.test(v)) return 'town'; if (v === 'administrative') return 'municipality'; return 'village'; }
+  function sugestoes(inp, aoEscolher) {
+    if (!inp || inp.__iprSug || !W.fetch) return; inp.__iprSug = 1;
+    var f = inp.form || inp.parentNode; if (getComputedStyle(f).position === 'static') f.style.position = 'relative';
+    var ul = D.createElement('ul'); ul.className = 'ipr-exm-sug'; ul.hidden = true; ul.setAttribute('role', 'listbox'); ul.id = inp.id + '-sug';
+    f.appendChild(ul); inp.setAttribute('aria-autocomplete', 'list'); inp.setAttribute('aria-controls', ul.id); inp.setAttribute('aria-expanded', 'false');
+    var lista = [], act = -1, tmo = 0, ctl = null, ult = '';
+    function fechar() { ul.hidden = true; inp.setAttribute('aria-expanded', 'false'); act = -1; }
+    function marcar(i) { act = i; [].forEach.call(ul.querySelectorAll('[role=option]'), function (b, j) { b.setAttribute('aria-selected', j === i ? 'true' : 'false'); if (j === i) inp.setAttribute('aria-activedescendant', b.id); }); }
+    function escolher(i) { var r = lista[i]; if (!r) return; inp.value = r.nome; fechar(); gtag('exm_sugestao', { tipo: r.addresstype }); aoEscolher(r); }
+    function mostrar() {
+      if (!lista.length) { fechar(); return; }
+      ul.innerHTML = lista.map(function (r, i) { return '<li role="option" id="' + ul.id + '-' + i + '" aria-selected="false" data-i="' + i + '"><b>' + esc(r.nome) + '</b><small>' + esc([r.tipo, r.onde].filter(Boolean).join(' · ')) + '</small></li>'; }).join('') +
+        '<li class="cr" aria-hidden="true">© OpenStreetMap</li>';
+      ul.hidden = false; inp.setAttribute('aria-expanded', 'true'); act = -1;
+    }
+    function pedir(q) {
+      if (ctl) try { ctl.abort(); } catch (e) {}
+      ctl = W.AbortController ? new AbortController() : null;
+      fetch('https://photon.komoot.io/api/?limit=7&lang=default&bbox=-31.6,32.3,-6.1,42.2&q=' + encodeURIComponent(q), ctl ? { signal: ctl.signal } : {})
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+          if (inp.value.trim() !== q) return;
+          var vistos = {};
+          lista = (j.features || []).filter(function (x) { return x.properties && x.properties.countrycode === 'PT'; }).map(function (x) {
+            var p = x.properties, c = x.geometry.coordinates, nome = p.name || [p.street, p.housenumber].filter(Boolean).join(' ') || p.postcode || '';
+            var onde = [p.district && p.district !== nome ? p.district : '', p.city && p.city !== nome ? p.city : '', p.county && p.county !== p.city ? p.county : ''].filter(Boolean).slice(0, 2).join(', ');
+            var t = TIPO[p.osm_value] || (p.osm_key === 'highway' ? ['Rua ou caminho', 'Road'] : null);
+            return { nome: nome, onde: onde, tipo: t ? (EN() ? t[1] : t[0]) : '', lat: String(c[1]), lon: String(c[0]), addresstype: zTipo(p.osm_value, p.osm_key), display_name: [nome, onde].filter(Boolean).join(', ') };
+          }).filter(function (r) { var k = (r.nome + '|' + r.onde).toLowerCase(); if (!r.nome || vistos[k]) return false; vistos[k] = 1; return true; }).slice(0, 6);
+          mostrar();
+        }).catch(function () {});
+    }
+    inp.addEventListener('input', function () {
+      var q = inp.value.trim(); clearTimeout(tmo);
+      if (q.length < 3 || q === ult || /^[A-Za-z]{3}\s?\d{3}/.test(q) || /^\s*-?\d{1,2}[.,]\d/.test(q)) { if (q.length < 3) fechar(); return; }
+      tmo = setTimeout(function () { ult = q; pedir(q); }, 280);
+    });
+    inp.addEventListener('keydown', function (e) {
+      if (ul.hidden) return;
+      if (e.key === 'ArrowDown') { e.preventDefault(); marcar(Math.min(lista.length - 1, act + 1)); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); marcar(Math.max(0, act - 1)); }
+      else if (e.key === 'Enter' && act >= 0) { e.preventDefault(); e.stopPropagation(); escolher(act); }
+      else if (e.key === 'Escape') fechar();
+    });
+    ul.addEventListener('mousedown', function (e) { e.preventDefault(); });
+    ul.addEventListener('click', function (e) { var li = e.target.closest('[data-i]'); if (li) escolher(+li.getAttribute('data-i')); });
+    inp.addEventListener('blur', function () { setTimeout(fechar, 150); });
+    if (inp.form) inp.form.addEventListener('submit', function () { fechar(); }, true);
+  }
   var jaPerfis = false;
   function depoisDeProcurar() {
     pintarTerreno();
@@ -378,6 +436,8 @@
     D.body.appendChild(painel());
     D.body.appendChild(perfis());
     var bv = entrada(); D.body.appendChild(bv);
+    var irPara = function (r) { voar(r); fecharEntrada(); var l = D.getElementById('ipr-exm-res'); if (l) l.hidden = true; depoisDeProcurar(); };
+    sugestoes(D.getElementById('ipr-exm-q'), irPara); sugestoes(D.getElementById('ipr-exm-q2'), irPara);
     var visto = false; try { visto = sessionStorage.getItem('ipr_exm_bv') === '1'; } catch (e) {}
     if (visto || /[?&](mapa|ficha|servico|assistente)=/.test(location.search)) bv.hidden = true;
     D.addEventListener('click', cliques, true);
