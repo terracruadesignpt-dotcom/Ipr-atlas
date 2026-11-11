@@ -761,6 +761,7 @@
   var B = [
     ['tp-crono-t', 'Cronologia: comparar o terreno em anos diferentes', '\u003csvg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">\u003cpath d="M3.5 12a8.5 8.5 0 1 0 2.6-6.1"/>\u003cpath d="M3.5 4.5v4h4"/>\u003cpath d="M12 7.5V12l3 2"/>\u003c/svg>', '.ipr-crono-b'],
     ['tp-net-t', 'Testar internet: verifica se chega para carregar as camadas', '\u003csvg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">\u003cpath d="M2 9a15 15 0 0 1 20 0M5.5 12.5a10 10 0 0 1 13 0M9 16a5 5 0 0 1 6 0"/>\u003ccircle cx="12" cy="19.5" r="1.2" fill="currentColor"/>\u003c/svg>', '#ipr-lig-b'],
+    ['tp-cam-t', 'Testar camadas: diagnóstico de todas as camadas (só equipa)', '\u003csvg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">\u003cpath d="M3 12h4l3-8 4 16 3-8h4"/>\u003c/svg>', '#tcd-testar-cam'],
     ['tp-pa-t', 'Pergunte ao Atlas', '\u003cspan class="tp-pa-ic">\u003csvg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">\u003cpath d="M4 5h16v11H9l-5 4z"/>\u003c/svg>\u003c/span>', '#ipr-pa-b']
   ];
   var R = {};
@@ -771,14 +772,22 @@
       if (!b) {
         b = document.createElement('button'); b.type = 'button'; b.id = d[0]; b.className = 'ipe-ib tp-tb';
         b.title = d[1]; b.setAttribute('aria-label', d[1]); b.innerHTML = d[2];
-        b.addEventListener('click', function(e){ e.preventDefault(); var o = document.querySelector(d[3]); if (o) o.click(); setTimeout(est, 50); });
+        b.addEventListener('click', function(e){ e.preventDefault(); var o = document.querySelector(d[3]); if (o) o.click(); setTimeout(est, 50);
+          // 11/11 (Nuno): o resultado do «Testar internet» fica na barra da esquerda; abre-se a barra e mostra-se o resultado
+          if (d[0] === 'tp-net-t') setTimeout(function(){ var ipe = document.getElementById('ipe'), cam = document.getElementById('ipe-camadas'), r = document.getElementById('ipr-lig-r');
+            if (ipe && cam && ipe.classList.contains('sem-esq')) cam.click();
+            if (r && r.scrollIntoView) setTimeout(function(){ r.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }, 120); }, 30);
+        });
         R[d[0]] = b;
       }
     });
-    var a = R['tp-crono-t'], c = R['tp-net-t'], q = R['tp-pa-t'];
+    var a = R['tp-crono-t'], c = R['tp-net-t'], q = R['tp-pa-t'], k = R['tp-cam-t'];
     if (tema.nextElementSibling !== a) tema.parentNode.insertBefore(a, tema.nextSibling);
     if (a.nextElementSibling !== q) tema.parentNode.insertBefore(q, a.nextSibling);
     if (c.nextElementSibling !== tema) tema.parentNode.insertBefore(c, tema);
+    // 11/11 (Nuno): «Testar camadas» ao lado do «Testar internet», só quando o botão da equipa existe
+    if (document.getElementById('tcd-testar-cam')) { if (k.nextElementSibling !== c) tema.parentNode.insertBefore(k, c); }
+    else if (k.parentNode) k.parentNode.removeChild(k);
     est();
   }
   function est(){
