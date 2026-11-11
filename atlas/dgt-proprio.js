@@ -13,7 +13,7 @@
   var BASE = "https://camadas.terracruadesign.pt/pmtiles/dgt/";
   var PROPRIAS = { srup_ren_areal: 1, srup_ren_linear: 1, srup_ran: 1, srup_albufeiras: 1, srup_rede_eletrica: 1, srup_zec: 1, srup_zpe: 1,
     srup_areas_protegidas: 1, srup_aquiferos: 1, srup_defesa_militar_zonas: 1, srup_aeronautica: 1, linhas_agua: 1, crus: 1 };
-  var PMT = "https://cdn.jsdelivr.net/npm/pmtiles@3.2.1/dist/pmtiles.js", pronto = null, fontes = {};
+  var PMT = "https://cdn.jsdelivr.net/npm/pmtiles@3.2.1/dist/pmtiles.js", pronto = null, fontes = {}, LIG = 0;
   W.__iprDgtProprioEstado = function () { return { fontes: fontes, protocolo: !!pronto }; };
   // A biblioteca PMTiles (a mesma versão que o viz.js usa) carrega logo ao arranque; enquanto não estiver pronta, as camadas
   // ficam na origem antiga (DGT), para não haver mapas vazios por corrida.
@@ -36,7 +36,10 @@
       if (c && !pronto) registar();
       if (c && pronto) {
         fontes[id] = c;
-        src = { type: "vector", url: "pmtiles://" + BASE + c + ".pmtiles", attribution: (src.attribution || "DGT") + " · cópia IPR Atlas" };
+        // 11/11/2026, 20h51 (Nuno: «se seleccionar e desseleccionar os layers deixam de aparecer»): cada vez que a camada volta
+        // a ser ligada, endereço novo (?l=n). O Protocol do pmtiles guarda uma instância por endereço e, se a camada for
+        // desligada a meio do carregamento, os pedidos cancelados ficavam na cache dessa instância e os mosaicos nunca mais vinham.
+        src = { type: "vector", url: "pmtiles://" + BASE + c + ".pmtiles?l=" + (++LIG), attribution: (src.attribution || "DGT") + " · cópia IPR Atlas" };
       }
       return aS.call(this, id, src);
     };
