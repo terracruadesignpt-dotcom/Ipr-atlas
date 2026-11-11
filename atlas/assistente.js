@@ -101,7 +101,7 @@
       aEspera: "À espera do terreno no mapa…",
       achado: "Terreno no mapa", achadoArea: "Área",
       p3T: "Confirme o terreno e o preço", p3S: "Valores sem IVA e com IVA (23 %).",
-      semIva: "sem IVA", comIva: "com IVA",
+      semIva: "sem IVA", comIva: "com IVA", totP: "Total a pagar", ivaInc: "IVA incluído", pagarV: "Pagar", confia: "Sem conta · Pagamento seguro · Dados oficiais da DGT · Factura com NIF",
       juntarL: "Juntar a Leitura Territorial", pacote: "Base e Leitura juntas: mais 10 % de desconto nas duas, no pagamento.",
       consulta: "Sob consulta para esta área. Pedimos-lhe os dados e enviamos uma proposta.",
       inclui: {
@@ -186,7 +186,7 @@
       aEspera: "Waiting for the land on the map…",
       achado: "Land on the map", achadoArea: "Area",
       p3T: "Check the land and the price", p3S: "Prices without and with VAT (23 %).",
-      semIva: "without VAT", comIva: "with VAT",
+      semIva: "without VAT", comIva: "with VAT", totP: "Total to pay", ivaInc: "VAT included", pagarV: "Pay", confia: "No account needed · Secure payment · Official DGT data · Invoice with VAT number",
       juntarL: "Add the Territorial Reading", pacote: "Base and Reading together: a further 10 % off both, at payment.",
       consulta: "On request for this area. Leave your details and we send a quote.",
       inclui: {
@@ -308,6 +308,7 @@
     "#ipr-as-pn .ach .ok{display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:#94BE39;color:#0F170B;flex:none}#ipr-as-pn .ach b{display:block;font:600 15px/1.2 " + O + "}#ipr-as-pn .ach small{font:500 12px " + M + ";color:#B8A83A}" +
     "#ipr-as-pn table.pr{width:100%;border-collapse:collapse;border:0!important;margin:12px 0 4px;font-size:13.5px}#ipr-as-pn table.pr th,#ipr-as-pn table.pr td{padding:8px 4px!important;border:0!important;border-bottom:1px solid #2E3A26!important;background:transparent!important;text-align:right;font-family:" + M + ";font-weight:500}" +
     "#ipr-as-pn table.pr th:first-child,#ipr-as-pn table.pr td:first-child{text-align:left;font-family:" + F + "}#ipr-as-pn table.pr th{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#9AA088}#ipr-as-pn table.pr tr.tot td{color:#94BE39;font-weight:600;border-bottom:0}" +
+    "#ipr-as-pn .totp{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin:10px 0 2px;padding:12px 14px;border:1px solid #3A4A2C;border-left:2px solid #94BE39;border-radius:2px;background:rgba(148,190,57,.06)}#ipr-as-pn .totp span{font-size:13px;color:#9AA088}#ipr-as-pn .totp b{font:600 22px/1.1 " + O + ";color:#E4E2D8}#ipr-as-pn .totp small{font-size:12px;color:#9AA088}#ipr-as-pn p.confia{margin:8px 0 0;font-size:12.5px;line-height:1.45;color:#9AA088}" +
     "#ipr-as-pn ul.inc{list-style:none;margin:12px 0 0;padding:0;display:grid;gap:5px}#ipr-as-pn ul.inc li{display:flex;gap:8px;font-size:12.5px;color:#E4E2D8}#ipr-as-pn ul.inc li svg{color:#94BE39;flex:none;margin-top:2px}" +
     "#ipr-as-pn .nota{margin:10px 0 0;font-size:12px;color:#9AA088}#ipr-as-pn .aviso{margin:10px 0 0;padding:10px 12px;border-left:3px solid #B8A83A;background:#14200F;font-size:13px}" +
     "#ipr-as-pn .falta{margin:10px 0 0;font-size:12.5px;color:#d9a35b;min-height:1em}#ipr-as-pn .erro{margin:10px 0 0;font-size:13px;color:#e07a5f}" +
@@ -1165,6 +1166,9 @@
       var tab = el("table", "pr"), th = el("tr"); ["", t("semIva"), t("comIva")].forEach(function (h) { th.appendChild(el("th", "", h)); }); tab.appendChild(th);
       var tr = el("tr", "tot"); tr.appendChild(el("td", "", d[0])); tr.appendChild(el("td", "", euros(v))); tr.appendChild(el("td", "", euros(v * (1 + IVA)))); tab.appendChild(tr);
       caixa.appendChild(tab);
+      // 11/11/2026 (estratégia, sistema 5): total com IVA bem à vista, prazo e confiança antes de continuar
+      var tp = el("div", "totp"); tp.appendChild(el("span", "", t("totP"))); tp.appendChild(el("b", "", euros(v * (1 + IVA)))); tp.appendChild(el("small", "", t("ivaInc"))); caixa.appendChild(tp);
+      caixa.appendChild(el("p", "confia", t("confia")));
       if (k === "leitura" && /−\s*50|-\s*50|50\s*%/.test(txt("ipe-preco-l"))) caixa.appendChild(el("p", "nota", txt("ipe-preco-l")));
       if (S.nsei) caixa.appendChild(el("p", "nota", q("areaNsei")));
       s.disabled = false;
@@ -1253,7 +1257,7 @@
     var erro = el("p", "erro"); erro.setAttribute("role", "alert"); form.appendChild(erro);
     c.appendChild(form);
     var T0 = Date.now();
-    var rotulo = S.consulta ? q("pedirProposta") : ROTA === false ? t("pedirMail") : t("pagar") + (S.valor ? " · " + euros(S.valor * (1 + IVA)) : "");
+    var rotulo = S.consulta ? q("pedirProposta") : ROTA === false ? t("pedirMail") : (S.valor ? t("pagarV") + " " + euros(S.valor * (1 + IVA)) : t("pagar"));
     rod.appendChild(el("span"));
     var s = el("button", "bt"); s.type = "button"; s.textContent = rotulo; rod.appendChild(s);
     function guardarD() { S.dados = { nome: nome.value, email: email.value, telefone: tel.value, nif: nif.value, pais: pais.value, notas: notas.value }; }
