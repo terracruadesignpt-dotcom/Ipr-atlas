@@ -88,34 +88,45 @@
   }
 
   // ---------- camadas no mapa ----------
+  var MAPAS = [];
   var VAZIO = { type: "FeatureCollection", features: [] };
   function montar(m) {
-    if (m.__iprVol) return; m.__iprVol = { ult: "", n: 0 };
+    if (m.__iprVol) return; m.__iprVol = { ult: "", n: 0 }; MAPAS.push(m);
+    // na vista 3D da ficha da propriedade o terreno inteiro cabe no quadro, mais longe do chão
+    var zE = ZMIN_EDIF, zA = ZMIN_ARV;
+    function vePerto() { var f = false; try { f = !!m.getContainer().closest(".ipr-3d-c"); } catch (e) {} zE = f ? 12.5 : ZMIN_EDIF; zA = f ? 12.5 : ZMIN_ARV;
+      try { if (m.getLayer("vol3dedificios")) m.setLayerZoomRange("vol3dedificios", zE, 24); if (m.getLayer("vol3dcopas")) m.setLayerZoomRange("vol3dcopas", zA, 24); } catch (e) {} }
     function poe() {
       try {
-        if (!m.getSource("ipr-ofm-edif")) m.addSource("ipr-ofm-edif", { type: "vector", url: OFM, attribution: "© OpenStreetMap" });
-        if (!m.getLayer("ipr-vol-edif")) m.addLayer({ id: "ipr-vol-edif", type: "fill-extrusion", source: "ipr-ofm-edif", "source-layer": "building", minzoom: ZMIN_EDIF,
+        if (!m.getSource("vol3dofm")) m.addSource("vol3dofm", { type: "vector", url: OFM, attribution: "© OpenStreetMap" });
+        if (!m.getLayer("vol3dedificios")) m.addLayer({ id: "vol3dedificios", type: "fill-extrusion", source: "vol3dofm", "source-layer": "building", minzoom: zE,
           layout: { visibility: "none" },
           paint: { "fill-extrusion-color": "#d9cfbd", "fill-extrusion-opacity": 0.92,
             "fill-extrusion-height": ["coalesce", ["get", "render_height"], 6], "fill-extrusion-base": ["coalesce", ["get", "render_min_height"], 0] } });
-        if (!m.getSource("ipr-vol-arv")) m.addSource("ipr-vol-arv", { type: "geojson", data: VAZIO, attribution: "Copas: Meta CHM v2 (Meta / Data for Good, Taylor Geospatial), CC BY 4.0" });
-        if (!m.getLayer("ipr-vol-arv")) m.addLayer({ id: "ipr-vol-arv", type: "fill-extrusion", source: "ipr-vol-arv", minzoom: ZMIN_ARV,
+        if (!m.getSource("vol3dcopas")) m.addSource("vol3dcopas", { type: "geojson", data: VAZIO, attribution: "Copas: Meta CHM v2 (Meta / Data for Good, Taylor Geospatial), CC BY 4.0" });
+        if (!m.getLayer("vol3dcopas")) m.addLayer({ id: "vol3dcopas", type: "fill-extrusion", source: "vol3dcopas", minzoom: zA,
           layout: { visibility: "none" },
           paint: { "fill-extrusion-color": ["interpolate", ["linear"], ["get", "h"], 2, "#8fb45a", 8, "#4f8a3c", 16, "#2f6a34", 30, "#1d4a2a"],
             "fill-extrusion-opacity": 0.95, "fill-extrusion-height": ["get", "h"], "fill-extrusion-base": 0 } });
       } catch (e) {}
       actualiza();
     }
-    var t = 0;
+    var t = 0, ultimo = 0;
+    // Em limite de ritmo, não em espera (a vista 3D da ficha roda sozinha e dispara «moveend» sem parar), e por
+    // requestAnimationFrame: o ritmo.js estica os setTimeout repetidos quando ninguém mexe na página.
     function actualiza() {
-      clearTimeout(t);
-      t = setTimeout(function () {
+      if (t) return;
+      t = 1;
+      W.requestAnimationFrame(function passo() {
+        if (Date.now() - ultimo < 300) { W.requestAnimationFrame(passo); return; }
+        t = 0; ultimo = Date.now();
+        vePerto();
         var on = m.getPitch() > INCL, z = m.getZoom();
         try {
-          if (m.getLayer("ipr-vol-edif")) m.setLayoutProperty("ipr-vol-edif", "visibility", on && z >= ZMIN_EDIF ? "visible" : "none");
-          if (m.getLayer("ipr-vol-arv")) m.setLayoutProperty("ipr-vol-arv", "visibility", on && z >= ZMIN_ARV ? "visible" : "none");
+          if (m.getLayer("vol3dedificios")) m.setLayoutProperty("vol3dedificios", "visibility", on && z >= zE ? "visible" : "none");
+          if (m.getLayer("vol3dcopas")) m.setLayoutProperty("vol3dcopas", "visibility", on && z >= zA ? "visible" : "none");
         } catch (e) { return; }
-        if (!on || z < ZMIN_ARV) return;
+        if (!on || z < zA) return;
         var c = m.getCenter(), X = mx(c.lng), Y = my(c.lat), b = m.getBounds();
         var meia = Math.min(LADO_MAX / 2, Math.max(150, (mx(b.getEast()) - mx(b.getWest())) / 2));
         var cx = [X - meia, Y - meia, X + meia, Y + meia].map(function (v) { return Math.round(v / 50) * 50; });
@@ -123,13 +134,14 @@
         var n = ++m.__iprVol.n;
         copas(cx).then(function (fc) {
           if (n !== m.__iprVol.n) return;
-          var s = m.getSource("ipr-vol-arv"); if (s) s.setData(fc);
+          var s = m.getSource("vol3dcopas"); if (s) s.setData(fc);
         });
-      }, 350);
+      });
     }
     if (m.isStyleLoaded && m.isStyleLoaded()) poe(); else m.once("load", poe);
-    m.on("styledata", function () { if (!m.getLayer("ipr-vol-edif") || !m.getLayer("ipr-vol-arv")) setTimeout(poe, 50); });
-    m.on("pitchend", actualiza); m.on("moveend", actualiza);
+    // outros módulos (por exemplo o botão relevo/satélite da ficha) escondem camadas que não conhecem: volta a mostrar
+    m.on("styledata", function () { if (!m.getLayer("vol3dedificios") || !m.getLayer("vol3dcopas")) setTimeout(poe, 50); else actualiza(); });
+    m.on("pitchend", actualiza); m.on("moveend", actualiza); m.on("move", actualiza); m.on("idle", actualiza);
   }
 
   // mapas já criados (principal) e os que vierem (vistas 3D das fichas)
@@ -144,5 +156,5 @@
     Novo.__iprVol = 1; ML.Map = Novo;
   }
   var k = 0; (function espera() { procurar(); if (k++ < 40) setTimeout(espera, 500); })();
-  W.__iprVol3d = { montar: montar, copas: copas, quadkey: quadkey };
+  W.__iprVol3d = { mapas: MAPAS, montar: montar, copas: copas, quadkey: quadkey };
 })();
