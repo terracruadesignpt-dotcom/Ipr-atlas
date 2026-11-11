@@ -224,6 +224,40 @@
     return '<p class="tcd-fe-v"><span class="tcd-fe-t ' + R[0] + '">' + pior + " · " + T(R[1], R[2]) + "</span> " + T("Dados do PDM: ", "PDM data: ") + txt +
       '<br><span style="opacity:.8;font-size:.92em">' + partes.join(" · ") + (det ? " · " + T("área do terreno: ", "site area: ") + det : "") + "</span></p>";
   }
+  // 11/11/2026, 23h05 (Nuno: «Ran e ren apuros», REN e RAN presas em «a calcular…»): a ficha mede ela própria a REN e a RAN nas
+  // PMTiles próprias (camadas.terracruadesign.pt, cópia da DGT), sem depender dos mosaicos da DGT, que demoram ou falham.
+  var PM = "https://camadas.terracruadesign.pt/pmtiles/dgt/", PMJS = "https://cdn.jsdelivr.net/npm/pmtiles@3.2.1/dist/pmtiles.js", pmP = null, pmI = {}, rrCache = {};
+  function pmLib() {
+    if (W.pmtiles) return Promise.resolve(W.pmtiles);
+    if (!pmP) pmP = new Promise(function (ok, ko) { var sc = D.createElement("script"); sc.src = PMJS; sc.crossOrigin = "anonymous"; sc.onload = function () { W.pmtiles ? ok(W.pmtiles) : ko(new Error("pmtiles")); }; sc.onerror = ko; (D.head || D.documentElement).appendChild(sc); });
+    return pmP;
+  }
+  function renRan(f) {
+    var k = chaveF(f); if (rrCache[k]) return rrCache[k];
+    var b = caixaF(f), x0 = mxp(b[0]), x1 = mxp(b[2]), y0 = myp(b[3]), y1 = myp(b[1]), w = x1 - x0, h = y1 - y0, S = 400;
+    var G = { x0: x0, y0: y0, w: w, h: h, W: w >= h ? S : Math.max(8, Math.round(S * w / h)), H: w >= h ? Math.max(8, Math.round(S * h / w)) : S };
+    var M = pintar(G, [f.geometry]), tot = 0; for (var i = 0; i < M.length; i++) tot += M[i];
+    var z = 14; function nt(z) { var n = Math.pow(2, z); return (Math.floor((x0 + w) * n) - Math.floor(x0 * n) + 1) * (Math.floor((y0 + h) * n) - Math.floor(y0 * n) + 1); }
+    while (z > 7 && nt(z) > 9) z--;
+    var n = Math.pow(2, z), tiles = [];
+    for (var tx = Math.floor(x0 * n); tx <= Math.floor((x0 + w) * n); tx++) for (var ty = Math.floor(y0 * n); ty <= Math.floor((y0 + h) * n); ty++) tiles.push([tx, ty]);
+    function medir(col) {
+      var dec = W.IPRDiag && W.IPRDiag.mvtDecode; if (!dec || !tot) return Promise.resolve(null);
+      return pmLib().then(function (L) {
+        var P = pmI[col] || (pmI[col] = new L.PMTiles(PM + col + ".pmtiles"));
+        var c = D.createElement("canvas"); c.width = G.W; c.height = G.H; var x = c.getContext("2d", { willReadFrequently: true }); x.fillStyle = "#000";
+        return Promise.all(tiles.map(function (t) { return P.getZxy(z, t[0], t[1]).then(function (r) {
+          if (!r || !r.data) return;
+          dec(r.data).forEach(function (ft) { if (ft.tipo !== 3) return; var e = ft.ext || 4096; x.beginPath();
+            ft.aneis.forEach(function (an) { an.forEach(function (q, i2) { var px = ((t[0] + q[0] / e) / n - G.x0) / G.w * G.W, py = ((t[1] + q[1] / e) / n - G.y0) / G.h * G.H; if (i2) x.lineTo(px, py); else x.moveTo(px, py); }); x.closePath(); });
+            x.fill("evenodd"); });
+        }); })).then(function () { var d = x.getImageData(0, 0, G.W, G.H).data, cnt = 0; for (var i3 = 0; i3 < M.length; i3++) if (M[i3] && d[i3 * 4 + 3] > 127) cnt++; return Math.round(1000 * cnt / tot) / 10; });
+      });
+    }
+    var to = new Promise(function (ok) { setTimeout(function () { ok(null); }, 20000); });
+    rrCache[k] = Promise.race([Promise.all([medir("srup_ren_areal").catch(function () { return null; }), medir("srup_ran").catch(function () { return null; })]), to.then(function () { return [null, null]; })]);
+    return rrCache[k];
+  }
   function pctCam(res, id) { var x = (res || []).filter(function (r) { return r.e && r.e.id === id; })[0]; return x ? (x.r.pct != null ? x.r.pct : null) : 0; }
   function edif(out) {
     var box = out.querySelector(".tcd-fn-e"); if (!box || EDIF_OFF) return;
@@ -232,6 +266,9 @@
     var ren = res ? pctCam(res, "ren") : null, ran = res ? pctCam(res, "ran") : null;
     if (!fim) { if (ren === 0) ren = null; if (ran === 0) ran = null; }
     var kf = chaveF(f);
+    var rrJa = box.__rr && box.__rr[0] === kf ? box.__rr[1] : null;
+    if (!rrJa) renRan(f).then(function (rr) { box.__rr = [kf, rr]; if (rr && (rr[0] != null || rr[1] != null)) { box.__chave = ""; edif(out); } });
+    if (rrJa) { if (rrJa[0] != null) ren = rrJa[0]; if (rrJa[1] != null) ran = rrJa[1]; if (rrJa[0] != null && rrJa[1] != null) fim = true; }
     Promise.all([crusMedir(f), confJ()]).then(function (CJ) {
       var C = CJ[0], J = CJ[1];
       var chave = kf + "|" + ren + "|" + ran + "|" + fim + "|" + (C ? C.length : "x") + "|" + (J ? 1 : 0);
