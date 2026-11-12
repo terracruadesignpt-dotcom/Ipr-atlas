@@ -516,7 +516,22 @@
     p.then(function () { if (emCurso === e) emCurso = null; }, function () { if (emCurso === e) emCurso = null; });
     return p;
   }
+  // 12/11/2026: o separador Processos põe o Atlas em modo de encomenda; aí os cartões e o «Ver» não abrem nenhuma Base e
+  // a escolha acabava por recarregar a página (20 s ou mais). O separador Bases do próprio Atlas sai desse modo; depois
+  // abre-se a Base pedida como de costume.
+  function sairEncomenda() {
+    var e = est(); if (!e || e.modo !== "encomenda") return Promise.resolve();
+    var tb = [].slice.call(document.querySelectorAll('[role=tab][data-tab="proj"]')).filter(function (x) { return x.offsetParent; })[0];
+    if (!tb) return Promise.resolve();
+    try { tb.click(); } catch (x) {}
+    return esperar(function () { var e2 = est(); return !!e2 && e2.modo !== "encomenda"; }, 4000);
+  }
   function mostrarBase0(id) {
+    var e = est();
+    if (e && e.modo === "encomenda" && actualId() !== String(id)) return sairEncomenda().then(function () { return mostrarBase1(id); });
+    return mostrarBase1(id);
+  }
+  function mostrarBase1(id) {
     var n = ++pedidoMostrar, ver = telemovel() ? null : botaoVer(id), c = cartao(id);
     var depois = function (ok) {
       if (n !== pedidoMostrar) return ok;
