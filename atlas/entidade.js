@@ -321,6 +321,12 @@
     // camadas de sempre. Nos primeiros 10 s volta-se a pôr a zona e as camadas de partida, enquanto a pessoa não mexer no mapa.
     var mexeu = false, m0 = W.__ipe.mapa;
     if (m0 && m0.on) m0.on("movestart", function (e) { if (e && e.originalEvent) mexeu = true; });
+    // Se o Atlas afastar o mapa sozinho (vista do país ao arrancar, mesmo com o separador em segundo plano), volta à zona.
+    var t0 = Date.now();
+    if (ZONA && m0 && m0.on) m0.on("moveend", function (e) {
+      if (mexeu || (e && e.originalEvent) || Date.now() - t0 > 45000) return;
+      if (m0.getZoom() < 7.5) setTimeout(function () { if (!mexeu) try { m0.fitBounds(ZONA, {padding: 40, duration: 0}); } catch (x) {} }, 50);
+    });
     [1500, 3500, 6500, 10000].forEach(function (ms) {
       setTimeout(function () {
         if (mexeu) return;
