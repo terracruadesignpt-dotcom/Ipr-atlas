@@ -43,7 +43,7 @@
       fundoQ: "Fundo", fundo_impermeavel: "Impermeabilizado (tela ou argila)", fundo_natural: "Terreno natural", fundo_infiltracao: "Charca de infiltração",
       resAd: "Terreno grande: calculado com células de {c} m (a Base tem {b} m), para caber na memória do servidor. Os padrões gerais valem; charcas e depressões mais pequenas do que a célula não aparecem.",
       montT: "Água de montante", montSem: "Esta Base ainda não tem os dados de montante: só entra a chuva que cai no terreno. Se chegar água de fora, os resultados ficam por baixo da realidade.", montTx: "{v} m³ de fora do terreno ({p} % da água), {n} troços de entrada, {a} km² a montante.", montTx2: "Entra água de fora do terreno: {n} troços de entrada, {a} km² a montante (já contada nos valores abaixo).",
-      charcaR: "Charca", volUtil: "Volume útil", cotaA: "Cota da água", corte: "Corte", aterro: "Aterro", dique: "Altura máx. do dique", descR: "Descarregador", aviso: "Resultados de modelo para apoiar decisões de projecto; não substituem estudo hidráulico nem licenciamento."
+      diqueAlto: "Dique com {h} m: alto demais para uma charca. Confirme o desenho (outro sítio, ou cota da água mais baixa). Um dique destes é uma obra que precisa de projecto e licenciamento.", faltaTerra: "O aterro precisa de mais {v} m³ do que sai do corte: faltaria terra de fora.", sobraTerra: "Sobram {v} m³ de terra do corte.", charcaR: "Charca", volUtil: "Volume útil", cotaA: "Cota da água", corte: "Corte", aterro: "Aterro", dique: "Altura máx. do dique", descR: "Descarregador", aviso: "Resultados de modelo para apoiar decisões de projecto; não substituem estudo hidráulico nem licenciamento."
     },
     en: {
       botao: "Water simulator", titulo: "Water simulator", fechar: "Close", min: "Minimise",
@@ -77,7 +77,7 @@
       fundoQ: "Bottom", fundo_impermeavel: "Lined (membrane or clay)", fundo_natural: "Natural ground", fundo_infiltracao: "Infiltration pond",
       resAd: "Large area: computed with {c} m cells (the Base Map has {b} m) to fit the server memory. General patterns hold; ponds and hollows smaller than a cell do not show.",
       montT: "Upstream water", montSem: "This Base Map has no upstream data yet: only rain falling on the land is counted. If water arrives from outside, results are underestimated.", montTx: "{v} m³ from outside the land ({p} % of the water), {n} inflow sections, {a} km² upstream.", montTx2: "Water enters from outside the land: {n} inflow sections, {a} km² upstream (already counted in the values below).",
-      charcaR: "Pond", volUtil: "Useful volume", cotaA: "Water level", corte: "Cut", aterro: "Fill", dique: "Max. embankment height", descR: "Spillway", aviso: "Model results to support design decisions; they do not replace a hydraulic study or permitting."
+      diqueAlto: "Embankment {h} m high: too high for a pond. Check the design (another spot, or a lower water level). An embankment this size is a work that needs a design and permits.", faltaTerra: "The fill needs {v} m³ more than the cut gives: soil would have to come from elsewhere.", sobraTerra: "{v} m³ of cut soil left over.", charcaR: "Pond", volUtil: "Useful volume", cotaA: "Water level", corte: "Cut", aterro: "Fill", dique: "Max. embankment height", descR: "Spillway", aviso: "Model results to support design decisions; they do not replace a hydraulic study or permitting."
     }
   };
   function L() { return (W.IPR_LINGUA || document.documentElement.lang || "pt").slice(0, 2) === "en" ? "en" : "pt"; }
@@ -329,6 +329,10 @@
         h += "</div>";
         if (c.aviso_descarregador) h += '<p class="nota">' + esc(c.aviso_descarregador) + "</p>";
         if (c.aviso_fundo) h += '<p class="nota">' + esc(c.aviso_fundo) + "</p>";
+        // 12/11/2026: avisos de desenho que o resumo não dava (num ensaio, uma charca numa encosta deu 11,9 m de dique)
+        if (+c.altura_max_dique_m > 4) h += '<p class="faixa">' + esc(t("diqueAlto").replace("{h}", n(c.altura_max_dique_m, 1))) + "</p>";
+        var dT = (+c.aterro_m3 || 0) - (+c.corte_m3 || 0), mT = Math.max(+c.aterro_m3 || 0, +c.corte_m3 || 0);
+        if (mT > 0 && Math.abs(dT) > 0.15 * mT) h += '<p class="nota">' + esc(t(dT > 0 ? "faltaTerra" : "sobraTerra").replace("{v}", n(Math.abs(dT), 0))) + "</p>";
       });
       (s.comparacao || []).forEach(function (c) {
         if (c.ganho_m3 != null) h += '<div class="kv"><span><b>' + n(c.chuva_mm, 0) + " mm</b></span><span></span><span>" + esc(t("ganho")) + "</span><span>" + n(c.ganho_m3, 0) + " m³</span><span>" + esc(t("retido")) + "</span><span>" + n(c.retido_antes_m3, 0) + " → " + n(c.retido_depois_m3, 0) + " m³</span></div>";
