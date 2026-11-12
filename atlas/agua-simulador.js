@@ -42,7 +42,7 @@
       talI: "Talude interior (1:x)", talE: "Talude exterior (1:x)", folga: "Folga até ao coroamento", coroaL: "Largura do coroamento", cotaAgua: "Cota da água (vazio = automática)",
       fundoQ: "Fundo", fundo_impermeavel: "Impermeabilizado (tela ou argila)", fundo_natural: "Terreno natural", fundo_infiltracao: "Charca de infiltração",
       resAd: "Terreno grande: calculado com células de {c} m (a Base tem {b} m), para caber na memória do servidor. Os padrões gerais valem; charcas e depressões mais pequenas do que a célula não aparecem.",
-      montT: "Água de montante", montSem: "Esta Base ainda não tem os dados de montante: só entra a chuva que cai no terreno. Se chegar água de fora, os resultados ficam por baixo da realidade.", montTx: "{v} m³ de fora do terreno ({p} % da água), {n} troços de entrada, {a} km² a montante.",
+      montT: "Água de montante", montSem: "Esta Base ainda não tem os dados de montante: só entra a chuva que cai no terreno. Se chegar água de fora, os resultados ficam por baixo da realidade.", montTx: "{v} m³ de fora do terreno ({p} % da água), {n} troços de entrada, {a} km² a montante.", montTx2: "Entra água de fora do terreno: {n} troços de entrada, {a} km² a montante (já contada nos valores abaixo).",
       charcaR: "Charca", volUtil: "Volume útil", cotaA: "Cota da água", corte: "Corte", aterro: "Aterro", dique: "Altura máx. do dique", descR: "Descarregador", aviso: "Resultados de modelo para apoiar decisões de projecto; não substituem estudo hidráulico nem licenciamento."
     },
     en: {
@@ -76,7 +76,7 @@
       talI: "Inner slope (1:x)", talE: "Outer slope (1:x)", folga: "Freeboard to crest", coroaL: "Crest width", cotaAgua: "Water level (empty = automatic)",
       fundoQ: "Bottom", fundo_impermeavel: "Lined (membrane or clay)", fundo_natural: "Natural ground", fundo_infiltracao: "Infiltration pond",
       resAd: "Large area: computed with {c} m cells (the Base Map has {b} m) to fit the server memory. General patterns hold; ponds and hollows smaller than a cell do not show.",
-      montT: "Upstream water", montSem: "This Base Map has no upstream data yet: only rain falling on the land is counted. If water arrives from outside, results are underestimated.", montTx: "{v} m³ from outside the land ({p} % of the water), {n} inflow sections, {a} km² upstream.",
+      montT: "Upstream water", montSem: "This Base Map has no upstream data yet: only rain falling on the land is counted. If water arrives from outside, results are underestimated.", montTx: "{v} m³ from outside the land ({p} % of the water), {n} inflow sections, {a} km² upstream.", montTx2: "Water enters from outside the land: {n} inflow sections, {a} km² upstream (already counted in the values below).",
       charcaR: "Pond", volUtil: "Useful volume", cotaA: "Water level", corte: "Cut", aterro: "Fill", dique: "Max. embankment height", descR: "Spillway", aviso: "Model results to support design decisions; they do not replace a hydraulic study or permitting."
     }
   };
@@ -300,11 +300,14 @@
     (s.rio || []).forEach(function (x) { h += '<p class="nota"><b>' + esc(L() === "en" ? "River" : "Rio") + "</b> · " + esc(x.cenario_titulo) + " · " + n(x.pico_m3s, 1) + " m³/s · " + esc(x.hipotese) + "</p>"; });
     if (s.aviso_montante) h += '<p class="faixa">' + esc(t("montSem")) + "</p>";
     else if (s.montante) {
-      var vm = 0, tot = 0;
+      var vm = 0, tot = 0, temV = true, bl = s.balanco || (s.antes && s.antes.balanco);
       if (s.cenarios && s.cenarios.length) { vm = s.cenarios[s.cenarios.length - 1].montante_m3; tot = s.cenarios[s.cenarios.length - 1].entrada_total_m3; }
-      else if (s.balanco) { vm = s.balanco.montante_m3; tot = s.balanco.chuva_m3 + s.balanco.montante_m3; }
+      else if (bl) { vm = bl.montante_m3; tot = bl.chuva_m3 + bl.montante_m3; }
       else if (s.montante.volume_montante_m3) { vm = s.montante.volume_montante_m3; }
-      h += '<p class="nota"><b>' + esc(t("montT")) + "</b> · " + esc(t("montTx").replace("{v}", n(vm, 0)).replace("{p}", tot ? n(100 * vm / tot, 0) : "–").replace("{n}", s.montante.trocos).replace("{a}", n(s.montante.area_montante_km2, 2))) + "</p>";
+      else temV = false;
+      // 12/11/2026: no Antes e depois rápido o resumo não traz o volume de montante; sem ele não se mostra «0 m³»
+      var txM = temV ? t("montTx").replace("{v}", n(vm, 0)).replace("{p}", tot ? n(100 * vm / tot, 0) : "–") : t("montTx2");
+      h += '<p class="nota"><b>' + esc(t("montT")) + "</b> · " + esc(txM.replace("{n}", s.montante.trocos).replace("{a}", n(s.montante.area_montante_km2, 2))) + "</p>";
     }
     if (r.processo === "retencao-rapida") {
       h += '<p class="nota">' + esc(t("estatico")) + "</p>";
