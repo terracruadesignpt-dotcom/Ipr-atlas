@@ -76,7 +76,7 @@
     try {
       m3 = new W.maplibregl.Map({ container: C, attributionControl: false, pitch: 60, bearing: -20, maxPitch: 80, interactive: true,
         style: { version: 8, sources: {
-          sat: { type: "raster", tiles: ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"], tileSize: 256, maxzoom: 19 },
+          sat: { type: "raster", tiles: ["https://ortos.dgterritorio.gov.pt/wms/ortosat2023?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&LAYERS=ortoSat2023-CorVerdadeira&STYLES=&CRS=EPSG:3857&WIDTH=256&HEIGHT=256&FORMAT=image/jpeg&BBOX={bbox-epsg-3857}"], tileSize: 256, maxzoom: 19, attribution: "DGT · OrtoSat 2023, CC BY 4.0" },
           dem: { type: "raster-dem", tiles: [location.origin + "/ipr-relevo/{z}/{x}/{y}.webp"], encoding: "terrarium", tileSize: 512, maxzoom: 14 },
           lim: { type: "geojson", data: lim } },
           layers: [{ id: "sat", type: "raster", source: "sat" },

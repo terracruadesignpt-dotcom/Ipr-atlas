@@ -339,7 +339,7 @@
     { k: "cadastro", re: /cadastr|parcelas?|predios?|parcels?|cadastre/, ids: ["cad"] },
     { k: "bupi", re: /\bbupi\b/, ids: ["bupi"] },
     { k: "orto", re: /ortofoto|\borto\b|fotografia aerea|imagem aerea|aerial|orthophoto/, ids: ["f_ortosat", "f_o25"], fundo: 1 },
-    { k: "satelite", re: /satelite|satellite/, ids: ["f_esri", "f_s2g"], fundo: 1 },
+    { k: "satelite", re: /satelite|satellite/, ids: ["f_ortosat", "f_s2g"], fundo: 1 },
     { k: "mapa", re: /openstreetmap|\bosm\b|mapa de ruas|street map/, ids: ["f_mapa"], fundo: 1 },
     { k: "capacidade", re: /capacidade de uso|\bsroa\b/, ids: ["sroa"] },
     { k: "cos", re: /\bcos\b|ocupacao do solo|uso do solo|land (cover|use)/, ids: ["cos23", "cos25", "cos_s2"] },
