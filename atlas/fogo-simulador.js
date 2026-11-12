@@ -217,7 +217,9 @@
     h += '<div class="acc"><button class="b pri" data-fs="simular"' + (corre || S.des ? " disabled" : "") + ">" + esc(corre ? t("aSimular") : t("simular")) + "</button></div>";
     if (S.erro) h += '<div class="err">' + (S.bloq ? "<b>" + esc(t("bloqueado")) + "</b><br>" : "") + esc(S.erro) + (S.bloq ? "<br>" + esc(t("emerg")) : "") + "</div>";
     if (corre) h += barraJob();
-    if (S.res) h += resultados();
+    // 12/11/2026: os resultados só aparecem no separador do processo que os fez (os de «Muitas ignições» apareciam
+    // debaixo do formulário do «Antes e depois»); a lista «Simulações deste mapa» continua a abri-los com «Ver».
+    if (S.res && (!S.res.processo || S.res.processo === PROC[S.tab])) h += resultados();
     h += anteriores();
     h += '<p class="av">' + esc(t("notaFim")) + " " + esc(t("emerg")) + "</p>";
     return h;
@@ -500,6 +502,8 @@
       }
       if (r.estado === "successful") {
         S.res = r; if (!r.id) r.id = job.id; S.job = null;
+        // «Ver» de uma simulação de outro processo: o painel passa para o separador dela, onde os resultados aparecem
+        if (r.processo) Object.keys(PROC).forEach(function (k) { if (PROC[k] === r.processo) S.tab = k; });
         var v = (r.ficheiros || []).filter(function (f) { return f.nome === "vista/vista.json"; })[0];
         if (v) return fetch(urlF(v.url), { credentials: "same-origin" }).then(function (x) { return x.json(); }).then(function (vj) {
           S.res.vista = vj; S.res.fich = {}; (r.ficheiros || []).forEach(function (f) { S.res.fich[f.nome] = f.url; });
