@@ -356,12 +356,12 @@
   }
 
   // ───────────── fluxo ─────────────
-  function iniciar(tipo) {
+  function iniciar(tipo, trocar) {
     tipo = tipo === "fogo" ? "fogo" : "agua";
     if (!PODE[tipo]) { F = { tipo: tipo, passo: "intel" }; mostrar(); return; }
     // Regra de aceitação de cada simulador: a água guarda a versão aceite no navegador (agua-simulador.js); o fogo pergunta
     // ao site (fogo/aviso, «aceite»). Já aceite: segue directamente para a escolha da Base.
-    F = { tipo: tipo, passo: "aviso", texto: null, chk: false };
+    F = { tipo: tipo, passo: "aviso", texto: null, chk: false, trocar: !!trocar };
     var f = F;
     if (tipo === "agua") {
       var ok = false; try { ok = localStorage.getItem("ipr_agua_aviso") === AVISO.versao.agua; } catch (x) {}
@@ -413,6 +413,9 @@
       var ab = actualId() || (new URLSearchParams(location.search).get("mapa") || ""), ul = ""; try { ul = localStorage.getItem(ULTIMA) || ""; } catch (x) {}
       var tem = function (id) { return id && f.bases.some(function (b) { return String(b.id) === String(id); }); };
       // 01/11/2026: a Base aberta no mapa vem primeiro (escolher outra obrigava a trocar o mapa e às vezes a recarregar).
+      // 12/11/2026: com uma Base já aberta no mapa, o simulador abre logo sobre ela (um clique). A escolha só aparece
+      // sem Base aberta ou em «Trocar». Antes era preciso escolher e confirmar outra vez a Base que já estava à vista.
+      if (!f.trocar && actualId() && tem(actualId())) { f.sel = String(actualId()); return confirmar(); }
       if (f.bases.length === 1) f.sel = String(f.bases[0].id);
       else if (tem(ab)) f.sel = String(ab);
       else if (tem(ul)) f.sel = ul;
@@ -498,11 +501,20 @@
       setTimeout(v, 120);
     })();
   }
-  var pedidoMostrar = 0;
+  var pedidoMostrar = 0, emCurso = null;
   // Ao escolher uma Base na lista: abre-a (se ainda não estiver aberta) e enquadra o terreno. Usa o «Ver» da lista
   // «Os meus projectos» da esquerda (minhas-bases.js: abre pelo cartão do Atlas e enquadra quando o mapa está pronto);
   // sem essa lista, o cartão do separador Projectos e o mesmo enquadramento do enquadrar.js.
   function mostrarBase(id) {
+    // 12/11/2026: escolher a Base na lista já a está a abrir; «Simular» logo a seguir esperava por essa abertura em vez de
+    // carregar outra vez no «Ver» (o segundo clique recomeçava a abertura e parecia que era preciso pedir duas vezes).
+    if (emCurso && emCurso.id === String(id)) return emCurso.p;
+    var p = mostrarBase0(id), e = { id: String(id), p: p };
+    emCurso = e;
+    p.then(function () { if (emCurso === e) emCurso = null; }, function () { if (emCurso === e) emCurso = null; });
+    return p;
+  }
+  function mostrarBase0(id) {
     var n = ++pedidoMostrar, ver = telemovel() ? null : botaoVer(id), c = cartao(id);
     var depois = function (ok) {
       if (n !== pedidoMostrar) return ok;
@@ -517,7 +529,8 @@
       ver = botaoVer(id) || ver;
       ver.click();
     } else c.click();
-    return esperar(function () { return actualId() === String(id) && mapaPronto(); }, 15000).then(function (ok) {
+    // basta a Base estar aberta: o painel pode abrir enquanto as camadas acabam de carregar (o enquadramento espera o mapa)
+    return esperar(function () { return actualId() === String(id); }, 15000).then(function (ok) {
       if (n === pedidoMostrar) enquadrarFim(id, n);   // sempre, também depois do «Ver» da lista da esquerda
       return depois(ok);
     });
@@ -729,7 +742,7 @@
   // «Trocar» na etiqueta da Base do painel: volta à escolha (sem repetir o aviso já aceite).
   document.addEventListener("click", function (e) {
     var b = e.target && e.target.closest ? e.target.closest("[data-ipr-sb-trocar]") : null; if (!b) return;
-    e.preventDefault(); e.stopPropagation(); iniciar(b.getAttribute("data-ipr-sb-trocar"));
+    e.preventDefault(); e.stopPropagation(); iniciar(b.getAttribute("data-ipr-sb-trocar"), true);
   }, true);
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", observar); else observar();
   document.addEventListener("ipr:lingua", function () { garantir(); pintar(); });
