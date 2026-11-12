@@ -415,7 +415,9 @@
       // 01/11/2026: a Base aberta no mapa vem primeiro (escolher outra obrigava a trocar o mapa e às vezes a recarregar).
       // 12/11/2026: com uma Base já aberta no mapa, o simulador abre logo sobre ela (um clique). A escolha só aparece
       // sem Base aberta ou em «Trocar». Antes era preciso escolher e confirmar outra vez a Base que já estava à vista.
-      if (!f.trocar && actualId() && tem(actualId())) { f.sel = String(actualId()); return confirmar(); }
+      // O separador Processos (onde estão os simuladores) põe o Atlas em modo de encomenda e fecha a Base: conta também a
+      // Base do endereço (?mapa=), que continua a ser a que o utilizador tinha aberta, e reabre-a antes do painel.
+      if (!f.trocar && tem(ab)) { f.sel = String(ab); return confirmar(); }
       if (f.bases.length === 1) f.sel = String(f.bases[0].id);
       else if (tem(ab)) f.sel = String(ab);
       else if (tem(ul)) f.sel = ul;
