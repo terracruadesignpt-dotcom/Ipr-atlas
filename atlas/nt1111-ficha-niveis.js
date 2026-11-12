@@ -185,7 +185,7 @@
   var confP = null, BASE = ((D.currentScript && D.currentScript.src) || "").split("?")[0].replace(/[^\/]*$/, "");
   function chv(s) { return String(s || "").normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9;]+/g, " ").replace(/\s+/g, " ").replace(/^[ ;]+|[ ;]+$/g, ""); }
   function confJ() {
-    if (!confP) { var u = W.TCD_PDM_CONF || "https://cdn.jsdelivr.net/gh/terracruadesignpt-dotcom/Ipr-atlas@de4255fe946e5c8f88a845212465bd4e9667a322/atlas/dados/pdm-confianca.json";
+    if (!confP) { var u = W.TCD_PDM_CONF || "https://cdn.jsdelivr.net/gh/terracruadesignpt-dotcom/Ipr-atlas@5a9faa2c53ac7f8ba4285957aca67ed87ccc91af/atlas/dados/pdm-confianca.json";
       confP = fetch(u).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }).catch(function () { return null; }); }
     return confP;
   }
@@ -200,9 +200,9 @@
   // A alta confiança · B boa · C média · D fraca (de resumo ou por confirmar) · E sem dados. Revisão em curso tira o A;
   // suspensões, medidas preventivas e CRUS de plano anterior descem para C. Calculado no worker 1.0.88 (pdm-confianca.json).
   var RAT = { A: ["ok", "Alta confiança", "High confidence"], B: ["ok", "Boa confiança", "Good confidence"], C: ["pc", "Confiança média", "Medium confidence"],
-    D: ["dv", "Confiança fraca", "Low confidence"], E: ["dv", "Sem dados", "No data"] };
+    D: ["dv", "Confiança baixa", "Low confidence"], E: ["dv", "Sem dados", "No data"] };
   var FLG = { revisao: ["PDM em revisão", "PDM under review"], suspensao: ["suspensão ou medidas preventivas", "suspension or preventive measures"],
-    normas: ["normas provisórias", "provisional rules"], crus_anterior: ["carta de um plano anterior", "map from a previous plan"], hab_sem_max: ["habitação sem área máxima confirmada", "housing without confirmed maximum area"] };
+    normas: ["normas provisórias", "provisional rules"], crus_anterior: ["carta de um plano anterior", "map from a previous plan"], alteracao: ["alteração do PDM em elaboração", "PDM amendment in preparation"], hab_sem_max: ["habitação sem área máxima confirmada", "housing without confirmed maximum area"] };
   function confLinha(J, C) {
     if (!J || !C || !C.length) return "";
     var mun = {}, t = { a: 0, m: 0, b: 0, s: 0 };
@@ -219,10 +219,10 @@
     var txt = { A: T("as regras do PDM para este terreno foram lidas no regulamento em vigor.", "the PDM rules for this land were read in the regulation in force."),
       B: T("quase todas as regras foram lidas no regulamento em vigor; o que falta vem assinalado na Leitura.", "almost all rules were read in the regulation in force; the rest is flagged in the report."),
       C: T("parte das regras vem de resumo ou de versão anterior, ou o PDM tem suspensões; a Leitura diz o que confirmar.", "part of the rules come from a summary or earlier version, or the PDM has suspensions; the report says what to confirm."),
-      D: T("a maior parte das regras ainda não está conferida no regulamento; a Leitura vai ao texto e diz o que fica por confirmar.", "most rules are not yet checked in the regulation; the report goes to the text and says what remains to confirm."),
+      D: T("confiança baixa: o PDM está em revisão ou a maior parte das regras ainda não está conferida no regulamento; os valores podem mudar e confirmam-se na Câmara.", "low confidence: the PDM is under review or most rules are not yet checked in the regulation; values may change and must be confirmed with the municipality."),
       E: T("ainda não temos as regras do PDM deste concelho; a Leitura vai ao regulamento.", "we do not yet have this municipality's PDM rules; the report goes to the regulation.") }[pior];
     return '<p class="tcd-fe-v"><span class="tcd-fe-t ' + R[0] + '">' + pior + " · " + T(R[1], R[2]) + "</span> " + T("Dados do PDM: ", "PDM data: ") + txt +
-      '<br><span style="opacity:.8;font-size:.92em">' + partes.join(" · ") + (det ? " · " + T("área do terreno: ", "site area: ") + det : "") + "</span></p>";
+      '<br><span style="opacity:.8;font-size:.92em">' + partes.join(" · ") + (det ? " · " + T("área do terreno: ", "site area: ") + det : "") + "</span><br><span style=\"opacity:.8;font-size:.9em\">" + T("Auxílio para preparar o dossiê, não vinculativo: dependemos dos dados publicados pela DGT, pelo SNIT, pela Câmara e pelas entidades; quem decide é a Câmara, pelo pedido de informação prévia (PIP).", "An aid to prepare the application file, not binding: we depend on data published by DGT, SNIT, the municipality and other bodies; the municipality decides, through a prior information request (PIP).") + "</span></p>";
   }
   // 11/11/2026, 23h05 (Nuno: «Ran e ren apuros», REN e RAN presas em «a calcular…»): a ficha mede ela própria a REN e a RAN nas
   // PMTiles próprias (camadas.terracruadesign.pt, cópia da DGT), sem depender dos mosaicos da DGT, que demoram ou falham.
