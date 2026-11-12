@@ -523,8 +523,15 @@
     var e = est(); if (!e || e.modo !== "encomenda") return Promise.resolve();
     var tb = [].slice.call(document.querySelectorAll('[role=tab][data-tab="proj"]')).filter(function (x) { return x.offsetParent; })[0];
     if (!tb) return Promise.resolve();
-    try { tb.click(); } catch (x) {}
-    return esperar(function () { var e2 = est(); return !!e2 && e2.modo !== "encomenda"; }, 4000);
+    // logo a seguir a entrar no modo de encomenda o Atlas ainda o está a montar e um clique pode perder-se: até 4 tentativas
+    var k = 0;
+    function tenta() {
+      var e1 = est(); if (!e1 || e1.modo !== "encomenda") return Promise.resolve(true);
+      if (k++ >= 4) return Promise.resolve(false);
+      try { tb.click(); } catch (x) {}
+      return esperar(function () { var e2 = est(); return !!e2 && e2.modo !== "encomenda"; }, 1500).then(function (ok) { return ok || tenta(); });
+    }
+    return tenta();
   }
   function mostrarBase0(id) {
     var e = est();
