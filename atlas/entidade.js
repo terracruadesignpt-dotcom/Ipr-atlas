@@ -156,7 +156,8 @@
     "#ipr-ent-wiz .op .x{flex:none;width:16px;height:16px;border:1px solid #6b6e63;margin-top:2px;display:flex;align-items:center;justify-content:center;font-size:11px;color:#0f100b}" +
     "#ipr-ent-wiz .op[aria-pressed=true] .x{background:#94BE39;border-color:#94BE39}" +
     "#ipr-ent-wiz .op .t{display:flex;flex-direction:column;gap:2px;flex:1}#ipr-ent-wiz .op .t b{color:#E6E7E0;font-weight:600}#ipr-ent-wiz .op .t span{font-size:12.5px;color:#A9AC9F}" +
-    "#ipr-ent-wiz .tag{font-size:11px;color:#B8A83A;white-space:nowrap}" +
+    "#ipr-ent-wiz .tag{font-size:11px;color:#B8A83A;flex:0 1 auto;max-width:34%;text-align:right;line-height:1.3}" +
+    "#ipr-ent-wiz .op .t{min-width:0}#ipr-ent-wiz .wb{overflow-x:hidden}" +
     "#ipr-ent-wiz .wf{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:12px 20px;border-top:1px solid #2a2c25;flex-wrap:wrap}" +
     "#ipr-ent-wiz .res{font-size:12.5px;color:#A9AC9F}" +
     "@media (max-width:800px){#ipr-ent-dir{top:auto;left:0;width:auto;max-height:55%;border-left:0;border-top:1px solid #383A33}#ipr-ent-dir.fechado{left:auto;right:8px;bottom:70px}}";
@@ -316,6 +317,19 @@
   // ---------- Arranque ----------
   espera(function () {
     aplicar(true);
+    // O arranque do Atlas (vista inicial, camadas guardadas da visita anterior) corre depois e repõe o país inteiro e as
+    // camadas de sempre. Nos primeiros 10 s volta-se a pôr a zona e as camadas de partida, enquanto a pessoa não mexer no mapa.
+    var mexeu = false, m0 = W.__ipe.mapa;
+    if (m0 && m0.on) m0.on("movestart", function (e) { if (e && e.originalEvent) mexeu = true; });
+    [1500, 3500, 6500, 10000].forEach(function (ms) {
+      setTimeout(function () {
+        if (mexeu) return;
+        var v = viz(), a = act(), falta = false;
+        activos().forEach(function (m) { (m.liga || []).forEach(function (i) { if (existe(i) && a.indexOf(i) < 0) { falta = true; try { v.ligar(i, true); } catch (e) {} } }); });
+        if (ZONA && m0 && m0.getZoom && m0.getZoom() < 7.5) try { m0.fitBounds(ZONA, {padding: 40, duration: 0}); } catch (e) {}
+        if (falta) painel();
+      }, ms);
+    });
     // A árvore de camadas redesenha-se (pesquisa, grupos, línguas): voltar a marcar o que é da entidade.
     var esq = D.getElementById("ipe-esq"), tm = 0;
     if (esq && W.MutationObserver) new MutationObserver(function (ms) {
