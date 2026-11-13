@@ -147,7 +147,7 @@
   // ---------- Estilo (tema escuro do Atlas) ----------
   var css =
     "#ipr-ent-dir{position:absolute;top:56px;right:0;bottom:0;width:340px;z-index:30;background:#16170f;border-left:1px solid #383A33;color:#C3C5BC;font:13px/1.45 Inter,system-ui,sans-serif;display:flex;flex-direction:column}" +
-    "#ipr-ent-dir.fechado{width:auto;bottom:auto;border:0;background:transparent}" +
+    "#ipr-ent-dir.fechado{top:auto;bottom:96px;right:12px;width:auto;border:1px solid #383A33;border-radius:6px;background:#16170f;box-shadow:0 4px 14px rgba(0,0,0,.35)}#ipr-ent-dir.fechado .h{border-bottom:0;padding:6px 8px}" +
     "#ipr-ent-dir .h{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid #2a2c25}" +
     "#ipr-ent-dir .h b{flex:1;color:#E6E7E0;font:600 14px Outfit,Inter,sans-serif}" +
     "#ipr-ent-dir.fechado .h b,#ipr-ent-dir.fechado .c{display:none}" +
