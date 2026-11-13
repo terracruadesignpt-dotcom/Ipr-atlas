@@ -168,6 +168,8 @@
     "#ipr-ent-dir button.it{display:flex;justify-content:space-between;gap:8px;width:100%;text-align:left;background:#1b1c16;border:1px solid #2a2c25;border-radius:6px;color:#E6E7E0;padding:8px 10px;margin:4px 0;cursor:pointer;font:13px Inter,sans-serif}#ipr-ent-dir button.it span{color:#9aa08f;font-size:12px;white-space:nowrap}#ipr-ent-dir button.it:hover{border-color:#94BE39}" +
     "#ipr-ent-dir a.mais{display:inline-block;margin-top:6px;color:#94BE39;font-size:12px;text-decoration:none}#ipr-ent-dir .rod{display:flex;gap:8px;flex-wrap:wrap}" +
     "html.ipr-ent-so #ipe li.ipr-dl{display:none!important}" +
+    "#ipr-ent-dir .add{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}#ipr-ent-dir .ipr-ent-b.bc{margin:-2px 0 6px;font-size:11px}" +
+    ".ipr-ent-toast{position:fixed;left:50%;bottom:40px;transform:translateX(-50%);z-index:99999;background:#16170f;color:#E6E7E0;border:1px solid #94BE39;border-radius:6px;padding:10px 14px;font:13px Inter,sans-serif;max-width:420px;box-shadow:0 6px 20px rgba(0,0,0,.4)}" +
     "#ipr-ent-esq .ap{display:flex;align-items:center;justify-content:space-between;margin-top:10px;font:600 11px Inter;letter-spacing:.06em;text-transform:uppercase;color:#B8A83A}" +
     ".ipr-ent-b{all:unset;box-sizing:border-box;cursor:pointer;min-height:32px;padding:5px 10px;border:1px solid #383A33;border-radius:2px;color:#C3C5BC;font:500 12px/1.3 Inter,sans-serif;display:inline-flex;align-items:center;gap:6px}" +
     ".ipr-ent-b:hover{border-color:#94BE39;color:#94BE39}.ipr-ent-b:focus-visible{outline:2px solid #94BE39;outline-offset:1px}" +
@@ -369,7 +371,7 @@
     var cs = ORG ? ORG.camadas || [] : [];
     var principal = AGRO ? "exploracoes" : null;
     var temPrincipal = principal ? cs.some(function (c) { return c.grupo === principal && +c.n > 0; }) : cs.length > 0;
-    if (!temPrincipal) return ["Ponha no mapa os " + (AGRO ? "locais e as parcelas dos produtores associados" : "seus locais, terrenos e projectos") + ". Pode carregar uma folha de cálculo com coordenadas, um KML ou um shapefile, ou desenhar no mapa.", "Carregar locais", "/oficina/#camadas"];
+    if (!temPrincipal) return ["Ponha no mapa os " + (AGRO ? "locais e as parcelas dos produtores associados" : "seus locais, terrenos e projectos") + ". Pode carregar KML, KMZ, GeoJSON, GPX, shapefile (zip), GeoPackage, DXF ou DWG, uma lista CSV com coordenadas, ou desenhar no mapa.", "Carregar ficheiro", "#carregar"];
     if (!S.feito && PODE) return ["Confirme o tipo de organização e as bacias em que trabalha. Leva dois minutos.", "Configurar", "#wiz"];
     return ["Peça à equipa do IPR a leitura do território (Fase 1): água, solo, fogo e condicionantes, sobre os seus locais.", "Pedir à equipa", "/contacto/"];
   }
@@ -385,7 +387,7 @@
     var h = '<div class="q"><div class="tipo">' + esc(tipo) + (papel ? " · " + esc(papel) : "") + '</div><h2>' + esc(ENT.nome) + "</h2></div>";
     h += '<div class="nums">' + numeros().map(function (n) { return '<div class="n"><b>' + fmt(n[1]) + "</b><span>" + esc(n[0]) + "</span></div>"; }).join("") + "</div>";
     var px = proximo();
-    h += '<div class="px"><div class="t">Próximo passo</div><p>' + esc(px[0]) + '</p>' + (px[2] === "#wiz" ? '<button type="button" class="ipr-ent-b p" data-ent="wiz">' + esc(px[1]) + "</button>" : '<a class="ipr-ent-b p" href="' + px[2] + '" target="_blank" rel="noopener">' + esc(px[1]) + "</a>") + "</div>";
+    h += '<div class="px"><div class="t">Próximo passo</div><p>' + esc(px[0]) + '</p>' + (px[2] === "#wiz" ? '<button type="button" class="ipr-ent-b p" data-ent="wiz">' + esc(px[1]) + "</button>" : px[2] === "#carregar" ? '<button type="button" class="ipr-ent-b p" data-ent-carregar="f">' + esc(px[1]) + "</button>" : '<a class="ipr-ent-b p" href="' + px[2] + '" target="_blank" rel="noopener">' + esc(px[1]) + "</a>") + "</div>";
     h += '<div class="sec"><div class="t">Os nossos locais e projectos</div>';
     var cs = ORG ? ORG.camadas || [] : [];
     if (!ORG) h += '<p class="s">A carregar…</p>';
@@ -396,13 +398,80 @@
       dele.forEach(function (c) {
         var nn = +c.n || 0, pt = /^ponto/.test(c.geom || ""), info = nn + (pt ? (nn === 1 ? " local" : " locais") : (nn === 1 ? " área" : " áreas")) + (c.ha ? " · " + fmt(c.ha) + " ha" : "");
         h += '<button type="button" class="it" data-ent-orgir="' + c.id + '"><b>' + esc(c.nome) + "</b><span>" + info + "</span></button>";
+        if (!pt && W.IPR_ENT_BASES) h += '<button type="button" class="ipr-ent-b bc" data-ent-base="' + c.id + '">Fazer a Base Cartográfica desta área</button>';
       });
     });
-    h += '<a class="mais" href="/oficina/#camadas" target="_blank" rel="noopener">+ Acrescentar locais, parcelas ou projectos</a></div>';
+    h += '<div class="add"><button type="button" class="ipr-ent-b" data-ent-carregar="f">Carregar ficheiro</button><button type="button" class="ipr-ent-b" data-ent-carregar="csv">Lista CSV</button><button type="button" class="ipr-ent-b" data-ent-carregar="d">Desenhar</button></div>' +
+      '<p class="s">KML, KMZ, GeoJSON, GPX, shapefile (zip), GeoPackage, DXF, DWG. CSV com colunas nome, latitude e longitude (de Excel: «Guardar como CSV»). O que carregar fica nos seus Locais.</p></div>';
+    var B = W.IPR_ENT_BASES;
+    if (B) h += '<div class="sec bcs"><div class="t">Bases Cartográficas</div><div class="nums"><div class="n"><b>' + (+B.restam || 0) + '</b><span>gratuitas por usar, de ' + (+B.total || 0) + '</span></div></div>' +
+      '<p class="s">Cada Base Cartográfica cobre um produtor ou terreno sob gestão' + (B.ha ? ", até " + fmt(B.ha) + " ha somados" : "") + '. Desenhe ou carregue a área, carregue em «Fazer a Base Cartográfica» e use o vale <b>' + esc(B.codigo) + '</b>. A Base fica na lista de Bases e no mapa, sobre o local.</p>' +
+      '<button type="button" class="ipr-ent-b p" data-ent-base="0">Fazer uma Base Cartográfica</button></div>';
     h += '<div class="sec"><div class="t">Ferramentas</div>' + ferrHtml() + "</div>";
     h += '<div class="sec rod"><button type="button" class="ipr-ent-b" data-ent-tab="com">Comunidade e avisos</button>' + (PODE ? '<button type="button" class="ipr-ent-b" data-ent="wiz">Configurar</button>' : "") + "</div>";
     if (W.IPR_NIVEL === "explorer") h += '<p class="s">Parte das camadas de apoio (condicionantes, água, solo) precisa do Intelligence.</p>';
     p.innerHTML = '<div class="h"><b>Organização</b>' + (W.tcdEquipa ? '<button type="button" class="ipr-ent-b" data-ent="fechar" title="' + (p.classList.contains("fechado") ? "Abrir o painel da organização" : "Fechar e ver o Atlas da equipa") + '">' + (p.classList.contains("fechado") ? "Organização" : "×") + "</button>" : "") + '</div><div class="c">' + h + "</div>";
+  }
+  // Carregar: ficheiros pelo importador do Atlas (os formatos são os dele); CSV com coordenadas lido aqui.
+  function aviso(txt) { var a = D.createElement("div"); a.className = "ipr-ent-toast"; a.textContent = txt; D.body.appendChild(a); setTimeout(function () { a.remove(); }, 6000); }
+  function carregar(k) {
+    if (k === "d") { var d = D.querySelector('#ipe [data-tool="desenhar"]'); if (d) d.click(); aviso("Desenhe a área no mapa; quando fechar o polígono, fica nos seus Locais."); return; }
+    if (k === "f") { var f = D.getElementById("ipe-file") || D.getElementById("ipe-lfile"); if (f) f.click(); else aviso("O importador do Atlas ainda está a carregar."); return; }
+    var i = D.createElement("input"); i.type = "file"; i.accept = ".csv,.txt,text/csv";
+    i.addEventListener("change", function () { var fl = i.files && i.files[0]; if (!fl) return; var r = new FileReader(); r.onload = function () { csvLer(String(r.result || "")); }; r.readAsText(fl); });
+    i.click();
+  }
+  function csvLer(txt) {
+    var ls = txt.replace(/^\uFEFF/, "").split(/\r?\n/).filter(function (l) { return l.trim(); }); if (ls.length < 2) { aviso("O CSV está vazio."); return; }
+    var sep = (ls[0].match(/;/g) || []).length >= (ls[0].match(/,/g) || []).length ? ";" : (ls[0].indexOf("\t") >= 0 ? "\t" : ",");
+    var cab = ls[0].split(sep).map(function (x) { return x.trim().toLowerCase().replace(/^"|"$/g, ""); });
+    function col(re) { for (var j = 0; j < cab.length; j++) if (re.test(cab[j])) return j; return -1; }
+    var ci = col(/^(lat|latitude|y)$/), cj = col(/^(lon|lng|long|longitude|x)$/), cn = col(/^(nome|name|produtor|explora|local|designa)/);
+    if (ci < 0 || cj < 0) { aviso("Não encontrei as colunas latitude e longitude no CSV."); return; }
+    var n = 0, bx = null, L = W.__ipe && W.__ipe.locais;
+    ls.slice(1).forEach(function (l) {
+      var v = l.split(sep).map(function (x) { return x.trim().replace(/^"|"$/g, ""); });
+      var la = parseFloat(String(v[ci]).replace(",", ".")), lo = parseFloat(String(v[cj]).replace(",", "."));
+      if (!isFinite(la) || !isFinite(lo) || Math.abs(la) > 90 || Math.abs(lo) > 180) return;
+      try { L.juntar("ponto", [lo, la], cn >= 0 ? v[cn] : ""); n++; bx = bx ? [Math.min(bx[0], lo), Math.min(bx[1], la), Math.max(bx[2], lo), Math.max(bx[3], la)] : [lo, la, lo, la]; } catch (e) {}
+    });
+    aviso(n ? n + " locais carregados para os seus Locais." : "Nenhuma linha com coordenadas válidas.");
+    if (bx && W.__ipe.mapa) try { if (bx[0] === bx[2]) W.__ipe.mapa.flyTo({center: [bx[0], bx[1]], zoom: 13}); else W.__ipe.mapa.fitBounds([[bx[0], bx[1]], [bx[2], bx[3]]], {padding: 60, maxZoom: 13}); } catch (e) {}
+  }
+  // Base Cartográfica: a área entra nos Locais da pessoa e abre-se o formulário de sempre (Processos › Base Cartográfica),
+  // com o nome e o vale da organização já escritos. O formulário e o pagamento são os do Atlas.
+  function fazerBase(camId) {
+    var B = W.IPR_ENT_BASES || {};
+    function abrirForm(nome) {
+      var p = D.getElementById("ipr-ent-dir"); if (p && !p.classList.contains("fechado")) { p.classList.add("fechado"); painel(); }
+      var tab = D.querySelector('#ipe .ipe-tab[data-tab="enc"]'); if (tab) tab.click();
+      var n = 0;
+      (function encher() {
+        var bt = [].filter.call(D.querySelectorAll("#ipe button, #ipe a"), function (x) { return /^\s*Base Cartogr/i.test(x.textContent) && x.offsetParent; })[0];
+        if (bt && !bt.dataset.entFeito) { bt.dataset.entFeito = 1; bt.click(); }
+        var nm = [].filter.call(D.querySelectorAll("#ipe input"), function (x) { return /Herdade do Vale|nome do pedido/i.test(x.placeholder || ""); })[0];
+        var vl = [].filter.call(D.querySelectorAll("#ipe input"), function (x) { return /OFERTA/i.test(x.placeholder || ""); })[0];
+        if (nm || vl) {
+          function por(x, v) { if (!x || !v || x.value) return; x.value = v; x.dispatchEvent(new Event("input", {bubbles: true})); x.dispatchEvent(new Event("change", {bubbles: true})); }
+          por(nm, nome); por(vl, B.codigo);
+          aviso(camId ? "A área está nos seus Locais: carregue em «Usar um dos meus locais» e escolha-a." : "Desenhe ou escolha a área em «01 · Terreno»; o vale da organização já está escrito.");
+          return;
+        }
+        if (++n < 30) setTimeout(encher, 300);
+      })();
+    }
+    if (!camId) { abrirForm(""); return; }
+    var c = orgCam(camId); if (!c) return;
+    fetch(c.url, {credentials: "same-origin", headers: {"X-WP-Nonce": ENT.nonce}}).then(function (r) { return r.json(); }).then(function (gj) {
+      var L = W.__ipe && W.__ipe.locais, k = 0;
+      (gj.features || []).forEach(function (f) {
+        var g = f.geometry || {}, nm = (f.properties && (f.properties.nome || f.properties.name)) || c.nome;
+        if (g.type === "Polygon") { try { L.juntar("area", g.coordinates, nm); k++; } catch (e) {} }
+        if (g.type === "MultiPolygon") (g.coordinates || []).forEach(function (pc) { try { L.juntar("area", pc, nm); k++; } catch (e) {} });
+      });
+      if (!k) { aviso("Esta camada não tem polígonos. Desenhe a área do terreno para fazer a Base Cartográfica."); return; }
+      abrirForm(c.nome);
+    }).catch(function () { aviso("Não consegui ler a camada."); });
   }
   function painelCom(p) {
     p.innerHTML = '<div class="h"><button type="button" class="ipr-ent-b" data-ent-tab="painel">← Organização</button><b>Comunidade</b></div><div class="c"><div id="ipr-ent-comc"></div></div>';
@@ -483,10 +552,12 @@
 
   // ---------- Eventos ----------
   D.addEventListener("click", function (e) {
-    var t = e.target.closest && e.target.closest("[data-ent],[data-ent-mod],[data-ent-perfil],[data-ent-bacia],[data-ent-cat],[data-ent-cam],[data-ent-abrir],[data-ent-tab],[data-ent-org],[data-ent-orgir],[data-ent-ferr]");
+    var t = e.target.closest && e.target.closest("[data-ent],[data-ent-mod],[data-ent-perfil],[data-ent-bacia],[data-ent-cat],[data-ent-cam],[data-ent-abrir],[data-ent-tab],[data-ent-org],[data-ent-orgir],[data-ent-ferr],[data-ent-carregar],[data-ent-base]");
     if (!t) return;
     if (t.hasAttribute("data-ent-org")) { var oc = orgCam(t.getAttribute("data-ent-org")); orgLigar(oc, t.checked); setTimeout(function () { marcarEsq(); if (TAB === "proj") painel(); }, 0); return; }
     if (t.hasAttribute("data-ent-orgir")) { e.preventDefault(); e.stopPropagation(); var oi = orgCam(t.getAttribute("data-ent-orgir")); if (oi && !ORGON[oi.id]) orgLigar(oi, true); orgIr(oi); marcarEsq(); return; }
+    if (t.hasAttribute("data-ent-carregar")) { e.preventDefault(); e.stopPropagation(); carregar(t.getAttribute("data-ent-carregar")); return; }
+    if (t.hasAttribute("data-ent-base")) { e.preventDefault(); e.stopPropagation(); fazerBase(+t.getAttribute("data-ent-base")); return; }
     if (t.hasAttribute("data-ent-tab")) { e.preventDefault(); e.stopPropagation(); TAB = t.getAttribute("data-ent-tab"); painel(); return; }
     if (t.hasAttribute("data-ent-ferr")) { e.preventDefault(); e.stopPropagation(); var fe = FERR[+t.getAttribute("data-ent-ferr")], nb = fe && D.querySelector("[" + fe[0] + "]"); if (nb) nb.click(); return; }
     var a = t.getAttribute("data-ent"), v = viz();
