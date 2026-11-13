@@ -141,11 +141,18 @@
   }
 
   // ---------- 2b. qualquer bloco das barras laterais com altura máxima que transborde passa a deslizar ----------
+  // 13/11/2026: cada elemento é revisto no máximo de 30 a 60 s em 30 a 60 s. Antes, cada mudança de classe na página voltava a
+  // pedir o estilo de todos os elementos das barras (cerca de 20 000 numa conta com dezenas de Bases, 0,5 s de cada vez,
+  // várias vezes por segundo) e o Atlas ficava preso. O efeito é o mesmo: o bloco que transborda passa a deslizar.
+  var visto = typeof WeakMap === "function" ? new WeakMap() : null;
   function blocos() {
+    var agora = Date.now();
     [].forEach.call(D.querySelectorAll("#ipe-esq *, #ipe-dir *"), function (e) {
       if (e.__iprRol || !e.firstElementChild) return;
+      if (visto) { var v = visto.get(e); if (v && agora < v) return; visto.set(e, agora + 30000 + Math.floor(Math.random() * 30000)); }
       var s = getComputedStyle(e);
       if (s.maxHeight === "none" || s.overflowY !== "visible" || s.position === "absolute" || s.position === "fixed") return;
+      if (visto) visto.delete(e);
       if (e.scrollHeight > e.clientHeight + 4) { e.__iprRol = 1; e.style.setProperty("overflow-y", "auto", "important"); e.style.setProperty("overflow-x", "hidden", "important"); }
     });
   }
