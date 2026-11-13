@@ -209,6 +209,9 @@
     function repor() { desenharApt(); desenharReg(); desenharPts(); }
     if (I.isStyleLoaded && I.isStyleLoaded()) repor(); else I.once("idle", repor);
     I.on("styledata", function () { if (ON.apt && !I.getLayer("ipr-apt-f")) setTimeout(desenharApt, 0); if (ON.reg && !I.getLayer("ipr-reg-f")) setTimeout(desenharReg, 0); if (ON.pts && !I.getLayer("ipr-biop")) setTimeout(desenharPts, 0); });
+    // Se o tema já vinha ligado e o estilo ainda não estava pronto, volta a tentar quando o mapa assenta.
+    var ult = 0;
+    I.on("idle", function () { if (Date.now() - ult < 1500) return; ult = Date.now(); if (ON.apt && !I.getLayer("ipr-apt-f")) desenharApt(); if (ON.reg && !I.getLayer("ipr-reg-f")) desenharReg(); if (ON.pts && !I.getLayer("ipr-biop")) desenharPts(); });
     I.on("click", "ipr-apt-f", popup);
     I.on("click", "ipr-biop", fichaPt);
     I.on("mouseenter", "ipr-biop", function () { I.getCanvas().style.cursor = "pointer"; });
