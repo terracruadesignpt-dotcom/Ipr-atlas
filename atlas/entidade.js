@@ -330,7 +330,18 @@
 
   // ---- Pessoas, convites e fichas dos associados (m91486) ----
   var EO = W.IPR_ENT_ORG || null, PESS = null, FICHAS = null, FFORM = null, MARCAR = false, ENVCONF = false, SEL = {};
+  var EM = {};
   function eo(op, extra) {
+    // Envios e gravações: um de cada vez, para um duplo clique não mandar dois mails.
+    if (/^(enviar|teste|aviso|aviso_teste|juntar|ficha_guardar|calendario_guardar)$/.test(op)) {
+      if (EM[op]) return EM[op];
+      var pr = eo2(op, extra); EM[op] = pr;
+      var fim = function () { setTimeout(function () { delete EM[op]; }, 800); };
+      pr.then(fim, fim); return pr;
+    }
+    return eo2(op, extra);
+  }
+  function eo2(op, extra) {
     var fd = new FormData(); fd.append("action", "tcd_ent_org"); fd.append("n", EO.n); fd.append("org", EO.org); fd.append("op", op);
     Object.keys(extra || {}).forEach(function (k) { fd.append(k, extra[k]); });
     return fetch(EO.ajax, {method: "POST", credentials: "same-origin", body: fd}).then(function (r) { return r.json(); }).then(function (j) { if (!j || !j.success) throw new Error((j && j.data) || "erro"); return j.data; });
@@ -795,6 +806,13 @@
     if (!S.feito && PODE) return ["Confirme o tipo de organização e as bacias em que trabalha. Leva dois minutos.", "Configurar", "#wiz"];
     return ["Peça à equipa do IPR a leitura do território (Fase 1): água, solo, fogo e condicionantes, sobre os seus locais.", "Pedir à equipa", "/contacto/"];
   }
+  // Repor o painel sem perder o lugar: o mapa redesenha-o a cada "idle".
+  function pPor(p, h) {
+    if (p.__h === h && p.__f === p.firstChild && p.firstChild) return;
+    var c = p.querySelector(".c"), y = c ? c.scrollTop : 0, mesma = p.__k === TAB;
+    p.innerHTML = h; p.__h = h; p.__f = p.firstChild; p.__k = TAB;
+    var c2 = p.querySelector(".c"); if (c2 && mesma && y) c2.scrollTop = y;
+  }
   function painel() {
     var p = D.getElementById("ipr-ent-dir"), dir = D.getElementById("ipe-dir"), ipe = D.getElementById("ipe");
     if (!p) { p = D.createElement("aside"); p.id = "ipr-ent-dir"; p.setAttribute("aria-label", "Painel da organização"); }
@@ -802,11 +820,11 @@
     if (p.parentNode !== casa) { if (dir && getComputedStyle(dir).position === "static") dir.style.position = "relative"; casa.appendChild(p); p.classList.toggle("dentro", !!dir); }
     if (TAB === "com") { painelCom(p); return; }
     comMostrar(false);
-    if (TAB === "ficha" && FICHA) { p.classList.remove("fechado"); p.innerHTML = fichaHtml(FICHA); return; }
-    if (TAB === "cal") { p.classList.remove("fechado"); p.innerHTML = calHtml(); return; }
-    if (TAB === "aviso" && EO && EO.gestor) { p.classList.remove("fechado"); p.innerHTML = avisoHtml(); return; }
-    if (TAB === "pessoas") { p.classList.remove("fechado"); p.innerHTML = pessoasHtml(); return; }
-    if (TAB === "fform" && FFORM) { p.classList.remove("fechado"); p.innerHTML = fformHtml(FFORM); return; }
+    if (TAB === "ficha" && FICHA) { p.classList.remove("fechado"); pPor(p, fichaHtml(FICHA)); return; }
+    if (TAB === "cal") { p.classList.remove("fechado"); pPor(p, calHtml()); return; }
+    if (TAB === "aviso" && EO && EO.gestor) { p.classList.remove("fechado"); pPor(p, avisoHtml()); return; }
+    if (TAB === "pessoas") { p.classList.remove("fechado"); pPor(p, pessoasHtml()); return; }
+    if (TAB === "fform" && FFORM) { p.classList.remove("fechado"); pPor(p, fformHtml(FFORM)); return; }
     var O = W.IPR_ORGS, papel = ""; if (O && O.lista) O.lista.forEach(function (o) { if (+o.id === ORGID) papel = o.papel || ""; });
     var tipo = (PERFIS.filter(function (x) { return x.id === S.perfil; })[0] || {}).n || "";
     var h = '<div class="q"><div class="tipo">' + esc(tipo) + (papel ? " · " + esc(papel) : "") + '</div><h2>' + esc(ENT.nome) + "</h2></div>";
@@ -838,7 +856,7 @@
     h += '<div class="sec"><div class="t">Ferramentas</div>' + ferrHtml() + "</div>";
     h += '<div class="sec rod"><button type="button" class="ipr-ent-b" data-ent-tab="com">Comunidade e avisos</button>' + (PODE ? '<button type="button" class="ipr-ent-b" data-ent="wiz">Configurar</button>' : "") + "</div>";
     if (W.IPR_NIVEL === "explorer") h += '<p class="s">Parte das camadas de apoio (condicionantes, água, solo) precisa do Intelligence.</p>';
-    p.innerHTML = '<div class="h"><b>Organização</b>' + (W.tcdEquipa ? '<button type="button" class="ipr-ent-b" data-ent="fechar" title="' + (p.classList.contains("fechado") ? "Abrir o painel da organização" : "Fechar e ver o Atlas da equipa") + '">' + (p.classList.contains("fechado") ? "Organização" : "×") + "</button>" : "") + '</div><div class="c">' + h + "</div>";
+    pPor(p, '<div class="h"><b>Organização</b>' + (W.tcdEquipa ? '<button type="button" class="ipr-ent-b" data-ent="fechar" title="' + (p.classList.contains("fechado") ? "Abrir o painel da organização" : "Fechar e ver o Atlas da equipa") + '">' + (p.classList.contains("fechado") ? "Organização" : "×") + "</button>" : "") + '</div><div class="c">' + h + "</div>");
   }
   // Carregar: ficheiros pelo importador do Atlas (os formatos são os dele); CSV com coordenadas lido aqui.
   function aviso(txt) { var a = D.createElement("div"); a.className = "ipr-ent-toast"; a.textContent = txt; D.body.appendChild(a); setTimeout(function () { a.remove(); }, 6000); }
