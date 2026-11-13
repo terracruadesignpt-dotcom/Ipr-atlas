@@ -77,6 +77,8 @@
     if (REG) return por(REG);
     fetch(BASE + "regadio-dgadr.json?v=1").then(function (r) { return r.json(); }).then(function (gj) { REG = gj; if (ON.reg) por(gj); }).catch(function () {});
   }
+  // A identificação nativa do Atlas abre ao mesmo clique: some durante 2,5 s para ficar só a nossa janela.
+  function limpaNativo() { var t0 = Date.now(); (function l() { [].forEach.call(D.querySelectorAll(".iprv-pop"), function (x) { x.remove(); }); if (Date.now() - t0 < 2500) setTimeout(l, 120); })(); }
   function barra(v) { return v < 0 ? '<span class="sd">' + t("sem dados", "no data") + "</span>" : '<span class="b"><i style="width:' + v + '%"></i></span><b>' + v + "</b>"; }
   function popup(e) {
     if (!DADOS || !e.features || !e.features.length) return;
@@ -92,7 +94,7 @@
     DADOS.criterios.forEach(function (k, j) { h += "<tr><td title=\"" + k[2].replace(/"/g, "") + "\">" + k[1] + "</td><td>" + barra(r[6 + j]) + "</td></tr>"; });
     h += "</table>" + (ilha ? '<p class="n">' + t("Nas ilhas ainda não há dados públicos de solo, água e pressões com esta cobertura: a leitura usa mercado, terra, procura e rede de apoio, e as classes comparam as ilhas entre si.", "On the islands there is no public soil, water or pressure data with this coverage yet: the reading uses market, land, demand and support network, and classes compare the islands with each other.") + "</p>" : "") +
       '<p class="n">' + t("Leitura indicativa para escolher zonas a visitar. Não substitui a visita, a análise de solo nem a consulta à DRAP.", "Indicative reading to choose areas to visit. It does not replace a site visit, a soil test or advice from the regional agriculture office.") + "</p></div>";
-    try { new W.maplibregl.Popup({maxWidth: "320px", className: "ipr-apt-pp"}).setLngLat(e.lngLat).setHTML(h).addTo(I); } catch (x) {}
+    try { new W.maplibregl.Popup({maxWidth: "320px", className: "ipr-apt-pp"}).setLngLat(e.lngLat).setHTML(h).addTo(I); limpaNativo(); } catch (x) {}
   }
   var CSS = "#ipr-apt{margin:0 0 10px;padding:10px 10px 8px;border:1px solid var(--ln,#383A33);border-radius:6px;background:var(--bg2,rgba(148,190,57,.06))}" +
     "#ipr-apt h4{margin:0 0 6px;font:600 13px Inter,system-ui,sans-serif;color:var(--tx,#e8e8e0)}#ipr-apt label{display:flex;gap:7px;align-items:flex-start;font:13px/1.35 Inter,system-ui,sans-serif;color:var(--tx,#ddd);padding:3px 0;cursor:pointer}" +
@@ -148,7 +150,7 @@
     h += "</table>";
     if (p.site) h += '<p class="n"><a href="' + esc(p.site) + '" target="_blank" rel="noopener" style="color:#94BE39">' + t("Abrir o sítio", "Open website") + "</a></p>";
     h += '<p class="n">' + t("Fonte: ", "Source: ") + esc(p.fonte || "referência pública") + ". " + esc(p.estado || "") + (p.posicao ? " · " + t("posição ", "position ") + esc(p.posicao) : "") + "</p></div>";
-    try { new W.maplibregl.Popup({maxWidth: "320px", className: "ipr-apt-pp"}).setLngLat(f.geometry.coordinates).setHTML(h).addTo(mapa()); } catch (x) {}
+    try { new W.maplibregl.Popup({maxWidth: "320px", className: "ipr-apt-pp"}).setLngLat(f.geometry.coordinates).setHTML(h).addTo(mapa()); limpaNativo(); } catch (x) {}
   }
   // O tema Biológico passa a ser «onde instalar-se como jovem agricultor biológico»: só leituras positivas por defeito.
   // Mexe-se no objecto do tema por referência (não se edita o arrumar.js de outra sessão): camadas ligadas, legenda e texto.
@@ -215,7 +217,7 @@
     I.on("click", "ipr-reg-f", function (e) {
       var I2 = mapa(); if (I2.queryRenderedFeatures(e.point, {layers: ["ipr-apt-f"]}).length && ON.apt) return;
       var p = e.features[0].properties;
-      try { new W.maplibregl.Popup({maxWidth: "280px", className: "ipr-apt-pp"}).setLngLat(e.lngLat).setHTML('<div class="ipr-apt-pop"><div class="k">' + t("Regadio público", "Public irrigation") + '</div><div class="t">' + (p.nome || "") + '</div><div class="cc">' + (p.gestor || "") + "</div>" + (p.ha ? "<div>" + Math.round(p.ha).toLocaleString("pt-PT") + " ha · " + (p.grupo || "") + "</div>" : "") + '<p class="n">DGADR, ' + t("aproveitamentos em exploração", "schemes in operation") + ", Set. 2024. " + t("Não inclui o Alqueva (EFMA).", "Alqueva (EFMA) not included.") + "</p></div>").addTo(I2); } catch (x) {}
+      try { new W.maplibregl.Popup({maxWidth: "280px", className: "ipr-apt-pp"}).setLngLat(e.lngLat).setHTML('<div class="ipr-apt-pop"><div class="k">' + t("Regadio público", "Public irrigation") + '</div><div class="t">' + (p.nome || "") + '</div><div class="cc">' + (p.gestor || "") + "</div>" + (p.ha ? "<div>" + Math.round(p.ha).toLocaleString("pt-PT") + " ha · " + (p.grupo || "") + "</div>" : "") + '<p class="n">DGADR, ' + t("aproveitamentos em exploração", "schemes in operation") + ", Set. 2024. " + t("Não inclui o Alqueva (EFMA).", "Alqueva (EFMA) not included.") + "</p></div>").addTo(I2); limpaNativo(); } catch (x) {}
     });
     vigiarTema();
   })(0);
