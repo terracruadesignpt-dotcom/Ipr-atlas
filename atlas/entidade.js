@@ -234,10 +234,19 @@
       try { W.sessionStorage.setItem("ipr_ent_volta", ENT.id); } catch (e) {}
       location.href = "/atlas/?ipr_org=" + ORGID + "&_ipr_org=" + encodeURIComponent(O.nonce) + "&separador=org"; return;
     }
-    fetch("/wp-json/tcd/v1/org/camadas", {credentials: "same-origin", headers: {"X-WP-Nonce": ENT.nonce}})
-      .then(function (r) { return r.json(); })
-      .then(function (d) { if (d && d.org && +d.org.id === ORGID) { ORG = d; (d.camadas || []).forEach(function (c) { orgLigar(c, true); }); marcarEsq(); painel(); } })
-      .catch(function () {});
+    var n = 0;
+    (function pedir() {
+      fetch("/wp-json/tcd/v1/org/camadas", {credentials: "same-origin", headers: {"X-WP-Nonce": ENT.nonce}})
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          W.__iprEntOrg = {quando: Date.now(), org: d && d.org ? d.org.id : null, camadas: d && d.camadas ? d.camadas.length : null};
+          if (!d || !d.org || +d.org.id !== ORGID) throw new Error("org");
+          ORG = d;
+          (d.camadas || []).forEach(function (c) { try { orgLigar(c, true); } catch (e) {} });
+          marcarEsq(); painel();
+        })
+        .catch(function (e) { W.__iprEntOrgErro = String(e); if (++n < 6) setTimeout(pedir, 2500); });
+    })();
   }
   function orgCam(id) { return ORG ? (ORG.camadas || []).filter(function (c) { return +c.id === +id; })[0] : null; }
   function orgLigar(c, on) {
