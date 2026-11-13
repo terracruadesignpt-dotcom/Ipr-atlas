@@ -90,7 +90,7 @@
       '<div class="t"><span class="sw" style="background:' + CORES[r[4] - 1] + '"></span>' + NOMES[r[4] - 1] + " · " + r[3] + "/100</div>" +
       '<div class="cc">' + (c[0] || "") + (c[1] ? ", " + c[1] : "") + (c[2] != null ? " · " + t("média do concelho ", "municipality mean ") + c[2] : "") + "</div><table>";
     DADOS.criterios.forEach(function (k, j) { h += "<tr><td title=\"" + k[2].replace(/"/g, "") + "\">" + k[1] + "</td><td>" + barra(r[6 + j]) + "</td></tr>"; });
-    h += "</table>" + (ilha ? '<p class="n">' + t("Nas ilhas ainda não há dados públicos de solo, água e pressões com esta cobertura: a leitura usa mercado, terra, procura e rede de apoio.", "On the islands there is no public soil, water or pressure data with this coverage yet: the reading uses market, land, demand and support network.") + "</p>" : "") +
+    h += "</table>" + (ilha ? '<p class="n">' + t("Nas ilhas ainda não há dados públicos de solo, água e pressões com esta cobertura: a leitura usa mercado, terra, procura e rede de apoio, e as classes comparam as ilhas entre si.", "On the islands there is no public soil, water or pressure data with this coverage yet: the reading uses market, land, demand and support network, and classes compare the islands with each other.") + "</p>" : "") +
       '<p class="n">' + t("Leitura indicativa para escolher zonas a visitar. Não substitui a visita, a análise de solo nem a consulta à DRAP.", "Indicative reading to choose areas to visit. It does not replace a site visit, a soil test or advice from the regional agriculture office.") + "</p></div>";
     try { new W.maplibregl.Popup({maxWidth: "320px", className: "ipr-apt-pp"}).setLngLat(e.lngLat).setHTML(h).addTo(I); } catch (x) {}
   }
