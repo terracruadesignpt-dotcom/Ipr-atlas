@@ -108,6 +108,8 @@
     {id: "conservacao", n: "Conservação e renaturalização", d: "Organizações de conservação, rewilding e restauro ecológico", a: "habitats, corredores e fogo", on: ["delim", "base", "hidro", "keyline", "nasc", "solos", "ocup", "bio", "fogo", "perigo", "risco", "cond", "cadastro", "terras", "capitais", "patr", "dagua", "publico", "ancora", "obsv"]},
     {id: "profissional", n: "Profissional", d: "Projectistas da Rede IPR", a: "ferramentas de desenho", on: ["delim", "base", "hidro", "keyline", "infil", "solos", "ocup", "bio", "fogo", "cond", "dagua", "dresto", "obsv"]}
   ];
+  // O perfil da própria entidade aparece primeiro, com o nome dela e os seus módulos de partida.
+  if (X.perfis) Object.keys(X.perfis).forEach(function (id) { var o = X.perfis[id]; PERFIS.forEach(function (p, i) { if (p.id === id) { ["n", "d", "a", "on"].forEach(function (k) { if (o[k]) p[k] = o[k]; }); PERFIS.splice(i, 1); PERFIS.unshift(p); } }); });
   var BACIAS = X.bacias ? X.bacias : ENT.id === "adxtur" ? [
     {id: "ceira", n: "Mondego, pelo rio Ceira", a: ["Cepos", "Fajão", "Caterredor", "Candal", "Campelo"], nota: "3 sub-bacias"},
     {id: "zezere", n: "Zêzere", a: ["Coentral Grande", "Álvaro"], nota: "cabeceira no Santo António da Neve"},
@@ -517,6 +519,7 @@
   // ---- Números vivos, calendário, alertas, oferta e procura, avisos e relatório ----
   function todosPontos() { var r = []; Object.keys(PONTOS).forEach(function (k) { (PONTOS[k].features || []).forEach(function (f) { if (f.geometry && f.geometry.type === "Point") r.push(f); }); }); return r; }
   function vivos() {
+    if (!AGRO) return null; // números da produção: só na associação agrícola; as outras usam numeros() e X.numeros
     var ps = todosPontos(); if (!ps.length) return null;
     var c = {produtor: 0, venda: 0, cabaz: 0, ilhas: 0, fichas: FICHAS ? FICHAS.length : 0};
     ps.forEach(function (f) { var t = f.properties.tipo || "produtor", x = f.geometry.coordinates[0];
@@ -644,7 +647,7 @@
     return h;
   }
   function opResumo() {
-    if (!todosPontos().length) return "";
+    if (!AGRO || !todosPontos().length) return "";
     opCalcular();
     var lac = OP.venda.filter(function (v) { return v.n === 0; }), pou = OP.venda.filter(function (v) { return v.n > 0 && v.n < 3; });
     var h = '<div class="sec op"><div class="t">Oferta e procura</div><p class="s">Com os produtores que já estão no mapa, quantos há a menos de ' + RAIO + " km de cada ponto de venda.</p>";
@@ -722,6 +725,7 @@
   // ---- Fichas ----
   var PONTOS = {}, DICA = null, FICHA = null;
   var TIPOS = {produtor: "Produtor", mercado: "Mercado", feira: "Feira", loja: "Loja", cabaz: "Cabazes (AMAP / CSA)", escola: "Ensino e formação", cert: "Certificação", bioregiao: "Bio-região", territorio: "Território", sede: "Sede", sementes: "Sementes", demo: "Campo de demonstração"};
+  if (X.tipos) Object.keys(X.tipos).forEach(function (k) { TIPOS[k] = X.tipos[k]; });
   // Campos de cada tipo de ficha: [chave, rótulo]. O que não está preenchido aparece em «Por confirmar».
   var CAMPOS = {
     produtor: [["o_que", "O que produz"], ["certificacao", "Certificação"], ["venda", "Venda directa"], ["visitas", "Visitas"], ["terras", "Terra para jovens agricultores"], ["cabaz", "Faz parte de"], ["site", "Site"], ["contacto", "Contacto"]],
@@ -887,7 +891,7 @@
     if (TAB === "pessoas") { p.classList.remove("fechado"); pPor(p, pessoasHtml()); return; }
     if (TAB === "fform" && FFORM) { p.classList.remove("fechado"); pPor(p, fformHtml(FFORM)); return; }
     var O = W.IPR_ORGS, papel = ""; if (O && O.lista) O.lista.forEach(function (o) { if (+o.id === ORGID) papel = o.papel || ""; });
-    var tipo = (PERFIS.filter(function (x) { return x.id === S.perfil; })[0] || {}).n || "";
+    var tipo = X.tipo || (PERFIS.filter(function (x) { return x.id === S.perfil; })[0] || {}).n || "";
     var h = '<div class="q"><div class="tipo">' + esc(tipo) + (papel ? " · " + esc(papel) : "") + '</div><h2>' + esc(ENT.nome) + "</h2></div>";
     h += '<div class="nums">' + (vivos() || numeros()).map(function (n) { return '<div class="n"><b>' + fmt(n[1]) + "</b><span>" + esc(n[0]) + "</span></div>"; }).join("") + "</div>";
     var px = proximo();
@@ -1226,8 +1230,8 @@
       h = (X.passo4 ? "<h2>" + esc(X.passo4[0]) + "</h2><p class='lead'>" + esc(X.passo4[1]) + "</p><div class='gr'>" : AGRO ? "<h2>Novos agricultores: quantos, onde, por que ordem</h2><p class='lead'>Cada produtor que se instala é uma família no território. O número de novas explorações por bacia vem da capacidade de suporte (solo, água, mercado), não de uma meta.</p><div class='gr'>"
         : "<h2>Repovoamento: quanta gente, que perfis, por que ordem</h2><p class='lead'>O tecto de famílias de cada sub-bacia vem da capacidade de suporte, não de uma meta. Dentro do tecto, cada fase de chegada só abre quando a anterior criou as condições.</p><div class='gr'>") +
         (X.fases || [["1 · Os que mantêm", "Parcelas abandonadas, casas recuperáveis, manutenção de floresta, água e caminhos", "água e acessos mantidos"], ["2 · Os que produzem para dentro", "Solos com aptidão, água no Verão, zonas de uso diário junto à aldeia", "base alimentar local"], ["3 · Os que produzem para fora", "Cadeias de valor compatíveis com a bacia", "rendimento a entrar na bacia"], ["4 · Os que prestam serviços", "Massa crítica por aldeia face ao limiar de cada serviço", "uma família com filhos pode ficar"]]).map(function (c) {
-          return '<div class="op lock" style="cursor:default"><span class="t"><b>' + c[0] + "</b><span>" + c[1] + '</span><span style="color:#B8A83A">Abre a seguinte quando: ' + c[2] + "</span></span></div>"; }).join("") + "</div><div class='gr' style='margin-top:10px'>" +
-        op("data-ent-mod", "capac", on(mod("capac")), mod("capac").n, esc(mod("capac").d)) + op("data-ent-mod", "acolh", on(mod("acolh")), mod("acolh").n, esc(mod("acolh").d)) + "</div>";
+          return '<div class="op lock" style="cursor:default"><span class="t"><b>' + c[0] + "</b><span>" + c[1] + '</span><span style="color:#B8A83A">Abre a seguinte quando: ' + c[2] + "</span></span></div>"; }).join("") + "</div>" + (X.fases && !X.repo ? "" : "<div class='gr' style='margin-top:10px'>" +
+        op("data-ent-mod", "capac", on(mod("capac")), mod("capac").n, esc(mod("capac").d)) + op("data-ent-mod", "acolh", on(mod("acolh")), mod("acolh").n, esc(mod("acolh").d)) + "</div>");
     } else if (s === 5) {
       h = "<h2>Quem acede e o que fica público</h2><p class='lead'>Cada decisão fica na menor escala capaz de a resolver bem. Nenhum contributo do mapa público aparece sem moderação, e nada identifica proprietários ou residentes.</p>" +
         "<div class='gh'>Papéis</div><div class='gr'>" + (X.papeis || (AGRO ? [["Direcção", "Tudo · configura e modera"], ["Equipa técnica do IPR", "Tudo · camadas e validação"], ["Técnicos da associação", "Assistência técnica e formação, todas as explorações"], ["Associado", "A sua exploração e a sua bacia"], ["Público", "Mercados e mapa público, contributos moderados"]] : [["Coordenação", "Tudo · configura e modera"], ["Equipa técnica do IPR", "Tudo · camadas e validação"], ["Município", "O seu concelho e as suas bacias"], ["Aldeia", "A sua aldeia e a sua sub-bacia"], ["Público", "Mapa público, contributos moderados"]])).map(function (r) { return '<div class="op lock"><span class="t"><b>' + r[0] + "</b><span>" + r[1] + "</span></span></div>"; }).join("") +
