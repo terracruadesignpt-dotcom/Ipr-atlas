@@ -64,7 +64,7 @@
   var CSS = "#ipr-orgs{margin:10px 10px 12px;border:1px solid var(--ln,#3a3f33);border-radius:10px;padding:10px 12px;font:13px/1.35 Inter,sans-serif;color:var(--tx,#e9eadf)}" +
     "#ipr-orgs h3{margin:0 0 8px;font:600 11px Inter,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--mu,#9aa08f)}" +
     "#ipr-orgs .l{display:flex;align-items:center;gap:8px;padding:7px 0;border-top:1px solid var(--ln,#3a3f33)}#ipr-orgs .l:first-of-type{border-top:0}" +
-    "#ipr-orgs .n{flex:1 1 auto;min-width:0}#ipr-orgs .n b{display:block;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}" +
+    "#ipr-orgs .n{flex:1 1 auto;min-width:0}#ipr-orgs .n b{display:block;font-weight:600;overflow-wrap:anywhere}" +
     "#ipr-orgs .n small{color:var(--mu,#9aa08f)}#ipr-orgs .act{color:#94BE39}" +
     "#ipr-orgs button{flex:0 0 auto;font:600 12px Inter,sans-serif;border-radius:7px;padding:5px 9px;cursor:pointer;border:1px solid var(--ln,#3a3f33);background:transparent;color:var(--tx,#e9eadf)}" +
     "#ipr-orgs button.p{background:#94BE39;border-color:#94BE39;color:#111}";
