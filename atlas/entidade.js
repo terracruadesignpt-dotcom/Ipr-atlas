@@ -289,7 +289,7 @@
       // Cada tipo tem a sua marca: cabazes em anel largo, mercados e feiras com contorno branco, o resto com a cor do grupo.
       m.addLayer({id: sid + "-p", type: "circle", source: sid, filter: ["==", ["geometry-type"], "Point"], paint: {
         "circle-color": ["match", ["get", "tipo"], "cabaz", "#ffffff", "mercado", cor, "feira", cor, "loja", cor, "bioregiao", "rgba(0,0,0,0)", cor],
-        "circle-radius": ["match", ["get", "tipo"], "cabaz", 8, "bioregiao", 14, "sede", 8, ["interpolate", ["linear"], ["zoom"], 5, 4.5, 10, 6.5, 14, 8]],
+        "circle-radius": ["interpolate", ["linear"], ["zoom"], 5, ["match", ["get", "tipo"], "cabaz", 6, "bioregiao", 11, "sede", 6, 4.5], 10, ["match", ["get", "tipo"], "cabaz", 8, "bioregiao", 14, "sede", 8, 6.5], 14, ["match", ["get", "tipo"], "cabaz", 10, "bioregiao", 16, "sede", 9, 8]],
         "circle-stroke-color": ["match", ["get", "tipo"], "cabaz", "#8e5fb3", "mercado", "#ffffff", "feira", "#ffffff", "loja", "#ffffff", "bioregiao", cor, "#111"],
         "circle-stroke-width": ["match", ["get", "tipo"], "cabaz", 3.5, "bioregiao", 2.5, 1.5]}});
       PONTOS[c.id] = gj; redesDesenhar();
