@@ -125,7 +125,7 @@
   }
   var CSS = "#ipr-t62 p.ipr-tf{margin:6px 0 0;font-size:11.5px;line-height:1.45;color:var(--mu,#9a9b90)}" +
     // Todos os «i» alinhados à direita: a linha passa a flex, o nome ocupa o espaço que sobra.
-    "#ipr-t62 label:has(> .ipr-ii-b){display:flex!important;align-items:center;gap:6px}#ipr-t62 label:has(> .ipr-ii-b)>span{flex:1 1 auto;min-width:0}#ipr-t62 label>.ipr-ii-b{margin-left:auto!important;flex:none}";
+    "#ipr-t62 label:has(> .ipr-ii-b){display:flex!important;align-items:center;gap:6px;flex:1 1 auto;width:100%}#ipr-t62 label:has(> .ipr-ii-b)>span{flex:1 1 auto;min-width:0}#ipr-t62 label>.ipr-ii-b{margin-left:auto!important;flex:none}";
   (function arrancar(n) {
     var ok = preencherFontes() && juntarMais();
     var w = D.getElementById("ipr-t62");
