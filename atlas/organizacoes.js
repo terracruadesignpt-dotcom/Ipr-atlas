@@ -52,6 +52,13 @@
     abrirSeparador(!!url);
   }
   W.iprAbrirOrganizacao = abrir;
+  // As listas de organizações do separador «Organização» (ligações ?ipr_org=<id>) só trocavam a organização activa e voltavam
+  // ao mesmo sítio. Para organizações com área de trabalho própria, a ligação abre-a (Nuno, 13/11, 11h01).
+  D.addEventListener("click", function (e) {
+    var a = e.target && e.target.closest && e.target.closest('a[href*="ipr_org="]'); if (!a) return;
+    var m = /[?&]ipr_org=(\d+)/.exec(a.getAttribute("href") || ""); if (!m || !ENT[m[1]]) return;
+    e.preventDefault(); e.stopPropagation(); abrir(m[1]);
+  }, true);
   // Volta do entidade.js depois de mudar a organização activa.
   try { var volta = W.sessionStorage.getItem("ipr_ent_volta"); if (volta && /^[a-z0-9_-]{2,40}$/.test(volta)) { W.sessionStorage.removeItem("ipr_ent_volta"); location.replace("/atlas/?entidade=" + volta + "&completo=1"); return; } } catch (e) {}
 

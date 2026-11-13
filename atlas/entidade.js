@@ -101,6 +101,7 @@
     {id: "bacia", n: "Bacia", d: "Comissões de bacia e associações de regantes", a: "estrutura hídrica e Observatório", on: ["delim", "base", "hidro", "keyline", "infil", "nasc", "cheias", "solos", "ocup", "bio", "fogo", "risco", "cond", "dagua", "dresto", "comissao", "obsv"]},
     {id: "propriedade", n: "Propriedade", d: "Herdades, quintas e investidores", a: "Base Cartográfica na parcela", on: ["delim", "base", "hidro", "keyline", "infil", "solos", "ocup", "fogo", "perigo", "cond", "cadastro", "dagua", "dresto", "obsv"]},
     {id: "associacao", n: "Associação agrícola", d: "Associações de produtores e de agricultura biológica", a: "mapa dos associados, mercados e métricas da produção", on: ["delim", "base", "hidro", "infil", "solos", "ocup", "bio", "fogo", "cond", "cadastro", "econ", "terras", "capitais", "rprod", "mercados", "conv", "fert", "rega", "clima", "pecu", "sem", "biof", "tecn", "educ", "publico", "ancora", "obsv"]},
+    {id: "conservacao", n: "Conservação e renaturalização", d: "Organizações de conservação, rewilding e restauro ecológico", a: "habitats, corredores e fogo", on: ["delim", "base", "hidro", "keyline", "nasc", "solos", "ocup", "bio", "fogo", "perigo", "risco", "cond", "cadastro", "terras", "capitais", "patr", "dagua", "publico", "ancora", "obsv"]},
     {id: "profissional", n: "Profissional", d: "Projectistas da Rede IPR", a: "ferramentas de desenho", on: ["delim", "base", "hidro", "keyline", "infil", "solos", "ocup", "bio", "fogo", "cond", "dagua", "dresto", "obsv"]}
   ];
   var BACIAS = ENT.id === "adxtur" ? [
@@ -247,6 +248,8 @@
           if (!d || !d.org || +d.org.id !== ORGID) throw new Error("org");
           ORG = d;
           (d.camadas || []).forEach(function (c) { try { orgLigar(c, true); } catch (e) {} });
+          if (!ZONA) { var bx = null; (d.camadas || []).forEach(function (c) { var b = c.bbox; if (!b || b.length !== 4) return; bx = bx ? [Math.min(bx[0], b[0]), Math.min(bx[1], b[1]), Math.max(bx[2], b[2]), Math.max(bx[3], b[3])] : b.slice(); });
+            if (bx) { ZONA = [[bx[0], bx[1]], [bx[2], bx[3]]]; try { if (bx[0] === bx[2]) W.__ipe.mapa.flyTo({center: [bx[0], bx[1]], zoom: 12}); else W.__ipe.mapa.fitBounds(ZONA, {padding: 48, maxZoom: 14, duration: 0}); } catch (e) {} } }
           marcarEsq(); painel();
         })
         .catch(function (e) { W.__iprEntOrgErro = String(e); if (++n < 6) setTimeout(pedir, 2500); });
