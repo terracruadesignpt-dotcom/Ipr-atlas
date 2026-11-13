@@ -269,12 +269,13 @@
     }).catch(function () {});
   }
   function orgIr(c) { var m = W.__ipe && W.__ipe.mapa; if (!m || !c || !c.bbox) return; var b = c.bbox; if (b[0] === b[2] && b[1] === b[3]) m.flyTo({center: [b[0], b[1]], zoom: 13}); else m.fitBounds([[b[0], b[1]], [b[2], b[3]]], {padding: 48, maxZoom: 15, duration: 700}); }
-  function orgBloco() {
+  function orgBloco(todos) {
     if (!ORG) return ORGID ? '<div class="ipr-ent-og"><div class="s">A carregar as camadas da organização…</div></div>' : "";
     var gs = ORG.grupos || [], cs = ORG.camadas || [];
     var h = '<div class="ipr-ent-og"><div class="t">Camadas da organização</div>';
     gs.forEach(function (g) {
       var dele = cs.filter(function (c) { return c.grupo === g.id; });
+      if (!dele.length && !todos) return;
       h += '<div class="g"><span class="cor" style="background:' + esc(g.cor || "#666") + '"></span>' + esc(g.nome) + "<small>" + dele.length + "</small></div>";
       dele.forEach(function (c) { h += '<label class="c"><input type="checkbox" data-ent-org="' + c.id + '"' + (ORGON[c.id] ? " checked" : "") + "><span>" + esc(c.nome) + '</span><button type="button" data-ent-orgir="' + c.id + '" title="Ir para">↗</button></label>'; });
       if (!dele.length) h += '<div class="s">Ainda sem camadas.</div>';
@@ -339,7 +340,7 @@
       h += "</div>";
     });
     var tabs = [["painel", "Painel"], ["proj", "Projectos"], ["ferr", "Ferramentas"], ["com", "Comunidade"]];
-    var corpo = TAB === "proj" ? (orgBloco() || '<p class="s">Esta entidade ainda não está ligada a uma organização.</p>') + (ORG ? '<p class="s">Cada camada é um projecto ou um conjunto de locais da organização. Para acrescentar, use «Carregar ficheiro» ou «Desenhar» em Ferramentas.</p>' : "")
+    var corpo = TAB === "proj" ? (orgBloco(true) || '<p class="s">Esta entidade ainda não está ligada a uma organização.</p>') + (ORG ? '<p class="s">Cada camada é um projecto ou um conjunto de locais da organização. Para acrescentar, use «Carregar ficheiro» ou «Desenhar» em Ferramentas.</p>' : "")
       : TAB === "ferr" ? ferrHtml()
       : TAB === "com" ? '<div id="ipr-ent-comc"></div>'
       : h;
