@@ -147,8 +147,8 @@
 
   // ---------- Estilo (tema escuro do Atlas) ----------
   var css =
-    "#ipr-ent-dir{position:absolute;top:56px;right:0;bottom:0;width:340px;z-index:30;background:#16170f;border-left:1px solid #383A33;color:#C3C5BC;font:13px/1.45 Inter,system-ui,sans-serif;display:flex;flex-direction:column}" +
-    "#ipr-ent-dir.fechado{top:auto;bottom:140px;right:12px;width:auto;border:1px solid #383A33;border-radius:6px;background:#16170f;box-shadow:0 4px 14px rgba(0,0,0,.35)}#ipr-ent-dir.fechado .h{border-bottom:0;padding:6px 8px}" +
+    "#ipr-ent-dir.dentro{top:0;left:0;width:auto}#ipr-ent-dir{position:absolute;top:56px;right:0;bottom:0;width:340px;z-index:30;background:#16170f;border-left:1px solid #383A33;color:#C3C5BC;font:13px/1.45 Inter,system-ui,sans-serif;display:flex;flex-direction:column}" +
+    "#ipr-ent-dir.fechado{top:auto;left:auto;bottom:140px;right:12px;width:auto;border:1px solid #383A33;border-radius:6px;background:#16170f;box-shadow:0 4px 14px rgba(0,0,0,.35)}#ipr-ent-dir.fechado .h{border-bottom:0;padding:6px 8px}" +
     "#ipr-ent-dir .h{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid #2a2c25}" +
     "#ipr-ent-dir .h b{flex:1;color:#E6E7E0;font:600 14px Outfit,Inter,sans-serif}" +
     "#ipr-ent-dir.fechado .h b,#ipr-ent-dir.fechado .c{display:none}" +
@@ -160,6 +160,14 @@
     ".ipr-ent-og .g{display:flex;align-items:center;gap:6px;margin:6px 0 2px;font-weight:600}.ipr-ent-og .g small{margin-left:auto;color:#8b8f80}.ipr-ent-og .cor{width:10px;height:10px;border-radius:2px;flex:0 0 10px}" +
     ".ipr-ent-og label.c{display:flex;align-items:center;gap:6px;padding:2px 0 2px 16px;cursor:pointer}.ipr-ent-og label.c span{flex:1;min-width:0}.ipr-ent-og label.c button{background:none;border:0;color:#94BE39;cursor:pointer;font-size:13px}" +
     ".ipr-ent-fe{display:flex;flex-wrap:wrap;gap:6px}.ipr-ent-fe .s{flex-basis:100%}" +
+    "#ipr-ent-dir .q .tipo{font:600 11px Inter;letter-spacing:.06em;text-transform:uppercase;color:#B8A83A}#ipr-ent-dir .q h2{margin:2px 0 12px;font:600 20px/1.2 Outfit,Inter,sans-serif;color:#E6E7E0}" +
+    "#ipr-ent-dir .nums{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin-bottom:14px}#ipr-ent-dir .nums .n{border:1px solid #2a2c25;border-radius:6px;padding:10px}#ipr-ent-dir .nums b{display:block;font:600 24px/1 Outfit,Inter,sans-serif;color:#94BE39}#ipr-ent-dir .nums span{font-size:12px;color:#9aa08f}" +
+    "#ipr-ent-dir .px{border-left:3px solid #94BE39;background:#1d1f17;padding:10px 12px;margin-bottom:16px}#ipr-ent-dir .px p{margin:4px 0 8px;color:#D6D8CF}#ipr-ent-dir a.ipr-ent-b{display:inline-block;text-decoration:none}" +
+    "#ipr-ent-dir .t{font:600 11px Inter;letter-spacing:.06em;text-transform:uppercase;color:#B8A83A;margin-bottom:6px}#ipr-ent-dir .sec{margin-bottom:16px}" +
+    "#ipr-ent-dir .g{display:flex;align-items:center;gap:6px;margin:8px 0 4px;font-weight:600;color:#C3C5BC}#ipr-ent-dir .g .cor{width:10px;height:10px;border-radius:2px}" +
+    "#ipr-ent-dir button.it{display:flex;justify-content:space-between;gap:8px;width:100%;text-align:left;background:#1b1c16;border:1px solid #2a2c25;border-radius:6px;color:#E6E7E0;padding:8px 10px;margin:4px 0;cursor:pointer;font:13px Inter,sans-serif}#ipr-ent-dir button.it span{color:#9aa08f;font-size:12px;white-space:nowrap}#ipr-ent-dir button.it:hover{border-color:#94BE39}" +
+    "#ipr-ent-dir a.mais{display:inline-block;margin-top:6px;color:#94BE39;font-size:12px;text-decoration:none}#ipr-ent-dir .rod{display:flex;gap:8px;flex-wrap:wrap}" +
+    "#ipr-ent-esq .ap{display:flex;align-items:center;justify-content:space-between;margin-top:10px;font:600 11px Inter;letter-spacing:.06em;text-transform:uppercase;color:#B8A83A}" +
     ".ipr-ent-b{all:unset;box-sizing:border-box;cursor:pointer;min-height:32px;padding:5px 10px;border:1px solid #383A33;border-radius:2px;color:#C3C5BC;font:500 12px/1.3 Inter,sans-serif;display:inline-flex;align-items:center;gap:6px}" +
     ".ipr-ent-b:hover{border-color:#94BE39;color:#94BE39}.ipr-ent-b:focus-visible{outline:2px solid #94BE39;outline-offset:1px}" +
     ".ipr-ent-b.p{background:#94BE39;border-color:#94BE39;color:#0f100b;font-weight:600}.ipr-ent-b[disabled]{opacity:.45;cursor:default}" +
@@ -210,7 +218,7 @@
     marcarEsq(); painel();
   }
   function marcarEsq() {
-    var setE = {}; camadasEnt().forEach(function (i) { setE[i] = 1; });
+    var setE = {}; apoio().forEach(function (i) { setE[i] = 1; }); act().forEach(function (i) { setE[i] = 1; });
     [].forEach.call(D.querySelectorAll("#ipe .ipr-it[data-id]"), function (li) {
       var id = li.getAttribute("data-id"), c = cat(id), fundo = c && c.g === "fundo";
       li.classList.toggle("ipr-ent-fora", !setE[id] && !fundo);
@@ -219,9 +227,7 @@
     var esq = D.getElementById("ipe-esq"); if (!esq) return;
     var b = D.getElementById("ipr-ent-esq");
     if (!b) { b = D.createElement("div"); b.id = "ipr-ent-esq"; esq.insertBefore(b, esq.firstChild); }
-    var hh = "<span>" + esc(ENT.nome) + ": <b>" + camadasEnt().length + "</b> camadas da entidade</span>" +
-      '<button type="button" class="ipr-ent-b" data-ent="so">' + (S.so ? "Ver todas as camadas" : "Só as da entidade") + "</button>";
-    hh += orgBloco();
+    var hh = orgBloco() + '<div class="ap"><span>Camadas de apoio</span><button type="button" class="ipr-ent-b" data-ent="so">' + (S.so ? "Ver todas" : "Só as de apoio") + "</button></div>";
     if (b.innerHTML !== hh) b.innerHTML = hh;
   }
 
@@ -325,40 +331,78 @@
     if (v === "piloto") return BACIAS.filter(function (b) { return S.bacias[b.id]; }).reduce(function (s, b) { return s + b.a.length; }, 0) || '<span class="na">por definir</span>';
     return esc(v);
   }
+  // Painel da organização (Nuno, 13/11, 11h15-11h16): ocupa o bloco da direita inteiro; diz quem é a organização, os números
+  // que já têm valor, os locais e projectos dela (o mais importante do mapa), o próximo passo e as ferramentas. Módulos,
+  // fases e camadas ficam no «Configurar».
+  var APOIO = {
+    associacao: ["solos", "sroa", "carbono", "ran", "nitratos", "ifap_p", "cos23", "capt_p", "aquif", "precip", "geada_ano", "temp_med"],
+    rede: ["o_nomes", "hidro", "bip_23", "percursos", "o_aguapts", "ard15", "perig_e", "ren", "ran", "cos23"],
+    municipio: ["caop", "o_edif", "viaria", "ren", "ran", "crus", "cad", "ard15", "perig_e", "cos23", "hidro"],
+    bacia: ["bacias", "hidro", "l_streams", "o_aguapts", "capt_p", "aquif", "massas", "inund100", "cos23", "sroa"],
+    conservacao: ["n2k", "rnap", "habitats", "prof_cor", "invasoras", "copa18", "ard15", "perig_e", "hidro", "cos23"],
+    propriedade: ["cad", "ren", "ran", "sroa", "l_declives", "l_curvas5", "hidro", "capt_p", "ard15", "perig_e", "cos23"],
+    profissional: ["cad", "ren", "ran", "crus", "l_declives", "l_curvas5", "hidro", "ard15", "perig_e", "cos23"]
+  };
+  var BASE_SEMPRE = ["f_ortosat", "r_somb", "concelhos", "caop"];
+  function apoio() { var o = {}; BASE_SEMPRE.concat(APOIO[S.perfil] || APOIO.propriedade).forEach(function (i) { if (existe(i)) o[i] = 1; }); return Object.keys(o); }
+  function fmt(n) { return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, " "); }
+  function numeros() {
+    var cs = ORG ? ORG.camadas || [] : [], tot = 0, ha = 0, porG = {};
+    cs.forEach(function (c) { tot += +c.n || 0; if (c.geom === "poligono") ha += +c.ha || 0; porG[c.grupo] = (porG[c.grupo] || 0) + (+c.n || 0); });
+    var r = [];
+    if (AGRO) { r.push(["Explorações no mapa", porG.exploracoes || 0]); r.push(["Mercados e pontos de venda", Math.max(0, (porG.mercados || 0) - 1)]); }
+    else if (ENT.id === "adxtur") { r.push(["Aldeias na rede", 27]); r.push(["Bacias de trabalho", nBacias()]); }
+    else r.push(["Locais e áreas no mapa", tot]);
+    if (ha) r.push(["Hectares desenhados", ha]);
+    if (BACIAS.length && !AGRO && ENT.id !== "adxtur") r.push(["Bacias", nBacias()]);
+    if (AGRO) r.push(["Bacias com associados", nBacias()]);
+    r.push(["Camadas próprias", cs.length]);
+    return r;
+  }
+  function proximo() {
+    var cs = ORG ? ORG.camadas || [] : [];
+    var principal = AGRO ? "exploracoes" : null;
+    var temPrincipal = principal ? cs.some(function (c) { return c.grupo === principal && +c.n > 0; }) : cs.length > 0;
+    if (!temPrincipal) return ["Ponha no mapa os " + (AGRO ? "locais e as parcelas dos produtores associados" : "seus locais, terrenos e projectos") + ". Pode carregar uma folha de cálculo com coordenadas, um KML ou um shapefile, ou desenhar no mapa.", "Carregar locais", "/oficina/#camadas"];
+    if (!S.feito && PODE) return ["Confirme o tipo de organização e as bacias em que trabalha. Leva dois minutos.", "Configurar", "#wiz"];
+    return ["Peça à equipa do IPR a leitura do território (Fase 1): água, solo, fogo e condicionantes, sobre os seus locais.", "Pedir à equipa", "/contacto/"];
+  }
   function painel() {
-    var p = D.getElementById("ipr-ent-dir"), ipe = D.getElementById("ipe");
-    if (!p) { p = D.createElement("aside"); p.id = "ipr-ent-dir"; p.setAttribute("aria-label", "Painel da entidade"); (ipe || D.body).appendChild(p); }
-    var a = act(), h = "";
-    if (!S.feito) h += '<div class="ipr-ent-aviso">' + (PODE ? "A configuração ainda não está concluída. " : "A coordenação ainda não concluiu a configuração. ") + (PODE ? '<button type="button" class="ipr-ent-b p" data-ent="wiz">Abrir o assistente</button>' : "") + "</div>";
-    if (W.IPR_NIVEL === "explorer") h += '<div class="ipr-ent-aviso">Parte das camadas (condicionantes, água, solo) precisa do Intelligence. Peça-o à equipa do IPR.</div>';
-    activos().forEach(function (m) {
-      var ids = m.ids.filter(existe);
-      if (!m.k.length && !ids.length && !m.cap && !m.seq) return;
-      h += '<div class="ipr-ent-k"><h4><span>' + esc(m.n) + '</span><span style="font:500 11px Inter;color:#B8A83A">' + esc(m.eb) + '</span></h4><div class="s">' + esc(m.d) + "</div>";
-      if (m.cap) h += '<div class="ipr-ent-cap"><span>Natural</span><span>Financeiro</span><span>Social</span><span>Cultural</span><span>Infra</span></div><div class="s" style="margin-top:6px">Estado de cada capital após as auditorias da Fase 1.</div>';
-      if (m.seq) h += '<div class="ipr-ent-seq"><span>1 · mantêm</span><span>2 · para dentro</span><span>3 · para fora</span><span>4 · serviços</span></div>';
-      h += m.k.map(function (k) { return '<div class="r"><span>' + esc(k[0]) + "</span><b>" + valor(k[1]) + "</b></div>"; }).join("");
-      if (ids.length) {
-        var lig = ids.filter(function (i) { return a.indexOf(i) >= 0; }).length;
-        h += '<div class="r"><span>Camadas</span><b>' + lig + " de " + ids.length + " ligadas</b></div>";
-        h += S.aberto[m.id] ? '<div class="ipr-ent-cam">' + ids.map(function (i) { var c = cat(i); return '<button type="button" data-ent-cam="' + esc(i) + '" class="' + (a.indexOf(i) >= 0 ? "on" : "") + '" title="' + esc(c && c.lic ? "Licença: " + c.lic : "") + '">' + esc(c ? c.n : i) + "</button>"; }).join("") + "</div>" : "";
-        h += '<div style="margin-top:6px"><button type="button" class="ipr-ent-b" data-ent-abrir="' + m.id + '">' + (S.aberto[m.id] ? "Fechar camadas" : "Ver camadas") + "</button></div>";
-      }
-      h += "</div>";
-    });
-    var tabs = [["painel", "Painel"], ["proj", "Projectos"], ["ferr", "Ferramentas"], ["com", "Comunidade"]];
-    var corpo = TAB === "proj" ? (orgBloco(true) || '<p class="s">Esta entidade ainda não está ligada a uma organização.</p>') + (ORG ? '<p class="s">Cada camada é um projecto ou um conjunto de locais da organização. Para acrescentar, use «Carregar ficheiro» ou «Desenhar» em Ferramentas.</p>' : "")
-      : TAB === "ferr" ? ferrHtml()
-      : TAB === "com" ? '<div id="ipr-ent-comc"></div>'
-      : h;
+    var p = D.getElementById("ipr-ent-dir"), dir = D.getElementById("ipe-dir"), ipe = D.getElementById("ipe");
+    if (!p) { p = D.createElement("aside"); p.id = "ipr-ent-dir"; p.setAttribute("aria-label", "Painel da organização"); }
+    var casa = dir || ipe || D.body;
+    if (p.parentNode !== casa) { if (dir && getComputedStyle(dir).position === "static") dir.style.position = "relative"; casa.appendChild(p); p.classList.toggle("dentro", !!dir); }
+    if (TAB === "com") { painelCom(p); return; }
     comMostrar(false);
-    p.innerHTML = '<div class="h"><b>' + esc(ENT.nome) + '</b><button type="button" class="ipr-ent-b" data-ent="wiz">' + (PODE ? "Configurar" : "Configuração") + '</button><button type="button" class="ipr-ent-b" data-ent="fechar" aria-label="Mostrar ou esconder o painel" title="' + (p.classList.contains("fechado") ? "Abrir o painel da entidade" : "Fechar e ver o Atlas de sempre") + '">' + (p.classList.contains("fechado") ? "Painel" : "×") + '</button></div>' +
-      '<div class="tb" role="tablist">' + tabs.map(function (t) { return '<button type="button" role="tab" data-ent-tab="' + t[0] + '" aria-selected="' + (TAB === t[0]) + '">' + t[1] + "</button>"; }).join("") + "</div>" +
-      '<div class="c">' + corpo + "</div>";
-    if (TAB === "com" && !p.classList.contains("fechado")) {
-      var nt = D.querySelector('#ipe .ipe-tab[data-tab="com"]'); var ic = D.getElementById("ipe-com"); if (nt && ic && !ic.querySelector(".ipc-nav")) try { nt.click(); } catch (e) {}
-      setTimeout(function () { comMostrar(true); }, 60); setTimeout(function () { if (TAB === "com") comMostrar(true); }, 900);
-    }
+    var O = W.IPR_ORGS, papel = ""; if (O && O.lista) O.lista.forEach(function (o) { if (+o.id === ORGID) papel = o.papel || ""; });
+    var tipo = (PERFIS.filter(function (x) { return x.id === S.perfil; })[0] || {}).n || "";
+    var h = '<div class="q"><div class="tipo">' + esc(tipo) + (papel ? " · " + esc(papel) : "") + '</div><h2>' + esc(ENT.nome) + "</h2></div>";
+    h += '<div class="nums">' + numeros().map(function (n) { return '<div class="n"><b>' + fmt(n[1]) + "</b><span>" + esc(n[0]) + "</span></div>"; }).join("") + "</div>";
+    var px = proximo();
+    h += '<div class="px"><div class="t">Próximo passo</div><p>' + esc(px[0]) + '</p>' + (px[2] === "#wiz" ? '<button type="button" class="ipr-ent-b p" data-ent="wiz">' + esc(px[1]) + "</button>" : '<a class="ipr-ent-b p" href="' + px[2] + '" target="_blank" rel="noopener">' + esc(px[1]) + "</a>") + "</div>";
+    h += '<div class="sec"><div class="t">Os nossos locais e projectos</div>';
+    var cs = ORG ? ORG.camadas || [] : [];
+    if (!ORG) h += '<p class="s">A carregar…</p>';
+    else if (!cs.length) h += '<p class="s">Ainda não há nada no mapa da organização.</p>';
+    else (ORG.grupos || []).forEach(function (g) {
+      var dele = cs.filter(function (c) { return c.grupo === g.id; }); if (!dele.length) return;
+      h += '<div class="g"><span class="cor" style="background:' + esc(g.cor || "#666") + '"></span>' + esc(g.nome) + "</div>";
+      dele.forEach(function (c) {
+        var info = (+c.n || 0) + (c.geom === "ponto" || c.geom === "pontos" ? " locais" : " elementos") + (c.ha ? " · " + fmt(c.ha) + " ha" : "");
+        h += '<button type="button" class="it" data-ent-orgir="' + c.id + '"><b>' + esc(c.nome) + "</b><span>" + info + "</span></button>";
+      });
+    });
+    h += '<a class="mais" href="/oficina/#camadas" target="_blank" rel="noopener">+ Acrescentar locais, parcelas ou projectos</a></div>';
+    h += '<div class="sec"><div class="t">Ferramentas</div>' + ferrHtml() + "</div>";
+    h += '<div class="sec rod"><button type="button" class="ipr-ent-b" data-ent-tab="com">Comunidade e avisos</button>' + (PODE ? '<button type="button" class="ipr-ent-b" data-ent="wiz">Configurar</button>' : "") + "</div>";
+    if (W.IPR_NIVEL === "explorer") h += '<p class="s">Parte das camadas de apoio (condicionantes, água, solo) precisa do Intelligence.</p>';
+    p.innerHTML = '<div class="h"><b>Organização</b>' + (W.tcdEquipa ? '<button type="button" class="ipr-ent-b" data-ent="fechar" title="' + (p.classList.contains("fechado") ? "Abrir o painel da organização" : "Fechar e ver o Atlas da equipa") + '">' + (p.classList.contains("fechado") ? "Organização" : "×") + "</button>" : "") + '</div><div class="c">' + h + "</div>";
+  }
+  function painelCom(p) {
+    p.innerHTML = '<div class="h"><button type="button" class="ipr-ent-b" data-ent-tab="painel">← Organização</button><b>Comunidade</b></div><div class="c"><div id="ipr-ent-comc"></div></div>';
+    var nt = D.querySelector('#ipe .ipe-tab[data-tab="com"]'), ic = D.getElementById("ipe-com");
+    if (nt && ic && !ic.querySelector(".ipc-nav")) try { nt.click(); } catch (e) {}
+    setTimeout(function () { comMostrar(true); }, 60); setTimeout(function () { if (TAB === "com") comMostrar(true); }, 900);
   }
 
   // ---------- Assistente ----------
@@ -490,6 +534,6 @@
       clearTimeout(tm); tm = setTimeout(marcarEsq, 120);
     }).observe(esq, {childList: true, subtree: true});
     var mp = W.__ipe.mapa; if (mp && mp.on) mp.on("idle", function () { if (D.getElementById("ipr-ent-dir")) { var x = D.activeElement; if (!x || !x.closest || !x.closest("#ipr-ent-dir")) painel(); } });
-    if (!S.feito && PODE) wiz(true);
+    if (!S.feito && PODE && !ENT.admin) wiz(true);
   });
 })();
