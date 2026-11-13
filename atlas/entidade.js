@@ -169,6 +169,10 @@
     "#ipr-ent-dir a.mais{display:inline-block;margin-top:6px;color:#94BE39;font-size:12px;text-decoration:none}#ipr-ent-dir .rod{display:flex;gap:8px;flex-wrap:wrap}" +
     "html.ipr-ent-so #ipe li.ipr-dl{display:none!important}" +
     "#ipr-ent-dir .add{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}#ipr-ent-dir .ipr-ent-b.bc{margin:-2px 0 6px;font-size:11px}" +
+    ".ipr-ent-dica .maplibregl-popup-content{background:#16170f;color:#E6E7E0;border:1px solid #3a3b2e;border-radius:6px;padding:8px 10px;font:12px/1.35 Inter,sans-serif;max-width:240px}.ipr-ent-dica .maplibregl-popup-tip{display:none}.ipr-ent-dica b{display:block;font-size:13px}.ipr-ent-dica span{display:block;color:#B8B9AE}.ipr-ent-dica i{display:block;color:#94BE39;font-style:normal;margin-top:3px;font-size:11px}" +
+    "#ipr-ent-dir .ipr-ent-ficha .loc{color:#B8B9AE;font:13px Inter,sans-serif;margin:-8px 0 10px}#ipr-ent-dir .ipr-ent-ficha .estado{display:inline-block;font:11px Inter,sans-serif;color:#d8b64a;border:1px solid #6b5a1f;border-radius:4px;padding:2px 6px;margin-bottom:10px}" +
+    "#ipr-ent-dir .ipr-ent-ficha dl{margin:0 0 12px;display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font:13px/1.4 Inter,sans-serif}#ipr-ent-dir .ipr-ent-ficha dt{color:#9a9b90}#ipr-ent-dir .ipr-ent-ficha dd{margin:0;color:#E6E7E0}#ipr-ent-dir .ipr-ent-ficha dd a{color:#94BE39}" +
+    "#ipr-ent-dir .ipr-ent-ficha .falta .s{color:#B8B9AE}#ipr-ent-dir .ipr-ent-ficha .sec{margin-top:12px}" +
     ".ipr-ent-toast{position:fixed;left:50%;bottom:40px;transform:translateX(-50%);z-index:99999;background:#16170f;color:#E6E7E0;border:1px solid #94BE39;border-radius:6px;padding:10px 14px;font:13px Inter,sans-serif;max-width:420px;box-shadow:0 6px 20px rgba(0,0,0,.4)}" +
     "#ipr-ent-esq .ap{display:flex;align-items:center;justify-content:space-between;margin-top:10px;font:600 11px Inter;letter-spacing:.06em;text-transform:uppercase;color:#B8A83A}" +
     ".ipr-ent-b{all:unset;box-sizing:border-box;cursor:pointer;min-height:32px;padding:5px 10px;border:1px solid #383A33;border-radius:2px;color:#C3C5BC;font:500 12px/1.3 Inter,sans-serif;display:inline-flex;align-items:center;gap:6px}" +
@@ -282,12 +286,87 @@
       m.addSource(sid, {type: "geojson", data: gj});
       m.addLayer({id: sid + "-f", type: "fill", source: sid, filter: ["==", ["geometry-type"], "Polygon"], paint: {"fill-color": cor, "fill-opacity": 0.15}});
       m.addLayer({id: sid + "-l", type: "line", source: sid, filter: ["!=", ["geometry-type"], "Point"], paint: {"line-color": cor, "line-width": 2}});
-      m.addLayer({id: sid + "-p", type: "circle", source: sid, filter: ["==", ["geometry-type"], "Point"], paint: {"circle-color": cor, "circle-radius": 6, "circle-stroke-color": "#111", "circle-stroke-width": 1.5}});
-      if (W.maplibregl) m.on("click", sid + "-p", function (e) {
-        var f = e.features && e.features[0]; if (!f) return; var pr = f.properties || {};
-        new W.maplibregl.Popup({closeButton: true}).setLngLat(f.geometry.coordinates).setHTML('<div style="max-width:260px;font:13px/1.4 Inter,sans-serif;color:#222"><b>' + esc(pr.nome || "") + "</b>" + (pr.o_que ? "<br>" + esc(pr.o_que) : "") + (pr.local ? '<br><span style="color:#555">' + esc(pr.local) + "</span>" : "") + (pr.dia ? "<br>" + esc(pr.dia) : "") + (pr.fonte ? '<br><span style="color:#777;font-size:11px">Fonte: ' + esc(pr.fonte) + "</span>" : "") + (pr.estado ? '<br><span style="color:#8a6d00;font-size:11px">' + esc(pr.estado) + "</span>" : "") + "</div>").addTo(m);
+      // Cada tipo tem a sua marca: cabazes em anel largo, mercados e feiras com contorno branco, o resto com a cor do grupo.
+      m.addLayer({id: sid + "-p", type: "circle", source: sid, filter: ["==", ["geometry-type"], "Point"], paint: {
+        "circle-color": ["match", ["get", "tipo"], "cabaz", "#ffffff", "mercado", cor, "feira", cor, "loja", cor, "bioregiao", "rgba(0,0,0,0)", cor],
+        "circle-radius": ["match", ["get", "tipo"], "cabaz", 8, "bioregiao", 14, "sede", 8, ["interpolate", ["linear"], ["zoom"], 5, 4.5, 10, 6.5, 14, 8]],
+        "circle-stroke-color": ["match", ["get", "tipo"], "cabaz", "#8e5fb3", "mercado", "#ffffff", "feira", "#ffffff", "loja", "#ffffff", "bioregiao", cor, "#111"],
+        "circle-stroke-width": ["match", ["get", "tipo"], "cabaz", 3.5, "bioregiao", 2.5, 1.5]}});
+      PONTOS[c.id] = gj; redesDesenhar();
+      m.on("mouseenter", sid + "-p", function (e) {
+        m.getCanvas().style.cursor = "pointer";
+        var f = e.features && e.features[0]; if (!f || !W.maplibregl) return; var pr = f.properties || {};
+        if (DICA) DICA.remove();
+        DICA = new W.maplibregl.Popup({closeButton: false, closeOnClick: false, offset: 10, className: "ipr-ent-dica"}).setLngLat(f.geometry.coordinates)
+          .setHTML("<b>" + esc(pr.nome || "") + "</b><span>" + esc(TIPOS[pr.tipo || "produtor"] || pr.tipo || "") + (pr.local ? " · " + esc(pr.local) : "") + "</span><i>Carregue para abrir a ficha</i>").addTo(m);
+      });
+      m.on("mouseleave", sid + "-p", function () { m.getCanvas().style.cursor = ""; if (DICA) { DICA.remove(); DICA = null; } });
+      m.on("click", sid + "-p", function (e) {
+        var f = e.features && e.features[0]; if (!f) return;
+        if (e.originalEvent) { e.originalEvent.__iprEnt = 1; }
+        if (DICA) { DICA.remove(); DICA = null; }
+        FICHA = {pr: f.properties || {}, xy: f.geometry.coordinates, cam: c};
+        TAB = "ficha"; painel();
       });
     }).catch(function () {});
+  }
+
+  // ---- Fichas ----
+  var PONTOS = {}, DICA = null, FICHA = null;
+  var TIPOS = {produtor: "Produtor", mercado: "Mercado", feira: "Feira", loja: "Loja", cabaz: "Cabazes (AMAP / CSA)", escola: "Ensino e formação", cert: "Certificação", bioregiao: "Bio-região", territorio: "Território", sede: "Sede", sementes: "Sementes", demo: "Campo de demonstração"};
+  // Campos de cada tipo de ficha: [chave, rótulo]. O que não está preenchido aparece em «Por confirmar».
+  var CAMPOS = {
+    produtor: [["o_que", "O que produz"], ["certificacao", "Certificação"], ["venda", "Venda directa"], ["visitas", "Visitas"], ["terras", "Terra para jovens agricultores"], ["cabaz", "Faz parte de"], ["site", "Site"], ["contacto", "Contacto"]],
+    mercado: [["o_que", "O que é"], ["dia", "Dia"], ["horario", "Horário"], ["organiza", "Organiza"], ["site", "Site"]],
+    feira: [["o_que", "O que é"], ["dia", "Quando"], ["horario", "Horário"], ["organiza", "Organiza"], ["site", "Site"]],
+    loja: [["o_que", "O que é"], ["horario", "Horário"], ["site", "Site"], ["contacto", "Contacto"]],
+    cabaz: [["o_que", "Como funciona"], ["entrega", "Entrega"], ["organiza", "Rede"], ["site", "Site"], ["contacto", "Contacto"]],
+    escola: [["o_que", "O que faz"], ["site", "Site"]],
+    cert: [["o_que", "O que faz"], ["site", "Site"], ["contacto", "Contacto"]],
+    bioregiao: [["o_que", "Quem faz parte"], ["site", "Site"]],
+    territorio: [["o_que", "Porquê"], ["site", "Site"]],
+    sede: [["o_que", "O que é"], ["site", "Site"], ["contacto", "Contacto"]]
+  };
+  function fichaHtml(F) {
+    var pr = F.pr, tp = pr.tipo || "produtor", cs = CAMPOS[tp] || CAMPOS.produtor, falta = [];
+    var h = '<div class="h"><button type="button" class="ipr-ent-b" data-ent-tab="painel">← Organização</button><b>Ficha</b></div><div class="c ipr-ent-ficha">';
+    h += '<div class="q"><div class="tipo">' + esc(TIPOS[tp] || tp) + (F.cam ? " · " + esc(F.cam.nome) : "") + "</div><h2>" + esc(pr.nome || "") + "</h2>" + (pr.local ? '<div class="loc">' + esc(pr.local) + "</div>" : "") + "</div>";
+    if (pr.estado) h += '<div class="estado">' + esc(pr.estado) + "</div>";
+    h += "<dl>";
+    cs.forEach(function (k) {
+      var v = pr[k[0]];
+      if (v == null || v === "") { falta.push(k[1]); return; }
+      v = String(v);
+      h += "<dt>" + esc(k[1]) + "</dt><dd>" + (/^https?:\/\//.test(v) ? '<a href="' + esc(v) + '" target="_blank" rel="noopener">' + esc(v.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "")) + "</a>" : esc(v)) + "</dd>";
+    });
+    h += "</dl>";
+    if (tp === "cabaz") {
+      var ps = produtoresDe(pr.nome);
+      h += '<div class="sec"><div class="t">Produtores deste cabaz</div>' + (ps.length ? ps.map(function (n) { return "<div>" + esc(n) + "</div>"; }).join("") : '<p class="s">Ainda nenhum produtor indicou que entrega aqui. Quando indicarem, aparecem ligados no mapa.</p>') + "</div>";
+    }
+    if (falta.length) h += '<div class="sec falta"><div class="t">Por confirmar</div><p class="s">' + falta.map(esc).join(" · ") + '</p><p class="s">' + (tp === "produtor" ? "Completa-se quando o produtor aceitar o convite para o mapa, ou pela Agrobio em nome dele." : "A Agrobio pode completar estes dados.") + "</p></div>";
+    var xy = F.xy || [];
+    h += '<div class="sec"><a class="ipr-ent-b" href="https://www.google.com/maps/dir/?api=1&destination=' + (+xy[1]).toFixed(5) + "," + (+xy[0]).toFixed(5) + '" target="_blank" rel="noopener">Como chegar</a> <button type="button" class="ipr-ent-b" data-ent="fichair">Ver no mapa</button></div>';
+    h += '<p class="s">' + (pr.fonte ? "Fonte: " + esc(pr.fonte) + ". " : "") + (pr.posicao ? "Posição " + esc(pr.posicao) + "." : "") + "</p>";
+    return h + "</div>";
+  }
+  function produtoresDe(nome) {
+    var r = []; Object.keys(PONTOS).forEach(function (k) { (PONTOS[k].features || []).forEach(function (f) { var p = f.properties || {}; if (p.cabaz && String(p.cabaz).split(/\s*;\s*/).indexOf(nome) >= 0) r.push(p.nome); }); });
+    return r;
+  }
+  // Ligações dos cabazes: cada produtor com «cabaz» liga-se ao ponto de entrega com esse nome.
+  function redesDesenhar() {
+    var m = W.__ipe && W.__ipe.mapa; if (!m) return;
+    var cab = {}, ls = [];
+    Object.keys(PONTOS).forEach(function (k) { (PONTOS[k].features || []).forEach(function (f) { var p = f.properties || {}; if (p.tipo === "cabaz" && f.geometry && f.geometry.type === "Point") cab[p.nome] = f.geometry.coordinates; }); });
+    Object.keys(PONTOS).forEach(function (k) { (PONTOS[k].features || []).forEach(function (f) {
+      var p = f.properties || {}; if (!p.cabaz || p.tipo === "cabaz" || !f.geometry || f.geometry.type !== "Point") return;
+      String(p.cabaz).split(/\s*;\s*/).forEach(function (n) { var a = cab[n]; if (a && (a[0] !== f.geometry.coordinates[0] || a[1] !== f.geometry.coordinates[1])) ls.push({type: "Feature", properties: {cabaz: n, produtor: p.nome}, geometry: {type: "LineString", coordinates: [f.geometry.coordinates, a]}}); });
+    }); });
+    var gj = {type: "FeatureCollection", features: ls};
+    if (m.getSource("ent-org-redes")) { m.getSource("ent-org-redes").setData(gj); return; }
+    m.addSource("ent-org-redes", {type: "geojson", data: gj});
+    m.addLayer({id: "ent-org-redes-l", type: "line", source: "ent-org-redes", paint: {"line-color": "#8e5fb3", "line-width": 2, "line-opacity": 0.8, "line-dasharray": [2, 1.5]}});
   }
   function orgIr(c) { var m = W.__ipe && W.__ipe.mapa; if (!m || !c || !c.bbox) return; var b = c.bbox; if (b[0] === b[2] && b[1] === b[3]) m.flyTo({center: [b[0], b[1]], zoom: 13}); else m.fitBounds([[b[0], b[1]], [b[2], b[3]]], {padding: 48, maxZoom: 15, duration: 700}); }
   function orgBloco(todos) {
@@ -382,6 +461,7 @@
     if (p.parentNode !== casa) { if (dir && getComputedStyle(dir).position === "static") dir.style.position = "relative"; casa.appendChild(p); p.classList.toggle("dentro", !!dir); }
     if (TAB === "com") { painelCom(p); return; }
     comMostrar(false);
+    if (TAB === "ficha" && FICHA) { p.classList.remove("fechado"); p.innerHTML = fichaHtml(FICHA); return; }
     var O = W.IPR_ORGS, papel = ""; if (O && O.lista) O.lista.forEach(function (o) { if (+o.id === ORGID) papel = o.papel || ""; });
     var tipo = (PERFIS.filter(function (x) { return x.id === S.perfil; })[0] || {}).n || "";
     var h = '<div class="q"><div class="tipo">' + esc(tipo) + (papel ? " · " + esc(papel) : "") + '</div><h2>' + esc(ENT.nome) + "</h2></div>";
@@ -416,27 +496,233 @@
   function aviso(txt) { var a = D.createElement("div"); a.className = "ipr-ent-toast"; a.textContent = txt; D.body.appendChild(a); setTimeout(function () { a.remove(); }, 6000); }
   function carregar(k) {
     if (k === "d") { var d = D.querySelector('#ipe [data-tool="desenhar"]'); if (d) d.click(); aviso("Desenhe a área no mapa; quando fechar o polígono, fica nos seus Locais."); return; }
-    if (k === "f") { var f = D.getElementById("ipe-file") || D.getElementById("ipe-lfile"); if (f) f.click(); else aviso("O importador do Atlas ainda está a carregar."); return; }
-    var i = D.createElement("input"); i.type = "file"; i.accept = ".csv,.txt,text/csv";
-    i.addEventListener("change", function () { var fl = i.files && i.files[0]; if (!fl) return; var r = new FileReader(); r.onload = function () { csvLer(String(r.result || "")); }; r.readAsText(fl); });
+    var i = D.createElement("input"); i.type = "file"; i.multiple = true;
+    i.accept = k === "csv" ? ".csv,.txt,text/csv" : ".kml,.kmz,.geojson,.json,.gpx,.zip,.shp,.dbf,.prj,.shx,.cpg,.gpkg,.dxf,.dwg,.csv,.txt";
+    i.addEventListener("change", function () { var fs = [].slice.call(i.files || []); if (fs.length) lerFicheiros(fs); });
     i.click();
   }
-  function csvLer(txt) {
-    var ls = txt.replace(/^\uFEFF/, "").split(/\r?\n/).filter(function (l) { return l.trim(); }); if (ls.length < 2) { aviso("O CSV está vazio."); return; }
-    var sep = (ls[0].match(/;/g) || []).length >= (ls[0].match(/,/g) || []).length ? ";" : (ls[0].indexOf("\t") >= 0 ? "\t" : ",");
+
+  // ---- Leitura de ficheiros para os Locais ----
+  // Formatos: KML, KMZ, GeoJSON, GPX, shapefile (zip ou .shp+.dbf+.prj), GeoPackage, DXF, CSV.
+  // Coordenadas projectadas (PT-TM06, Hayford-Gauss, Datum 73, UTM, PTRA08) passam a WGS84.
+  var LIBS = {};
+  function lib(url, nome) {
+    if (W[nome]) return Promise.resolve(W[nome]);
+    if (LIBS[url]) return LIBS[url];
+    LIBS[url] = new Promise(function (ok, ko) { var s = D.createElement("script"); s.src = url; s.crossOrigin = "anonymous"; s.onload = function () { W[nome] ? ok(W[nome]) : ko(new Error(nome)); }; s.onerror = function () { delete LIBS[url]; ko(new Error(nome)); }; D.head.appendChild(s); });
+    return LIBS[url];
+  }
+  var DEFS = {
+    3763: "+proj=tmerc +lat_0=39.66825833333333 +lon_0=-8.133108333333334 +k=1 +x_0=0 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs",
+    20790: "+proj=tmerc +lat_0=39.66666666666666 +lon_0=1 +k=1 +x_0=200000 +y_0=300000 +ellps=intl +towgs84=-304.046,-60.576,103.64,0,0,0,0 +pm=lisbon +units=m +no_defs",
+    20791: "+proj=tmerc +lat_0=39.66666666666666 +lon_0=1 +k=1 +x_0=0 +y_0=0 +ellps=intl +towgs84=-304.046,-60.576,103.64,0,0,0,0 +pm=lisbon +units=m +no_defs",
+    27492: "+proj=tmerc +lat_0=39.66666666666666 +lon_0=-8.131906111111112 +k=1 +x_0=180.598 +y_0=-86.99 +ellps=intl +towgs84=-223.237,110.193,36.649,0,0,0,0 +units=m +no_defs",
+    27493: "+proj=tmerc +lat_0=39.66666666666666 +lon_0=-8.131906111111112 +k=1 +x_0=180.598 +y_0=-86.99 +ellps=intl +towgs84=-223.237,110.193,36.649,0,0,0,0 +units=m +no_defs",
+    32629: "+proj=utm +zone=29 +datum=WGS84 +units=m +no_defs",
+    25829: "+proj=utm +zone=29 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs",
+    5013: "+proj=utm +zone=25 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs",
+    5014: "+proj=utm +zone=26 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs",
+    5015: "+proj=utm +zone=28 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs",
+    32626: "+proj=utm +zone=26 +datum=WGS84 +units=m +no_defs",
+    32628: "+proj=utm +zone=28 +datum=WGS84 +units=m +no_defs",
+    3857: "+proj=merc +a=6378137 +b=6378137 +lat_ts=0 +lon_0=0 +x_0=0 +y_0=0 +k=1 +units=m +nadgrids=@null +no_defs"
+  };
+  function emPT(p) { return p && p[0] > -32 && p[0] < -6 && p[1] > 30 && p[1] < 43; }
+  function geoCoords(g, fn) { // aplica fn a cada [x,y]
+    function r(c) { return typeof c[0] === "number" ? fn(c) : c.map(r); }
+    if (!g) return g;
+    if (g.type === "GeometryCollection") return {type: g.type, geometries: g.geometries.map(function (x) { return geoCoords(x, fn); })};
+    return {type: g.type, coordinates: r(g.coordinates)};
+  }
+  function umPonto(g) { var p = null; geoCoords(g, function (c) { if (!p) p = c; return c; }); return p; }
+  // Põe as geometrias em WGS84. srs: código EPSG, se conhecido; sem ele, adivinha pelo intervalo de valores.
+  function reproj(feats, srs) {
+    var p0 = null; feats.some(function (f) { p0 = umPonto(f.geometry); return !!p0; });
+    if (!p0) return Promise.resolve(feats);
+    if (!srs && Math.abs(p0[0]) <= 180 && Math.abs(p0[1]) <= 90) return Promise.resolve(feats);
+    if (srs === 4326 || srs === 4258 || srs === 4269) return Promise.resolve(feats);
+    return lib("https://cdn.jsdelivr.net/npm/proj4@2.11.0/dist/proj4.js", "proj4").then(function (P) {
+      var cand = srs ? [srs] : [3763, 20790, 20791, 27493, 25829, 5014, 5015, 5013, 3857];
+      var esc = null;
+      cand.some(function (c) { if (!DEFS[c]) return false; try { var q = P(DEFS[c], "WGS84", [p0[0], p0[1]]); if (srs || emPT(q)) { esc = c; return true; } } catch (e) {} return false; });
+      if (!esc) throw new Error(srs ? "srs" : "coords");
+      var t = P(DEFS[esc], "WGS84");
+      return feats.map(function (f) { return {type: "Feature", properties: f.properties, geometry: geoCoords(f.geometry, function (c) { return t.forward([c[0], c[1]]); })}; });
+    });
+  }
+  function fc(x) { var t = []; (Array.isArray(x) ? x : [x]).forEach(function (e) { if (e && e.type === "FeatureCollection") t = t.concat(e.features || []); else if (e && e.type === "Feature") t.push(e); else if (e && e.type) t.push({type: "Feature", properties: {}, geometry: e}); }); return t; }
+  function nomeBase(n) { return n.replace(/\.[^.]+$/, ""); }
+  function kmlTxt(txt) { return toGeoJSON.kml(new DOMParser().parseFromString(txt, "text/xml")); }
+  function srsGeoJSON(gj) { var n = gj && gj.crs && gj.crs.properties && gj.crs.properties.name; var m = n && String(n).match(/(\d{4,5})\s*$/); return m ? +m[1] : 0; }
+
+  // DXF (texto): LWPOLYLINE, POLYLINE/VERTEX, LINE, POINT, CIRCLE, INSERT (ponto). A camada (layer) dá o nome.
+  function dxfLer(txt) {
+    var ls = txt.split(/\r?\n/), pr = [];
+    for (var i = 0; i + 1 < ls.length; i += 2) pr.push([parseInt(ls[i], 10), ls[i + 1].trim()]);
+    var k = 0; while (k < pr.length && !(pr[k][0] === 2 && pr[k][1] === "ENTITIES")) k++;
+    var out = [], cur = null, poly = null;
+    function fecha() {
+      if (!cur) return;
+      var e = cur; cur = null;
+      if (e.t === "LWPOLYLINE" && e.p.length > 1) out.push(feat(e.l, e.closed && e.p.length > 2 ? {type: "Polygon", coordinates: [e.p.concat([e.p[0]])]} : {type: "LineString", coordinates: e.p}));
+      else if (e.t === "LINE" && e.p.length) out.push(feat(e.l, {type: "LineString", coordinates: [e.p[0], [e.x2, e.y2]]}));
+      else if ((e.t === "POINT" || e.t === "CIRCLE" || e.t === "INSERT" || e.t === "TEXT" || e.t === "MTEXT") && e.p.length) out.push(feat(e.l + (e.txt ? " · " + e.txt : ""), {type: "Point", coordinates: e.p[0]}));
+      else if (e.t === "POLYLINE") poly = {l: e.l, closed: e.closed, p: []};
+      else if (e.t === "VERTEX" && poly && e.p.length) poly.p.push(e.p[0]);
+      else if (e.t === "SEQEND" && poly) { if (poly.p.length > 1) out.push(feat(poly.l, poly.closed && poly.p.length > 2 ? {type: "Polygon", coordinates: [poly.p.concat([poly.p[0]])]} : {type: "LineString", coordinates: poly.p})); poly = null; }
+    }
+    function feat(l, g) { return {type: "Feature", properties: {nome: l}, geometry: g}; }
+    for (k++; k < pr.length; k++) {
+      var c = pr[k][0], v = pr[k][1];
+      if (c === 0) { fecha(); if (v === "ENDSEC") break; cur = {t: v, l: "", p: [], closed: false, xp: null}; continue; }
+      if (!cur) continue;
+      if (c === 8) cur.l = v;
+      else if (c === 1 && (cur.t === "TEXT" || cur.t === "MTEXT")) cur.txt = v.slice(0, 60);
+      else if (c === 70) cur.closed = (parseInt(v, 10) & 1) === 1;
+      else if (c === 10) cur.xp = parseFloat(v);
+      else if (c === 20 && cur.xp !== null) { cur.p.push([cur.xp, parseFloat(v)]); cur.xp = null; }
+      else if (c === 11) cur.x2 = parseFloat(v);
+      else if (c === 21) cur.y2 = parseFloat(v);
+    }
+    fecha();
+    return out;
+  }
+
+  // GeoPackage: lê as tabelas de elementos com sql.js; geometria = cabeçalho GP + WKB.
+  function wkb(dv, o) {
+    var le = dv.getUint8(o) === 1; o++;
+    var t = dv.getUint32(o, le); o += 4;
+    var z = false, m = false;
+    if (t & 0x80000000) z = true; if (t & 0x40000000) m = true; t = t & 0x0fffffff;
+    if (t > 3000) { z = true; m = true; t -= 3000; } else if (t > 2000) { m = true; t -= 2000; } else if (t > 1000) { z = true; t -= 1000; }
+    var dim = 2 + (z ? 1 : 0) + (m ? 1 : 0);
+    function pt() { var p = [dv.getFloat64(o, le), dv.getFloat64(o + 8, le)]; o += 8 * dim; return p; }
+    function n() { var x = dv.getUint32(o, le); o += 4; return x; }
+    function linha() { var k = n(), a = []; for (var i = 0; i < k; i++) a.push(pt()); return a; }
+    function pol() { var k = n(), a = []; for (var i = 0; i < k; i++) a.push(linha()); return a; }
+    function multi() { var k = n(), a = []; for (var i = 0; i < k; i++) { var r = wkb(dv, o); o = r.o; a.push(r.g); } return a; }
+    var g;
+    if (t === 1) g = {type: "Point", coordinates: pt()};
+    else if (t === 2) g = {type: "LineString", coordinates: linha()};
+    else if (t === 3) g = {type: "Polygon", coordinates: pol()};
+    else if (t === 4) g = {type: "MultiPoint", coordinates: multi().map(function (x) { return x.coordinates; })};
+    else if (t === 5) g = {type: "MultiLineString", coordinates: multi().map(function (x) { return x.coordinates; })};
+    else if (t === 6) g = {type: "MultiPolygon", coordinates: multi().map(function (x) { return x.coordinates; })};
+    else if (t === 7) g = {type: "GeometryCollection", geometries: multi()};
+    else throw new Error("wkb " + t);
+    return {g: g, o: o};
+  }
+  function gpGeom(u8) {
+    if (!u8 || u8.length < 8 || u8[0] !== 0x47 || u8[1] !== 0x50) return null;
+    var fl = u8[3], env = (fl >> 1) & 7, es = [0, 32, 48, 48, 64][env] || 0;
+    if (fl & 0x10) return null; // geometria vazia
+    var dv = new DataView(u8.buffer, u8.byteOffset, u8.byteLength);
+    return wkb(dv, 8 + es).g;
+  }
+  function gpkgLer(buf) {
+    return lib("https://cdn.jsdelivr.net/npm/sql.js@1.10.3/dist/sql-wasm.js", "initSqlJs").then(function (ini) {
+      return ini({locateFile: function (f) { return "https://cdn.jsdelivr.net/npm/sql.js@1.10.3/dist/" + f; }});
+    }).then(function (SQL) {
+      var db = new SQL.Database(new Uint8Array(buf)), tabs = [];
+      var r = db.exec("SELECT table_name, column_name, srs_id FROM gpkg_geometry_columns");
+      (r[0] ? r[0].values : []).forEach(function (v) { tabs.push({t: v[0], c: v[1], s: +v[2]}); });
+      var trab = tabs.map(function (tb) {
+        var q = db.exec('SELECT * FROM "' + String(tb.t).replace(/"/g, '""') + '" LIMIT 2000'), fs = [];
+        if (q[0]) {
+          var cols = q[0].columns, gi = cols.indexOf(tb.c);
+          q[0].values.forEach(function (row) {
+            var g = null; try { g = gpGeom(row[gi]); } catch (e) {}
+            if (!g) return;
+            var pr = {}; cols.forEach(function (cn, j) { if (j !== gi && row[j] != null && typeof row[j] !== "object") pr[cn] = row[j]; });
+            if (!pr.nome && !pr.name && !pr.Name && !pr.NOME) pr.nome = tb.t + (pr.fid != null ? " " + pr.fid : "");
+            fs.push({type: "Feature", properties: pr, geometry: g});
+          });
+        }
+        return reproj(fs, tb.s > 0 ? tb.s : 0);
+      });
+      db.close();
+      return Promise.all(trab).then(function (ls) { return [].concat.apply([], ls); });
+    });
+  }
+
+  function lerUm(f, grupo) {
+    var ext = (f.name.split(".").pop() || "").toLowerCase();
+    if (f.size > 50 * 1024 * 1024) return Promise.reject(new Error("O ficheiro " + f.name + " passa os 50 MB."));
+    if (ext === "geojson" || ext === "json") return f.text().then(function (t) { var gj = JSON.parse(t); return reproj(fc(gj), srsGeoJSON(gj)); });
+    if (ext === "kml") return f.text().then(function (t) { return fc(kmlTxt(t)); });
+    if (ext === "gpx") return f.text().then(function (t) { return fc(toGeoJSON.gpx(new DOMParser().parseFromString(t, "text/xml"))); });
+    if (ext === "kmz") return JSZip.loadAsync(f).then(function (z) { var k = Object.keys(z.files).find(function (n) { return /\.kml$/i.test(n); }); if (!k) throw new Error("O KMZ " + f.name + " não tem KML dentro."); return z.files[k].async("string"); }).then(function (t) { return fc(kmlTxt(t)); });
+    if (ext === "zip") return f.arrayBuffer().then(function (b) { return shp(b); }).then(function (g) { return reproj(fc(g), 0); });
+    if (ext === "shp") {
+      var b = nomeBase(f.name).toLowerCase(), dbf = grupo.filter(function (x) { return x.name.toLowerCase() === b + ".dbf"; })[0], prj = grupo.filter(function (x) { return x.name.toLowerCase() === b + ".prj"; })[0];
+      return Promise.all([f.arrayBuffer(), dbf ? dbf.arrayBuffer() : null, prj ? prj.text() : null]).then(function (a) {
+        var geoms = shp.parseShp(a[0], a[2] || undefined), g = a[1] ? shp.combine([geoms, shp.parseDbf(a[1])]) : {type: "FeatureCollection", features: geoms.map(function (x) { return {type: "Feature", properties: {}, geometry: x}; })};
+        return reproj(fc(g), 0);
+      });
+    }
+    if (ext === "gpkg") return f.arrayBuffer().then(gpkgLer);
+    if (ext === "dxf") return f.text().then(function (t) { if (!/SECTION/.test(t.slice(0, 2000))) throw new Error("O DXF " + f.name + " está em formato binário. Guarde-o como DXF de texto (ASCII)."); return reproj(dxfLer(t), 0); });
+    if (ext === "csv" || ext === "txt") return f.text().then(csvFeats);
+    if (ext === "dwg") return Promise.reject(new Error("O DWG não se lê no navegador. No AutoCAD ou QGIS, guarde-o como DXF e carregue o DXF."));
+    return Promise.resolve(null); // .dbf, .prj, .shx, .cpg acompanham o .shp
+  }
+  function juntarFeats(feats, fnome) {
+    var L = W.__ipe && W.__ipe.locais, n = 0, bx = null;
+    function caixa(c) { bx = bx ? [Math.min(bx[0], c[0]), Math.min(bx[1], c[1]), Math.max(bx[2], c[0]), Math.max(bx[3], c[1])] : [c[0], c[1], c[0], c[1]]; return c; }
+    function x2(c) { return [+c[0], +c[1]]; }
+    feats.slice(0, 1000).forEach(function (f) {
+      var g = f.geometry, p = f.properties || {}, nm = String(p.nome || p.name || p.Name || p.NOME || p.designacao || fnome || "").slice(0, 120);
+      if (!g) return;
+      function um(tipo, c, suf) { try { L.juntar(tipo, c, nm + (suf ? " " + suf : "")); n++; } catch (e) {} }
+      geoCoords(g, caixa);
+      if (g.type === "Point") um("ponto", x2(g.coordinates));
+      else if (g.type === "LineString") um("linha", g.coordinates.map(x2));
+      else if (g.type === "Polygon") um("area", g.coordinates.map(function (r) { return r.map(x2); }));
+      else if (g.type === "MultiPoint") g.coordinates.forEach(function (c, i) { um("ponto", x2(c), g.coordinates.length > 1 ? i + 1 : ""); });
+      else if (g.type === "MultiLineString") g.coordinates.forEach(function (c, i) { um("linha", c.map(x2), g.coordinates.length > 1 ? i + 1 : ""); });
+      else if (g.type === "MultiPolygon") g.coordinates.forEach(function (c, i) { um("area", c.map(function (r) { return r.map(x2); }), g.coordinates.length > 1 ? i + 1 : ""); });
+      else if (g.type === "GeometryCollection") juntarFeats(g.geometries.map(function (x) { return {type: "Feature", properties: p, geometry: x}; }), fnome);
+    });
+    return {n: n, bx: bx};
+  }
+  function lerFicheiros(fs) {
+    if (!(W.__ipe && W.__ipe.locais)) { aviso("O mapa ainda está a carregar. Tente daqui a uns segundos."); return; }
+    aviso("A ler " + (fs.length > 1 ? fs.length + " ficheiros" : fs[0].name) + "…");
+    var tot = 0, bx = null, erros = [];
+    Promise.all(fs.map(function (f) {
+      return lerUm(f, fs).then(function (feats) {
+        if (!feats) return;
+        var r = juntarFeats(feats, nomeBase(f.name)); tot += r.n;
+        if (!r.n) erros.push(f.name + ": sem elementos com coordenadas.");
+        if (r.bx) bx = bx ? [Math.min(bx[0], r.bx[0]), Math.min(bx[1], r.bx[1]), Math.max(bx[2], r.bx[2]), Math.max(bx[3], r.bx[3])] : r.bx;
+      }).catch(function (e) {
+        var m = e && e.message || "";
+        erros.push(/^(O |A )/.test(m) ? m : m === "coords" ? f.name + ": não reconheci o sistema de coordenadas. Exporte em WGS84 ou PT-TM06." : f.name + ": não consegui ler o ficheiro.");
+      });
+    })).then(function () {
+      aviso((tot ? tot + (tot === 1 ? " elemento carregado" : " elementos carregados") + " para os seus Locais." : "Nada foi carregado.") + (erros.length ? " " + erros.join(" ") : ""));
+      if (bx && W.__ipe.mapa) try { if (bx[0] === bx[2] && bx[1] === bx[3]) W.__ipe.mapa.flyTo({center: [bx[0], bx[1]], zoom: 15}); else W.__ipe.mapa.fitBounds([[bx[0], bx[1]], [bx[2], bx[3]]], {padding: 80, maxZoom: 16}); } catch (e) {}
+    });
+  }
+  function csvFeats(txt) {
+    var ls = txt.replace(/^﻿/, "").split(/\r?\n/).filter(function (l) { return l.trim(); }); if (ls.length < 2) throw new Error("O CSV está vazio.");
+    var sep = (ls[0].match(/;/g) || []).length >= (ls[0].match(/,/g) || []).length && /;/.test(ls[0]) ? ";" : (ls[0].indexOf("\t") >= 0 ? "\t" : ",");
     var cab = ls[0].split(sep).map(function (x) { return x.trim().toLowerCase().replace(/^"|"$/g, ""); });
     function col(re) { for (var j = 0; j < cab.length; j++) if (re.test(cab[j])) return j; return -1; }
-    var ci = col(/^(lat|latitude|y)$/), cj = col(/^(lon|lng|long|longitude|x)$/), cn = col(/^(nome|name|produtor|explora|local|designa)/);
-    if (ci < 0 || cj < 0) { aviso("Não encontrei as colunas latitude e longitude no CSV."); return; }
-    var n = 0, bx = null, L = W.__ipe && W.__ipe.locais;
+    var ci = col(/^(lat|latitude|y|m|n|norte|northing)$/), cj = col(/^(lon|lng|long|longitude|x|p|e|este|easting)$/), cn = col(/^(nome|name|produtor|explora|local|designa)/);
+    if (ci < 0 || cj < 0) throw new Error("O CSV precisa de colunas latitude e longitude (ou x e y).");
+    var fs = [];
     ls.slice(1).forEach(function (l) {
       var v = l.split(sep).map(function (x) { return x.trim().replace(/^"|"$/g, ""); });
-      var la = parseFloat(String(v[ci]).replace(",", ".")), lo = parseFloat(String(v[cj]).replace(",", "."));
-      if (!isFinite(la) || !isFinite(lo) || Math.abs(la) > 90 || Math.abs(lo) > 180) return;
-      try { L.juntar("ponto", [lo, la], cn >= 0 ? v[cn] : ""); n++; bx = bx ? [Math.min(bx[0], lo), Math.min(bx[1], la), Math.max(bx[2], lo), Math.max(bx[3], la)] : [lo, la, lo, la]; } catch (e) {}
+      var la = parseFloat(String(v[ci]).replace(/\s/g, "").replace(",", ".")), lo = parseFloat(String(v[cj]).replace(/\s/g, "").replace(",", "."));
+      if (!isFinite(la) || !isFinite(lo)) return;
+      var pr = {}; cab.forEach(function (c, j) { if (j !== ci && j !== cj && v[j]) pr[c] = v[j]; }); if (cn >= 0) pr.nome = v[cn];
+      fs.push({type: "Feature", properties: pr, geometry: {type: "Point", coordinates: [lo, la]}});
     });
-    aviso(n ? n + " locais carregados para os seus Locais." : "Nenhuma linha com coordenadas válidas.");
-    if (bx && W.__ipe.mapa) try { if (bx[0] === bx[2]) W.__ipe.mapa.flyTo({center: [bx[0], bx[1]], zoom: 13}); else W.__ipe.mapa.fitBounds([[bx[0], bx[1]], [bx[2], bx[3]]], {padding: 60, maxZoom: 13}); } catch (e) {}
+    return reproj(fs, 0);
+  }
+  function csvLer(txt) { // mantido para quem o chama directamente
+    try { csvFeats(txt).then(function (fs) { var r = juntarFeats(fs, ""); aviso(r.n ? r.n + " locais carregados para os seus Locais." : "Nenhuma linha com coordenadas válidas."); }); } catch (e) { aviso(e.message); }
   }
   // Base Cartográfica: a área entra nos Locais da pessoa e abre-se o formulário de sempre (Processos › Base Cartográfica),
   // com o nome e o vale da organização já escritos. O formulário e o pagamento são os do Atlas.
@@ -568,6 +854,7 @@
     if (a === "voltar") { if (S.passo > 1) S.passo--; wiz(true); return; }
     if (a === "guardar") { guardar(t); return; }
     if (a === "so") { S.so = !S.so; marcarEsq(); return; }
+    if (a === "fichair") { var mm = W.__ipe && W.__ipe.mapa; if (mm && FICHA && FICHA.xy) mm.flyTo({center: FICHA.xy, zoom: Math.max(mm.getZoom(), 13)}); return; }
     if (a === "fechar") { var p = D.getElementById("ipr-ent-dir"); p.classList.toggle("fechado"); painel(); return; }
     if (t.hasAttribute("data-ent-cam") && v) { var id = t.getAttribute("data-ent-cam"); v.ligar(id, act().indexOf(id) < 0); setTimeout(painel, 150); return; }
     if (t.hasAttribute("data-ent-abrir")) { var m = t.getAttribute("data-ent-abrir"); S.aberto[m] = !S.aberto[m]; painel(); return; }
