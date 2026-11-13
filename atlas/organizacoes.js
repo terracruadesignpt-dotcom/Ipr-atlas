@@ -27,9 +27,17 @@
     s.textContent = 'html #ipe .ipe-tab[data-tab="org"]{display:block!important}';
     (D.head || D.documentElement).appendChild(s);
   }
-  function abrirSeparador() {
-    var n = 0;
-    (function t() { var tab = D.querySelector('#ipe .ipe-tab[data-tab="org"]'); if (tab) { tab.click(); return; } if (++n < 40) setTimeout(t, 250); })();
+  // O arranque do Atlas escolhe outro separador depois de carregar: insiste até 12 s, e pára logo que a pessoa mexe.
+  function abrirSeparador(insistir) {
+    var fim = Date.now() + (insistir ? 12000 : 3000), parou = false;
+    function parar() { parou = true; }
+    if (insistir) ["pointerdown", "keydown", "wheel", "touchstart"].forEach(function (v) { D.addEventListener(v, parar, { capture: true, once: true }); });
+    (function t() {
+      if (parou) return;
+      var tab = D.querySelector('#ipe .ipe-tab[data-tab="org"]');
+      if (tab && tab.getAttribute("aria-selected") !== "true") tab.click();
+      if (Date.now() < fim) setTimeout(t, 400);
+    })();
   }
   function abrir(id, url) {
     var o = O(); if (!o) return;
@@ -38,8 +46,7 @@
       location.href = "/atlas/?ipr_org=" + encodeURIComponent(id) + "&_ipr_org=" + encodeURIComponent(o.nonce) + "&separador=org";
       return;
     }
-    if (url) { location.replace("/atlas/?separador=org"); return; }
-    abrirSeparador();
+    abrirSeparador(!!url);
   }
   W.iprAbrirOrganizacao = abrir;
 
