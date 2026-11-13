@@ -508,6 +508,7 @@
         if (v) return fetch(urlF(v.url), { credentials: "same-origin" }).then(function (x) { return x.json(); }).then(function (vj) {
           S.res.vista = vj; S.res.fich = {}; (r.ficheiros || []).forEach(function (f) { S.res.fich[f.nome] = f.url; });
           vj.camadas.filter(function (c) { return /^(chegada_h|depois__chegada_h|frequencia|isocronas|depois__isocronas)$/.test(c.id); }).forEach(function (c) { alternarCamada(c.id, true); });
+          irAoResultado(vj);
           pintar();
         });
         pintar(); return;
@@ -540,6 +541,31 @@
         paint: { "text-color": "#fff", "text-halo-color": "#141814", "text-halo-width": 1.2 } });
     }
     S.camadas[id] = true;
+  }
+  // 13/11/2026 (Nuno: «verifica tudo»): no fim, o mapa aproxima-se da área ardida. Numa Base grande (a de demonstração tem
+  // 16 400 ha) um incêndio de dezenas de hectares ficava invisível a 1:250 000. Usa as isócronas; sem elas, a imagem de chegada.
+  function irAoResultado(vj) {
+    var M = mapa(); if (!M || !S.res || !S.res.fich) return;
+    var c = vj.camadas.filter(function (x) { return /^(depois__)?isocronas$/.test(x.id) && x.geojson; })[0];
+    function enquadrar(b) {
+      if (!b || !(b[2] > b[0]) || !(b[3] > b[1])) return;
+      var r = P && !P.hidden ? P.getBoundingClientRect() : null, cr = M.getContainer().getBoundingClientRect();
+      var dir = r && r.left > cr.left + cr.width / 2 ? Math.max(40, cr.right - r.left + 40) : 40;
+      if (dir > cr.width - 200) dir = 40;
+      try { M.fitBounds([[b[0], b[1]], [b[2], b[3]]], { padding: { top: 70, bottom: 70, left: 60, right: dir }, maxZoom: 15.5, duration: 900 }); } catch (e) {}
+    }
+    if (c && S.res.fich["vista/" + c.geojson]) {
+      fetch(urlF(S.res.fich["vista/" + c.geojson]), { credentials: "same-origin" }).then(function (x) { return x.json(); }).then(function (g) {
+        var b = [180, 90, -180, -90];
+        (function walk(k) { if (typeof k[0] === "number") { b = [Math.min(b[0], k[0]), Math.min(b[1], k[1]), Math.max(b[2], k[0]), Math.max(b[3], k[1])]; } else k.forEach(walk); })
+          ((g.features || []).filter(function (f) { return f && f.geometry; }).map(function (f) { return f.geometry.coordinates; }));
+        enquadrar(b);
+      }).catch(function () {});
+      return;
+    }
+    var im = vj.camadas.filter(function (x) { return x.imagem && x.cantos; })[0];
+    if (im) { var xs = im.cantos.map(function (p) { return p[0]; }), ys = im.cantos.map(function (p) { return p[1]; });
+      enquadrar([Math.min.apply(null, xs), Math.min.apply(null, ys), Math.max.apply(null, xs), Math.max.apply(null, ys)]); }
   }
   function limparCamadas() { Object.keys(S.camadas).forEach(function (id) { alternarCamada(id, false); }); }
 
