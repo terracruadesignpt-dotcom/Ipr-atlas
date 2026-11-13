@@ -630,10 +630,10 @@
     var on = A.ligada(), h = '<div class="sec"><div class="t">Onde instalar-se · aptidão biológica</div>';
     h += '<p class="s">Zonas boas para um jovem agricultor biológico, com dez critérios positivos: solo, matéria orgânica, longe de pressões, chuva, água subterrânea, água de rega, mercado, terra acessível, zonas pouco procuradas e rede de apoio. Continente, Açores e Madeira.</p>';
     if (APTD) {
-      var top = APTD.conc.filter(function (c) { return c[2] != null && c[3] >= 3; }).sort(function (a, b) { return b[2] - a[2]; }).slice(0, 8);
+      var top = APTD.conc.filter(function (c) { return c[2] != null && c[3] >= 3 && !/Azores|Madeira|Açores/.test(c[1] || ""); }).sort(function (a, b) { return b[2] - a[2]; }).slice(0, 8);
       h += '<ol class="apt">' + top.map(function (c) { return "<li>" + esc(c[0]) + ' <span class="s">' + esc(c[1] || "") + "</span> <b>" + c[2] + "</b></li>"; }).join("") + "</ol>";
       var ilhas = APTD.conc.filter(function (c) { return c[2] != null && /Azores|Madeira|Açores/.test(c[1] || ""); }).sort(function (a, b) { return b[2] - a[2]; }).slice(0, 3);
-      if (ilhas.length) h += '<p class="s">Nas ilhas: ' + ilhas.map(function (c) { return esc(c[0]) + " (" + c[2] + ")"; }).join(", ") + ".</p>";
+      if (ilhas.length) h += '<p class="s">Nas ilhas (comparadas entre si): ' + ilhas.map(function (c) { return esc(c[0]) + " (" + c[2] + ")"; }).join(", ") + ".</p>";
     }
     h += '<button type="button" class="ipr-ent-b' + (on ? "" : " p") + '" data-ent="aptmapa">' + (on ? "Esconder do mapa" : "Ver no mapa") + "</button> ";
     h += '<button type="button" class="ipr-ent-b" data-ent="regmapa">Regadio público</button></div>';
@@ -680,7 +680,7 @@
       h += '<button class="p" onclick="print()">Imprimir ou guardar em PDF</button><div class="s">IPR Atlas · relatório da organização · ' + esc(hoje) + "</div><h1>" + esc(ENT.nome) + "</h1>";
       h += '<div class="k">' + vv.map(function (n) { return "<div><b>" + n[1] + "</b>" + esc(n[0]) + "</div>"; }).join("") + "</div>";
       if (img) h += "<h2>Mapa</h2><img src=\"" + img + "\">";
-      if (APTD) { var tp = APTD.conc.filter(function (c) { return c[2] != null && c[3] >= 3; }).sort(function (a, b) { return b[2] - a[2]; }).slice(0, 12); h += "<h2>Onde instalar-se: aptidão para jovens agricultores biológicos</h2><p>Dez critérios positivos (solo, matéria orgânica, longe de pressões, chuva, água subterrânea, água de rega, mercado, terra acessível, zonas pouco procuradas, rede de apoio), numa malha de 3 km no continente e 1,2 km nas ilhas. Fontes: APA, ICNF, DGADR, INE e o mapa da Agrobio. Concelhos com melhor média:</p><table><tr><th>Concelho</th><th>Distrito</th><th>Média</th></tr>" + tp.map(function (c) { return "<tr><td>" + esc(c[0]) + "</td><td>" + esc(c[1] || "") + "</td><td>" + c[2] + "</td></tr>"; }).join("") + "</table>"; }
+      if (APTD) { var tp = APTD.conc.filter(function (c) { return c[2] != null && c[3] >= 3 && !/Azores|Madeira|Açores/.test(c[1] || ""); }).sort(function (a, b) { return b[2] - a[2]; }).slice(0, 12); h += "<h2>Onde instalar-se: aptidão para jovens agricultores biológicos</h2><p>Dez critérios positivos (solo, matéria orgânica, longe de pressões, chuva, água subterrânea, água de rega, mercado, terra acessível, zonas pouco procuradas, rede de apoio), numa malha de 3 km no continente e 1,2 km nas ilhas. Fontes: APA, ICNF, DGADR, INE e o mapa da Agrobio. Concelhos com melhor média:</p><table><tr><th>Concelho</th><th>Distrito</th><th>Média</th></tr>" + tp.map(function (c) { return "<tr><td>" + esc(c[0]) + "</td><td>" + esc(c[1] || "") + "</td><td>" + c[2] + "</td></tr>"; }).join("") + "</table>"; }
       if (OP) { var lac = OP.venda.filter(function (v) { return v.n === 0; }); h += "<h2>Oferta e procura</h2><p>" + OP.venda.length + " pontos de venda, dos quais " + lac.length + " sem produtores a menos de " + RAIO + " km; " + OP.longe.length + " produtores a mais de 40 km de um ponto de venda.</p>"; }
       [["produtor", "Produtores"], ["mercado", "Mercados"], ["feira", "Feiras"], ["loja", "Lojas e cooperativas"], ["cabaz", "Cabazes e AMAP"], ["bioregiao", "Bio-regiões"]].forEach(function (t) {
         var l = por[t[0]]; if (!l || !l.length) return;
