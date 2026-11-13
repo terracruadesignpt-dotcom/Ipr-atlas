@@ -58,6 +58,7 @@
     abrir(m[1], true);
   })();
   mostrarSeparador();
+  if (ls("ipr_topo_org") === "1" && /[?&]separador=org(&|$)/.test(location.search) && !/[?&]org=\d/.test(location.search)) abrirSeparador(true);
 
   // 1. Comunidade
   var CSS = "#ipr-orgs{margin:10px 10px 12px;border:1px solid var(--ln,#3a3f33);border-radius:10px;padding:10px 12px;font:13px/1.35 Inter,sans-serif;color:var(--tx,#e9eadf)}" +
