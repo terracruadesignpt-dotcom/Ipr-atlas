@@ -63,6 +63,11 @@
     var m = /[?&]org=(\d+)(&|$)/.exec(location.search); if (!m) return;
     var o = O(); if (!o) return;
     if (!o.lista.some(function (x) { return +x.id === +m[1]; })) return;
+    // A organização vive no painel da direita, que a vista simplificada (limpo.js) esconde: passa a «Ver tudo» neste navegador.
+    if (ls("ipr_modo") !== "completo" || D.documentElement.classList.contains("ipr-limpo")) {
+      ls("ipr_modo", "completo"); ls("ipr_atlas_avancado", "1"); ls("ipr_topo_org", "1");
+      if (!/[?&]completo=1/.test(location.search)) { location.replace(location.pathname + location.search + "&completo=1"); return; }
+    }
     abrir(m[1], true);
   })();
   mostrarSeparador();
