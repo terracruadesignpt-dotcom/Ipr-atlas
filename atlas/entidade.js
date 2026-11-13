@@ -45,8 +45,11 @@
     ["repo", "Repovoamento", "Cap. 13-A · sequência do repovoamento"],
     ["des", "Design do sistema territorial", "SOT · Fase 3"],
     ["gov", "Governação e comunidade", "Partes IV e V"],
-    ["obs", "Implementação e Observatório", "Parte VI · Fases 4 a 6"]
+    ["obs", "Implementação e Observatório", "Parte VI · Fases 4 a 6"],
+    ["agro", "Produção e rede agrícola", "Parte I · capital produtivo e circuitos curtos"]
   ];
+  var AGRO = ENT.id === "agrobio";
+  if (AGRO) GRUPOS.splice(1, 0, GRUPOS.pop()); // numa associação agrícola, a produção vem logo a seguir ao território
   // ids = camadas do catálogo do viz.js; liga = as que se ligam ao aplicar (poucas, para o mapa não ficar pesado).
   var MOD = [
     {id: "delim", g: "base", n: "Delimitação de bacias e sub-bacias", d: "Bacias, sub-bacias e troços; limites administrativos só como referência", eb: "Finder", lock: 1, ids: ["bip_23", "bacias", "bac_troco", "l_bacias_l", "rh", "concelhos", "caop"], liga: ["bip_23", "bacias"], k: [["Bacias da entidade", "bacias"], ["Sub-bacias delimitadas", "f1"]]},
@@ -78,7 +81,16 @@
     {id: "comissao", g: "gov", n: "Comissão de Bacia e escalas de decisão", d: "Casa, aldeia, sub-bacia, bacia, rede: cada decisão na menor escala capaz", eb: "Planner", ids: [], k: [["Papéis", "coordenação, equipa IPR, municípios, aldeias, público"]]},
     {id: "publico", g: "gov", n: "Mapa público participativo", d: "Serviços visíveis, contributos moderados que alimentam as auditorias", eb: "Analyzer", ids: [], k: [["Contributos por moderar", "0"]]},
     {id: "ancora", g: "obs", n: "Projectos âncora e fichas", d: "Por bacia, com responsável, prazo e manutenção", eb: "Planner", ids: ["r_projipr"], k: [["Projectos em curso", "0"]]},
-    {id: "obsv", g: "obs", n: "Observatório Territorial", d: "Indicadores definidos no dia 1, comuns à Rede IPR, relatório anual", eb: "Monitoring", lock: 1, ids: [], k: [["Indicadores definidos", "13"], ["Linha de base fechada", "f1"]]}
+    {id: "obsv", g: "obs", n: "Observatório Territorial", d: "Indicadores definidos no dia 1, comuns à Rede IPR, relatório anual", eb: "Monitoring", lock: 1, ids: [], k: [["Indicadores definidos", "13"], ["Linha de base fechada", "f1"]]},
+    {id: "rprod", g: "agro", n: "Rede de associados e explorações", d: "Cada exploração no mapa, na sua bacia: área, culturas, estado da certificação", eb: "Finder", ids: ["ifap_p", "concelhos", "caop"], liga: ["concelhos"], k: [["Explorações no mapa", "f1"], ["Hectares em modo de produção biológico", "f1"], ["Bacias com associados", "f1"]]},
+    {id: "mercados", g: "agro", n: "Mercados e circuitos curtos", d: "Mercados, lojas e cabazes; distância de cada exploração ao seu ponto de venda", eb: "Finder", ids: ["o_nomes", "o_estradas"], k: [["Mercados no mapa", "mercados"], ["Distância média produtor-mercado", "f1"]]},
+    {id: "conv", g: "agro", n: "Conversão e certificação", d: "Parcelas e ocupação IFAP, zonas vulneráveis a nitratos, vizinhos convencionais e faixas junto à água", eb: "Analyzer", ids: ["ifap_p", "ifap_o", "nitratos", "cos23", "ran"], k: [["Hectares em conversão", "f1"], ["Parcelas com vizinho convencional", "f1"]]},
+    {id: "fert", g: "agro", n: "Fertilidade e solo vivo", d: "Capacidade de uso, carta de solos, carbono orgânico, erosão; análises de solo dos associados por cima", eb: "Analyzer", ids: ["sroa", "solos", "carbono", "l_erosao"], k: [["Carbono orgânico médio", "f1"], ["Análises de solo carregadas", "f1"]]},
+    {id: "rega", g: "agro", n: "Água de rega", d: "Captações, aquíferos, massas de água e escassez; a rega dimensiona-se pela bacia, não pela parcela", eb: "Analyzer", ids: ["capt_p", "capt_sup", "aquif", "massas", "wei"], k: [["Explorações em bacia com escassez", "f1"]]},
+    {id: "clima", g: "agro", n: "Clima e calendário agrícola", d: "Temperatura, geadas, precipitação, insolação, radiação, humidade, evapotranspiração", eb: "Analyzer", ids: ["temp_med", "geada_ano", "geada_dias", "precip", "insolacao", "radiacao", "humidade", "etr", "aridez"], k: [["Dias de geada, média da rede", "f1"]]},
+    {id: "biof", g: "agro", n: "Biodiversidade funcional", d: "Sebes e pequenos bosquetes, densidade de copa, ocorrências de aves e plantas", eb: "Analyzer", ids: ["swf21", "copa18", "n_gbif_aves", "n_gbif_plantas", "habitats"], k: [["Metros de sebe por hectare", "f1"]]},
+    {id: "tecn", g: "agro", n: "Assistência técnica e BioAssistência", d: "Visitas, pedidos e diagnósticos georreferenciados: pragas, doenças, fertilização", eb: "Monitoring", ids: [], k: [["Pedidos este ano", "0"], ["Pragas registadas no mapa", "0"]]},
+    {id: "educ", g: "agro", n: "Formação e hortas escolares", d: "Cursos, escolas com hortas biológicas, dias abertos nas explorações", eb: "Monitoring", ids: [], k: [["Escolas no mapa", "f1"], ["Formandos este ano", "f1"]]}
   ];
   var TODOS = MOD.map(function (m) { return m.id; });
   var PERFIS = [
@@ -86,20 +98,27 @@
     {id: "municipio", n: "Município", d: "Câmaras municipais e juntas de freguesia", a: "bacias do concelho e plano de fixação", on: ["delim", "base", "hidro", "infil", "fogo", "perigo", "risco", "cond", "cadastro", "aldeias", "presenca", "serv", "econ", "terras", "capitais", "capac", "acolh", "dagua", "comissao", "publico", "ancora", "obsv"]},
     {id: "bacia", n: "Bacia", d: "Comissões de bacia e associações de regantes", a: "estrutura hídrica e Observatório", on: ["delim", "base", "hidro", "keyline", "infil", "nasc", "cheias", "solos", "ocup", "bio", "fogo", "risco", "cond", "dagua", "dresto", "comissao", "obsv"]},
     {id: "propriedade", n: "Propriedade", d: "Herdades, quintas e investidores", a: "Base Cartográfica na parcela", on: ["delim", "base", "hidro", "keyline", "infil", "solos", "ocup", "fogo", "perigo", "cond", "cadastro", "dagua", "dresto", "obsv"]},
+    {id: "associacao", n: "Associação agrícola", d: "Associações de produtores e de agricultura biológica", a: "mapa dos associados, mercados e métricas da produção", on: ["delim", "base", "hidro", "infil", "solos", "ocup", "bio", "fogo", "cond", "cadastro", "econ", "terras", "capitais", "rprod", "mercados", "conv", "fert", "rega", "clima", "biof", "tecn", "educ", "publico", "ancora", "obsv"]},
     {id: "profissional", n: "Profissional", d: "Projectistas da Rede IPR", a: "ferramentas de desenho", on: ["delim", "base", "hidro", "keyline", "infil", "solos", "ocup", "bio", "fogo", "cond", "dagua", "dresto", "obsv"]}
   ];
   var BACIAS = ENT.id === "adxtur" ? [
     {id: "ceira", n: "Mondego, pelo rio Ceira", a: ["Cepos", "Fajão", "Caterredor", "Candal", "Campelo"], nota: "3 sub-bacias"},
     {id: "zezere", n: "Zêzere", a: ["Coentral Grande", "Álvaro"], nota: "cabeceira no Santo António da Neve"},
     {id: "ocreza", n: "Tejo, pelo rio Ocreza", a: ["Martim Branco", "Foz do Cobrão", "Ortiga"], nota: "Foz do Cobrão na fronteira; Ortiga fora do limite"}
+  ] : AGRO ? [
+    {id: "norte", n: "Norte: Minho, Lima, Cávado, Ave, Douro", a: ["Porto"], nota: "a confirmar com a Agrobio"},
+    {id: "centro", n: "Centro: Vouga, Mondego, Lis", a: ["Aveiro", "Coimbra"], nota: "a confirmar com a Agrobio"},
+    {id: "tejo", n: "Tejo e ribeiras do Oeste", a: ["Lisboa", "Oeiras", "Cascais", "Amadora", "Loures"], nota: "sede e a maioria dos mercados"},
+    {id: "sul", n: "Sado, Mira e Guadiana", a: ["Alentejo"], nota: "a confirmar com a Agrobio"},
+    {id: "algarve", n: "Ribeiras do Algarve", a: ["Algarve"], nota: "a confirmar com a Agrobio"}
   ] : [];
-  var ZONA = ENT.id === "adxtur" ? [[-8.45, 39.55], [-7.35, 40.35]] : null;
-  var CATS = [["serv", "Serviços: alojamento, restauração, loja, transporte"], ["casa", "Casas devolutas, à venda ou para arrendar"], ["agua", "Nascentes e linhas de água secas ou entupidas"], ["risco", "Caminhos fechados e acumulação de combustível"], ["pat", "Património e saber local"], ["vol", "Voluntariado e trabalho"]];
+  var ZONA = ENT.id === "adxtur" ? [[-8.45, 39.55], [-7.35, 40.35]] : AGRO ? [[-9.6, 36.9], [-6.1, 42.2]] : null;
+  var CATS = AGRO ? [["merc", "Mercados, lojas e cabazes"], ["terra", "Terra disponível para arrendar ou ceder"], ["sem", "Sementes e trocas"], ["praga", "Pragas e doenças observadas"], ["agua", "Água e regadio"], ["vol", "Voluntariado e estágios nas explorações"]] : [["serv", "Serviços: alojamento, restauração, loja, transporte"], ["casa", "Casas devolutas, à venda ou para arrendar"], ["agua", "Nascentes e linhas de água secas ou entupidas"], ["risco", "Caminhos fechados e acumulação de combustível"], ["pat", "Património e saber local"], ["vol", "Voluntariado e trabalho"]];
   var PASSOS = ["Perfil", "Bacias", "Módulos", "Repovoamento", "Acessos e mapa público", "Rever e guardar"];
 
   // ---------- Estado ----------
   var C = ENT.cfg || {};
-  var S = {perfil: C.perfil || "rede", bacias: {}, mods: {}, cats: {}, feito: !!C.feito, passo: 1, so: true, aberto: {}};
+  var S = {perfil: C.perfil || (AGRO ? "associacao" : "rede"), bacias: {}, mods: {}, cats: {}, feito: !!C.feito, passo: 1, so: true, aberto: {}};
   (C.bacias && C.bacias.length ? C.bacias : BACIAS.map(function (b) { return b.id; })).forEach(function (b) { S.bacias[b] = true; });
   (C.cats && C.cats.length ? C.cats : CATS.map(function (c) { return c[0]; })).forEach(function (c) { S.cats[c] = true; });
   if (C.modulos && C.modulos.length) C.modulos.forEach(function (m) { S.mods[m] = true; }); else perfil(S.perfil);
@@ -194,6 +213,7 @@
     if (v === "f1") return '<span class="na">após a Fase 1</span>';
     if (v === "f2") return '<span class="na">após a Fase 2</span>';
     if (v === "bacias") return BACIAS.length ? nBacias() : '<span class="na">por delimitar</span>';
+    if (v === "mercados") return W.IPR_ENT_MERCADOS ? String(W.IPR_ENT_MERCADOS) : '<span class="na">por carregar</span>';
     if (v === "rede") return ENT.id === "adxtur" ? "27" : '<span class="na">por carregar</span>';
     if (v === "piloto") return BACIAS.filter(function (b) { return S.bacias[b.id]; }).reduce(function (s, b) { return s + b.a.length; }, 0) || '<span class="na">por definir</span>';
     return esc(v);
@@ -242,19 +262,21 @@
       h = "<h2>Que tipo de entidade vai usar a plataforma?</h2><p class='lead'>O perfil escolhe os módulos de partida; no passo 3 pode mudá-los um a um. O método é o mesmo para todos: o que muda são os números de cada território.</p><div class='gr'>" +
         PERFIS.map(function (p) { return op("data-ent-perfil", p.id, S.perfil === p.id, p.n, esc(p.d) + "<br>Arranca por: " + esc(p.a), p.on.length + " módulos"); }).join("") + "</div>";
     } else if (s === 2) {
-      h = "<h2>Em que bacias está o vosso território?</h2><p class='lead'>A primeira decisão é sempre a bacia. A água não reconhece concelhos: cada aldeia é colocada na sua sub-bacia antes de qualquer outra camada.</p>";
+      h = AGRO ? "<h2>Em que bacias estão os vossos associados?</h2><p class='lead'>Uma rede nacional também se lê pela água: cada exploração é colocada na sua bacia, e as métricas da rede somam-se por bacia antes de se somarem pelo país.</p>"
+        : "<h2>Em que bacias está o vosso território?</h2><p class='lead'>A primeira decisão é sempre a bacia. A água não reconhece concelhos: cada aldeia é colocada na sua sub-bacia antes de qualquer outra camada.</p>";
       h += BACIAS.length ? "<div class='gr'>" + BACIAS.map(function (b) { return op("data-ent-bacia", b.id, !!S.bacias[b.id], b.n, esc(b.a.join(", ")), b.nota); }).join("") + "</div>" + (nBacias() ? "" : "<p class='ipr-ent-aviso'>Escolha pelo menos uma bacia.</p>")
         : "<p class='ipr-ent-aviso'>As bacias desta entidade ainda não estão carregadas. A equipa do IPR delimita-as com o LiDAR na Fase 1; até lá, use a camada Bacias hidrográficas no mapa.</p>";
     } else if (s === 3) {
       h = "<h2>Que módulos ligar?</h2><p class='lead'>Os módulos seguem as estruturas de <i>A Arquitectura Bioregional</i> e as fases do SOT-IPR. A ordem não se configura: o design só abre com a água; desligar a hidrografia desliga a estrutura hídrica e o que depende dela.</p>" + listaMods();
     } else if (s === 4) {
-      h = "<h2>Repovoamento: quanta gente, que perfis, por que ordem</h2><p class='lead'>O tecto de famílias de cada sub-bacia vem da capacidade de suporte, não de uma meta. Dentro do tecto, cada fase de chegada só abre quando a anterior criou as condições.</p><div class='gr'>" +
+      h = (AGRO ? "<h2>Novos agricultores: quantos, onde, por que ordem</h2><p class='lead'>Cada produtor que se instala é uma família no território. O número de novas explorações por bacia vem da capacidade de suporte (solo, água, mercado), não de uma meta.</p><div class='gr'>"
+        : "<h2>Repovoamento: quanta gente, que perfis, por que ordem</h2><p class='lead'>O tecto de famílias de cada sub-bacia vem da capacidade de suporte, não de uma meta. Dentro do tecto, cada fase de chegada só abre quando a anterior criou as condições.</p><div class='gr'>") +
         [["1 · Os que mantêm", "Parcelas abandonadas, casas recuperáveis, manutenção de floresta, água e caminhos", "água e acessos mantidos"], ["2 · Os que produzem para dentro", "Solos com aptidão, água no Verão, zonas de uso diário junto à aldeia", "base alimentar local"], ["3 · Os que produzem para fora", "Cadeias de valor compatíveis com a bacia", "rendimento a entrar na bacia"], ["4 · Os que prestam serviços", "Massa crítica por aldeia face ao limiar de cada serviço", "uma família com filhos pode ficar"]].map(function (c) {
           return '<div class="op lock" style="cursor:default"><span class="t"><b>' + c[0] + "</b><span>" + c[1] + '</span><span style="color:#B8A83A">Abre a seguinte quando: ' + c[2] + "</span></span></div>"; }).join("") + "</div><div class='gr' style='margin-top:10px'>" +
         op("data-ent-mod", "capac", on(mod("capac")), mod("capac").n, esc(mod("capac").d)) + op("data-ent-mod", "acolh", on(mod("acolh")), mod("acolh").n, esc(mod("acolh").d)) + "</div>";
     } else if (s === 5) {
       h = "<h2>Quem acede e o que fica público</h2><p class='lead'>Cada decisão fica na menor escala capaz de a resolver bem. Nenhum contributo do mapa público aparece sem moderação, e nada identifica proprietários ou residentes.</p>" +
-        "<div class='gh'>Papéis</div><div class='gr'>" + [["Coordenação", "Tudo · configura e modera"], ["Equipa técnica do IPR", "Tudo · camadas e validação"], ["Município", "O seu concelho e as suas bacias"], ["Aldeia", "A sua aldeia e a sua sub-bacia"], ["Público", "Mapa público, contributos moderados"]].map(function (r) { return '<div class="op lock"><span class="t"><b>' + r[0] + "</b><span>" + r[1] + "</span></span></div>"; }).join("") +
+        "<div class='gh'>Papéis</div><div class='gr'>" + (AGRO ? [["Direcção", "Tudo · configura e modera"], ["Equipa técnica do IPR", "Tudo · camadas e validação"], ["Técnicos da associação", "Assistência técnica e formação, todas as explorações"], ["Associado", "A sua exploração e a sua bacia"], ["Público", "Mercados e mapa público, contributos moderados"]] : [["Coordenação", "Tudo · configura e modera"], ["Equipa técnica do IPR", "Tudo · camadas e validação"], ["Município", "O seu concelho e as suas bacias"], ["Aldeia", "A sua aldeia e a sua sub-bacia"], ["Público", "Mapa público, contributos moderados"]]).map(function (r) { return '<div class="op lock"><span class="t"><b>' + r[0] + "</b><span>" + r[1] + "</span></span></div>"; }).join("") +
         "</div><div class='gh'>Categorias do mapa público</div><div class='gr'>" + CATS.map(function (c) { return op("data-ent-cat", c[0], !!S.cats[c[0]], c[1]); }).join("") + "</div>" +
         (on(mod("publico")) ? "" : "<p class='ipr-ent-aviso'>O módulo Mapa público está desligado no passo 3.</p>");
     } else {

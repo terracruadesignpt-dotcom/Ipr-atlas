@@ -14,7 +14,7 @@
   try { if (/[?&]orgs=0(&|$)/.test(location.search) || W.localStorage.getItem("ipr_orgs_off") === "1") return; } catch (e) {}
   if (W.__iprOrgs) return; W.__iprOrgs = 1;
 
-  var ENT = { "19065": "adxtur" }; // organização → entidade do configurador (m91120)
+  var ENT = W.IPR_ORG_ENT || { "19065": "adxtur" }; // organização → entidade do configurador (m91120; lista escrita pelo m91122)
   function ls(k, v) { try { if (v === undefined) return W.localStorage.getItem(k) || ""; W.localStorage.setItem(k, v); } catch (e) { return ""; } }
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
   function en() { return String(W.IPR_LINGUA || "pt").slice(0, 2) === "en"; }
