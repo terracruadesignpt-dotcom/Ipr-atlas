@@ -548,14 +548,14 @@
     var m = new Date().getMonth() + 1, es = calMes(m);
     var h = '<div class="sec cal"><div class="t">Calendário · ' + MESES[m - 1] + "</div>";
     if (CAL === null) h += '<p class="s">A carregar…</p>';
-    else if (!es.length) h += '<p class="s">' + (CAL.length ? "Nada marcado para este mês." : "O calendário do agricultor ainda está vazio.") + "</p>";
+    else if (!es.length) h += '<p class="s">' + (CAL.length ? "Nada marcado para este mês." : (X.cal ? "O " + X.cal.toLowerCase() + " ainda está vazio." : "O calendário do agricultor ainda está vazio.")) + "</p>";
     else h += es.map(function (x) { return '<div class="ce"><span class="ct ct-' + esc(x.tipo) + '">' + esc(CALTIPOS[x.tipo] || x.tipo) + "</span>" + esc(x.titulo || x.texto) + "</div>"; }).join("");
     return h + '<button type="button" class="ipr-ent-b" data-ent-tab="cal">Calendário do ano</button></div>';
   }
   function calHtml() {
     var g = EO && EO.gestor, m0 = new Date().getMonth() + 1;
     var h = '<div class="h"><button type="button" class="ipr-ent-b" data-ent-tab="painel">← Organização</button><b>Calendário</b></div><div class="c ipr-ent-cal">';
-    h += '<div class="q"><div class="tipo">Calendário do agricultor</div><h2>' + esc(ENT.nome.split(" ·")[0]) + "</h2></div>";
+    h += '<div class="q"><div class="tipo">' + esc(X.cal || "Calendário do agricultor") + '</div><h2>' + esc(ENT.nome.split(" ·")[0]) + "</h2></div>";
     h += '<p class="s">' + (g ? "É a organização que define o calendário. Os associados vêem o mês em curso no painel, e pode enviar-lhes o mês por e-mail." : "Definido pela organização.") + "</p>";
     if (g && CAL && !CAL.length) h += '<div class="sec"><button type="button" class="ipr-ent-b p" data-ent="calproposta">Começar com uma proposta</button><p class="s">Uma base de hortícolas e eventos para editar. Ajuste ao litoral, ao interior e às ilhas.</p></div>';
     h += '<div class="crono">' + MESES.map(function (n, i) { var k = calMes(i + 1).length; return '<a href="#cal-' + (i + 1) + '" class="cm' + (i + 1 === m0 ? " on" : "") + '"><b>' + n.slice(0, 3) + "</b><span>" + (k || "") + "</span></a>"; }).join("") + "</div>";
@@ -576,7 +576,7 @@
   function dist(a, b) { var R = 6371, dLa = (b[1] - a[1]) * Math.PI / 180, dLo = (b[0] - a[0]) * Math.PI / 180, x = Math.sin(dLa / 2) * Math.sin(dLa / 2) + Math.cos(a[1] * Math.PI / 180) * Math.cos(b[1] * Math.PI / 180) * Math.sin(dLo / 2) * Math.sin(dLo / 2); return 2 * R * Math.asin(Math.sqrt(x)); }
   function maisPerto(p, tab) { var mk = null, md = 1e9; Object.keys(tab).forEach(function (k) { var d = dist(p, tab[k]); if (d < md) { md = d; mk = k; } }); return mk; }
   function alertasCarregar() {
-    var ps = todosPontos().filter(function (f) { var t = f.properties.tipo || "produtor"; return t === "produtor"; }); if (!ps.length) return;
+    var ps = todosPontos().filter(function (f) { var t = f.properties.tipo || "produtor"; return X.alertas ? X.alertas[0].indexOf(t) >= 0 : t === "produtor"; }); if (!ps.length) return;
     var nom = {yellow: "amarelo", orange: "laranja", red: "vermelho"}, out = [];
     Promise.all([
       fetch("https://api.ipma.pt/open-data/forecast/warnings/warnings_www.json").then(function (r) { return r.json(); }).catch(function () { return []; }),
@@ -598,7 +598,7 @@
   }
   function alertasResumo() {
     if (ALERTAS === null) return "";
-    var h = '<div class="sec al"><div class="t">Alertas para os associados</div>';
+    var h = '<div class="sec al"><div class="t">' + esc(X.alertas ? X.alertas[1] : "Alertas para os associados") + '</div>';
     if (!ALERTAS.length) h += '<p class="s">Sem avisos do IPMA nem perigo de incêndio alto nos sítios dos produtores.</p>';
     else h += ALERTAS.slice(0, 5).map(function (a) { return '<div class="ale n' + a.n + '"><b>' + esc(a.t) + "</b><span>" + a.q.length + (a.q.length === 1 ? " produtor: " : " produtores: ") + esc(a.q.slice(0, 3).join(", ")) + (a.q.length > 3 ? "…" : "") + "</span></div>"; }).join("");
     return h + "</div>";
@@ -629,7 +629,7 @@
   // Aptidão para jovens agricultores biológicos (aptidao-bio.js): resumo no painel, com os concelhos de melhor média.
   var APTD = null;
   function aptResumo() {
-    var A = W.__iprAptidao; if (!A) return "";
+    var A = W.__iprAptidao; if (!A || (!AGRO && !X.apt)) return "";
     if (!APTD) { A.dados(function (d) { APTD = d; if (TAB === "painel") painel(); }); }
     var on = A.ligada(), h = '<div class="sec"><div class="t">Onde instalar-se · aptidão biológica</div>';
     h += '<p class="s">Zonas boas para um jovem agricultor biológico, com dez critérios positivos: solo, matéria orgânica, longe de pressões, chuva, água subterrânea, água de rega, mercado, terra acessível, zonas pouco procuradas e rede de apoio. Continente, Açores e Madeira.</p>';
