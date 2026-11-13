@@ -173,6 +173,10 @@
     "#ipr-ent-dir .ipr-ent-ficha .loc{color:#B8B9AE;font:13px Inter,sans-serif;margin:-8px 0 10px}#ipr-ent-dir .ipr-ent-ficha .estado{display:inline-block;font:11px Inter,sans-serif;color:#d8b64a;border:1px solid #6b5a1f;border-radius:4px;padding:2px 6px;margin-bottom:10px}" +
     "#ipr-ent-dir .ipr-ent-ficha dl{margin:0 0 12px;display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font:13px/1.4 Inter,sans-serif}#ipr-ent-dir .ipr-ent-ficha dt{color:#9a9b90}#ipr-ent-dir .ipr-ent-ficha dd{margin:0;color:#E6E7E0}#ipr-ent-dir .ipr-ent-ficha dd a{color:#94BE39}" +
     "#ipr-ent-dir .ipr-ent-ficha .falta .s{color:#B8B9AE}#ipr-ent-dir .ipr-ent-ficha .sec{margin-top:12px}" +
+    "#ipr-ent-dir .ipr-ent-pes .lin{display:grid;grid-template-columns:1fr 1fr;gap:6px}#ipr-ent-dir .ipr-ent-pes .lin button{grid-column:span 2}#ipr-ent-dir input,#ipr-ent-dir select,#ipr-ent-dir textarea{width:100%;box-sizing:border-box;background:#0f100b;color:#E6E7E0;border:1px solid #3a3b2e;border-radius:5px;padding:7px 9px;font:13px Inter,sans-serif}#ipr-ent-dir input[type=checkbox]{width:auto}" +
+    "#ipr-ent-dir .pe{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid #26271d}#ipr-ent-dir .pe label{display:flex;align-items:center;gap:8px;flex:1;min-width:0}#ipr-ent-dir .pe .nm{display:flex;flex-direction:column;min-width:0}#ipr-ent-dir .pe .nm small{color:#9a9b90;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#ipr-ent-dir .pe .ok{color:#94BE39}" +
+    "#ipr-ent-dir .st{font:11px Inter;padding:2px 6px;border-radius:4px;border:1px solid #3a3b2e;color:#B8B9AE;white-space:nowrap}#ipr-ent-dir .st-enviado{color:#d8b64a;border-color:#6b5a1f}#ipr-ent-dir .st-aceite{color:#94BE39;border-color:#4a6b12}#ipr-ent-dir .mini{background:none;border:1px solid #3a3b2e;color:#B8B9AE;border-radius:4px;padding:2px 7px;cursor:pointer;font:12px Inter}" +
+    "#ipr-ent-dir .ipr-ent-ff label{display:block;margin:10px 0 3px;color:#9a9b90;font:12px Inter,sans-serif}#ipr-ent-dir .ipr-ent-b[disabled]{opacity:.45;cursor:default}" +
     ".ipr-ent-toast{position:fixed;left:50%;bottom:40px;transform:translateX(-50%);z-index:99999;background:#16170f;color:#E6E7E0;border:1px solid #94BE39;border-radius:6px;padding:10px 14px;font:13px Inter,sans-serif;max-width:420px;box-shadow:0 6px 20px rgba(0,0,0,.4)}" +
     "#ipr-ent-esq .ap{display:flex;align-items:center;justify-content:space-between;margin-top:10px;font:600 11px Inter;letter-spacing:.06em;text-transform:uppercase;color:#B8A83A}" +
     ".ipr-ent-b{all:unset;box-sizing:border-box;cursor:pointer;min-height:32px;padding:5px 10px;border:1px solid #383A33;border-radius:2px;color:#C3C5BC;font:500 12px/1.3 Inter,sans-serif;display:inline-flex;align-items:center;gap:6px}" +
@@ -261,6 +265,7 @@
           if (!d || !d.org || +d.org.id !== ORGID) throw new Error("org");
           ORG = d;
           orgMapa();
+          if (!W.__iprEntEO) { W.__iprEntEO = 1; eoIniciar(); }
           if (!ZONA) { var bx = null; (d.camadas || []).forEach(function (c) { var b = c.bbox; if (!b || b.length !== 4) return; bx = bx ? [Math.min(bx[0], b[0]), Math.min(bx[1], b[1]), Math.max(bx[2], b[2]), Math.max(bx[3], b[3])] : b.slice(); });
             if (bx) { ZONA = [[bx[0], bx[1]], [bx[2], bx[3]]]; if (W.__ipe && W.__ipe.mapa) try { if (bx[0] === bx[2]) W.__ipe.mapa.flyTo({center: [bx[0], bx[1]], zoom: 12}); else W.__ipe.mapa.fitBounds(ZONA, {padding: 48, maxZoom: 14, duration: 0}); } catch (e) {} } }
           try { marcarEsq(); if (D.getElementById("ipr-ent-dir")) painel(); } catch (e) {}
@@ -272,6 +277,7 @@
   function orgMapa() {
     if (!ORG || ORGMAPA || !(W.__ipe && W.__ipe.mapa && W.__ipe.viz)) return;
     ORGMAPA = true; (ORG.camadas || []).forEach(function (c) { try { orgLigar(c, true); } catch (e) {} });
+    if (FICHAS) fichasMapa();
   }
   function orgCam(id) { return ORG ? (ORG.camadas || []).filter(function (c) { return +c.id === +id; })[0] : null; }
   function orgLigar(c, on) {
@@ -293,23 +299,165 @@
         "circle-stroke-color": ["match", ["get", "tipo"], "cabaz", "#8e5fb3", "mercado", "#ffffff", "feira", "#ffffff", "loja", "#ffffff", "bioregiao", cor, "#111"],
         "circle-stroke-width": ["match", ["get", "tipo"], "cabaz", 3.5, "bioregiao", 2.5, 1.5]}});
       PONTOS[c.id] = gj; redesDesenhar();
-      m.on("mouseenter", sid + "-p", function (e) {
-        m.getCanvas().style.cursor = "pointer";
-        var f = e.features && e.features[0]; if (!f || !W.maplibregl) return; var pr = f.properties || {};
-        if (DICA) DICA.remove();
-        DICA = new W.maplibregl.Popup({closeButton: false, closeOnClick: false, offset: 10, className: "ipr-ent-dica"}).setLngLat(f.geometry.coordinates)
-          .setHTML("<b>" + esc(pr.nome || "") + "</b><span>" + esc(TIPOS[pr.tipo || "produtor"] || pr.tipo || "") + (pr.local ? " · " + esc(pr.local) : "") + "</span><i>Carregue para abrir a ficha</i>").addTo(m);
-      });
-      m.on("mouseleave", sid + "-p", function () { m.getCanvas().style.cursor = ""; if (DICA) { DICA.remove(); DICA = null; } });
-      m.on("click", sid + "-p", function (e) {
-        var f = e.features && e.features[0]; if (!f) return;
-        if (e.originalEvent) { e.originalEvent.__iprEnt = 1; }
-        if (DICA) { DICA.remove(); DICA = null; }
-        FICHA = {pr: f.properties || {}, xy: f.geometry.coordinates, cam: c};
-        TAB = "ficha"; painel();
-      });
+      pontoEventos(sid + "-p", c);
     }).catch(function () {});
   }
+
+  function pontoEventos(lid, c) {
+    var m = W.__ipe && W.__ipe.mapa; if (!m) return;
+    m.on("mouseenter", lid, function (e) {
+      m.getCanvas().style.cursor = "pointer";
+      var f = e.features && e.features[0]; if (!f || !W.maplibregl) return; var pr = f.properties || {};
+      if (DICA) DICA.remove();
+      DICA = new W.maplibregl.Popup({closeButton: false, closeOnClick: false, offset: 10, className: "ipr-ent-dica"}).setLngLat(f.geometry.coordinates)
+        .setHTML("<b>" + esc(pr.nome || "") + "</b><span>" + esc(TIPOS[pr.tipo || "produtor"] || pr.tipo || "") + (pr.local ? " · " + esc(pr.local) : "") + "</span><i>Carregue para abrir a ficha</i>").addTo(m);
+    });
+    m.on("mouseleave", lid, function () { m.getCanvas().style.cursor = ""; if (DICA) { DICA.remove(); DICA = null; } });
+    m.on("click", lid, function (e) {
+      var f = e.features && e.features[0]; if (!f || MARCAR) return;
+      // O clique num ponto da organização não abre também a identificação do Atlas (cota, bacias…).
+      var t0 = Date.now(); (function limpa() { [].forEach.call(D.querySelectorAll(".iprv-pop"), function (x) { x.remove(); }); if (Date.now() - t0 < 2500) setTimeout(limpa, 120); })();
+      if (DICA) { DICA.remove(); DICA = null; }
+      FICHA = {pr: f.properties || {}, xy: f.geometry.coordinates, cam: c};
+      TAB = "ficha"; painel();
+    });
+  }
+
+
+  // ---- Pessoas, convites e fichas dos associados (m91486) ----
+  var EO = W.IPR_ENT_ORG || null, PESS = null, FICHAS = null, FFORM = null, MARCAR = false, ENVCONF = false, SEL = {};
+  function eo(op, extra) {
+    var fd = new FormData(); fd.append("action", "tcd_ent_org"); fd.append("n", EO.n); fd.append("org", EO.org); fd.append("op", op);
+    Object.keys(extra || {}).forEach(function (k) { fd.append(k, extra[k]); });
+    return fetch(EO.ajax, {method: "POST", credentials: "same-origin", body: fd}).then(function (r) { return r.json(); }).then(function (j) { if (!j || !j.success) throw new Error((j && j.data) || "erro"); return j.data; });
+  }
+  function eoIniciar() {
+    if (!EO) return;
+    if (EO.gestor) eo("lista").then(function (d) { PESS = d; if (TAB === "painel" || TAB === "pessoas") painel(); }).catch(function () {});
+    fichasCarregar(function () {
+      if (/[?&]ficha=minha/.test(location.search)) { var mf = (FICHAS || []).filter(function (f) { return f.minha; })[0]; fformAbrir(mf || {email: EO.eu, tipo: "produtor"}); }
+    });
+  }
+  function fichasCarregar(cb) {
+    eo("fichas").then(function (d) { FICHAS = d.fichas || []; fichasMapa(); if (cb) cb(); }).catch(function () {});
+  }
+  function fichaProps(f) {
+    var pr = {}; Object.keys(f).forEach(function (k) { if (k !== "x" && k !== "y" && k !== "email") pr[k] = f[k]; });
+    pr.tipo = f.tipo || "produtor"; pr.fid = f.id; pr.minha = f.minha ? 1 : 0;
+    pr.estado = f.preenchida === "gestor" && !+f.confirmada ? "Preenchida pela " + ENT.nome.split(" ·")[0] + ", por confirmar pelo próprio" : "Ficha confirmada pelo próprio";
+    return pr;
+  }
+  function fichasMapa() {
+    var m = W.__ipe && W.__ipe.mapa; if (!m || !FICHAS) return;
+    var gj = {type: "FeatureCollection", features: FICHAS.filter(function (f) { return isFinite(+f.x) && isFinite(+f.y) && f.x !== "" && f.x != null; }).map(function (f) { return {type: "Feature", properties: fichaProps(f), geometry: {type: "Point", coordinates: [+f.x, +f.y]}}; })};
+    PONTOS.fichas = gj; redesDesenhar();
+    if (m.getSource("ent-org-fichas")) { m.getSource("ent-org-fichas").setData(gj); return; }
+    m.addSource("ent-org-fichas", {type: "geojson", data: gj});
+    m.addLayer({id: "ent-org-fichas-p", type: "circle", source: "ent-org-fichas", paint: {"circle-color": "#d9822b", "circle-radius": ["interpolate", ["linear"], ["zoom"], 5, 5, 12, 8], "circle-stroke-color": "#16170f", "circle-stroke-width": 2}});
+    pontoEventos("ent-org-fichas-p", {id: "fichas", nome: "Fichas dos associados"});
+  }
+  function pessoasResumo() {
+    if (!EO) return "";
+    var h = '<div class="sec pes"><div class="t">Pessoas e acesso</div>';
+    if (EO.gestor) {
+      var u = PESS ? PESS.usados : 0, l = PESS ? PESS.lugares : EO.lugares, cv = PESS ? PESS.convites : [];
+      h += '<div class="nums"><div class="n"><b>' + u + (l ? " / " + l : "") + '</b><span>acessos usados</span></div><div class="n"><b>' + cv.filter(function (c) { return c.estado === "aceite"; }).length + '</b><span>já entraram</span></div><div class="n"><b>' + (FICHAS ? FICHAS.length : 0) + '</b><span>fichas</span></div></div>';
+      h += '<button type="button" class="ipr-ent-b p" data-ent-tab="pessoas">Dar acesso ao mapa</button> ';
+    }
+    h += '<button type="button" class="ipr-ent-b" data-ent="minhaficha">A minha ficha</button></div>';
+    return h;
+  }
+  var ESTADOS = {rascunho: "Por enviar", enviado: "Convite enviado", aceite: "Já entrou"};
+  function pessoasHtml() {
+    var cv = PESS ? PESS.convites : [], pp = EO.papeis || {};
+    var h = '<div class="h"><button type="button" class="ipr-ent-b" data-ent-tab="painel">← Organização</button><b>Pessoas</b></div><div class="c ipr-ent-pes">';
+    h += '<div class="q"><div class="tipo">Dar acesso ao mapa</div><h2>' + esc(ENT.nome.split(" ·")[0]) + "</h2></div>";
+    if (PESS) h += '<p class="s">' + PESS.usados + (PESS.lugares ? " de " + PESS.lugares : "") + " acessos usados. Os convites só saem quando carregar em «Enviar».</p>";
+    h += '<div class="sec"><div class="t">Juntar uma pessoa</div><div class="lin"><input id="ipr-pes-nome" placeholder="Nome"><input id="ipr-pes-email" type="email" placeholder="E-mail"><select id="ipr-pes-papel">' + Object.keys(pp).map(function (k) { return '<option value="' + k + '">' + esc(pp[k]) + "</option>"; }).join("") + '</select><button type="button" class="ipr-ent-b" data-ent="pesjuntar">Juntar</button></div>';
+    h += '<button type="button" class="ipr-ent-b" data-ent="pesimportar">Importar contactos (CSV)</button><p class="s">Colunas nome, email e papel (associado, produtor, técnico, parceiro, gestor). De Excel ou Google Sheets: guardar ou descarregar como CSV.</p></div>';
+    h += '<div class="sec"><div class="t">Lista</div>';
+    if (!PESS) h += '<p class="s">A carregar…</p>';
+    else if (!cv.length) h += '<p class="s">Ainda ninguém. Junte pessoas acima ou importe uma lista.</p>';
+    else h += cv.map(function (c) {
+      var pode = c.estado !== "aceite";
+      return '<div class="pe"><label>' + (pode ? '<input type="checkbox" data-ent-sel="' + esc(c.id) + '"' + (SEL[c.id] ? " checked" : "") + ">" : '<span class="ok">✓</span>') + '<span class="nm"><b>' + esc(c.nome || c.email) + "</b><small>" + esc(c.email || "") + " · " + esc(pp[c.papel] || c.papel) + '</small></span></label><span class="st st-' + esc(c.estado) + '">' + esc(ESTADOS[c.estado] || c.estado) + '</span><button type="button" class="mini" data-ent-pficha="' + esc(c.id) + '" title="Ficha">Ficha</button>' + (c.estado === "rascunho" ? '<button type="button" class="mini" data-ent-papagar="' + esc(c.id) + '" title="Tirar da lista">×</button>' : "") + "</div>";
+    }).join("");
+    h += "</div>";
+    var ns = Object.keys(SEL).filter(function (k) { return SEL[k]; }).length;
+    h += '<div class="sec acc">' + (ENVCONF ? '<button type="button" class="ipr-ent-b p" data-ent="pesenviar2">Confirmar: enviar ' + ns + (ns === 1 ? " convite" : " convites") + '</button> <button type="button" class="ipr-ent-b" data-ent="pescancelar">Cancelar</button>' :
+      '<button type="button" class="ipr-ent-b p" data-ent="pesenviar"' + (ns ? "" : " disabled") + '>Enviar convites (' + ns + ')</button> <button type="button" class="ipr-ent-b" data-ent="pesteste"' + (ns ? "" : " disabled") + ">Enviar-me um teste</button>") +
+      '<p class="s">O teste manda o mesmo e-mail só para ' + esc(EO.eu) + ", para ver como chega.</p>" +
+      '<button type="button" class="ipr-ent-b" data-ent="fnova">Nova ficha de produtor</button></div>';
+    return h + "</div>";
+  }
+  function csvContactos(txt) {
+    var ls = txt.replace(/^﻿/, "").split(/\r?\n/).filter(function (l) { return l.trim(); }); if (!ls.length) return [];
+    var sep = /;/.test(ls[0]) ? ";" : (/\t/.test(ls[0]) ? "\t" : ",");
+    var cab = ls[0].split(sep).map(function (x) { return x.trim().toLowerCase().replace(/^"|"$/g, ""); });
+    function col(re) { for (var j = 0; j < cab.length; j++) if (re.test(cab[j])) return j; return -1; }
+    var ce = col(/^(e-?mail|mail|correio)/), cn = col(/^(nome|name|contacto)/), cp = col(/^(papel|tipo|fun[cç][aã]o|role)/), ini = 1;
+    if (ce < 0) { ini = 0; }
+    return ls.slice(ini).map(function (l) {
+      var v = l.split(sep).map(function (x) { return x.trim().replace(/^"|"$/g, ""); });
+      var em = ce >= 0 ? v[ce] : (v.filter(function (x) { return /@/.test(x); })[0] || "");
+      var pa = cp >= 0 ? String(v[cp] || "").toLowerCase() : "associado";
+      pa = /produt/.test(pa) ? "produtor" : /t[eé]cn/.test(pa) ? "tecnico" : /parc/.test(pa) ? "parceiro" : /gest/.test(pa) ? "gestor" : "associado";
+      return {nome: cn >= 0 ? v[cn] : (ce < 0 ? v.filter(function (x) { return !/@/.test(x); })[0] || "" : ""), email: em, papel: pa};
+    }).filter(function (r) { return r.email; });
+  }
+  function pesAccao(a, t) {
+    if (a === "pesjuntar") {
+      var r = {nome: (D.getElementById("ipr-pes-nome") || {}).value || "", email: (D.getElementById("ipr-pes-email") || {}).value || "", papel: (D.getElementById("ipr-pes-papel") || {}).value || "associado"};
+      eo("juntar", {linhas: JSON.stringify([r])}).then(function (d) { PESS = d; if (d.maus && d.maus.length) aviso("E-mail inválido: " + d.maus.join(", ")); painel(); }).catch(function (e) { aviso("Não foi possível juntar: " + e.message); });
+      return true;
+    }
+    if (a === "pesimportar") {
+      var i = D.createElement("input"); i.type = "file"; i.accept = ".csv,.txt,text/csv";
+      i.addEventListener("change", function () { var f = i.files && i.files[0]; if (!f) return; f.text().then(function (txt) { var rs = csvContactos(txt); if (!rs.length) { aviso("Não encontrei e-mails no ficheiro."); return; } eo("juntar", {linhas: JSON.stringify(rs)}).then(function (d) { PESS = d; aviso(d.novos + (d.novos === 1 ? " pessoa juntada" : " pessoas juntadas") + " à lista" + (d.maus && d.maus.length ? "; " + d.maus.length + " e-mails inválidos" : "") + ". Ainda não foi enviado nada."); painel(); }); }); });
+      i.click(); return true;
+    }
+    if (a === "pesenviar") { ENVCONF = true; painel(); return true; }
+    if (a === "pescancelar") { ENVCONF = false; painel(); return true; }
+    if (a === "pesenviar2" || a === "pesteste") {
+      var ids = Object.keys(SEL).filter(function (k) { return SEL[k]; }); if (!ids.length) return true;
+      ENVCONF = false; aviso(a === "pesteste" ? "A enviar o teste…" : "A enviar…");
+      eo(a === "pesteste" ? "teste" : "enviar", {ids: JSON.stringify(a === "pesteste" ? ids.slice(0, 1) : ids)}).then(function (d) {
+        PESS = d; if (a !== "pesteste") SEL = {};
+        aviso(a === "pesteste" ? (d.enviados ? "Teste enviado para " + d.teste + "." : "O teste não saiu.") : d.enviados + (d.enviados === 1 ? " convite enviado" : " convites enviados") + (d.sem_lugar ? "; " + d.sem_lugar + " sem lugar disponível" : "") + (d.falhas && d.falhas.length ? "; falharam: " + d.falhas.join(", ") : "") + ".");
+        painel();
+      }).catch(function (e) { aviso("Não foi possível enviar: " + e.message); });
+      return true;
+    }
+    if (a === "fnova") { fformAbrir({tipo: "produtor"}); return true; }
+    if (a === "minhaficha") { var mf = (FICHAS || []).filter(function (f) { return f.minha; })[0]; fformAbrir(mf || {email: EO.eu, tipo: "produtor"}); return true; }
+    if (a === "fmarcar") {
+      var m = W.__ipe && W.__ipe.mapa; if (!m) return true; fformLer(); MARCAR = true; aviso("Carregue no mapa, no sítio da exploração.");
+      m.once("click", function (e) { MARCAR = false; FFORM.x = +e.lngLat.lng.toFixed(6); FFORM.y = +e.lngLat.lat.toFixed(6); var t0 = Date.now(); (function limpa() { [].forEach.call(D.querySelectorAll(".iprv-pop"), function (x) { x.remove(); }); if (Date.now() - t0 < 2500) setTimeout(limpa, 120); })(); TAB = "fform"; painel(); });
+      return true;
+    }
+    if (a === "fguardar") {
+      fformLer(); var f = FFORM;
+      if (!f.nome) { aviso("Falta o nome."); return true; }
+      eo("ficha_guardar", {ficha: JSON.stringify(f)}).then(function (d) { aviso("Ficha guardada."); fichasCarregar(function () { var nf = (FICHAS || []).filter(function (x) { return x.id === d.id; })[0]; if (nf && nf.x != null && nf.x !== "") { FICHA = {pr: fichaProps(nf), xy: [+nf.x, +nf.y], cam: {id: "fichas", nome: "Fichas dos associados"}}; TAB = "ficha"; } else TAB = EO.gestor ? "pessoas" : "painel"; painel(); }); }).catch(function (e) { aviso("Não foi possível guardar: " + e.message); });
+      return true;
+    }
+    if (a === "feditar" && FICHA && FICHA.pr.fid) { var ef = (FICHAS || []).filter(function (x) { return x.id === FICHA.pr.fid; })[0]; if (ef) fformAbrir(ef); return true; }
+    return false;
+  }
+  function fformAbrir(f) { FFORM = JSON.parse(JSON.stringify(f || {})); TAB = "fform"; painel(); }
+  var FCAMPOS = [["nome", "Nome da exploração ou do produtor"], ["o_que", "O que produz"], ["local", "Localidade e concelho"], ["certificacao", "Certificação (organismo, desde quando)"], ["venda", "Venda directa: produtos e onde"], ["visitas", "Visitas (ex.: com marcação, aos sábados)"], ["terras", "Terra disponível para jovens agricultores"], ["cabaz", "Entrega em que cabazes ou AMAP"], ["site", "Site"], ["contacto", "Contacto público (telefone ou e-mail)"]];
+  function fformHtml(f) {
+    var h = '<div class="h"><button type="button" class="ipr-ent-b" data-ent-tab="' + (EO && EO.gestor ? "pessoas" : "painel") + '">← Voltar</button><b>Ficha</b></div><div class="c ipr-ent-ff">';
+    h += '<div class="q"><div class="tipo">' + (f.id ? "Editar ficha" : "Nova ficha") + "</div><h2>" + esc(f.nome || "Ficha de produtor") + "</h2></div>";
+    if (EO && EO.gestor) h += '<label>E-mail da pessoa (liga a ficha à conta dela)</label><input data-ff="email" type="email" value="' + esc(f.email || "") + '">';
+    h += '<label>Tipo</label><select data-ff="tipo">' + ["produtor", "mercado", "feira", "loja", "cabaz"].map(function (k) { return '<option value="' + k + '"' + ((f.tipo || "produtor") === k ? " selected" : "") + ">" + esc(TIPOS[k]) + "</option>"; }).join("") + "</select>";
+    FCAMPOS.forEach(function (k) { h += "<label>" + esc(k[1]) + '</label><textarea rows="' + (k[0] === "nome" || k[0] === "site" || k[0] === "contacto" || k[0] === "local" ? 1 : 2) + '" data-ff="' + k[0] + '">' + esc(f[k[0]] || "") + "</textarea>"; });
+    h += '<label>Posição no mapa</label><p class="s">' + (f.x != null && f.x !== "" ? "Marcada: " + (+f.y).toFixed(5) + ", " + (+f.x).toFixed(5) : "Ainda sem posição.") + '</p><button type="button" class="ipr-ent-b" data-ent="fmarcar">Marcar no mapa</button>';
+    h += '<div class="sec"><button type="button" class="ipr-ent-b p" data-ent="fguardar">Guardar ficha</button></div>';
+    h += '<p class="s">' + (EO && EO.gestor && f.email && f.email !== EO.eu ? "Fica marcada como preenchida pela organização até a pessoa a confirmar." : "Os dados da ficha ficam visíveis para quem tem acesso ao mapa. O e-mail não é mostrado.") + "</p>";
+    return h + "</div>";
+  }
+  function fformLer() { [].forEach.call(D.querySelectorAll("#ipr-ent-dir [data-ff]"), function (x) { FFORM[x.getAttribute("data-ff")] = x.value; }); }
 
   // ---- Fichas ----
   var PONTOS = {}, DICA = null, FICHA = null;
@@ -346,6 +494,7 @@
     }
     if (falta.length) h += '<div class="sec falta"><div class="t">Por confirmar</div><p class="s">' + falta.map(esc).join(" · ") + '</p><p class="s">' + (tp === "produtor" ? "Completa-se quando o produtor aceitar o convite para o mapa, ou pela Agrobio em nome dele." : "A Agrobio pode completar estes dados.") + "</p></div>";
     var xy = F.xy || [];
+    if (pr.fid && EO && (EO.gestor || +pr.minha)) h += '<div class="sec"><button type="button" class="ipr-ent-b p" data-ent="feditar">Editar ficha</button></div>';
     h += '<div class="sec"><a class="ipr-ent-b" href="https://www.google.com/maps/dir/?api=1&destination=' + (+xy[1]).toFixed(5) + "," + (+xy[0]).toFixed(5) + '" target="_blank" rel="noopener">Como chegar</a> <button type="button" class="ipr-ent-b" data-ent="fichair">Ver no mapa</button></div>';
     h += '<p class="s">' + (pr.fonte ? "Fonte: " + esc(pr.fonte) + ". " : "") + (pr.posicao ? "Posição " + esc(pr.posicao) + "." : "") + "</p>";
     return h + "</div>";
@@ -462,6 +611,8 @@
     if (TAB === "com") { painelCom(p); return; }
     comMostrar(false);
     if (TAB === "ficha" && FICHA) { p.classList.remove("fechado"); p.innerHTML = fichaHtml(FICHA); return; }
+    if (TAB === "pessoas") { p.classList.remove("fechado"); p.innerHTML = pessoasHtml(); return; }
+    if (TAB === "fform" && FFORM) { p.classList.remove("fechado"); p.innerHTML = fformHtml(FFORM); return; }
     var O = W.IPR_ORGS, papel = ""; if (O && O.lista) O.lista.forEach(function (o) { if (+o.id === ORGID) papel = o.papel || ""; });
     var tipo = (PERFIS.filter(function (x) { return x.id === S.perfil; })[0] || {}).n || "";
     var h = '<div class="q"><div class="tipo">' + esc(tipo) + (papel ? " · " + esc(papel) : "") + '</div><h2>' + esc(ENT.nome) + "</h2></div>";
@@ -485,8 +636,9 @@
       '<p class="s">KML, KMZ, GeoJSON, GPX, shapefile (zip), GeoPackage, DXF, DWG. CSV com colunas nome, latitude e longitude (de Excel: «Guardar como CSV»). O que carregar fica nos seus Locais.</p></div>';
     var B = W.IPR_ENT_BASES;
     if (B) h += '<div class="sec bcs"><div class="t">Bases Cartográficas</div><div class="nums"><div class="n"><b>' + (+B.restam || 0) + '</b><span>gratuitas por usar, de ' + (+B.total || 0) + '</span></div></div>' +
-      '<p class="s">Cada Base Cartográfica cobre um produtor ou terreno sob gestão' + (B.ha ? ", até " + fmt(B.ha) + " ha somados" : "") + '. Desenhe ou carregue a área, carregue em «Fazer a Base Cartográfica» e use o vale <b>' + esc(B.codigo) + '</b>. A Base fica na lista de Bases e no mapa, sobre o local.</p>' +
+      '<p class="s">Cada Base Cartográfica cobre um produtor ou terreno sob gestão' + (B.ha ? ", até " + fmt(B.ha) + " ha somados" : ", de qualquer tamanho") + '. Desenhe ou carregue a área, carregue em «Fazer a Base Cartográfica» e use o vale <b>' + esc(B.codigo) + '</b>. A Base fica na lista de Bases e no mapa, sobre o local.</p>' +
       '<button type="button" class="ipr-ent-b p" data-ent-base="0">Fazer uma Base Cartográfica</button></div>';
+    h += pessoasResumo();
     h += '<div class="sec"><div class="t">Ferramentas</div>' + ferrHtml() + "</div>";
     h += '<div class="sec rod"><button type="button" class="ipr-ent-b" data-ent-tab="com">Comunidade e avisos</button>' + (PODE ? '<button type="button" class="ipr-ent-b" data-ent="wiz">Configurar</button>' : "") + "</div>";
     if (W.IPR_NIVEL === "explorer") h += '<p class="s">Parte das camadas de apoio (condicionantes, água, solo) precisa do Intelligence.</p>';
@@ -838,12 +990,15 @@
 
   // ---------- Eventos ----------
   D.addEventListener("click", function (e) {
-    var t = e.target.closest && e.target.closest("[data-ent],[data-ent-mod],[data-ent-perfil],[data-ent-bacia],[data-ent-cat],[data-ent-cam],[data-ent-abrir],[data-ent-tab],[data-ent-org],[data-ent-orgir],[data-ent-ferr],[data-ent-carregar],[data-ent-base]");
+    var t = e.target.closest && e.target.closest("[data-ent],[data-ent-mod],[data-ent-perfil],[data-ent-bacia],[data-ent-cat],[data-ent-cam],[data-ent-abrir],[data-ent-tab],[data-ent-org],[data-ent-orgir],[data-ent-ferr],[data-ent-carregar],[data-ent-base],[data-ent-sel],[data-ent-pficha],[data-ent-papagar]");
     if (!t) return;
     if (t.hasAttribute("data-ent-org")) { var oc = orgCam(t.getAttribute("data-ent-org")); orgLigar(oc, t.checked); setTimeout(function () { marcarEsq(); if (TAB === "proj") painel(); }, 0); return; }
     if (t.hasAttribute("data-ent-orgir")) { e.preventDefault(); e.stopPropagation(); var oi = orgCam(t.getAttribute("data-ent-orgir")); if (oi && !ORGON[oi.id]) orgLigar(oi, true); orgIr(oi); marcarEsq(); return; }
     if (t.hasAttribute("data-ent-carregar")) { e.preventDefault(); e.stopPropagation(); carregar(t.getAttribute("data-ent-carregar")); return; }
     if (t.hasAttribute("data-ent-base")) { e.preventDefault(); e.stopPropagation(); fazerBase(+t.getAttribute("data-ent-base")); return; }
+    if (t.hasAttribute("data-ent-sel")) { SEL[t.getAttribute("data-ent-sel")] = t.checked; ENVCONF = false; setTimeout(painel, 0); return; }
+    if (t.hasAttribute("data-ent-pficha")) { e.preventDefault(); e.stopPropagation(); var pc = (PESS && PESS.convites || []).filter(function (x) { return x.id === t.getAttribute("data-ent-pficha"); })[0] || {}; var pf = (FICHAS || []).filter(function (x) { return pc.email && (x.email || "").toLowerCase() === pc.email.toLowerCase(); })[0]; fformAbrir(pf || {nome: pc.nome, email: pc.email, tipo: pc.papel === "produtor" ? "produtor" : "produtor"}); return; }
+    if (t.hasAttribute("data-ent-papagar")) { e.preventDefault(); e.stopPropagation(); eo("apagar_rascunho", {id: t.getAttribute("data-ent-papagar")}).then(function (d) { PESS = d; delete SEL[t.getAttribute("data-ent-papagar")]; painel(); }); return; }
     if (t.hasAttribute("data-ent-tab")) { e.preventDefault(); e.stopPropagation(); TAB = t.getAttribute("data-ent-tab"); painel(); return; }
     if (t.hasAttribute("data-ent-ferr")) { e.preventDefault(); e.stopPropagation(); var fe = FERR[+t.getAttribute("data-ent-ferr")], nb = fe && D.querySelector("[" + fe[0] + "]"); if (nb) nb.click(); return; }
     var a = t.getAttribute("data-ent"), v = viz();
@@ -854,6 +1009,7 @@
     if (a === "voltar") { if (S.passo > 1) S.passo--; wiz(true); return; }
     if (a === "guardar") { guardar(t); return; }
     if (a === "so") { S.so = !S.so; marcarEsq(); return; }
+    if (pesAccao(a, t)) return;
     if (a === "fichair") { var mm = W.__ipe && W.__ipe.mapa; if (mm && FICHA && FICHA.xy) mm.flyTo({center: FICHA.xy, zoom: Math.max(mm.getZoom(), 13)}); return; }
     if (a === "fechar") { var p = D.getElementById("ipr-ent-dir"); p.classList.toggle("fechado"); painel(); return; }
     if (t.hasAttribute("data-ent-cam") && v) { var id = t.getAttribute("data-ent-cam"); v.ligar(id, act().indexOf(id) < 0); setTimeout(painel, 150); return; }
