@@ -152,7 +152,7 @@
     "#ipr-ent-dir .h{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid #2a2c25}" +
     "#ipr-ent-dir .h b{flex:1;color:#E6E7E0;font:600 14px Outfit,Inter,sans-serif}" +
     "#ipr-ent-dir.fechado .h b,#ipr-ent-dir.fechado .c{display:none}" +
-    "#ipr-ent-dir .c{overflow:auto;flex:1;padding:10px 12px 20px}" +
+    "#ipr-ent-dir .c{overflow:auto;flex:1;padding:10px 12px 20px}" + "#ipr-ent-dir ol.apt{margin:6px 0 8px;padding-left:20px}#ipr-ent-dir ol.apt li{padding:2px 0}#ipr-ent-dir ol.apt b{float:right;color:#94BE39}" +
     "html.ipr-ent-cli #ipe .ipe-tab[data-tab=\"proj\"],html.ipr-ent-cli #ipe .ipe-tab[data-tab=\"org\"]{display:none!important}" +
     "#ipr-ent-dir .tb{display:flex;border-bottom:1px solid #2a2c25}#ipr-ent-dir .tb button{flex:1;background:none;border:0;border-bottom:2px solid transparent;color:#9aa08f;font:600 12px Inter,sans-serif;padding:8px 2px;cursor:pointer}#ipr-ent-dir .tb button[aria-selected=true]{color:#E6E7E0;border-bottom-color:#94BE39}#ipr-ent-dir.fechado .tb{display:none}" +
     "#ipr-ent-dir .s,#ipr-ent-esq .s{color:#8b8f80;font-size:12px}#ipr-ent-dir #ipe-com{position:static}" +
@@ -622,6 +622,23 @@
     }
     m.setLayoutProperty("ent-op-c", "visibility", "visible");
   }
+  // Aptidão para jovens agricultores biológicos (aptidao-bio.js): resumo no painel, com os concelhos de melhor média.
+  var APTD = null;
+  function aptResumo() {
+    var A = W.__iprAptidao; if (!A) return "";
+    if (!APTD) { A.dados(function (d) { APTD = d; if (TAB === "painel") painel(); }); }
+    var on = A.ligada(), h = '<div class="sec"><div class="t">Onde instalar-se · aptidão biológica</div>';
+    h += '<p class="s">Zonas boas para um jovem agricultor biológico, com dez critérios positivos: solo, matéria orgânica, longe de pressões, chuva, água subterrânea, água de rega, mercado, terra acessível, zonas pouco procuradas e rede de apoio. Continente, Açores e Madeira.</p>';
+    if (APTD) {
+      var top = APTD.conc.filter(function (c) { return c[2] != null && c[3] >= 3; }).sort(function (a, b) { return b[2] - a[2]; }).slice(0, 8);
+      h += '<ol class="apt">' + top.map(function (c) { return "<li>" + esc(c[0]) + ' <span class="s">' + esc(c[1] || "") + "</span> <b>" + c[2] + "</b></li>"; }).join("") + "</ol>";
+      var ilhas = APTD.conc.filter(function (c) { return c[2] != null && /Azores|Madeira|Açores/.test(c[1] || ""); }).sort(function (a, b) { return b[2] - a[2]; }).slice(0, 3);
+      if (ilhas.length) h += '<p class="s">Nas ilhas: ' + ilhas.map(function (c) { return esc(c[0]) + " (" + c[2] + ")"; }).join(", ") + ".</p>";
+    }
+    h += '<button type="button" class="ipr-ent-b' + (on ? "" : " p") + '" data-ent="aptmapa">' + (on ? "Esconder do mapa" : "Ver no mapa") + "</button> ";
+    h += '<button type="button" class="ipr-ent-b" data-ent="regmapa">Regadio público</button></div>';
+    return h;
+  }
   function opResumo() {
     if (!todosPontos().length) return "";
     opCalcular();
@@ -663,6 +680,7 @@
       h += '<button class="p" onclick="print()">Imprimir ou guardar em PDF</button><div class="s">IPR Atlas · relatório da organização · ' + esc(hoje) + "</div><h1>" + esc(ENT.nome) + "</h1>";
       h += '<div class="k">' + vv.map(function (n) { return "<div><b>" + n[1] + "</b>" + esc(n[0]) + "</div>"; }).join("") + "</div>";
       if (img) h += "<h2>Mapa</h2><img src=\"" + img + "\">";
+      if (APTD) { var tp = APTD.conc.filter(function (c) { return c[2] != null && c[3] >= 3; }).sort(function (a, b) { return b[2] - a[2]; }).slice(0, 12); h += "<h2>Onde instalar-se: aptidão para jovens agricultores biológicos</h2><p>Dez critérios positivos (solo, matéria orgânica, longe de pressões, chuva, água subterrânea, água de rega, mercado, terra acessível, zonas pouco procuradas, rede de apoio), numa malha de 3 km no continente e 1,2 km nas ilhas. Fontes: APA, ICNF, DGADR, INE e o mapa da Agrobio. Concelhos com melhor média:</p><table><tr><th>Concelho</th><th>Distrito</th><th>Média</th></tr>" + tp.map(function (c) { return "<tr><td>" + esc(c[0]) + "</td><td>" + esc(c[1] || "") + "</td><td>" + c[2] + "</td></tr>"; }).join("") + "</table>"; }
       if (OP) { var lac = OP.venda.filter(function (v) { return v.n === 0; }); h += "<h2>Oferta e procura</h2><p>" + OP.venda.length + " pontos de venda, dos quais " + lac.length + " sem produtores a menos de " + RAIO + " km; " + OP.longe.length + " produtores a mais de 40 km de um ponto de venda.</p>"; }
       [["produtor", "Produtores"], ["mercado", "Mercados"], ["feira", "Feiras"], ["loja", "Lojas e cooperativas"], ["cabaz", "Cabazes e AMAP"], ["bioregiao", "Bio-regiões"]].forEach(function (t) {
         var l = por[t[0]]; if (!l || !l.length) return;
@@ -680,6 +698,8 @@
     if (a === "calproposta") { CAL = CAL_PROPOSTA.map(function (x) { return {mes: x[0], tipo: x[1], titulo: x[2], fonte: x[1] === "evento" ? "INFOBIO (Agrobio)" : "proposta Terracrua Design, a validar"}; }); calGuardar(); return true; }
     if (a === "calenviar") { var m0 = new Date().getMonth() + 1; AVISO = {titulo: "Calendário de " + MESES[m0 - 1], texto: calMes(m0).map(function (x) { return "· " + (CALTIPOS[x.tipo] || x.tipo) + ": " + (x.titulo || x.texto); }).join("\n"), raio: 30, centro: null}; TAB = "aviso"; painel(); return true; }
     if (a === "opmapa") { opMapa(!OPON); painel(); return true; }
+    if (a === "aptmapa" && W.__iprAptidao) { W.__iprAptidao.ligar(!W.__iprAptidao.ligada()); painel(); return true; }
+    if (a === "regmapa" && W.__iprAptidao) { W.__iprAptidao.regadio(true); aviso("Perímetros de rega públicos da DGADR (sem o Alqueva)."); return true; }
     if (a === "relatorio") { relatorio(); return true; }
     if (a === "avnovo") { AVISO = null; TAB = "aviso"; painel(); return true; }
     if (a === "avmarcar") { var m = W.__ipe && W.__ipe.mapa; avisoLer(); MARCAR = true; aviso("Carregue no mapa no centro da zona."); m.once("click", function (e) { MARCAR = false; AVISO.centro = [e.lngLat.lng, e.lngLat.lat]; var t0 = Date.now(); (function limpa() { [].forEach.call(D.querySelectorAll(".iprv-pop"), function (x) { x.remove(); }); if (Date.now() - t0 < 2500) setTimeout(limpa, 120); })(); TAB = "aviso"; painel(); }); return true; }
@@ -867,7 +887,7 @@
     h += '<div class="nums">' + (vivos() || numeros()).map(function (n) { return '<div class="n"><b>' + fmt(n[1]) + "</b><span>" + esc(n[0]) + "</span></div>"; }).join("") + "</div>";
     var px = proximo();
     h += '<div class="px"><div class="t">Próximo passo</div><p>' + esc(px[0]) + '</p>' + (px[2] === "#wiz" ? '<button type="button" class="ipr-ent-b p" data-ent="wiz">' + esc(px[1]) + "</button>" : px[2] === "#carregar" ? '<button type="button" class="ipr-ent-b p" data-ent-carregar="f">' + esc(px[1]) + "</button>" : '<a class="ipr-ent-b p" href="' + px[2] + '" target="_blank" rel="noopener">' + esc(px[1]) + "</a>") + "</div>";
-    h += alertasResumo() + calResumo() + opResumo();
+    h += alertasResumo() + aptResumo() + calResumo() + opResumo();
     h += '<div class="sec"><div class="t">Os nossos locais e projectos</div>';
     var cs = ORG ? ORG.camadas || [] : [];
     if (!ORG) h += '<p class="s">A carregar…</p>';
