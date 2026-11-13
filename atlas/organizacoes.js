@@ -50,7 +50,15 @@
   }
   W.iprAbrirOrganizacao = abrir;
 
-  // 2. ?org=<id>
+  // 2. ?org=<id>. Sem sessão iniciada, vai primeiro ao «Entrar» e volta a esta mesma ligação.
+  (function () {
+    var m0 = /[?&]org=(\d+)(&|$)/.exec(location.search); if (!m0 || O()) return;
+    function ver() {
+      if (O() || !D.body || D.body.classList.contains("logged-in")) return;
+      location.href = "/wp-login.php?redirect_to=" + encodeURIComponent(location.pathname + location.search);
+    }
+    if (D.readyState === "loading") D.addEventListener("DOMContentLoaded", ver); else ver();
+  })();
   (function () {
     var m = /[?&]org=(\d+)(&|$)/.exec(location.search); if (!m) return;
     var o = O(); if (!o) return;
