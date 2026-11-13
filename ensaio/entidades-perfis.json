@@ -1,0 +1,1141 @@
+{
+ "aldeiadamata": {
+  "zona": [
+   [
+    -7.86,
+    39.22
+   ],
+   [
+    -7.62,
+    39.38
+   ]
+  ],
+  "bacias": [
+   {
+    "id": "seda",
+    "n": "Tejo, pela ribeira de Seda",
+    "a": [
+     "Aldeia da Mata",
+     "Crato",
+     "Pisão"
+    ],
+    "nota": "barragem do Pisão (Aproveitamento Hidráulico do Crato); delimitação na Fase 1"
+   }
+  ],
+  "catsTitulo": "Pedidos dos fregueses",
+  "cats": [
+   [
+    "cam",
+    "Caminhos e estradas com problemas"
+   ],
+   [
+    "lixo",
+    "Lixo, entulho e monstros"
+   ],
+   [
+    "mato",
+    "Mato e combustível junto às casas"
+   ],
+   [
+    "agua",
+    "Fontes, fugas e linhas de água"
+   ],
+   [
+    "casa",
+    "Casas devolutas e terrenos abandonados"
+   ],
+   [
+    "pat",
+    "Património, memória e saber local"
+   ],
+   [
+    "vol",
+    "Voluntariado e trabalho"
+   ]
+  ],
+  "papeis": [
+   [
+    "Presidente e executivo da Junta",
+    "Tudo · configura e responde aos pedidos"
+   ],
+   [
+    "Equipa técnica do IPR",
+    "Tudo · camadas e validação"
+   ],
+   [
+    "Câmara Municipal do Crato",
+    "A freguesia no concelho: obras, regadio, protecção civil"
+   ],
+   [
+    "Funcionários da Junta",
+    "Registam e resolvem pedidos no terreno"
+   ],
+   [
+    "Fregueses",
+    "Pedidos e contributos, sempre moderados"
+   ]
+  ],
+  "principal": [
+   "equip",
+   "Ponha no mapa os equipamentos da freguesia: sede, escola, lar, piscinas, cemitério, fontes e fornos comunitários. São o esqueleto do mapa e o ponto de partida dos pedidos."
+  ],
+  "numeros": [
+   [
+    "Equipamentos e património no mapa",
+    "equip,patr"
+   ],
+   [
+    "Pedidos dos fregueses",
+    "pedidos"
+   ],
+   [
+    "Casas e terrenos para fixar gente",
+    "fixar"
+   ]
+  ],
+  "passo2": [
+   "Em que bacia está a freguesia?",
+   "A freguesia escoa para a ribeira de Seda, que com a de Sor forma o Sorraia, afluente do Tejo. A barragem do Pisão vai mudar a água do concelho: cada pedido, cada terreno e cada casa ficam ligados à sua sub-bacia."
+  ],
+  "passo4": [
+   "Fixar gente na freguesia: o que vem primeiro",
+   "O número de famílias que a freguesia pode receber vem das casas, da água e do trabalho que existem, não de uma meta. Cada fase só abre quando a anterior está feita."
+  ],
+  "fases": [
+   [
+    "1 · Casas e terrenos",
+    "Devolutos, ruínas recuperáveis e terrenos abandonados identificados com os donos",
+    "lista de casas disponíveis"
+   ],
+   [
+    "2 · Serviços que seguram",
+    "Escola, lar, transporte, saúde: o que falta e a que distância",
+    "nenhum serviço básico a mais de 20 minutos"
+   ],
+   [
+    "3 · Trabalho",
+    "Regadio do Pisão, montado, gado, caça, turismo rural",
+    "postos de trabalho por família nova"
+   ],
+   [
+    "4 · Novos fregueses",
+    "Acolhimento, apresentação à comunidade, primeiro ano acompanhado",
+    "famílias instaladas a ficar"
+   ]
+  ],
+  "grupos": [
+   [
+    "jf",
+    "Junta de freguesia",
+    "proximidade · pedidos, equipamentos e limpezas"
+   ]
+  ],
+  "gruposAntes": 1,
+  "mods": [
+   {
+    "id": "jf_ped",
+    "g": "jf",
+    "n": "Pedidos e ocorrências dos fregueses",
+    "d": "Registo georreferenciado: quem pede, onde, o que se fez e quando; com fotografia",
+    "eb": "Monitoring",
+    "ids": [],
+    "k": [
+     [
+      "Pedidos abertos",
+      "0"
+     ],
+     [
+      "Resolvidos este ano",
+      "0"
+     ]
+    ]
+   },
+   {
+    "id": "jf_equip",
+    "g": "jf",
+    "n": "Equipamentos e serviços de proximidade",
+    "d": "Edifícios, estradas e caminhos, energia; distância aos serviços do concelho",
+    "eb": "Finder",
+    "ids": [
+     "o_edif",
+     "o_estradas",
+     "o_caminhos",
+     "o_energia"
+    ],
+    "k": [
+     [
+      "Equipamentos no mapa",
+      "f1"
+     ]
+    ]
+   },
+   {
+    "id": "jf_limp",
+    "g": "jf",
+    "n": "Faixas de gestão de combustível e limpezas",
+    "d": "Rede primária, faixas do SGIFR, perigosidade; o que limpar antes do Verão e de quem é",
+    "eb": "Analyzer",
+    "ids": [
+     "sgifr_a",
+     "redeprim",
+     "perig",
+     "fogo_ult"
+    ],
+    "liga": [
+     "sgifr_a"
+    ],
+    "k": [
+     [
+      "Metros de faixa por limpar",
+      "f1"
+     ]
+    ]
+   },
+   {
+    "id": "jf_mont",
+    "g": "jf",
+    "n": "Montado, caça e paisagem",
+    "d": "Montado de sobro e azinho, ocupação do solo, zonas de caça, habitats",
+    "eb": "Analyzer",
+    "ids": [
+     "hab_6310",
+     "cos23",
+     "zonas_caca",
+     "habitats"
+    ],
+    "k": [
+     [
+      "Hectares de montado",
+      "f1"
+     ]
+    ]
+   },
+   {
+    "id": "jf_pisao",
+    "g": "jf",
+    "n": "Regadio e barragem do Pisão",
+    "d": "Barragens, Reserva Agrícola, aptidão e captações: o que muda com o regadio",
+    "eb": "Analyzer",
+    "ids": [
+     "barragens",
+     "ran",
+     "capt_sup",
+     "capt_p"
+    ],
+    "k": [
+     [
+      "Hectares regáveis na freguesia",
+      "f1"
+     ]
+    ]
+   }
+  ],
+  "apt": true,
+  "alertas": [
+   [
+    "sede",
+    "social",
+    "equipamento"
+   ],
+   "Alertas para a freguesia"
+  ],
+  "cal": "Calendário da freguesia",
+  "tipo": "Junta de freguesia",
+  "tipos": {
+   "social": "Apoio social",
+   "equipamento": "Equipamento",
+   "patrimonio": "Património"
+  },
+  "perfis": {
+   "municipio": {
+    "n": "Junta de freguesia",
+    "d": "Freguesia rural do Alto Alentejo: proximidade, pedidos dos fregueses, limpezas, montado e regadio",
+    "a": "equipamentos, pedidos e fixação de gente",
+    "on": [
+     "delim",
+     "base",
+     "hidro",
+     "infil",
+     "nasc",
+     "fogo",
+     "perigo",
+     "risco",
+     "cond",
+     "cadastro",
+     "publico",
+     "obsv",
+     "aldeias",
+     "presenca",
+     "serv",
+     "econ",
+     "terras",
+     "capac",
+     "acolh",
+     "dagua",
+     "ancora",
+     "jf_ped",
+     "jf_equip",
+     "jf_limp",
+     "jf_mont",
+     "jf_pisao"
+    ]
+   }
+  },
+  "repo": true
+ },
+ "terraagora": {
+  "zona": [
+   [
+    -9.6,
+    36.9
+   ],
+   [
+    -6.1,
+    42.2
+   ]
+  ],
+  "bacias": [
+   {
+    "id": "ponsul",
+    "n": "Tejo, pelo rio Ponsul",
+    "a": [
+     "Idanha-a-Velha · 1 600 ha"
+    ],
+    "nota": "primeiro terreno do banco de terras"
+   },
+   {
+    "id": "nabao",
+    "n": "Tejo, pelo rio Nabão",
+    "a": [
+     "Carril, Tomar · sede"
+    ],
+    "nota": "terreno da sede, a confirmar"
+   }
+  ],
+  "catsTitulo": "Contributos e propostas",
+  "cats": [
+   [
+    "terra",
+    "Terreno para doar ou vender à Fundação"
+   ],
+   [
+    "guardiao",
+    "Proposta de projecto-guardião"
+   ],
+   [
+    "obs",
+    "Observação de natureza: fauna, flora, habitats"
+   ],
+   [
+    "ameaca",
+    "Ameaças: fogo, invasoras, descargas, pressão urbana"
+   ],
+   [
+    "pat",
+    "Património e saber local"
+   ],
+   [
+    "vol",
+    "Voluntariado e trabalho no terreno"
+   ]
+  ],
+  "papeis": [
+   [
+    "Conselho de Administração",
+    "Tudo · configura, aceita terrenos e projectos"
+   ],
+   [
+    "Conselho de Curadores",
+    "Leitura de tudo · relatórios dos cinco capitais"
+   ],
+   [
+    "Equipa técnica do IPR",
+    "Tudo · leitura do território e validação"
+   ],
+   [
+    "Entidade-Guardiã",
+    "O seu terreno e o seu contrato a 99 anos"
+   ],
+   [
+    "Proprietários interessados",
+    "A sua proposta, sem ver as dos outros"
+   ],
+   [
+    "Público",
+    "Mapa público e contributos moderados"
+   ]
+  ],
+  "principal": [
+   "terras",
+   "Ponha no mapa os limites das propriedades do banco de terras. O de Idanha-a-Velha entra primeiro: com o limite desenhado, o IPR lê a água, o solo, o fogo e os habitats dos 1 600 ha."
+  ],
+  "numeros": [
+   [
+    "Propriedades no banco de terras",
+    "terras"
+   ],
+   [
+    "Terrenos propostos",
+    "propostas"
+   ],
+   [
+    "Projectos-guardião",
+    "guardiao"
+   ]
+  ],
+  "passo2": [
+   "Em que bacias estão as terras da Fundação?",
+   "A Fundação actua em todo o país. Cada terreno, doado ou comprado, lê-se primeiro na sua bacia e só depois na sua parcela: o plano de um projecto-guardião começa pela água."
+  ],
+  "passo4": [
+   "Do terreno proposto ao contrato-guardião",
+   "O horizonte é de 175 a 300 anos. Cada terreno passa pelas mesmas etapas, e cada etapa só abre quando a anterior está fechada."
+  ],
+  "fases": [
+   [
+    "1 · Avaliação",
+    "Proposta recebida; leitura do território: água, solo, habitats, fogo, condicionantes",
+    "valor ecológico e social confirmado"
+   ],
+   [
+    "2 · Aquisição",
+    "Compra ou doação, escritura e registo",
+    "terra fora do mercado, em nome da Fundação"
+   ],
+   [
+    "3 · Projecto-guardião",
+    "Uma entidade apresenta o plano nos cinco capitais: natural, social, humano, construído, financeiro",
+    "contrato-guardião a 99 anos"
+   ],
+   [
+    "4 · Acompanhamento",
+    "Monitorização ao longo de gerações, com os mesmos indicadores",
+    "relatório anual dos cinco capitais"
+   ]
+  ],
+  "grupos": [
+   [
+    "fta",
+    "Banco de terras e guarda",
+    "Fundação Terra Agora · terreno, contrato e gerações"
+   ]
+  ],
+  "gruposAntes": 1,
+  "mods": [
+   {
+    "id": "fta_aval",
+    "g": "fta",
+    "n": "Avaliação de terrenos propostos",
+    "d": "Para cada proposta: Rede Natura e áreas protegidas, habitats, ocupação, perigo de incêndio, RAN e REN",
+    "eb": "Finder",
+    "ids": [
+     "n2k",
+     "rnap",
+     "habitats",
+     "cos23",
+     "perig",
+     "ran",
+     "ren"
+    ],
+    "liga": [
+     "n2k"
+    ],
+    "k": [
+     [
+      "Terrenos em avaliação",
+      "0"
+     ]
+    ]
+   },
+   {
+    "id": "fta_cap",
+    "g": "fta",
+    "n": "Cinco capitais: natural, social, humano, construído, financeiro",
+    "d": "Linha de base e indicadores anuais de cada projecto-guardião",
+    "eb": "Monitoring",
+    "ids": [
+     "carbono",
+     "copa18",
+     "n_gbif_todas"
+    ],
+    "k": [
+     [
+      "Projectos com linha de base",
+      "0"
+     ]
+    ]
+   },
+   {
+    "id": "fta_rest",
+    "g": "fta",
+    "n": "Restauro ecológico",
+    "d": "Habitats a restaurar, invasoras, erosão, susceptibilidade à desertificação, sebes e bosquetes",
+    "eb": "Analyzer",
+    "ids": [
+     "habitats",
+     "invasoras",
+     "l_erosao",
+     "desert",
+     "swf21"
+    ],
+    "k": [
+     [
+      "Hectares em restauro",
+      "f1"
+     ]
+    ]
+   },
+   {
+    "id": "fta_30",
+    "g": "fta",
+    "n": "Meta 30 por cento: áreas protegidas e lacunas",
+    "d": "Onde um terreno da Fundação acrescenta protecção ao que já existe",
+    "eb": "Analyzer",
+    "ids": [
+     "n2k",
+     "rnap",
+     "zif"
+    ],
+    "k": [
+     [
+      "Hectares que contam para a meta",
+      "f1"
+     ]
+    ]
+   }
+  ],
+  "alertas": [
+   [
+    "propriedade",
+    "sede"
+   ],
+   "Alertas para as terras da Fundação"
+  ],
+  "cal": "Calendário de acompanhamento",
+  "tipo": "Fundação · banco de terras",
+  "tipos": {
+   "propriedade": "Propriedade do banco de terras"
+  },
+  "perfis": {
+   "conservacao": {
+    "n": "Fundação · banco de terras",
+    "d": "Terra fora do mercado, guardada por gerações através de projectos-guardião",
+    "a": "avaliação de terrenos e cinco capitais",
+    "on": [
+     "delim",
+     "base",
+     "hidro",
+     "keyline",
+     "nasc",
+     "solos",
+     "ocup",
+     "bio",
+     "fogo",
+     "perigo",
+     "risco",
+     "cond",
+     "cadastro",
+     "terras",
+     "capitais",
+     "patr",
+     "dagua",
+     "publico",
+     "ancora",
+     "obsv",
+     "fta_aval",
+     "fta_cap",
+     "fta_rest",
+     "fta_30"
+    ]
+   }
+  }
+ },
+ "ovar": {
+  "zona": [
+   [
+    -8.71,
+    40.8
+   ],
+   [
+    -8.52,
+    40.99
+   ]
+  ],
+  "bacias": [
+   {
+    "id": "costa",
+    "n": "Ribeiras costeiras entre o Douro e o Vouga",
+    "a": [
+     "Esmoriz",
+     "Cortegaça",
+     "Maceda"
+    ],
+    "nota": "acabam na Barrinha de Esmoriz e no mar"
+   },
+   {
+    "id": "ria",
+    "n": "Vouga, pela Ria de Aveiro",
+    "a": [
+     "Ovar",
+     "Válega",
+     "São Vicente de Pereira",
+     "Furadouro"
+    ],
+    "nota": "rio Cáster e esteiro de Ovar"
+   }
+  ],
+  "catsTitulo": "Ocorrências dos munícipes",
+  "cats": [
+   [
+    "erosao",
+    "Recuo da duna, galgamentos e danos na marginal"
+   ],
+   [
+    "agua",
+    "Cheias, valas entupidas e linhas de água"
+   ],
+   [
+    "lixo",
+    "Lixo, entulho e descargas"
+   ],
+   [
+    "invas",
+    "Invasoras: acácias e chorão"
+   ],
+   [
+    "mato",
+    "Mato e combustível junto às casas"
+   ],
+   [
+    "via",
+    "Passeios, estradas e iluminação"
+   ]
+  ],
+  "papeis": [
+   [
+    "Executivo municipal",
+    "Tudo · configura e decide"
+   ],
+   [
+    "Equipa técnica do IPR",
+    "Tudo · camadas e validação"
+   ],
+   [
+    "Serviços municipais",
+    "Ambiente, Protecção Civil, Obras e Urbanismo: o seu sector em todo o concelho"
+   ],
+   [
+    "Juntas de freguesia",
+    "A sua freguesia e as suas ocorrências"
+   ],
+   [
+    "Munícipes",
+    "Ocorrências e contributos, sempre moderados"
+   ]
+  ],
+  "principal": [
+   "orla",
+   "Ponha no mapa os troços da costa, as obras de defesa e as zonas onde a duna recua. É por aí que o mapa do concelho começa a ser útil para a APA e para o POC Ovar-Marinha Grande."
+  ],
+  "numeros": [
+   [
+    "Pontos da orla seguidos",
+    "orla"
+   ],
+   [
+    "Ocorrências registadas",
+    "ocorr"
+   ],
+   [
+    "Obras e equipamentos",
+    "obras"
+   ]
+  ],
+  "passo2": [
+   "Em que bacias está o concelho?",
+   "Ovar tem duas frentes de água: o mar e a ria. A norte, as ribeiras costeiras acabam na Barrinha de Esmoriz; a sul, o Cáster e os esteiros acabam na Ria de Aveiro. Cada ocorrência fica na sua bacia."
+  ],
+  "passo4": [
+   "Adaptação da costa: o que proteger, onde dar espaço à duna, por que ordem",
+   "A sequência segue o Programa da Orla Costeira Ovar-Marinha Grande e a estratégia municipal de adaptação. Cada fase abre quando a anterior tem dados."
+  ],
+  "fases": [
+   [
+    "1 · Medir",
+    "Perfis de praia e linha de costa medidos com regularidade",
+    "série de monitorização de dois anos"
+   ],
+   [
+    "2 · Proteger o que não pode recuar",
+    "Furadouro, Esmoriz, Cortegaça: marginais, cordão dunar, reposição de areias",
+    "obras feitas e a funcionar"
+   ],
+   [
+    "3 · Dar espaço à duna",
+    "Usos fora das faixas de salvaguarda do POC, onde a lei o prevê",
+    "faixas de salvaguarda no PDM"
+   ],
+   [
+    "4 · Viver com o mar",
+    "Época balnear, comércio e habitação ajustados ao risco",
+    "plano revisto a cada temporal grande"
+   ]
+  ],
+  "grupos": [
+   [
+    "mun",
+    "Serviços municipais",
+    "sector a sector · orla, cheias, clima, protecção civil, urbanismo"
+   ]
+  ],
+  "gruposAntes": 1,
+  "mods": [
+   {
+    "id": "mo_orla",
+    "g": "mun",
+    "n": "Orla costeira, erosão e galgamentos",
+    "d": "Programa da Orla Costeira: área, zona terrestre de protecção, margem e áreas críticas",
+    "eb": "Analyzer",
+    "ids": [
+     "poc_area",
+     "poc_ztp",
+     "poc_margem",
+     "poc_critica"
+    ],
+    "liga": [
+     "poc_critica"
+    ],
+    "k": [
+     [
+      "Metros de costa em área crítica",
+      "f1"
+     ]
+    ]
+   },
+   {
+    "id": "mo_cheia",
+    "g": "mun",
+    "n": "Cheias e drenagem",
+    "d": "Zonas de risco, inundação a 20 e 100 anos, perigo do PGRI, cotas de cheia",
+    "eb": "Analyzer",
+    "ids": [
+     "arpsi",
+     "inund20",
+     "inund100",
+     "pgri_perigo",
+     "cotas_cheia"
+    ],
+    "k": [
+     [
+      "Edifícios em zona inundável",
+      "f1"
+     ]
+    ]
+   },
+   {
+    "id": "mo_clima",
+    "g": "mun",
+    "n": "Plano Municipal de Acção Climática",
+    "d": "Temperatura, precipitação e vento; medidas do plano no mapa",
+    "eb": "Monitoring",
+    "ids": [
+     "temp_med",
+     "precip",
+     "l_vento"
+    ],
+    "k": [
+     [
+      "Medidas do plano no mapa",
+      "0"
+     ]
+    ]
+   },
+   {
+    "id": "mo_pc",
+    "g": "mun",
+    "n": "Protecção civil e incêndios",
+    "d": "Perigosidade, faixas de gestão, rede primária, últimos incêndios",
+    "eb": "Analyzer",
+    "ids": [
+     "perig",
+     "sgifr_a",
+     "redeprim",
+     "fogo_ult"
+    ],
+    "k": [
+     [
+      "Faixas por limpar",
+      "f1"
+     ]
+    ]
+   },
+   {
+    "id": "mo_urb",
+    "g": "mun",
+    "n": "Urbanismo e condicionantes",
+    "d": "RAN, REN, servidões, cadastro simplificado: o que pesa sobre cada parcela",
+    "eb": "Finder",
+    "ids": [
+     "ran",
+     "ren",
+     "srup_rf",
+     "srup_ic",
+     "bupi"
+    ],
+    "k": [
+     [
+      "Pedidos de informação prévia no mapa",
+      "0"
+     ]
+    ]
+   },
+   {
+    "id": "mo_ocorr",
+    "g": "mun",
+    "n": "Ocorrências dos munícipes e piquete",
+    "d": "Registo georreferenciado com fotografia, encaminhado ao serviço certo",
+    "eb": "Monitoring",
+    "ids": [],
+    "k": [
+     [
+      "Ocorrências abertas",
+      "0"
+     ],
+     [
+      "Tempo médio de resposta",
+      "0"
+     ]
+    ]
+   }
+  ],
+  "alertas": [
+   [
+    "defesa",
+    "praia",
+    "risco",
+    "sede"
+   ],
+   "Alertas para o concelho"
+  ],
+  "cal": "Calendário municipal",
+  "tipo": "Município",
+  "tipos": {
+   "defesa": "Defesa costeira",
+   "praia": "Praia",
+   "risco": "Risco",
+   "percurso": "Percurso"
+  },
+  "perfis": {
+   "municipio": {
+    "n": "Município costeiro",
+    "d": "Câmara com duas frentes de água, o mar e a ria: erosão, cheias, clima, protecção civil e urbanismo",
+    "a": "orla costeira e ocorrências dos munícipes",
+    "on": [
+     "delim",
+     "base",
+     "hidro",
+     "infil",
+     "nasc",
+     "fogo",
+     "perigo",
+     "risco",
+     "cond",
+     "cadastro",
+     "publico",
+     "obsv",
+     "cheias",
+     "ocup",
+     "bio",
+     "aldeias",
+     "presenca",
+     "serv",
+     "econ",
+     "terras",
+     "capitais",
+     "dagua",
+     "comissao",
+     "ancora",
+     "mo_orla",
+     "mo_cheia",
+     "mo_clima",
+     "mo_pc",
+     "mo_urb",
+     "mo_ocorr"
+    ]
+   }
+  }
+ },
+ "cne": {
+  "zona": [
+   [
+    -9.6,
+    36.9
+   ],
+   [
+    -6.1,
+    42.2
+   ]
+  ],
+  "bacias": [
+   {
+    "id": "ponsul",
+    "n": "Tejo, pelo rio Ponsul",
+    "a": [
+     "CNAE, Monte Trigo (Idanha-a-Nova)",
+     "Barragem Marechal Carmona"
+    ],
+    "nota": "campo nacional, 79 ha"
+   },
+   {
+    "id": "toulica",
+    "n": "Tejo, pela ribeira da Toulica",
+    "a": [
+     "Barragem da Toulica, Zebreira"
+    ],
+    "nota": "campo de apoio dos ACANAC; bacia a confirmar"
+   }
+  ],
+  "catsTitulo": "Contributos dos agrupamentos",
+  "cats": [
+   [
+    "campo",
+    "Locais para acampar e acantonar"
+   ],
+   [
+    "agua",
+    "Água potável e pontos de água"
+   ],
+   [
+    "risco",
+    "Riscos no terreno: fogo, cheias, quedas, calor"
+   ],
+   [
+    "servico",
+    "Pedidos de serviço à comunidade"
+   ],
+   [
+    "obs",
+    "Observação de natureza"
+   ],
+   [
+    "lixo",
+    "Lixo encontrado no percurso"
+   ]
+  ],
+  "papeis": [
+   [
+    "Junta Central",
+    "Tudo · configura e modera"
+   ],
+   [
+    "Equipa técnica do IPR",
+    "Tudo · camadas e validação"
+   ],
+   [
+    "Juntas regionais",
+    "A sua região e os seus campos"
+   ],
+   [
+    "Agrupamentos",
+    "As suas actividades, os seus campos, a sua sede"
+   ],
+   [
+    "Chefes de actividade",
+    "A actividade e o percurso, com o risco do dia"
+   ],
+   [
+    "Público",
+    "Mapa público dos campos, contributos moderados"
+   ]
+  ],
+  "principal": [
+   "centros",
+   "Ponha no mapa os centros e campos escutistas com o limite de cada um. Com o limite, o IPR diz para cada campo o perigo de incêndio, as zonas inundáveis, a água e o acesso de socorro."
+  ],
+  "numeros": [
+   [
+    "Centros e campos",
+    "centros"
+   ],
+   [
+    "Actividades no mapa",
+    "activ"
+   ],
+   [
+    "Acções de serviço",
+    "servico"
+   ]
+  ],
+  "passo2": [
+   "Em que bacias estão os vossos campos?",
+   "Um campo escutista é um pedaço de bacia: a água que se bebe, a cheia que pode chegar à tenda, o fogo que sobe a encosta. Cada campo fica ligado à sua bacia."
+  ],
+  "passo4": [
+   "Antes de cada actividade: o terreno é seguro?",
+   "O IPR cruza o local e as datas com o risco. A actividade avança quando cada verificação está feita; o Geo Scouts continua a ser o canal de comunicação às autoridades."
+  ],
+  "fases": [
+   [
+    "1 · Local",
+    "Campo ou percurso desenhado no mapa",
+    "fora de leito de cheia e de zona crítica de fogo"
+   ],
+   [
+    "2 · Comunicação",
+    "Actividade comunicada ao município, protecção civil, GNR e ICNF",
+    "comunicação feita"
+   ],
+   [
+    "3 · Água e socorro",
+    "Ponto de água, acesso de viaturas, centro de saúde mais próximo",
+    "plano de emergência da actividade"
+   ],
+   [
+    "4 · Depois",
+    "Relatório, lixo recolhido, acção de serviço registada",
+    "campo deixado melhor do que se encontrou"
+   ]
+  ],
+  "grupos": [
+   [
+    "cne",
+    "Actividades escutistas",
+    "campos, segurança, natureza e serviço"
+   ]
+  ],
+  "gruposAntes": 1,
+  "mods": [
+   {
+    "id": "cne_seg",
+    "g": "cne",
+    "n": "Segurança das actividades",
+    "d": "Perigosidade e risco de incêndio, zonas inundáveis, faixas de gestão de combustível",
+    "eb": "Analyzer",
+    "ids": [
+     "perig",
+     "perig_e",
+     "inund100",
+     "arpsi",
+     "sgifr_a"
+    ],
+    "liga": [
+     "perig"
+    ],
+    "k": [
+     [
+      "Campos em perigo alto ou muito alto",
+      "f1"
+     ]
+    ]
+   },
+   {
+    "id": "cne_campos",
+    "g": "cne",
+    "n": "Centros, campos e acantonamentos",
+    "d": "Pontos de água, caminhos, percursos pedestres, edifícios de apoio",
+    "eb": "Finder",
+    "ids": [
+     "o_aguapts",
+     "o_caminhos",
+     "percursos",
+     "o_edif"
+    ],
+    "k": [
+     [
+      "Campos com limite desenhado",
+      "f1"
+     ]
+    ]
+   },
+   {
+    "id": "cne_nat",
+    "g": "cne",
+    "n": "Natureza e especialidades",
+    "d": "Rede Natura, áreas protegidas, habitats, aves e plantas, geossítios",
+    "eb": "Analyzer",
+    "ids": [
+     "n2k",
+     "rnap",
+     "habitats",
+     "n_gbif_aves",
+     "n_gbif_plantas",
+     "geossitios"
+    ],
+    "k": []
+   },
+   {
+    "id": "cne_serv",
+    "g": "cne",
+    "n": "Serviço à comunidade: plantações e limpezas",
+    "d": "Áreas ardidas a recuperar, invasoras, incêndios recentes; cada acção registada",
+    "eb": "Monitoring",
+    "ids": [
+     "ard15",
+     "invasoras",
+     "fogo_ult"
+    ],
+    "k": [
+     [
+      "Árvores plantadas",
+      "f1"
+     ],
+     [
+      "Horas de serviço",
+      "f1"
+     ]
+    ]
+   },
+   {
+    "id": "cne_calor",
+    "g": "cne",
+    "n": "Calor e clima no Verão",
+    "d": "Temperatura e precipitação médias por local, para escolher datas e campos",
+    "eb": "Monitoring",
+    "ids": [
+     "temp_med",
+     "precip"
+    ],
+    "k": []
+   }
+  ],
+  "alertas": [
+   [
+    "campo",
+    "sede"
+   ],
+   "Alertas para os campos"
+  ],
+  "cal": "Calendário de actividades",
+  "tipo": "Associação de juventude · escutismo",
+  "tipos": {
+   "campo": "Campo escutista",
+   "patrimonio": "Património"
+  },
+  "perfis": {
+   "rede": {
+    "n": "Escutismo · agrupamentos e campos",
+    "d": "Associação nacional de juventude: campos, actividades ao ar livre, segurança e serviço à comunidade",
+    "a": "segurança dos campos e das actividades",
+    "on": [
+     "delim",
+     "base",
+     "hidro",
+     "nasc",
+     "cheias",
+     "ocup",
+     "bio",
+     "fogo",
+     "perigo",
+     "risco",
+     "publico",
+     "obsv",
+     "cne_seg",
+     "cne_campos",
+     "cne_nat",
+     "cne_serv",
+     "cne_calor"
+    ]
+   }
+  }
+ }
+}
