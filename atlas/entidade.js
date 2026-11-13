@@ -394,7 +394,7 @@
       var dele = cs.filter(function (c) { return c.grupo === g.id; }); if (!dele.length) return;
       h += '<div class="g"><span class="cor" style="background:' + esc(g.cor || "#666") + '"></span>' + esc(g.nome) + "</div>";
       dele.forEach(function (c) {
-        var info = (+c.n || 0) + (c.geom === "ponto" || c.geom === "pontos" ? " locais" : " elementos") + (c.ha ? " · " + fmt(c.ha) + " ha" : "");
+        var nn = +c.n || 0, pt = /^ponto/.test(c.geom || ""), info = nn + (pt ? (nn === 1 ? " local" : " locais") : (nn === 1 ? " área" : " áreas")) + (c.ha ? " · " + fmt(c.ha) + " ha" : "");
         h += '<button type="button" class="it" data-ent-orgir="' + c.id + '"><b>' + esc(c.nome) + "</b><span>" + info + "</span></button>";
       });
     });
