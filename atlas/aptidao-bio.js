@@ -18,8 +18,8 @@
   function en() { return (D.documentElement.lang || "").slice(0, 2) === "en" || /[?&]lang=en/.test(location.search); }
   function t(pt, e) { return en() ? e : pt; }
   function mapa() { return W.__ipe && W.__ipe.mapa ? W.__ipe.mapa : null; }
-  var DADOS = null, ESPERA = [], A_PEDIR = false, ON = {apt: false, reg: false};
-  try { var g = JSON.parse(W.localStorage.getItem("ipr_aptidao") || "{}"); ON.apt = !!g.apt; ON.reg = !!g.reg; } catch (e) {}
+  var DADOS = null, ESPERA = [], A_PEDIR = false, ON = {apt: false, reg: false, pts: false};
+  try { var g = JSON.parse(W.localStorage.getItem("ipr_aptidao") || "{}"); ON.apt = !!g.apt; ON.reg = !!g.reg; ON.pts = !!g.pts; } catch (e) {}
   function guardar() { try { W.localStorage.setItem("ipr_aptidao", JSON.stringify(ON)); } catch (e) {} }
   function dados(cb) {
     if (DADOS) return cb(DADOS);
@@ -81,7 +81,7 @@
   function popup(e) {
     if (!DADOS || !e.features || !e.features.length) return;
     // Os pontos das organizações e as fichas têm prioridade sobre a malha.
-    var I = mapa(), ls = (I.getStyle().layers || []).filter(function (l) { return /^ent-org-.*-p$|^ent-org-fichas/.test(l.id); }).map(function (l) { return l.id; });
+    var I = mapa(), ls = (I.getStyle().layers || []).filter(function (l) { return /^ent-org-.*-p$|^ent-org-fichas|^ipr-biop$/.test(l.id); }).map(function (l) { return l.id; });
     if (ls.length && I.queryRenderedFeatures(e.point, {layers: ls}).length) return;
     var r = DADOS.h[e.features[0].properties.i]; if (!r) return;
     var c = DADOS.conc[r[5]] || [];
@@ -112,32 +112,104 @@
       '<label><input type="checkbox" data-apt="apt"' + (ON.apt ? " checked" : "") + "> <span>" + t("Aptidão para jovens agricultores biológicos", "Suitability for young organic farmers") + "</span></label>" +
       '<div class="lg">' + CORES.map(function (c) { return '<span style="background:' + c + '"></span>'; }).join("") + '</div><div class="lgt"><span>' + t("Boa", "Good") + "</span><span>" + t("As melhores", "The best") + "</span></div>" +
       '<label><input type="checkbox" data-apt="reg"' + (ON.reg ? " checked" : "") + "> <span>" + t("Perímetros de rega públicos (DGADR)", "Public irrigation schemes (DGADR)") + "</span></label>" +
+      '<label><input type="checkbox" data-apt="pts"' + (ON.pts ? " checked" : "") + "> <span>" + t("Mercados, quintas, cabazes e escolas (com ficha)", "Markets, farms, box schemes and schools (with profile)") + "</span></label>" +
       "<small>" + t("Dez critérios positivos: solo, matéria orgânica, longe de pressões, chuva, água subterrânea, água de rega, mercado, terra acessível, zonas pouco procuradas e rede de apoio. Carregue num hexágono para ver a leitura. Fontes: APA, ICNF, DGADR, INE, Agrobio.", "Ten positive criteria: soil, organic matter, distance from pressures, rain, groundwater, irrigation water, market, affordable land, less sought-after areas and support network. Click a hexagon to see the reading. Sources: APA, ICNF, DGADR, INE, Agrobio.") + "</small>";
     cam.insertBefore(d, cam.firstChild);
-    d.addEventListener("change", function (e) { var c = e.target.closest("[data-apt]"); if (!c) return; var k = c.getAttribute("data-apt"); ON[k] = c.checked; guardar(); if (k === "apt") desenharApt(); else desenharReg(); });
+    d.addEventListener("change", function (e) { var c = e.target.closest("[data-apt]"); if (!c) return; var k = c.getAttribute("data-apt"); ON[k] = c.checked; guardar(); if (k === "apt") desenharApt(); else if (k === "reg") desenharReg(); else desenharPts(); });
     return true;
   }
   function sinc() { var d = D.getElementById("ipr-apt"); if (!d) return; d.querySelectorAll("[data-apt]").forEach(function (c) { var v = !!ON[c.getAttribute("data-apt")]; if (c.checked !== v) c.checked = v; }); }
-  // A primeira vez que o tema Biológico é escolhido, a aptidão liga-se.
+  // Pontos públicos do tema (mercados, feiras, lojas, quintas, cabazes, escolas, bio-regiões), com ficha ao carregar.
+  var TIPOS = {produtor: "Produtor", mercado: "Mercado", feira: "Feira", loja: "Loja", cabaz: "Cabazes / AMAP", escola: "Ensino", cert: "Certificação", bioregiao: "Bio-região", territorio: "Território", sede: "Sede", sementes: "Sementes", demo: "Demonstração"};
+  var CAMPOS = [["o_que", "O que é"], ["local", "Onde"], ["dia", "Dia"], ["horario", "Horário"], ["organiza", "Organiza"], ["visitas", "Visitas"], ["venda", "Venda"], ["terras", "Terra para jovens agricultores"], ["certificacao", "Certificação"], ["cabaz", "Faz parte de"]];
+  var PTS = null;
+  function esc(x) { return String(x == null ? "" : x).replace(/[&<>"]/g, function (c) { return {"&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;"}[c]; }); }
+  function desenharPts() {
+    var I = mapa(); if (!I || !I.getStyle) return;
+    if (!ON.pts) { ["ipr-biop"].forEach(function (l) { try { if (I.getLayer(l)) I.setLayoutProperty(l, "visibility", "none"); } catch (e) {} }); return; }
+    function por(gj) {
+      try {
+        if (!I.getSource("ipr-biop")) I.addSource("ipr-biop", {type: "geojson", data: gj});
+        if (!I.getLayer("ipr-biop")) I.addLayer({id: "ipr-biop", type: "circle", source: "ipr-biop", paint: {
+          "circle-color": ["match", ["get", "tipo"], "produtor", "#e0a42b", "mercado", "#94BE39", "feira", "#94BE39", "loja", "#94BE39", "cabaz", "#ffffff", "bioregiao", "rgba(0,0,0,0)", "#5c9bd5"],
+          "circle-radius": ["interpolate", ["linear"], ["zoom"], 5, ["match", ["get", "tipo"], "bioregiao", 10, 4], 10, ["match", ["get", "tipo"], "bioregiao", 14, 6.5], 14, 8],
+          "circle-stroke-color": ["match", ["get", "tipo"], "cabaz", "#8e5fb3", "bioregiao", "#2e7d32", "#111"],
+          "circle-stroke-width": ["match", ["get", "tipo"], "cabaz", 3, "bioregiao", 2.5, 1.2]}});
+        I.setLayoutProperty("ipr-biop", "visibility", "visible");
+      } catch (e) {}
+    }
+    if (PTS) return por(PTS);
+    fetch(BASE + "bio-pontos.json?v=1").then(function (r) { return r.json(); }).then(function (gj) { PTS = gj; if (ON.pts) por(gj); }).catch(function () {});
+  }
+  function fichaPt(e) {
+    var f = e.features && e.features[0]; if (!f) return;
+    var p = f.properties || {}, h = '<div class="ipr-apt-pop"><div class="k">' + esc(TIPOS[p.tipo] || p.tipo || "") + '</div><div class="t">' + esc(p.nome) + "</div><table>";
+    CAMPOS.forEach(function (c) { if (p[c[0]]) h += "<tr><td>" + c[1] + "</td><td style=\"justify-content:flex-start;text-align:left\">" + esc(p[c[0]]) + "</td></tr>"; });
+    h += "</table>";
+    if (p.site) h += '<p class="n"><a href="' + esc(p.site) + '" target="_blank" rel="noopener" style="color:#94BE39">' + t("Abrir o sítio", "Open website") + "</a></p>";
+    h += '<p class="n">' + t("Fonte: ", "Source: ") + esc(p.fonte || "referência pública") + ". " + esc(p.estado || "") + (p.posicao ? " · " + t("posição ", "position ") + esc(p.posicao) : "") + "</p></div>";
+    try { new W.maplibregl.Popup({maxWidth: "320px", className: "ipr-apt-pp"}).setLngLat(f.geometry.coordinates).setHTML(h).addTo(mapa()); } catch (x) {}
+  }
+  // O tema Biológico passa a ser «onde instalar-se como jovem agricultor biológico»: só leituras positivas por defeito.
+  // Mexe-se no objecto do tema por referência (não se edita o arrumar.js de outra sessão): camadas ligadas, legenda e texto.
+  var TXT = {
+    pt: "Onde instalar-se como jovem agricultor biológico. A aptidão (hexágonos, do verde-claro «boa» ao verde-escuro «as melhores») junta dez critérios positivos: solo, matéria orgânica, longe de pressões, chuva, água subterrânea, água de rega, mercado ao alcance, terra mais acessível, zonas pouco procuradas e rede de apoio. Por cima: capacidade de uso do solo, carbono orgânico, RAN, rede hidrográfica, os perímetros de rega públicos e os pontos de referência (mercados, feiras, lojas, quintas, cabazes, escolas, bio-regiões), cada um com ficha. Continente, Açores e Madeira. Em «Mais camadas deste tema» estão a ocupação do solo, os nitratos, a erosão, as captações, o clima e a biodiversidade.",
+    en: "Where to settle as a young organic farmer. The suitability layer (hexagons, from light green «good» to dark green «the best») combines ten positive criteria: soil, organic matter, distance from pressures, rain, groundwater, irrigation water, market within reach, more affordable land, less sought-after areas and support network. On top: land capability, soil organic carbon, RAN, rivers, public irrigation schemes and reference points (markets, fairs, shops, farms, box schemes, schools, bio-regions), each with a profile. Mainland, Azores and Madeira. «More layers in this theme» has land cover, nitrates, erosion, abstractions, climate and biodiversity."
+  };
+  function ajustarTema() {
+    var T = W.__iprTemas; if (!T || typeof T.defs !== "function") return false;
+    var b = (T.defs() || []).filter(function (x) { return x && x.id === "bio"; })[0]; if (!b) return false;
+    if (b.__apt) return true; b.__apt = 1;
+    var c = ["sroa", "carbono", "ran", "hidro"]; b.c.splice.apply(b.c, [0, b.c.length].concat(c));
+    ["cos23", "nitratos"].forEach(function (id) { if (b.extra && b.extra.indexOf(id) < 0) b.extra.unshift(id); });
+    if (b.leg) b.leg.splice.apply(b.leg, [0, b.leg.length].concat([["l_sroa", "#9e9d24", "area"], ["l_carbono", "#5d4037", "area"], ["l_ran", "#c9a227", "area"], ["l_agua", "#2b7bb9", "linha"]]));
+    return true;
+  }
+  function textoTema(w) {
+    var ver = w.querySelector(".ipr-t62-c:not(.ipr-ag-c) .ipr-t62-ver"); if (!ver) return;
+    var p = ver.querySelector("p") || ver; var txt = TXT[en() ? "en" : "pt"];
+    if (p.getAttribute("data-apt") === "1" && p.textContent === txt) return;
+    // o primeiro parágrafo do bloco «O que está a ver»
+    var alvo = null; [].some.call(ver.querySelectorAll("p"), function (x) { if (x.textContent.length > 120) { alvo = x; return true; } return false; });
+    if (!alvo) { [].some.call(w.querySelectorAll("p"), function (x) { if (/Ocupação do solo \(COS 2023\)|Land cover \(COS 2023\)/.test(x.textContent)) { alvo = x; return true; } return false; }); }
+    if (alvo && alvo.textContent !== txt) { alvo.textContent = txt; alvo.setAttribute("data-apt", "1"); }
+  }
+  var BIO = false, AUTO = {};
   function vigiarTema() {
+    ajustarTema();
     var w = D.getElementById("ipr-t62"); if (!w || !W.MutationObserver) { setTimeout(vigiarTema, 1500); return; }
-    function ver() { var b = w.querySelector('[data-t62="bio"][aria-pressed="true"]'); if (!b) return; var ja = false; try { ja = W.localStorage.getItem("ipr_aptidao_tema") === "1"; } catch (e) {} if (ja) return; try { W.localStorage.setItem("ipr_aptidao_tema", "1"); } catch (e) {} ON.apt = true; guardar(); sinc(); desenharApt(); }
-    new MutationObserver(ver).observe(w, {subtree: true, attributes: true, attributeFilter: ["aria-pressed"]}); ver();
+    var tm = 0;
+    function ver() {
+      ajustarTema();
+      var on = !!w.querySelector('[data-t62="bio"][aria-pressed="true"]');
+      if (on) textoTema(w);
+      if (on === BIO) return; BIO = on;
+      if (on) { ["apt", "reg", "pts"].forEach(function (k) { if (k === "pts" && /[?&]entidade=/.test(location.search)) return; if (!ON[k]) { ON[k] = true; AUTO[k] = 1; } }); }
+      else { Object.keys(AUTO).forEach(function (k) { ON[k] = false; }); AUTO = {}; }
+      guardar(); sinc(); desenharApt(); desenharReg(); desenharPts();
+    }
+    new MutationObserver(function () { clearTimeout(tm); tm = setTimeout(ver, 60); }).observe(w, {subtree: true, childList: true, attributes: true, attributeFilter: ["aria-pressed"]});
+    ver();
   }
   W.__iprAptidao = {
     ligar: function (v) { ON.apt = v !== false; guardar(); sinc(); desenharApt(); },
     regadio: function (v) { ON.reg = v !== false; guardar(); sinc(); desenharReg(); },
+    pontos: function (v) { ON.pts = v !== false; guardar(); sinc(); desenharPts(); },
     ligada: function () { return ON.apt; },
     dados: dados
   };
+  (function cedo(n) { if (!ajustarTema() && n < 60) setTimeout(function () { cedo(n + 1); }, 250); })(0);
   (function arrancar(n) {
     var I = mapa();
     if (!I || !bloco()) { if (n < 80) setTimeout(function () { arrancar(n + 1); }, 500); return; }
     var feito = false;
-    function repor() { desenharApt(); desenharReg(); }
+    function repor() { desenharApt(); desenharReg(); desenharPts(); }
     if (I.isStyleLoaded && I.isStyleLoaded()) repor(); else I.once("idle", repor);
-    I.on("styledata", function () { if (ON.apt && !I.getLayer("ipr-apt-f")) setTimeout(desenharApt, 0); if (ON.reg && !I.getLayer("ipr-reg-f")) setTimeout(desenharReg, 0); });
+    I.on("styledata", function () { if (ON.apt && !I.getLayer("ipr-apt-f")) setTimeout(desenharApt, 0); if (ON.reg && !I.getLayer("ipr-reg-f")) setTimeout(desenharReg, 0); if (ON.pts && !I.getLayer("ipr-biop")) setTimeout(desenharPts, 0); });
     I.on("click", "ipr-apt-f", popup);
+    I.on("click", "ipr-biop", fichaPt);
+    I.on("mouseenter", "ipr-biop", function () { I.getCanvas().style.cursor = "pointer"; });
+    I.on("mouseleave", "ipr-biop", function () { I.getCanvas().style.cursor = ""; });
     I.on("mouseenter", "ipr-apt-f", function () { I.getCanvas().style.cursor = "pointer"; });
     I.on("mouseleave", "ipr-apt-f", function () { I.getCanvas().style.cursor = ""; });
     I.on("click", "ipr-reg-f", function (e) {
