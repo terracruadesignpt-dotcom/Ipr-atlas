@@ -31,13 +31,14 @@
     var n = 0;
     (function t() { var tab = D.querySelector('#ipe .ipe-tab[data-tab="org"]'); if (tab) { tab.click(); return; } if (++n < 40) setTimeout(t, 250); })();
   }
-  function abrir(id) {
+  function abrir(id, url) {
     var o = O(); if (!o) return;
     ls("ipr_topo_org", "1"); mostrarSeparador();
     if (+id !== +o.activa && o.nonce) {
       location.href = "/atlas/?ipr_org=" + encodeURIComponent(id) + "&_ipr_org=" + encodeURIComponent(o.nonce) + "&separador=org";
       return;
     }
+    if (url) { location.replace("/atlas/?separador=org"); return; }
     abrirSeparador();
   }
   W.iprAbrirOrganizacao = abrir;
@@ -47,8 +48,7 @@
     var m = /[?&]org=(\d+)(&|$)/.exec(location.search); if (!m) return;
     var o = O(); if (!o) return;
     if (!o.lista.some(function (x) { return +x.id === +m[1]; })) return;
-    try { history.replaceState(null, "", location.pathname + location.search.replace(/([?&])org=\d+(&|$)/, function (a, p, f) { return f ? p : ""; }).replace(/[?&]$/, "")); } catch (e) {}
-    abrir(m[1]);
+    abrir(m[1], true);
   })();
   mostrarSeparador();
 
