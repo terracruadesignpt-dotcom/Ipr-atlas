@@ -27,7 +27,7 @@
       desH: "Clique no mapa para marcar os pontos. Termine com duplo clique ou em «Terminar». Esc cancela.", terminar: "Terminar", cancelar: "Cancelar",
       prof: "Profundidade", largura: "Largura", berma: "Altura da berma", coroa: "Cota do coroamento", desc: "Cota do descarregador", cn: "CN (II)", manning: "Rugosidade de Manning",
       nenhuma: "Ainda não desenhou nenhuma intervenção.", apagar: "Apagar",
-      simular: "Simular", aSimular: "A simular…", fila: "Na fila", corre: "A calcular", filaPos: "Na fila: {p}.º lugar.", filaFrente: "À frente: {x}.", filaOutros: "Pode haver trabalhos de outros mapas à frente.", haTempo: "há {t}", desde: "desde as {h}", lento: "Está a demorar mais do que o habitual para este tipo de simulação.", pararCorre: "Parar o cálculo", parar: "Cancelar", aParar: "A cancelar…", parado: "Simulação cancelada.", estimado: "Costuma demorar {t}.", e_accepted: "na fila", e_running: "a calcular", e_successful: "concluída", e_failed: "falhou", e_dismissed: "cancelada", ultimo: "Último resultado deste separador, enquanto a nova simulação corre.", ok: "Concluído", falhou: "Não foi possível simular",
+      simular: "Simular", aSimular: "A simular…", fila: "Na fila", corre: "A calcular", filaPos: "Na fila: {p}.º lugar.", filaFrente: "À frente: {x}.", filaOutros: "Pode haver trabalhos de outros mapas à frente.", haTempo: "há {t}", desde: "desde as {h}", lento: "Está a demorar mais do que o habitual para este tipo de simulação.", pararCorre: "Parar o cálculo", parar: "Cancelar", aParar: "A cancelar…", parado: "Simulação cancelada.", estimado: "Costuma demorar {t}.", estimadoAte: "Pode demorar até 10 ou 15 minutos, consoante a fila de simulações no motor.", e_accepted: "na fila", e_running: "a calcular", e_successful: "concluída", e_failed: "falhou", e_dismissed: "cancelada", ultimo: "Último resultado deste separador, enquanto a nova simulação corre.", ok: "Concluído", falhou: "Não foi possível simular",
       anteriores: "Simulações deste mapa", nenhumaSim: "Ainda não há simulações neste mapa.", ver: "Ver",
       resultados: "Resultados", opT: "Isto bate certo com o que conhece do terreno?", opSub: "Período de testes: a sua resposta fica registada com esta simulação e serve para afinar o simulador.", op_certo: "Bate certo", op_parcial: "Em parte", op_errado: "Não bate certo", opTx: "O que viu no terreno (onde, quando, que altura de água)? Opcional.", opEnviar: "Enviar", opObrigado: "Obrigado. Ficou registado.", camadas: "No mapa", descargas: "Ficheiros (COG, GeoPackage, CSV)", balanco: "Balanço de volumes",
       envolvente: "Os mapas de máximos são a envolvente de toda a simulação, não um instante.",
@@ -62,7 +62,7 @@
       desH: "Click on the map to add points. Finish with a double click or «Finish». Esc cancels.", terminar: "Finish", cancelar: "Cancel",
       prof: "Depth", largura: "Width", berma: "Berm height", coroa: "Crest level", desc: "Spillway level", cn: "CN (II)", manning: "Manning roughness",
       nenhuma: "No interventions drawn yet.", apagar: "Delete",
-      simular: "Simulate", aSimular: "Simulating…", fila: "Queued", corre: "Running", filaPos: "Queued: position {p}.", filaFrente: "Ahead: {x}.", filaOutros: "Jobs from other maps may also be ahead.", haTempo: "for {t}", desde: "since {h}", lento: "This is taking longer than usual for this kind of simulation.", pararCorre: "Stop the calculation", parar: "Cancel", aParar: "Cancelling…", parado: "Simulation cancelled.", estimado: "Usually takes {t}.", e_accepted: "queued", e_running: "running", e_successful: "done", e_failed: "failed", e_dismissed: "cancelled", ultimo: "Last result for this tab, while the new simulation runs.", ok: "Done", falhou: "Could not simulate",
+      simular: "Simulate", aSimular: "Simulating…", fila: "Queued", corre: "Running", filaPos: "Queued: position {p}.", filaFrente: "Ahead: {x}.", filaOutros: "Jobs from other maps may also be ahead.", haTempo: "for {t}", desde: "since {h}", lento: "This is taking longer than usual for this kind of simulation.", pararCorre: "Stop the calculation", parar: "Cancel", aParar: "Cancelling…", parado: "Simulation cancelled.", estimado: "Usually takes {t}.", estimadoAte: "It can take up to 10 or 15 minutes, depending on the simulation queue on the engine.", e_accepted: "queued", e_running: "running", e_successful: "done", e_failed: "failed", e_dismissed: "cancelled", ultimo: "Last result for this tab, while the new simulation runs.", ok: "Done", falhou: "Could not simulate",
       anteriores: "Simulations for this map", nenhumaSim: "No simulations for this map yet.", ver: "View",
       resultados: "Results", opT: "Does this match what you know of the land?", opSub: "Testing period: your answer is stored with this simulation and helps tune the simulator.", op_certo: "It matches", op_parcial: "Partly", op_errado: "It does not match", opTx: "What did you see on the ground (where, when, how deep)? Optional.", opEnviar: "Send", opObrigado: "Thank you. It has been recorded.", camadas: "On the map", descargas: "Files (COG, GeoPackage, CSV)", balanco: "Volume balance",
       envolvente: "Maximum maps are the envelope of the whole run, not a single moment.", estatico: "Static exploration: no timing, velocities or flows.",
@@ -253,7 +253,8 @@
 
   // ───────────── resultados ─────────────
   // Tempo típico por processo (minutos), para avisar quando passa muito do normal. Ajustar com o histórico do motor.
-  var TIPICO = { "retencao-rapida": 2, "antes-depois": 10, "simulacao-2d": 30 };
+  // 13/11/2026 (Nuno): «Onde a água pára» pode levar até 10 ou 15 min numa Base grande, conforme a fila do motor.
+  var TIPICO = { "retencao-rapida": 15, "antes-depois": 10, "simulacao-2d": 30 };
   function dur(ms) {
     var s = Math.max(0, Math.round(ms / 1000)), m = Math.floor(s / 60), hh = Math.floor(m / 60);
     if (hh) return hh + " h " + (m % 60) + " min";
@@ -285,7 +286,7 @@
       if (fase) h += '<p class="nota">' + esc(fase) + (j.fimEst ? " · " + (L() === "en" ? "time left " : "faltam ") + "<b>" + (j.fimEst - Date.now() > 1000 ? mmss((j.fimEst - Date.now()) / 1000) : (L() === "en" ? "almost done…" : "quase a terminar…")) + "</b>" : "") + "</p>";
       if (TIPICO[proc] && !j.fimEst) {
         if (dt > TIPICO[proc] * 60000) h += '<p class="faixa">' + esc(t("lento")) + "</p>";
-        else h += '<p class="nota">' + esc(t("estimado").replace("{t}", "~" + TIPICO[proc] + " min")) + "</p>";
+        else h += '<p class="nota">' + esc(proc === "retencao-rapida" ? t("estimadoAte") : t("estimado").replace("{t}", "~" + TIPICO[proc] + " min")) + "</p>";
       }
       if (d.pode_parar) h += '<div class="acc"><button class="b" data-as="parar"' + (j.aParar ? " disabled" : "") + ">" + esc(j.aParar ? t("aParar") : t("pararCorre")) + "</button></div>";
     } else {
