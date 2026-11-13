@@ -283,7 +283,7 @@
       m.addLayer({id: sid + "-p", type: "circle", source: sid, filter: ["==", ["geometry-type"], "Point"], paint: {"circle-color": cor, "circle-radius": 6, "circle-stroke-color": "#111", "circle-stroke-width": 1.5}});
       if (W.maplibregl) m.on("click", sid + "-p", function (e) {
         var f = e.features && e.features[0]; if (!f) return; var pr = f.properties || {};
-        new W.maplibregl.Popup({closeButton: true}).setLngLat(f.geometry.coordinates).setHTML("<b>" + esc(pr.nome || "") + "</b>" + (pr.dia ? "<br>" + esc(pr.dia) : "") + (pr.estado ? '<br><span style="color:#888">' + esc(pr.estado) + "</span>" : "")).addTo(m);
+        new W.maplibregl.Popup({closeButton: true}).setLngLat(f.geometry.coordinates).setHTML('<div style="max-width:260px;font:13px/1.4 Inter,sans-serif;color:#222"><b>' + esc(pr.nome || "") + "</b>" + (pr.o_que ? "<br>" + esc(pr.o_que) : "") + (pr.local ? '<br><span style="color:#555">' + esc(pr.local) + "</span>" : "") + (pr.dia ? "<br>" + esc(pr.dia) : "") + (pr.fonte ? '<br><span style="color:#777;font-size:11px">Fonte: ' + esc(pr.fonte) + "</span>" : "") + (pr.estado ? '<br><span style="color:#8a6d00;font-size:11px">' + esc(pr.estado) + "</span>" : "") + "</div>").addTo(m);
       });
     }).catch(function () {});
   }
