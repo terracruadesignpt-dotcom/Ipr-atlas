@@ -152,6 +152,7 @@
     "#ipr-ent-dir .h b{flex:1;color:#E6E7E0;font:600 14px Outfit,Inter,sans-serif}" +
     "#ipr-ent-dir.fechado .h b,#ipr-ent-dir.fechado .c{display:none}" +
     "#ipr-ent-dir .c{overflow:auto;flex:1;padding:10px 12px 20px}" +
+    "html.ipr-ent-cli #ipe .ipe-tab[data-tab=\"proj\"],html.ipr-ent-cli #ipe .ipe-tab[data-tab=\"org\"]{display:none!important}" +
     "#ipr-ent-dir .tb{display:flex;border-bottom:1px solid #2a2c25}#ipr-ent-dir .tb button{flex:1;background:none;border:0;border-bottom:2px solid transparent;color:#9aa08f;font:600 12px Inter,sans-serif;padding:8px 2px;cursor:pointer}#ipr-ent-dir .tb button[aria-selected=true]{color:#E6E7E0;border-bottom-color:#94BE39}#ipr-ent-dir.fechado .tb{display:none}" +
     "#ipr-ent-dir .s,#ipr-ent-esq .s{color:#8b8f80;font-size:12px}#ipr-ent-dir #ipe-com{position:static}" +
     ".ipr-ent-og{margin-top:8px;border-top:1px solid #2a2c25;padding-top:8px;font:12px/1.4 Inter,sans-serif;color:#C3C5BC}.ipr-ent-og .t{font:600 11px Inter;letter-spacing:.06em;text-transform:uppercase;color:#B8A83A;margin-bottom:4px}" +
@@ -225,6 +226,9 @@
 
   // ---------- Organização ligada à entidade (Nuno, 13/11, 10h36: camadas deles à esquerda; à direita o que precisam) ----------
   var ORGID = 0, ORG = null, ORGON = {}, TAB = "painel", COMV = null;
+  // Quem entra por uma organização não precisa dos separadores Bases e Organização de sempre: o que é dela está no painel
+  // da entidade. A equipa continua a vê-los quando fecha o painel.
+  if (!W.tcdEquipa) D.documentElement.classList.add("ipr-ent-cli");
   (function () { var m = W.IPR_ORG_ENT || {}; Object.keys(m).forEach(function (k) { if (m[k] === ENT.id) ORGID = +k; }); })();
   function orgCarregar() {
     if (!ORGID) return;
