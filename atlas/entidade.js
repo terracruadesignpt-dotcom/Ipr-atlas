@@ -88,6 +88,8 @@
     {id: "fert", g: "agro", n: "Fertilidade e solo vivo", d: "Capacidade de uso, carta de solos, carbono orgânico, erosão; análises de solo dos associados por cima", eb: "Analyzer", ids: ["sroa", "solos", "carbono", "l_erosao"], k: [["Carbono orgânico médio", "f1"], ["Análises de solo carregadas", "f1"]]},
     {id: "rega", g: "agro", n: "Água de rega", d: "Captações, aquíferos, massas de água e escassez; a rega dimensiona-se pela bacia, não pela parcela", eb: "Analyzer", ids: ["capt_p", "capt_sup", "aquif", "massas", "wei"], k: [["Explorações em bacia com escassez", "f1"]]},
     {id: "clima", g: "agro", n: "Clima e calendário agrícola", d: "Temperatura, geadas, precipitação, insolação, radiação, humidade, evapotranspiração", eb: "Analyzer", ids: ["temp_med", "geada_ano", "geada_dias", "precip", "insolacao", "radiacao", "humidade", "etr", "aridez"], k: [["Dias de geada, média da rede", "f1"]]},
+    {id: "pecu", g: "agro", n: "Pecuária, pastagens e apicultura biológicas", d: "Pastagens e montado, encabeçamento, ocupação IFAP; leite, carne e mel em modo biológico", eb: "Analyzer", ids: ["cos23", "ifap_o", "hab_6310", "swf21"], k: [["Cabeças normais por hectare, média da rede", "f1"], ["Apiários no mapa", "f1"]]},
+    {id: "sem", g: "agro", n: "Sementes e variedades regionais", d: "Bancos e trocas de sementes, variedades tradicionais, produtores de semente biológica", eb: "Finder", ids: [], k: [["Variedades registadas", "f1"]]},
     {id: "biof", g: "agro", n: "Biodiversidade funcional", d: "Sebes e pequenos bosquetes, densidade de copa, ocorrências de aves e plantas", eb: "Analyzer", ids: ["swf21", "copa18", "n_gbif_aves", "n_gbif_plantas", "habitats"], k: [["Metros de sebe por hectare", "f1"]]},
     {id: "tecn", g: "agro", n: "Assistência técnica e BioAssistência", d: "Visitas, pedidos e diagnósticos georreferenciados: pragas, doenças, fertilização", eb: "Monitoring", ids: [], k: [["Pedidos este ano", "0"], ["Pragas registadas no mapa", "0"]]},
     {id: "educ", g: "agro", n: "Formação e hortas escolares", d: "Cursos, escolas com hortas biológicas, dias abertos nas explorações", eb: "Monitoring", ids: [], k: [["Escolas no mapa", "f1"], ["Formandos este ano", "f1"]]}
@@ -98,7 +100,7 @@
     {id: "municipio", n: "Município", d: "Câmaras municipais e juntas de freguesia", a: "bacias do concelho e plano de fixação", on: ["delim", "base", "hidro", "infil", "fogo", "perigo", "risco", "cond", "cadastro", "aldeias", "presenca", "serv", "econ", "terras", "capitais", "capac", "acolh", "dagua", "comissao", "publico", "ancora", "obsv"]},
     {id: "bacia", n: "Bacia", d: "Comissões de bacia e associações de regantes", a: "estrutura hídrica e Observatório", on: ["delim", "base", "hidro", "keyline", "infil", "nasc", "cheias", "solos", "ocup", "bio", "fogo", "risco", "cond", "dagua", "dresto", "comissao", "obsv"]},
     {id: "propriedade", n: "Propriedade", d: "Herdades, quintas e investidores", a: "Base Cartográfica na parcela", on: ["delim", "base", "hidro", "keyline", "infil", "solos", "ocup", "fogo", "perigo", "cond", "cadastro", "dagua", "dresto", "obsv"]},
-    {id: "associacao", n: "Associação agrícola", d: "Associações de produtores e de agricultura biológica", a: "mapa dos associados, mercados e métricas da produção", on: ["delim", "base", "hidro", "infil", "solos", "ocup", "bio", "fogo", "cond", "cadastro", "econ", "terras", "capitais", "rprod", "mercados", "conv", "fert", "rega", "clima", "biof", "tecn", "educ", "publico", "ancora", "obsv"]},
+    {id: "associacao", n: "Associação agrícola", d: "Associações de produtores e de agricultura biológica", a: "mapa dos associados, mercados e métricas da produção", on: ["delim", "base", "hidro", "infil", "solos", "ocup", "bio", "fogo", "cond", "cadastro", "econ", "terras", "capitais", "rprod", "mercados", "conv", "fert", "rega", "clima", "pecu", "sem", "biof", "tecn", "educ", "publico", "ancora", "obsv"]},
     {id: "profissional", n: "Profissional", d: "Projectistas da Rede IPR", a: "ferramentas de desenho", on: ["delim", "base", "hidro", "keyline", "infil", "solos", "ocup", "bio", "fogo", "cond", "dagua", "dresto", "obsv"]}
   ];
   var BACIAS = ENT.id === "adxtur" ? [
@@ -106,11 +108,17 @@
     {id: "zezere", n: "Zêzere", a: ["Coentral Grande", "Álvaro"], nota: "cabeceira no Santo António da Neve"},
     {id: "ocreza", n: "Tejo, pelo rio Ocreza", a: ["Martim Branco", "Foz do Cobrão", "Ortiga"], nota: "Foz do Cobrão na fronteira; Ortiga fora do limite"}
   ] : AGRO ? [
-    {id: "norte", n: "Norte: Minho, Lima, Cávado, Ave, Douro", a: ["Porto"], nota: "a confirmar com a Agrobio"},
-    {id: "centro", n: "Centro: Vouga, Mondego, Lis", a: ["Aveiro", "Coimbra"], nota: "a confirmar com a Agrobio"},
-    {id: "tejo", n: "Tejo e ribeiras do Oeste", a: ["Lisboa", "Oeiras", "Cascais", "Amadora", "Loures"], nota: "sede e a maioria dos mercados"},
-    {id: "sul", n: "Sado, Mira e Guadiana", a: ["Alentejo"], nota: "a confirmar com a Agrobio"},
-    {id: "algarve", n: "Ribeiras do Algarve", a: ["Algarve"], nota: "a confirmar com a Agrobio"}
+    // As dez regiões hidrográficas da Lei da Água (RH1 a RH10), as mesmas da camada «Regiões hidrográficas».
+    {id: "rh1", n: "RH1 · Minho e Lima", a: ["Alto Minho"], nota: "a confirmar com a Agrobio"},
+    {id: "rh2", n: "RH2 · Cávado, Ave e Leça", a: ["Braga", "Porto"], nota: "a confirmar com a Agrobio"},
+    {id: "rh3", n: "RH3 · Douro", a: ["Trás-os-Montes", "Douro", "Beira Alta"], nota: "a confirmar com a Agrobio"},
+    {id: "rh4", n: "RH4 · Vouga, Mondego e Lis", a: ["Aveiro", "Coimbra", "Leiria"], nota: "a confirmar com a Agrobio"},
+    {id: "rh5", n: "RH5 · Tejo e ribeiras do Oeste", a: ["Lisboa", "Oeiras", "Cascais", "Amadora", "Loures", "Oeste", "Ribatejo", "Beira Baixa"], nota: "sede e a maioria dos mercados"},
+    {id: "rh6", n: "RH6 · Sado e Mira", a: ["Alentejo Litoral", "Setúbal"], nota: "a confirmar com a Agrobio"},
+    {id: "rh7", n: "RH7 · Guadiana", a: ["Alentejo interior"], nota: "a confirmar com a Agrobio"},
+    {id: "rh8", n: "RH8 · Ribeiras do Algarve", a: ["Algarve"], nota: "a confirmar com a Agrobio"},
+    {id: "rh9", n: "RH9 · Açores", a: ["nove ilhas"], nota: "muitas camadas do IPR só cobrem o continente"},
+    {id: "rh10", n: "RH10 · Madeira", a: ["Madeira", "Porto Santo"], nota: "muitas camadas do IPR só cobrem o continente"}
   ] : [];
   var ZONA = ENT.id === "adxtur" ? [[-8.45, 39.55], [-7.35, 40.35]] : AGRO ? [[-9.6, 36.9], [-6.1, 42.2]] : null;
   var CATS = AGRO ? [["merc", "Mercados, lojas e cabazes"], ["terra", "Terra disponível para arrendar ou ceder"], ["sem", "Sementes e trocas"], ["praga", "Pragas e doenças observadas"], ["agua", "Água e regadio"], ["vol", "Voluntariado e estágios nas explorações"]] : [["serv", "Serviços: alojamento, restauração, loja, transporte"], ["casa", "Casas devolutas, à venda ou para arrendar"], ["agua", "Nascentes e linhas de água secas ou entupidas"], ["risco", "Caminhos fechados e acumulação de combustível"], ["pat", "Património e saber local"], ["vol", "Voluntariado e trabalho"]];
