@@ -254,13 +254,18 @@
           W.__iprEntOrg = {quando: Date.now(), org: d && d.org ? d.org.id : null, camadas: d && d.camadas ? d.camadas.length : null};
           if (!d || !d.org || +d.org.id !== ORGID) throw new Error("org");
           ORG = d;
-          (d.camadas || []).forEach(function (c) { try { orgLigar(c, true); } catch (e) {} });
+          orgMapa();
           if (!ZONA) { var bx = null; (d.camadas || []).forEach(function (c) { var b = c.bbox; if (!b || b.length !== 4) return; bx = bx ? [Math.min(bx[0], b[0]), Math.min(bx[1], b[1]), Math.max(bx[2], b[2]), Math.max(bx[3], b[3])] : b.slice(); });
-            if (bx) { ZONA = [[bx[0], bx[1]], [bx[2], bx[3]]]; try { if (bx[0] === bx[2]) W.__ipe.mapa.flyTo({center: [bx[0], bx[1]], zoom: 12}); else W.__ipe.mapa.fitBounds(ZONA, {padding: 48, maxZoom: 14, duration: 0}); } catch (e) {} } }
-          marcarEsq(); painel();
+            if (bx) { ZONA = [[bx[0], bx[1]], [bx[2], bx[3]]]; if (W.__ipe && W.__ipe.mapa) try { if (bx[0] === bx[2]) W.__ipe.mapa.flyTo({center: [bx[0], bx[1]], zoom: 12}); else W.__ipe.mapa.fitBounds(ZONA, {padding: 48, maxZoom: 14, duration: 0}); } catch (e) {} } }
+          try { marcarEsq(); if (D.getElementById("ipr-ent-dir")) painel(); } catch (e) {}
         })
         .catch(function (e) { W.__iprEntOrgErro = String(e); if (++n < 6) setTimeout(pedir, 2500); });
     })();
+  }
+  var ORGMAPA = false;
+  function orgMapa() {
+    if (!ORG || ORGMAPA || !(W.__ipe && W.__ipe.mapa && W.__ipe.viz)) return;
+    ORGMAPA = true; (ORG.camadas || []).forEach(function (c) { try { orgLigar(c, true); } catch (e) {} });
   }
   function orgCam(id) { return ORG ? (ORG.camadas || []).filter(function (c) { return +c.id === +id; })[0] : null; }
   function orgLigar(c, on) {
@@ -505,9 +510,10 @@
   D.addEventListener("keydown", function (e) { if (e.key === "Escape" && D.getElementById("ipr-ent-wiz")) wiz(false); });
 
   // ---------- Arranque ----------
+  try { orgCarregar(); } catch (e) {} // as camadas da organização pedem-se logo, sem esperar pelo mapa
   espera(function () {
     aplicar(true);
-    try { orgCarregar(); } catch (e) {}
+    try { orgMapa(); if (ORG) { marcarEsq(); painel(); } } catch (e) {}
     // O mapa é da organização: fecha o tema que o Atlas abre sozinho ao arrancar, enquanto a pessoa não mexer.
     [2500, 6000, 11000].forEach(function (ms) { setTimeout(function () { var x = D.querySelector("#ipr-t62 .ipr-t62-x"); if (x && x.offsetParent !== null) try { x.click(); } catch (e) {} }, ms); });
     // O arranque do Atlas (vista inicial, camadas guardadas da visita anterior) corre depois e repõe o país inteiro e as
