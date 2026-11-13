@@ -330,7 +330,7 @@
 
   // ---- Pessoas, convites e fichas dos associados (m91486) ----
   var EO = W.IPR_ENT_ORG || null, PESS = null, FICHAS = null, FFORM = null, MARCAR = false, ENVCONF = false, SEL = {};
-  var EM = {}, FARQ = null;
+  var EM = {}, FARQ = null, ANUL = null;
   function eo(op, extra) {
     // Envios e gravações: um de cada vez, para um duplo clique não mandar dois mails.
     if (/^(enviar|teste|aviso|aviso_teste|juntar|ficha_guardar|calendario_guardar)$/.test(op)) {
@@ -384,7 +384,7 @@
     h += '<button type="button" class="ipr-ent-b" data-ent="minhaficha">A minha ficha</button></div>';
     return h;
   }
-  var ESTADOS = {rascunho: "Por enviar", enviado: "Convite enviado", aceite: "Já entrou"};
+  var ESTADOS = {rascunho: "Por enviar", enviado: "Convite enviado", aceite: "Já entrou", anulado: "Anulado"};
   function pessoasHtml() {
     var cv = PESS ? PESS.convites : [], pp = EO.papeis || {};
     var h = '<div class="h"><button type="button" class="ipr-ent-b" data-ent-tab="painel">← Organização</button><b>Pessoas</b></div><div class="c ipr-ent-pes">';
@@ -397,7 +397,7 @@
     else if (!cv.length) h += '<p class="s">Ainda ninguém. Junte pessoas acima ou importe uma lista.</p>';
     else h += cv.map(function (c) {
       var pode = c.estado !== "aceite";
-      return '<div class="pe"><label>' + (pode ? '<input type="checkbox" data-ent-sel="' + esc(c.id) + '"' + (SEL[c.id] ? " checked" : "") + ">" : '<span class="ok">✓</span>') + '<span class="nm"><b>' + esc(c.nome || c.email) + "</b><small>" + esc(c.email || "") + " · " + esc(pp[c.papel] || c.papel) + '</small></span></label><span class="st st-' + esc(c.estado) + '">' + esc(ESTADOS[c.estado] || c.estado) + '</span><button type="button" class="mini" data-ent-pficha="' + esc(c.id) + '" title="Ficha">Ficha</button>' + (c.estado === "rascunho" ? '<button type="button" class="mini" data-ent-papagar="' + esc(c.id) + '" title="Tirar da lista">×</button>' : "") + "</div>";
+      return '<div class="pe"><label>' + (pode ? '<input type="checkbox" data-ent-sel="' + esc(c.id) + '"' + (SEL[c.id] ? " checked" : "") + ">" : '<span class="ok">✓</span>') + '<span class="nm"><b>' + esc(c.nome || c.email) + "</b><small>" + esc(c.email || "") + " · " + esc(pp[c.papel] || c.papel) + '</small></span></label><span class="st st-' + esc(c.estado) + '">' + esc(ESTADOS[c.estado] || c.estado) + '</span><button type="button" class="mini" data-ent-pficha="' + esc(c.id) + '" title="Ficha">Ficha</button>' + (c.estado === "rascunho" ? '<button type="button" class="mini" data-ent-papagar="' + esc(c.id) + '" title="Tirar da lista">×</button>' : "") + (c.estado === "enviado" ? '<button type="button" class="mini" data-ent-panular="' + esc(c.id) + '" title="O link deixa de funcionar e o acesso volta a ficar livre">' + (ANUL === c.id ? "Confirmar anular" : "Anular") + "</button>" : "") + "</div>";
     }).join("");
     h += "</div>";
     var ns = Object.keys(SEL).filter(function (k) { return SEL[k]; }).length;
@@ -1239,7 +1239,7 @@
 
   // ---------- Eventos ----------
   D.addEventListener("click", function (e) {
-    var t = e.target.closest && e.target.closest("[data-ent],[data-ent-mod],[data-ent-perfil],[data-ent-bacia],[data-ent-cat],[data-ent-cam],[data-ent-abrir],[data-ent-tab],[data-ent-org],[data-ent-orgir],[data-ent-ferr],[data-ent-carregar],[data-ent-base],[data-ent-sel],[data-ent-pficha],[data-ent-papagar],[data-ent-caljunta],[data-ent-caltira]");
+    var t = e.target.closest && e.target.closest("[data-ent],[data-ent-mod],[data-ent-perfil],[data-ent-bacia],[data-ent-cat],[data-ent-cam],[data-ent-abrir],[data-ent-tab],[data-ent-org],[data-ent-orgir],[data-ent-ferr],[data-ent-carregar],[data-ent-base],[data-ent-sel],[data-ent-pficha],[data-ent-papagar],[data-ent-panular],[data-ent-caljunta],[data-ent-caltira]");
     if (!t) return;
     if (t.hasAttribute("data-ent-org")) { var oc = orgCam(t.getAttribute("data-ent-org")); orgLigar(oc, t.checked); setTimeout(function () { marcarEsq(); if (TAB === "proj") painel(); }, 0); return; }
     if (t.hasAttribute("data-ent-orgir")) { e.preventDefault(); e.stopPropagation(); var oi = orgCam(t.getAttribute("data-ent-orgir")); if (oi && !ORGON[oi.id]) orgLigar(oi, true); orgIr(oi); marcarEsq(); return; }
@@ -1249,6 +1249,13 @@
     if (t.hasAttribute("data-ent-caltira")) { e.preventDefault(); e.stopPropagation(); var pr2 = t.getAttribute("data-ent-caltira").split(":"), mm = +pr2[0], jj = +pr2[1], k2 = -1; CAL = (CAL || []).filter(function (x) { if (+x.mes !== mm) return true; k2++; return k2 !== jj; }); calGuardar(); return; }
     if (t.hasAttribute("data-ent-sel")) { SEL[t.getAttribute("data-ent-sel")] = t.checked; ENVCONF = false; setTimeout(painel, 0); return; }
     if (t.hasAttribute("data-ent-pficha")) { e.preventDefault(); e.stopPropagation(); var pc = (PESS && PESS.convites || []).filter(function (x) { return x.id === t.getAttribute("data-ent-pficha"); })[0] || {}; var pf = (FICHAS || []).filter(function (x) { return pc.email && (x.email || "").toLowerCase() === pc.email.toLowerCase(); })[0]; fformAbrir(pf || {nome: pc.nome, email: pc.email, tipo: pc.papel === "produtor" ? "produtor" : "produtor"}); return; }
+    if (t.hasAttribute("data-ent-panular")) {
+      e.preventDefault(); e.stopPropagation(); var aid = t.getAttribute("data-ent-panular");
+      if (ANUL !== aid) { ANUL = aid; painel(); return; }
+      ANUL = null; aviso("A anular…");
+      eo("anular", {id: aid}).then(function (d) { PESS = d; aviso("Convite anulado. O link já não funciona e o acesso ficou livre."); painel(); }).catch(function (er) { aviso("Não foi possível anular: " + er.message); });
+      return;
+    }
     if (t.hasAttribute("data-ent-papagar")) { e.preventDefault(); e.stopPropagation(); eo("apagar_rascunho", {id: t.getAttribute("data-ent-papagar")}).then(function (d) { PESS = d; delete SEL[t.getAttribute("data-ent-papagar")]; painel(); }); return; }
     if (t.hasAttribute("data-ent-tab")) { e.preventDefault(); e.stopPropagation(); TAB = t.getAttribute("data-ent-tab"); painel(); return; }
     if (t.hasAttribute("data-ent-ferr")) { e.preventDefault(); e.stopPropagation(); var fe = FERR[+t.getAttribute("data-ent-ferr")], nb = fe && D.querySelector("[" + fe[0] + "]"); if (nb) nb.click(); return; }
