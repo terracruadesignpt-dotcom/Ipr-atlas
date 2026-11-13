@@ -24,7 +24,7 @@
   function dados(cb) {
     if (DADOS) return cb(DADOS);
     ESPERA.push(cb); if (A_PEDIR) return; A_PEDIR = true;
-    fetch(BASE + "aptidao-bio.json?v=1").then(function (r) { return r.json(); }).then(function (d) {
+    fetch(BASE + "aptidao-bio.json?v=2").then(function (r) { return r.json(); }).then(function (d) {
       DADOS = d; var l = ESPERA; ESPERA = []; l.forEach(function (f) { try { f(d); } catch (e) {} });
     }).catch(function () { A_PEDIR = false; });
   }
