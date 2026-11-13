@@ -20,7 +20,8 @@
   function mapa() { return W.__ipe && W.__ipe.mapa ? W.__ipe.mapa : null; }
   var DADOS = null, ESPERA = [], A_PEDIR = false, ON = {apt: false, reg: false, pts: false};
   try { var g = JSON.parse(W.localStorage.getItem("ipr_aptidao") || "{}"); ON.apt = !!g.apt; ON.reg = !!g.reg; ON.pts = !!g.pts; } catch (e) {}
-  function guardar() { try { W.localStorage.setItem("ipr_aptidao", JSON.stringify(ON)); } catch (e) {} }
+  // Só se guarda o que a pessoa ligou à mão; o que o tema ligou desliga-se ao sair dele e não fica para a visita seguinte.
+  function guardar() { try { var g = {}; Object.keys(ON).forEach(function (k) { g[k] = !!ON[k] && !(typeof AUTO === "object" && AUTO && AUTO[k]); }); W.localStorage.setItem("ipr_aptidao", JSON.stringify(g)); } catch (e) {} }
   function dados(cb) {
     if (DADOS) return cb(DADOS);
     ESPERA.push(cb); if (A_PEDIR) return; A_PEDIR = true;
@@ -117,7 +118,7 @@
       '<label><input type="checkbox" data-apt="pts"' + (ON.pts ? " checked" : "") + "> <span>" + t("Mercados, quintas, cabazes e escolas (com ficha)", "Markets, farms, box schemes and schools (with profile)") + "</span></label>" +
       "<small>" + t("Dez critérios positivos: solo, matéria orgânica, longe de pressões, chuva, água subterrânea, água de rega, mercado, terra acessível, zonas pouco procuradas e rede de apoio. Carregue num hexágono para ver a leitura. Fontes: APA, ICNF, DGADR, INE, Agrobio.", "Ten positive criteria: soil, organic matter, distance from pressures, rain, groundwater, irrigation water, market, affordable land, less sought-after areas and support network. Click a hexagon to see the reading. Sources: APA, ICNF, DGADR, INE, Agrobio.") + "</small>";
     cam.insertBefore(d, cam.firstChild);
-    d.addEventListener("change", function (e) { var c = e.target.closest("[data-apt]"); if (!c) return; var k = c.getAttribute("data-apt"); ON[k] = c.checked; guardar(); if (k === "apt") desenharApt(); else if (k === "reg") desenharReg(); else desenharPts(); });
+    d.addEventListener("change", function (e) { var c = e.target.closest("[data-apt]"); if (!c) return; var k = c.getAttribute("data-apt"); ON[k] = c.checked; if (AUTO) delete AUTO[k]; guardar(); if (k === "apt") desenharApt(); else if (k === "reg") desenharReg(); else desenharPts(); });
     return true;
   }
   function sinc() { var d = D.getElementById("ipr-apt"); if (!d) return; d.querySelectorAll("[data-apt]").forEach(function (c) { var v = !!ON[c.getAttribute("data-apt")]; if (c.checked !== v) c.checked = v; }); }
