@@ -177,6 +177,9 @@
     "#ipr-ent-dir .pe{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid #26271d}#ipr-ent-dir .pe label{display:flex;align-items:center;gap:8px;flex:1;min-width:0}#ipr-ent-dir .pe .nm{display:flex;flex-direction:column;min-width:0}#ipr-ent-dir .pe .nm small{color:#9a9b90;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#ipr-ent-dir .pe .ok{color:#94BE39}" +
     "#ipr-ent-dir .st{font:11px Inter;padding:2px 6px;border-radius:4px;border:1px solid #3a3b2e;color:#B8B9AE;white-space:nowrap}#ipr-ent-dir .st-enviado{color:#d8b64a;border-color:#6b5a1f}#ipr-ent-dir .st-aceite{color:#94BE39;border-color:#4a6b12}#ipr-ent-dir .mini{background:none;border:1px solid #3a3b2e;color:#B8B9AE;border-radius:4px;padding:2px 7px;cursor:pointer;font:12px Inter}" +
     "#ipr-ent-dir .ipr-ent-ff label{display:block;margin:10px 0 3px;color:#9a9b90;font:12px Inter,sans-serif}#ipr-ent-dir .ipr-ent-b[disabled]{opacity:.45;cursor:default}" +
+    "#ipr-ent-dir .ce{padding:4px 0;font:13px/1.4 Inter,sans-serif;color:#E6E7E0}#ipr-ent-dir .ct{display:inline-block;font:10px Inter;letter-spacing:.04em;text-transform:uppercase;border:1px solid #3a3b2e;border-radius:3px;padding:1px 5px;margin-right:6px;color:#B8B9AE}#ipr-ent-dir .ct-evento{color:#d8b64a;border-color:#6b5a1f}#ipr-ent-dir .ct-sementeira,#ipr-ent-dir .ct-plantacao{color:#94BE39;border-color:#4a6b12}" +
+    "#ipr-ent-dir .crono{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin:10px 0}#ipr-ent-dir .cm{display:block;text-align:center;border:1px solid #3a3b2e;border-radius:4px;padding:5px 0;color:#B8B9AE;text-decoration:none;font:11px Inter}#ipr-ent-dir .cm b{display:block;color:#E6E7E0}#ipr-ent-dir .cm.on{border-color:#94BE39}#ipr-ent-dir .cm span{color:#94BE39}#ipr-ent-dir .cal-add{grid-template-columns:110px 1fr auto!important;margin-top:6px}#ipr-ent-dir .cal-add button{grid-column:auto!important}" +
+    "#ipr-ent-dir .ale{border-left:3px solid #d8b64a;padding:4px 8px;margin:6px 0;font:12px/1.4 Inter,sans-serif}#ipr-ent-dir .ale b{display:block;color:#E6E7E0}#ipr-ent-dir .ale span{color:#B8B9AE}#ipr-ent-dir .ale.n2{border-color:#e08a3a}#ipr-ent-dir .ale.n3{border-color:#d9542b}" +
     ".ipr-ent-toast{position:fixed;left:50%;bottom:40px;transform:translateX(-50%);z-index:99999;background:#16170f;color:#E6E7E0;border:1px solid #94BE39;border-radius:6px;padding:10px 14px;font:13px Inter,sans-serif;max-width:420px;box-shadow:0 6px 20px rgba(0,0,0,.4)}" +
     "#ipr-ent-esq .ap{display:flex;align-items:center;justify-content:space-between;margin-top:10px;font:600 11px Inter;letter-spacing:.06em;text-transform:uppercase;color:#B8A83A}" +
     ".ipr-ent-b{all:unset;box-sizing:border-box;cursor:pointer;min-height:32px;padding:5px 10px;border:1px solid #383A33;border-radius:2px;color:#C3C5BC;font:500 12px/1.3 Inter,sans-serif;display:inline-flex;align-items:center;gap:6px}" +
@@ -300,6 +303,7 @@
         "circle-stroke-width": ["match", ["get", "tipo"], "cabaz", 3.5, "bioregiao", 2.5, 1.5]}});
       PONTOS[c.id] = gj; redesDesenhar();
       pontoEventos(sid + "-p", c);
+      clearTimeout(W.__iprEntRp); W.__iprEntRp = setTimeout(function () { if (TAB === "painel") painel(); if (ALERTAS === null && EO) alertasCarregar(); }, 600);
     }).catch(function () {});
   }
 
@@ -334,6 +338,8 @@
   function eoIniciar() {
     if (!EO) return;
     if (EO.gestor) eo("lista").then(function (d) { PESS = d; if (TAB === "painel" || TAB === "pessoas") painel(); }).catch(function () {});
+    calCarregar();
+    setTimeout(alertasCarregar, 4000);
     fichasCarregar(function () {
       if (/[?&]ficha=minha/.test(location.search)) { var mf = (FICHAS || []).filter(function (f) { return f.minha; })[0]; fformAbrir(mf || {email: EO.eu, tipo: "produtor"}); }
     });
@@ -458,6 +464,187 @@
     return h + "</div>";
   }
   function fformLer() { [].forEach.call(D.querySelectorAll("#ipr-ent-dir [data-ff]"), function (x) { FFORM[x.getAttribute("data-ff")] = x.value; }); }
+
+
+  // ---- Números vivos, calendário, alertas, oferta e procura, avisos e relatório ----
+  function todosPontos() { var r = []; Object.keys(PONTOS).forEach(function (k) { (PONTOS[k].features || []).forEach(function (f) { if (f.geometry && f.geometry.type === "Point") r.push(f); }); }); return r; }
+  function vivos() {
+    var ps = todosPontos(); if (!ps.length) return null;
+    var c = {produtor: 0, venda: 0, cabaz: 0, ilhas: 0, fichas: FICHAS ? FICHAS.length : 0};
+    ps.forEach(function (f) { var t = f.properties.tipo || "produtor", x = f.geometry.coordinates[0];
+      if (t === "produtor") c.produtor++; else if (t === "mercado" || t === "feira" || t === "loja") c.venda++; else if (t === "cabaz") c.cabaz++;
+      if (x < -15) c.ilhas++; });
+    return [["Produtores no mapa", c.produtor], ["Mercados, feiras e lojas", c.venda], ["Cabazes e AMAP", c.cabaz], ["Fichas dos associados", c.fichas], ["Pontos nos Açores e Madeira", c.ilhas]];
+  }
+  var MESES = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+  var CAL = null, ALERTAS = null, OP = null, OPON = false, AVISO = null;
+  var CAL_PROPOSTA = [
+    [1, "trabalho", "Planear rotações e encomendar sementes biológicas; podas de inverno das fruteiras."], [1, "sementeira", "Alfobre protegido: alface e couves."],
+    [2, "sementeira", "Alfobre protegido: tomate, pimento e beringela."], [2, "trabalho", "Plantar fruteiras de raiz nua; composto na adubação de fundo."],
+    [3, "sementeira", "Ao ar livre: cenoura, ervilha, rabanete e espinafre; plantar batata."],
+    [4, "plantacao", "Transplantar alface e couves; incorporar os adubos verdes de inverno."],
+    [5, "plantacao", "Transplantar tomate, pimento, beringela, curgete e pepino; semear feijão e milho; cobrir o solo."],
+    [6, "trabalho", "Vigiar afídeos e escaravelho, favorecer os auxiliares; guardar semente das culturas de primavera."],
+    [7, "trabalho", "Rega gota-a-gota e acolchoamento; alfobre de couves de inverno."],
+    [8, "trabalho", "Recolha de semente; sementeiras de outono (alface, nabo); atenção ao perigo de incêndio."],
+    [9, "evento", "23 de Setembro: Dia Europeu da Agricultura Biológica."], [9, "sementeira", "Adubos verdes; plantar morango."],
+    [10, "sementeira", "Semear fava, ervilha e cebola; plantar alho; compostar os restos das culturas de verão."],
+    [11, "evento", "18 de Novembro: seminário «Sementes, Plantas e Outro Material de Propagação em Agricultura Biológica», ESAC, Coimbra (Agrobio)."], [11, "plantacao", "Plantar fruteiras; manter o solo coberto."],
+    [12, "trabalho", "Balanço da campanha; preparar o controlo e a certificação do ano seguinte."]
+  ];
+  var CALTIPOS = {sementeira: "Sementeira", plantacao: "Plantação", colheita: "Colheita", trabalho: "Trabalhos", evento: "Evento", nota: "Nota"};
+  function calCarregar() { if (!EO) return; eo("calendario").then(function (d) { CAL = d.cal || []; if (TAB === "painel" || TAB === "cal") painel(); }).catch(function () {}); }
+  function calMes(m) { return (CAL || []).filter(function (x) { return +x.mes === m; }); }
+  function calResumo() {
+    if (!EO) return "";
+    var m = new Date().getMonth() + 1, es = calMes(m);
+    var h = '<div class="sec cal"><div class="t">Calendário · ' + MESES[m - 1] + "</div>";
+    if (CAL === null) h += '<p class="s">A carregar…</p>';
+    else if (!es.length) h += '<p class="s">' + (CAL.length ? "Nada marcado para este mês." : "O calendário do agricultor ainda está vazio.") + "</p>";
+    else h += es.map(function (x) { return '<div class="ce"><span class="ct ct-' + esc(x.tipo) + '">' + esc(CALTIPOS[x.tipo] || x.tipo) + "</span>" + esc(x.titulo || x.texto) + "</div>"; }).join("");
+    return h + '<button type="button" class="ipr-ent-b" data-ent-tab="cal">Calendário do ano</button></div>';
+  }
+  function calHtml() {
+    var g = EO && EO.gestor, m0 = new Date().getMonth() + 1;
+    var h = '<div class="h"><button type="button" class="ipr-ent-b" data-ent-tab="painel">← Organização</button><b>Calendário</b></div><div class="c ipr-ent-cal">';
+    h += '<div class="q"><div class="tipo">Calendário do agricultor</div><h2>' + esc(ENT.nome.split(" ·")[0]) + "</h2></div>";
+    h += '<p class="s">' + (g ? "É a organização que define o calendário. Os associados vêem o mês em curso no painel, e pode enviar-lhes o mês por e-mail." : "Definido pela organização.") + "</p>";
+    if (g && CAL && !CAL.length) h += '<div class="sec"><button type="button" class="ipr-ent-b p" data-ent="calproposta">Começar com uma proposta</button><p class="s">Uma base de hortícolas e eventos para editar. Ajuste ao litoral, ao interior e às ilhas.</p></div>';
+    h += '<div class="crono">' + MESES.map(function (n, i) { var k = calMes(i + 1).length; return '<a href="#cal-' + (i + 1) + '" class="cm' + (i + 1 === m0 ? " on" : "") + '"><b>' + n.slice(0, 3) + "</b><span>" + (k || "") + "</span></a>"; }).join("") + "</div>";
+    MESES.forEach(function (n, i) {
+      var es = calMes(i + 1);
+      h += '<div class="sec" id="cal-' + (i + 1) + '"><div class="t">' + n + "</div>";
+      h += es.map(function (x, j) { return '<div class="ce"><span class="ct ct-' + esc(x.tipo) + '">' + esc(CALTIPOS[x.tipo] || x.tipo) + "</span>" + esc(x.titulo || x.texto) + (g ? ' <button type="button" class="mini" data-ent-caltira="' + (i + 1) + ":" + j + '">×</button>' : "") + "</div>"; }).join("") || '<p class="s">—</p>';
+      if (g) h += '<div class="lin cal-add"><select data-calt="' + (i + 1) + '">' + Object.keys(CALTIPOS).map(function (k) { return '<option value="' + k + '">' + CALTIPOS[k] + "</option>"; }).join("") + '</select><input data-calx="' + (i + 1) + '" placeholder="Juntar ao mês"><button type="button" class="ipr-ent-b" data-ent-caljunta="' + (i + 1) + '">Juntar</button></div>';
+      h += "</div>";
+    });
+    if (g) h += '<div class="sec"><button type="button" class="ipr-ent-b p" data-ent="calenviar">Enviar o mês de ' + MESES[m0 - 1] + " aos associados</button></div>";
+    return h + "</div>";
+  }
+  function calGuardar() { return eo("calendario_guardar", {cal: JSON.stringify(CAL)}).then(function (d) { CAL = d.cal; painel(); }); }
+
+  // Alertas: avisos do IPMA por distrito e perigo de incêndio por concelho, para os sítios das fichas e dos produtores.
+  var DISTR = {AVR: [-8.65, 40.64], BJA: [-7.86, 38.02], BRG: [-8.42, 41.55], BGC: [-6.76, 41.81], CBO: [-7.49, 39.82], CBR: [-8.43, 40.21], EVR: [-7.91, 38.57], FAR: [-7.93, 37.02], GDA: [-7.27, 40.54], LRA: [-8.81, 39.74], LSB: [-9.14, 38.72], PTG: [-7.43, 39.29], PTO: [-8.61, 41.15], STM: [-8.68, 39.24], STB: [-8.89, 38.52], VCT: [-8.83, 41.69], VRL: [-7.74, 41.3], VIS: [-7.91, 40.66], MCS: [-16.91, 32.65], MCN: [-16.9, 32.83], MPS: [-16.34, 33.07], AOR: [-25.67, 37.75], ACE: [-27.22, 38.66], AOC: [-31.13, 39.45]};
+  function dist(a, b) { var R = 6371, dLa = (b[1] - a[1]) * Math.PI / 180, dLo = (b[0] - a[0]) * Math.PI / 180, x = Math.sin(dLa / 2) * Math.sin(dLa / 2) + Math.cos(a[1] * Math.PI / 180) * Math.cos(b[1] * Math.PI / 180) * Math.sin(dLo / 2) * Math.sin(dLo / 2); return 2 * R * Math.asin(Math.sqrt(x)); }
+  function maisPerto(p, tab) { var mk = null, md = 1e9; Object.keys(tab).forEach(function (k) { var d = dist(p, tab[k]); if (d < md) { md = d; mk = k; } }); return mk; }
+  function alertasCarregar() {
+    var ps = todosPontos().filter(function (f) { var t = f.properties.tipo || "produtor"; return t === "produtor"; }); if (!ps.length) return;
+    var nom = {yellow: "amarelo", orange: "laranja", red: "vermelho"}, out = [];
+    Promise.all([
+      fetch("https://api.ipma.pt/open-data/forecast/warnings/warnings_www.json").then(function (r) { return r.json(); }).catch(function () { return []; }),
+      fetch("https://api.ipma.pt/open-data/forecast/meteorology/rcm/rcm-d0.json").then(function (r) { return r.json(); }).catch(function () { return null; })
+    ]).then(function (rs) {
+      var av = rs[0] || [], rcm = rs[1], porD = {};
+      ps.forEach(function (f) { var d = maisPerto(f.geometry.coordinates, DISTR); (porD[d] = porD[d] || []).push(f.properties.nome); });
+      av.forEach(function (a) { if (!a || !nom[a.awarenessLevelID] || !porD[a.idAreaAviso]) return; var fim = a.endTime ? new Date(a.endTime) : null; if (fim && fim < new Date()) return;
+        out.push({n: a.awarenessLevelID === "red" ? 3 : a.awarenessLevelID === "orange" ? 2 : 1, t: "Aviso " + nom[a.awarenessLevelID] + " de " + String(a.awarenessTypeName || "").toLowerCase() + " (IPMA)", q: porD[a.idAreaAviso]}); });
+      if (rcm && rcm.local) {
+        var loc = {}; Object.keys(rcm.local).forEach(function (k) { var l = rcm.local[k]; if (l && isFinite(+l.longitude) && isFinite(+l.latitude)) loc[k] = [+l.longitude, +l.latitude]; });
+        var altos = {};
+        ps.forEach(function (f) { var k = maisPerto(f.geometry.coordinates, loc); if (!k) return; var v = +(((rcm.local[k] || {}).data || {}).rcm); if (v >= 4) (altos[v] = altos[v] || []).push(f.properties.nome); });
+        Object.keys(altos).forEach(function (v) { out.push({n: +v === 5 ? 3 : 2, t: "Perigo de incêndio " + (+v === 5 ? "máximo" : "muito elevado") + " hoje (IPMA)", q: altos[v]}); });
+      }
+      out.sort(function (a, b) { return b.n - a.n; }); ALERTAS = out; if (TAB === "painel") painel();
+    });
+  }
+  function alertasResumo() {
+    if (ALERTAS === null) return "";
+    var h = '<div class="sec al"><div class="t">Alertas para os associados</div>';
+    if (!ALERTAS.length) h += '<p class="s">Sem avisos do IPMA nem perigo de incêndio alto nos sítios dos produtores.</p>';
+    else h += ALERTAS.slice(0, 5).map(function (a) { return '<div class="ale n' + a.n + '"><b>' + esc(a.t) + "</b><span>" + a.q.length + (a.q.length === 1 ? " produtor: " : " produtores: ") + esc(a.q.slice(0, 3).join(", ")) + (a.q.length > 3 ? "…" : "") + "</span></div>"; }).join("");
+    return h + "</div>";
+  }
+
+  // Oferta e procura: cada ponto de venda conta os produtores a menos de 50 km; os que têm poucos são lacunas.
+  var RAIO = 50;
+  function opCalcular() {
+    var ps = todosPontos(), of = ps.filter(function (f) { return (f.properties.tipo || "produtor") === "produtor"; }), pr = ps.filter(function (f) { var t = f.properties.tipo; return t === "mercado" || t === "feira" || t === "loja" || t === "cabaz"; });
+    var venda = pr.map(function (f) { var n = of.filter(function (o) { return dist(f.geometry.coordinates, o.geometry.coordinates) <= RAIO; }).length; return {f: f, n: n}; });
+    var longe = of.filter(function (o) { return !pr.some(function (f) { return dist(f.geometry.coordinates, o.geometry.coordinates) <= 40; }); });
+    OP = {venda: venda, longe: longe};
+  }
+  function opMapa(on) {
+    var m = W.__ipe && W.__ipe.mapa; if (!m) return; OPON = on;
+    if (!on) { if (m.getLayer("ent-op-c")) m.setLayoutProperty("ent-op-c", "visibility", "none"); return; }
+    opCalcular();
+    var gj = {type: "FeatureCollection", features: OP.venda.map(function (v) { return {type: "Feature", properties: {n: v.n, nome: v.f.properties.nome}, geometry: v.f.geometry}; })};
+    if (m.getSource("ent-op")) m.getSource("ent-op").setData(gj); else {
+      m.addSource("ent-op", {type: "geojson", data: gj});
+      var antes = m.getLayer("ent-org-redes-l") ? "ent-org-redes-l" : undefined;
+      m.addLayer({id: "ent-op-c", type: "circle", source: "ent-op", paint: {
+        "circle-radius": ["interpolate", ["exponential", 2], ["zoom"], 5, RAIO * 1000 / 3800, 10, RAIO * 1000 / 118.8],
+        "circle-color": ["step", ["get", "n"], "#d9542b", 1, "#d8b64a", 3, "#94BE39"], "circle-opacity": 0.12, "circle-stroke-color": ["step", ["get", "n"], "#d9542b", 1, "#d8b64a", 3, "#94BE39"], "circle-stroke-width": 1}}, antes);
+    }
+    m.setLayoutProperty("ent-op-c", "visibility", "visible");
+  }
+  function opResumo() {
+    if (!todosPontos().length) return "";
+    opCalcular();
+    var lac = OP.venda.filter(function (v) { return v.n === 0; }), pou = OP.venda.filter(function (v) { return v.n > 0 && v.n < 3; });
+    var h = '<div class="sec op"><div class="t">Oferta e procura</div><p class="s">Produtores a menos de ' + RAIO + " km de cada ponto de venda.</p>";
+    h += '<div class="nums"><div class="n"><b>' + lac.length + '</b><span>pontos de venda sem produtores perto</span></div><div class="n"><b>' + pou.length + '</b><span>com 1 ou 2</span></div><div class="n"><b>' + OP.longe.length + '</b><span>produtores longe de onde vender</span></div></div>';
+    if (lac.length) h += '<p class="s">Sem produtores perto: ' + esc(lac.slice(0, 4).map(function (v) { return v.f.properties.nome.split(" ·")[0]; }).join(", ")) + (lac.length > 4 ? "…" : "") + "</p>";
+    return h + '<button type="button" class="ipr-ent-b" data-ent="opmapa">' + (OPON ? "Esconder do mapa" : "Ver no mapa") + "</button></div>";
+  }
+
+  // Avisos por zona: a todos, ou às fichas a menos de X km de um sítio marcado no mapa.
+  function avisoHtml() {
+    var A = AVISO || (AVISO = {titulo: "", texto: "", raio: 30, centro: null}), alvo = avisoAlvo();
+    var h = '<div class="h"><button type="button" class="ipr-ent-b" data-ent-tab="painel">← Organização</button><b>Aviso</b></div><div class="c ipr-ent-ff">';
+    h += '<div class="q"><div class="tipo">Aviso aos associados</div><h2>' + esc(ENT.nome.split(" ·")[0]) + "</h2></div>";
+    h += '<label>Título</label><input data-av="titulo" value="' + esc(A.titulo) + '"><label>Mensagem</label><textarea rows="6" data-av="texto">' + esc(A.texto) + "</textarea>";
+    h += '<label>A quem</label><p class="s">' + (A.centro ? "Fichas a menos de " + A.raio + " km do sítio marcado: " : "Todas as fichas com e-mail: ") + "<b>" + alvo.length + "</b>.</p>";
+    h += '<div class="lin"><input data-av="raio" type="number" min="1" max="500" value="' + A.raio + '"><button type="button" class="ipr-ent-b" data-ent="avmarcar">' + (A.centro ? "Mudar o sítio" : "Só uma zona: marcar no mapa") + "</button></div>" + (A.centro ? '<button type="button" class="ipr-ent-b" data-ent="avtodos">Enviar a todos</button>' : "");
+    h += '<div class="sec acc">' + (ENVCONF ? '<button type="button" class="ipr-ent-b p" data-ent="avenviar2">Confirmar: enviar a ' + alvo.length + '</button> <button type="button" class="ipr-ent-b" data-ent="pescancelar">Cancelar</button>' : '<button type="button" class="ipr-ent-b p" data-ent="avenviar"' + (alvo.length ? "" : " disabled") + '>Enviar</button> <button type="button" class="ipr-ent-b" data-ent="avteste">Enviar-me um teste</button>') + "</div>";
+    return h + "</div>";
+  }
+  function avisoAlvo() { var A = AVISO || {}; return (FICHAS || []).filter(function (f) { if (!f.email && !(EO && EO.gestor)) return false; if (!A.centro) return true; return f.x != null && f.x !== "" && dist(A.centro, [+f.x, +f.y]) <= (+A.raio || 30); }); }
+  function avisoLer() { [].forEach.call(D.querySelectorAll("#ipr-ent-dir [data-av]"), function (x) { AVISO[x.getAttribute("data-av")] = x.getAttribute("data-av") === "raio" ? +x.value || 30 : x.value; }); }
+
+  // Relatório para financiadores: página para imprimir ou guardar em PDF, com o mapa e os números.
+  function relatorio() {
+    var m = W.__ipe && W.__ipe.mapa, img = "";
+    function abrir() {
+      var vv = vivos() || [], ps = todosPontos(), por = {};
+      ps.forEach(function (f) { var t = f.properties.tipo || "produtor"; (por[t] = por[t] || []).push(f.properties); });
+      var hoje = new Date().toLocaleDateString("pt-PT", {day: "numeric", month: "long", year: "numeric"});
+      var nome = ENT.nome.split(" ·")[0];
+      var h = '<!doctype html><html lang="pt"><head><meta charset="utf-8"><title>Relatório · ' + esc(nome) + '</title><style>body{font:13px/1.5 Inter,Arial,sans-serif;color:#1d1e17;margin:32px auto;max-width:820px;padding:0 20px}h1{font:600 26px Outfit,Arial,sans-serif;margin:0}h2{font:600 16px Arial;margin:26px 0 8px;border-bottom:1px solid #ddd;padding-bottom:4px}.k{display:flex;gap:10px;flex-wrap:wrap;margin:16px 0}.k div{border:1px solid #ddd;border-radius:6px;padding:10px 12px;min-width:120px}.k b{display:block;font-size:22px}.s{color:#666}img{width:100%;border:1px solid #ddd;border-radius:6px}table{width:100%;border-collapse:collapse}td,th{text-align:left;padding:4px 6px;border-bottom:1px solid #eee;vertical-align:top}.p{position:fixed;top:12px;right:12px}@media print{.p{display:none}}</style></head><body>';
+      h += '<button class="p" onclick="print()">Imprimir ou guardar em PDF</button><div class="s">IPR Atlas · relatório da organização · ' + esc(hoje) + "</div><h1>" + esc(ENT.nome) + "</h1>";
+      h += '<div class="k">' + vv.map(function (n) { return "<div><b>" + n[1] + "</b>" + esc(n[0]) + "</div>"; }).join("") + "</div>";
+      if (img) h += "<h2>Mapa</h2><img src=\"" + img + "\">";
+      if (OP) { var lac = OP.venda.filter(function (v) { return v.n === 0; }); h += "<h2>Oferta e procura</h2><p>" + OP.venda.length + " pontos de venda, dos quais " + lac.length + " sem produtores a menos de " + RAIO + " km; " + OP.longe.length + " produtores a mais de 40 km de um ponto de venda.</p>"; }
+      [["produtor", "Produtores"], ["mercado", "Mercados"], ["feira", "Feiras"], ["loja", "Lojas e cooperativas"], ["cabaz", "Cabazes e AMAP"], ["bioregiao", "Bio-regiões"]].forEach(function (t) {
+        var l = por[t[0]]; if (!l || !l.length) return;
+        h += "<h2>" + t[1] + " (" + l.length + ")</h2><table>" + l.map(function (p) { return "<tr><td><b>" + esc(p.nome) + "</b></td><td>" + esc(p.local || "") + "</td><td>" + esc(p.o_que || p.dia || "") + "</td></tr>"; }).join("") + "</table>";
+      });
+      if (PESS) h += "<h2>Pessoas</h2><p>" + PESS.convites.filter(function (c) { return c.estado === "aceite"; }).length + " pessoas com acesso ao mapa; " + (FICHAS || []).length + " fichas preenchidas.</p>";
+      h += '<p class="s" style="margin-top:30px">Fontes públicas indicadas em cada ponto; pontos em proposta estão por confirmar pela organização. IPR · Instituto de Planeamento Regenerativo · Terracrua Design.</p></body></html>';
+      var w = W.open("", "_blank"); if (!w) { aviso("O navegador bloqueou a janela do relatório. Permita janelas para este site."); return; }
+      w.document.open(); w.document.write(h); w.document.close();
+    }
+    if (!m) { abrir(); return; }
+    m.once("render", function () { try { img = m.getCanvas().toDataURL("image/jpeg", 0.85); } catch (e) { img = ""; } abrir(); });
+    m.triggerRepaint();
+  }
+  function extrasAccao(a, t) {
+    if (a === "calproposta") { CAL = CAL_PROPOSTA.map(function (x) { return {mes: x[0], tipo: x[1], titulo: x[2], fonte: x[1] === "evento" ? "INFOBIO (Agrobio)" : "proposta Terracrua Design, a validar"}; }); calGuardar(); return true; }
+    if (a === "calenviar") { var m0 = new Date().getMonth() + 1; AVISO = {titulo: "Calendário de " + MESES[m0 - 1], texto: calMes(m0).map(function (x) { return "· " + (CALTIPOS[x.tipo] || x.tipo) + ": " + (x.titulo || x.texto); }).join("\n"), raio: 30, centro: null}; TAB = "aviso"; painel(); return true; }
+    if (a === "opmapa") { opMapa(!OPON); painel(); return true; }
+    if (a === "relatorio") { relatorio(); return true; }
+    if (a === "avnovo") { AVISO = null; TAB = "aviso"; painel(); return true; }
+    if (a === "avmarcar") { var m = W.__ipe && W.__ipe.mapa; avisoLer(); MARCAR = true; aviso("Carregue no mapa no centro da zona."); m.once("click", function (e) { MARCAR = false; AVISO.centro = [e.lngLat.lng, e.lngLat.lat]; var t0 = Date.now(); (function limpa() { [].forEach.call(D.querySelectorAll(".iprv-pop"), function (x) { x.remove(); }); if (Date.now() - t0 < 2500) setTimeout(limpa, 120); })(); TAB = "aviso"; painel(); }); return true; }
+    if (a === "avtodos") { avisoLer(); AVISO.centro = null; painel(); return true; }
+    if (a === "avenviar") { avisoLer(); ENVCONF = true; painel(); return true; }
+    if (a === "avenviar2" || a === "avteste") {
+      avisoLer(); ENVCONF = false; if (!AVISO.titulo || !AVISO.texto) { aviso("Falta o título ou a mensagem."); painel(); return true; }
+      var ids = avisoAlvo().map(function (f) { return f.id; });
+      aviso(a === "avteste" ? "A enviar o teste…" : "A enviar…");
+      eo(a === "avteste" ? "aviso_teste" : "aviso", {titulo: AVISO.titulo, texto: AVISO.texto, fichas: JSON.stringify(ids)}).then(function (d) { aviso(a === "avteste" ? "Teste enviado para " + d.teste + "." : d.enviados + (d.enviados === 1 ? " aviso enviado." : " avisos enviados.")); if (a !== "avteste") { AVISO = null; TAB = "painel"; } painel(); }).catch(function (e) { aviso("Não foi possível enviar: " + e.message); });
+      return true;
+    }
+    return false;
+  }
 
   // ---- Fichas ----
   var PONTOS = {}, DICA = null, FICHA = null;
@@ -611,14 +798,17 @@
     if (TAB === "com") { painelCom(p); return; }
     comMostrar(false);
     if (TAB === "ficha" && FICHA) { p.classList.remove("fechado"); p.innerHTML = fichaHtml(FICHA); return; }
+    if (TAB === "cal") { p.classList.remove("fechado"); p.innerHTML = calHtml(); return; }
+    if (TAB === "aviso" && EO && EO.gestor) { p.classList.remove("fechado"); p.innerHTML = avisoHtml(); return; }
     if (TAB === "pessoas") { p.classList.remove("fechado"); p.innerHTML = pessoasHtml(); return; }
     if (TAB === "fform" && FFORM) { p.classList.remove("fechado"); p.innerHTML = fformHtml(FFORM); return; }
     var O = W.IPR_ORGS, papel = ""; if (O && O.lista) O.lista.forEach(function (o) { if (+o.id === ORGID) papel = o.papel || ""; });
     var tipo = (PERFIS.filter(function (x) { return x.id === S.perfil; })[0] || {}).n || "";
     var h = '<div class="q"><div class="tipo">' + esc(tipo) + (papel ? " · " + esc(papel) : "") + '</div><h2>' + esc(ENT.nome) + "</h2></div>";
-    h += '<div class="nums">' + numeros().map(function (n) { return '<div class="n"><b>' + fmt(n[1]) + "</b><span>" + esc(n[0]) + "</span></div>"; }).join("") + "</div>";
+    h += '<div class="nums">' + (vivos() || numeros()).map(function (n) { return '<div class="n"><b>' + fmt(n[1]) + "</b><span>" + esc(n[0]) + "</span></div>"; }).join("") + "</div>";
     var px = proximo();
     h += '<div class="px"><div class="t">Próximo passo</div><p>' + esc(px[0]) + '</p>' + (px[2] === "#wiz" ? '<button type="button" class="ipr-ent-b p" data-ent="wiz">' + esc(px[1]) + "</button>" : px[2] === "#carregar" ? '<button type="button" class="ipr-ent-b p" data-ent-carregar="f">' + esc(px[1]) + "</button>" : '<a class="ipr-ent-b p" href="' + px[2] + '" target="_blank" rel="noopener">' + esc(px[1]) + "</a>") + "</div>";
+    h += alertasResumo() + calResumo() + opResumo();
     h += '<div class="sec"><div class="t">Os nossos locais e projectos</div>';
     var cs = ORG ? ORG.camadas || [] : [];
     if (!ORG) h += '<p class="s">A carregar…</p>';
@@ -639,6 +829,7 @@
       '<p class="s">Cada Base Cartográfica cobre um produtor ou terreno sob gestão' + (B.ha ? ", até " + fmt(B.ha) + " ha somados" : ", de qualquer tamanho") + '. Desenhe ou carregue a área, carregue em «Fazer a Base Cartográfica» e use o vale <b>' + esc(B.codigo) + '</b>. A Base fica na lista de Bases e no mapa, sobre o local.</p>' +
       '<button type="button" class="ipr-ent-b p" data-ent-base="0">Fazer uma Base Cartográfica</button></div>';
     h += pessoasResumo();
+    h += '<div class="sec"><div class="t">Comunicar e prestar contas</div>' + (EO && EO.gestor ? '<button type="button" class="ipr-ent-b" data-ent="avnovo">Escrever um aviso</button> ' : "") + '<button type="button" class="ipr-ent-b" data-ent="relatorio">Relatório para financiadores</button></div>';
     h += '<div class="sec"><div class="t">Ferramentas</div>' + ferrHtml() + "</div>";
     h += '<div class="sec rod"><button type="button" class="ipr-ent-b" data-ent-tab="com">Comunidade e avisos</button>' + (PODE ? '<button type="button" class="ipr-ent-b" data-ent="wiz">Configurar</button>' : "") + "</div>";
     if (W.IPR_NIVEL === "explorer") h += '<p class="s">Parte das camadas de apoio (condicionantes, água, solo) precisa do Intelligence.</p>';
@@ -990,12 +1181,14 @@
 
   // ---------- Eventos ----------
   D.addEventListener("click", function (e) {
-    var t = e.target.closest && e.target.closest("[data-ent],[data-ent-mod],[data-ent-perfil],[data-ent-bacia],[data-ent-cat],[data-ent-cam],[data-ent-abrir],[data-ent-tab],[data-ent-org],[data-ent-orgir],[data-ent-ferr],[data-ent-carregar],[data-ent-base],[data-ent-sel],[data-ent-pficha],[data-ent-papagar]");
+    var t = e.target.closest && e.target.closest("[data-ent],[data-ent-mod],[data-ent-perfil],[data-ent-bacia],[data-ent-cat],[data-ent-cam],[data-ent-abrir],[data-ent-tab],[data-ent-org],[data-ent-orgir],[data-ent-ferr],[data-ent-carregar],[data-ent-base],[data-ent-sel],[data-ent-pficha],[data-ent-papagar],[data-ent-caljunta],[data-ent-caltira]");
     if (!t) return;
     if (t.hasAttribute("data-ent-org")) { var oc = orgCam(t.getAttribute("data-ent-org")); orgLigar(oc, t.checked); setTimeout(function () { marcarEsq(); if (TAB === "proj") painel(); }, 0); return; }
     if (t.hasAttribute("data-ent-orgir")) { e.preventDefault(); e.stopPropagation(); var oi = orgCam(t.getAttribute("data-ent-orgir")); if (oi && !ORGON[oi.id]) orgLigar(oi, true); orgIr(oi); marcarEsq(); return; }
     if (t.hasAttribute("data-ent-carregar")) { e.preventDefault(); e.stopPropagation(); carregar(t.getAttribute("data-ent-carregar")); return; }
     if (t.hasAttribute("data-ent-base")) { e.preventDefault(); e.stopPropagation(); fazerBase(+t.getAttribute("data-ent-base")); return; }
+    if (t.hasAttribute("data-ent-caljunta")) { e.preventDefault(); e.stopPropagation(); var cm = +t.getAttribute("data-ent-caljunta"), ci = D.querySelector('#ipr-ent-dir [data-calx="' + cm + '"]'), ct = D.querySelector('#ipr-ent-dir [data-calt="' + cm + '"]'); if (ci && ci.value.trim()) { CAL = CAL || []; CAL.push({mes: cm, tipo: ct ? ct.value : "nota", titulo: ci.value.trim()}); calGuardar(); } return; }
+    if (t.hasAttribute("data-ent-caltira")) { e.preventDefault(); e.stopPropagation(); var pr2 = t.getAttribute("data-ent-caltira").split(":"), mm = +pr2[0], jj = +pr2[1], k2 = -1; CAL = (CAL || []).filter(function (x) { if (+x.mes !== mm) return true; k2++; return k2 !== jj; }); calGuardar(); return; }
     if (t.hasAttribute("data-ent-sel")) { SEL[t.getAttribute("data-ent-sel")] = t.checked; ENVCONF = false; setTimeout(painel, 0); return; }
     if (t.hasAttribute("data-ent-pficha")) { e.preventDefault(); e.stopPropagation(); var pc = (PESS && PESS.convites || []).filter(function (x) { return x.id === t.getAttribute("data-ent-pficha"); })[0] || {}; var pf = (FICHAS || []).filter(function (x) { return pc.email && (x.email || "").toLowerCase() === pc.email.toLowerCase(); })[0]; fformAbrir(pf || {nome: pc.nome, email: pc.email, tipo: pc.papel === "produtor" ? "produtor" : "produtor"}); return; }
     if (t.hasAttribute("data-ent-papagar")) { e.preventDefault(); e.stopPropagation(); eo("apagar_rascunho", {id: t.getAttribute("data-ent-papagar")}).then(function (d) { PESS = d; delete SEL[t.getAttribute("data-ent-papagar")]; painel(); }); return; }
@@ -1010,6 +1203,7 @@
     if (a === "guardar") { guardar(t); return; }
     if (a === "so") { S.so = !S.so; marcarEsq(); return; }
     if (pesAccao(a, t)) return;
+    if (extrasAccao(a, t)) return;
     if (a === "fichair") { var mm = W.__ipe && W.__ipe.mapa; if (mm && FICHA && FICHA.xy) mm.flyTo({center: FICHA.xy, zoom: Math.max(mm.getZoom(), 13)}); return; }
     if (a === "fechar") { var p = D.getElementById("ipr-ent-dir"); p.classList.toggle("fechado"); painel(); return; }
     if (t.hasAttribute("data-ent-cam") && v) { var id = t.getAttribute("data-ent-cam"); v.ligar(id, act().indexOf(id) < 0); setTimeout(painel, 150); return; }
