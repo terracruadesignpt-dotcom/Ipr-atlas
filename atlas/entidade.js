@@ -544,6 +544,7 @@
         ps.forEach(function (f) { var k = maisPerto(f.geometry.coordinates, loc); if (!k) return; var v = +(((rcm.local[k] || {}).data || {}).rcm); if (v >= 4) (altos[v] = altos[v] || []).push(f.properties.nome); });
         Object.keys(altos).forEach(function (v) { out.push({n: +v === 5 ? 3 : 2, t: "Perigo de incêndio " + (+v === 5 ? "máximo" : "muito elevado") + " hoje (IPMA)", q: altos[v]}); });
       }
+      var g = {}; out.forEach(function (a) { if (g[a.t]) g[a.t].q = g[a.t].q.concat(a.q); else g[a.t] = a; }); out = Object.keys(g).map(function (k) { return g[k]; });
       out.sort(function (a, b) { return b.n - a.n; }); ALERTAS = out; if (TAB === "painel") painel();
     });
   }
@@ -581,7 +582,7 @@
     if (!todosPontos().length) return "";
     opCalcular();
     var lac = OP.venda.filter(function (v) { return v.n === 0; }), pou = OP.venda.filter(function (v) { return v.n > 0 && v.n < 3; });
-    var h = '<div class="sec op"><div class="t">Oferta e procura</div><p class="s">Produtores a menos de ' + RAIO + " km de cada ponto de venda.</p>";
+    var h = '<div class="sec op"><div class="t">Oferta e procura</div><p class="s">Com os produtores que já estão no mapa, quantos há a menos de ' + RAIO + " km de cada ponto de venda.</p>";
     h += '<div class="nums"><div class="n"><b>' + lac.length + '</b><span>pontos de venda sem produtores perto</span></div><div class="n"><b>' + pou.length + '</b><span>com 1 ou 2</span></div><div class="n"><b>' + OP.longe.length + '</b><span>produtores longe de onde vender</span></div></div>';
     if (lac.length) h += '<p class="s">Sem produtores perto: ' + esc(lac.slice(0, 4).map(function (v) { return v.f.properties.nome.split(" ·")[0]; }).join(", ")) + (lac.length > 4 ? "…" : "") + "</p>";
     return h + '<button type="button" class="ipr-ent-b" data-ent="opmapa">' + (OPON ? "Esconder do mapa" : "Ver no mapa") + "</button></div>";
@@ -598,13 +599,18 @@
     h += '<div class="sec acc">' + (ENVCONF ? '<button type="button" class="ipr-ent-b p" data-ent="avenviar2">Confirmar: enviar a ' + alvo.length + '</button> <button type="button" class="ipr-ent-b" data-ent="pescancelar">Cancelar</button>' : '<button type="button" class="ipr-ent-b p" data-ent="avenviar"' + (alvo.length ? "" : " disabled") + '>Enviar</button> <button type="button" class="ipr-ent-b" data-ent="avteste">Enviar-me um teste</button>') + "</div>";
     return h + "</div>";
   }
-  function avisoAlvo() { var A = AVISO || {}; return (FICHAS || []).filter(function (f) { if (!f.email && !(EO && EO.gestor)) return false; if (!A.centro) return true; return f.x != null && f.x !== "" && dist(A.centro, [+f.x, +f.y]) <= (+A.raio || 30); }); }
+  function avisoAlvo() { var A = AVISO || {}; return (FICHAS || []).filter(function (f) { if (!f.email) return false; if (!A.centro) return true; return f.x != null && f.x !== "" && dist(A.centro, [+f.x, +f.y]) <= (+A.raio || 30); }); }
   function avisoLer() { [].forEach.call(D.querySelectorAll("#ipr-ent-dir [data-av]"), function (x) { AVISO[x.getAttribute("data-av")] = x.getAttribute("data-av") === "raio" ? +x.value || 30 : x.value; }); }
 
   // Relatório para financiadores: página para imprimir ou guardar em PDF, com o mapa e os números.
   function relatorio() {
-    var m = W.__ipe && W.__ipe.mapa, img = "";
+    var m = W.__ipe && W.__ipe.mapa, img = "", feito = false;
+    // A janela abre-se já, no clique (senão o navegador bloqueia-a); o conteúdo entra quando o mapa estiver desenhado.
+    var w = W.open("", "_blank");
+    if (!w) { aviso("O navegador bloqueou a janela do relatório. Permita janelas para este site."); return; }
+    w.document.write('<p style="font:14px Arial;padding:30px">A preparar o relatório…</p>');
     function abrir() {
+      if (feito) return; feito = true;
       var vv = vivos() || [], ps = todosPontos(), por = {};
       ps.forEach(function (f) { var t = f.properties.tipo || "produtor"; (por[t] = por[t] || []).push(f.properties); });
       var hoje = new Date().toLocaleDateString("pt-PT", {day: "numeric", month: "long", year: "numeric"});
@@ -620,12 +626,11 @@
       });
       if (PESS) h += "<h2>Pessoas</h2><p>" + PESS.convites.filter(function (c) { return c.estado === "aceite"; }).length + " pessoas com acesso ao mapa; " + (FICHAS || []).length + " fichas preenchidas.</p>";
       h += '<p class="s" style="margin-top:30px">Fontes públicas indicadas em cada ponto; pontos em proposta estão por confirmar pela organização. IPR · Instituto de Planeamento Regenerativo · Terracrua Design.</p></body></html>';
-      var w = W.open("", "_blank"); if (!w) { aviso("O navegador bloqueou a janela do relatório. Permita janelas para este site."); return; }
       w.document.open(); w.document.write(h); w.document.close();
     }
     if (!m) { abrir(); return; }
     m.once("render", function () { try { img = m.getCanvas().toDataURL("image/jpeg", 0.85); } catch (e) { img = ""; } abrir(); });
-    m.triggerRepaint();
+    m.triggerRepaint(); setTimeout(abrir, 2500);
   }
   function extrasAccao(a, t) {
     if (a === "calproposta") { CAL = CAL_PROPOSTA.map(function (x) { return {mes: x[0], tipo: x[1], titulo: x[2], fonte: x[1] === "evento" ? "INFOBIO (Agrobio)" : "proposta Terracrua Design, a validar"}; }); calGuardar(); return true; }
@@ -1028,6 +1033,7 @@
     });
     return {n: n, bx: bx};
   }
+  W.__iprEntLer = function (fs) { lerFicheiros(fs); }; // para testes de formatos
   function lerFicheiros(fs) {
     if (!(W.__ipe && W.__ipe.locais)) { aviso("O mapa ainda está a carregar. Tente daqui a uns segundos."); return; }
     aviso("A ler " + (fs.length > 1 ? fs.length + " ficheiros" : fs[0].name) + "…");
