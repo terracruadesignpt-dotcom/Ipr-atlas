@@ -152,6 +152,12 @@
     "#ipr-ent-dir .h b{flex:1;color:#E6E7E0;font:600 14px Outfit,Inter,sans-serif}" +
     "#ipr-ent-dir.fechado .h b,#ipr-ent-dir.fechado .c{display:none}" +
     "#ipr-ent-dir .c{overflow:auto;flex:1;padding:10px 12px 20px}" +
+    "#ipr-ent-dir .tb{display:flex;border-bottom:1px solid #2a2c25}#ipr-ent-dir .tb button{flex:1;background:none;border:0;border-bottom:2px solid transparent;color:#9aa08f;font:600 12px Inter,sans-serif;padding:8px 2px;cursor:pointer}#ipr-ent-dir .tb button[aria-selected=true]{color:#E6E7E0;border-bottom-color:#94BE39}#ipr-ent-dir.fechado .tb{display:none}" +
+    "#ipr-ent-dir .s,#ipr-ent-esq .s{color:#8b8f80;font-size:12px}#ipr-ent-dir #ipe-com{position:static}" +
+    ".ipr-ent-og{margin-top:8px;border-top:1px solid #2a2c25;padding-top:8px;font:12px/1.4 Inter,sans-serif;color:#C3C5BC}.ipr-ent-og .t{font:600 11px Inter;letter-spacing:.06em;text-transform:uppercase;color:#B8A83A;margin-bottom:4px}" +
+    ".ipr-ent-og .g{display:flex;align-items:center;gap:6px;margin:6px 0 2px;font-weight:600}.ipr-ent-og .g small{margin-left:auto;color:#8b8f80}.ipr-ent-og .cor{width:10px;height:10px;border-radius:2px;flex:0 0 10px}" +
+    ".ipr-ent-og label.c{display:flex;align-items:center;gap:6px;padding:2px 0 2px 16px;cursor:pointer}.ipr-ent-og label.c span{flex:1;min-width:0}.ipr-ent-og label.c button{background:none;border:0;color:#94BE39;cursor:pointer;font-size:13px}" +
+    ".ipr-ent-fe{display:flex;flex-wrap:wrap;gap:6px}.ipr-ent-fe .s{flex-basis:100%}" +
     ".ipr-ent-b{all:unset;box-sizing:border-box;cursor:pointer;min-height:32px;padding:5px 10px;border:1px solid #383A33;border-radius:2px;color:#C3C5BC;font:500 12px/1.3 Inter,sans-serif;display:inline-flex;align-items:center;gap:6px}" +
     ".ipr-ent-b:hover{border-color:#94BE39;color:#94BE39}.ipr-ent-b:focus-visible{outline:2px solid #94BE39;outline-offset:1px}" +
     ".ipr-ent-b.p{background:#94BE39;border-color:#94BE39;color:#0f100b;font-weight:600}.ipr-ent-b[disabled]{opacity:.45;cursor:default}" +
@@ -213,7 +219,83 @@
     if (!b) { b = D.createElement("div"); b.id = "ipr-ent-esq"; esq.insertBefore(b, esq.firstChild); }
     var hh = "<span>" + esc(ENT.nome) + ": <b>" + camadasEnt().length + "</b> camadas da entidade</span>" +
       '<button type="button" class="ipr-ent-b" data-ent="so">' + (S.so ? "Ver todas as camadas" : "Só as da entidade") + "</button>";
+    hh += orgBloco();
     if (b.innerHTML !== hh) b.innerHTML = hh;
+  }
+
+  // ---------- Organização ligada à entidade (Nuno, 13/11, 10h36: camadas deles à esquerda; à direita o que precisam) ----------
+  var ORGID = 0, ORG = null, ORGON = {}, TAB = "painel", COMV = null;
+  (function () { var m = W.IPR_ORG_ENT || {}; Object.keys(m).forEach(function (k) { if (m[k] === ENT.id) ORGID = +k; }); })();
+  function orgCarregar() {
+    if (!ORGID) return;
+    var O = W.IPR_ORGS;
+    if (O && O.nonce && +O.activa !== ORGID && (O.lista || []).some(function (o) { return +o.id === ORGID; })) {
+      // A organização desta entidade passa a ser a activa (o mesmo pedido do selector do Atlas) e volta-se aqui.
+      try { W.sessionStorage.setItem("ipr_ent_volta", ENT.id); } catch (e) {}
+      location.href = "/atlas/?ipr_org=" + ORGID + "&_ipr_org=" + encodeURIComponent(O.nonce) + "&separador=org"; return;
+    }
+    fetch("/wp-json/tcd/v1/org/camadas", {credentials: "same-origin", headers: {"X-WP-Nonce": ENT.nonce}})
+      .then(function (r) { return r.json(); })
+      .then(function (d) { if (d && d.org && +d.org.id === ORGID) { ORG = d; (d.camadas || []).forEach(function (c) { orgLigar(c, true); }); marcarEsq(); painel(); } })
+      .catch(function () {});
+  }
+  function orgCam(id) { return ORG ? (ORG.camadas || []).filter(function (c) { return +c.id === +id; })[0] : null; }
+  function orgLigar(c, on) {
+    var m = W.__ipe && W.__ipe.mapa; if (!m || !c) return;
+    var sid = "ent-org-" + c.id, ls = [sid + "-f", sid + "-l", sid + "-p"];
+    ORGON[c.id] = !!on;
+    if (m.getSource(sid)) { ls.forEach(function (l) { if (m.getLayer(l)) m.setLayoutProperty(l, "visibility", on ? "visible" : "none"); }); return; }
+    if (!on) return;
+    fetch(c.url, {credentials: "same-origin", headers: {"X-WP-Nonce": ENT.nonce}}).then(function (r) { return r.json(); }).then(function (gj) {
+      if (!gj || gj.type !== "FeatureCollection" || m.getSource(sid)) return;
+      var cor = c.cor || "#94BE39";
+      m.addSource(sid, {type: "geojson", data: gj});
+      m.addLayer({id: sid + "-f", type: "fill", source: sid, filter: ["==", ["geometry-type"], "Polygon"], paint: {"fill-color": cor, "fill-opacity": 0.15}});
+      m.addLayer({id: sid + "-l", type: "line", source: sid, filter: ["!=", ["geometry-type"], "Point"], paint: {"line-color": cor, "line-width": 2}});
+      m.addLayer({id: sid + "-p", type: "circle", source: sid, filter: ["==", ["geometry-type"], "Point"], paint: {"circle-color": cor, "circle-radius": 6, "circle-stroke-color": "#111", "circle-stroke-width": 1.5}});
+      if (W.maplibregl) m.on("click", sid + "-p", function (e) {
+        var f = e.features && e.features[0]; if (!f) return; var pr = f.properties || {};
+        new W.maplibregl.Popup({closeButton: true}).setLngLat(f.geometry.coordinates).setHTML("<b>" + esc(pr.nome || "") + "</b>" + (pr.dia ? "<br>" + esc(pr.dia) : "") + (pr.estado ? '<br><span style="color:#888">' + esc(pr.estado) + "</span>" : "")).addTo(m);
+      });
+    }).catch(function () {});
+  }
+  function orgIr(c) { var m = W.__ipe && W.__ipe.mapa; if (!m || !c || !c.bbox) return; var b = c.bbox; if (b[0] === b[2] && b[1] === b[3]) m.flyTo({center: [b[0], b[1]], zoom: 13}); else m.fitBounds([[b[0], b[1]], [b[2], b[3]]], {padding: 48, maxZoom: 15, duration: 700}); }
+  function orgBloco() {
+    if (!ORG) return ORGID ? '<div class="ipr-ent-og"><div class="s">A carregar as camadas da organização…</div></div>' : "";
+    var gs = ORG.grupos || [], cs = ORG.camadas || [];
+    var h = '<div class="ipr-ent-og"><div class="t">Camadas da organização</div>';
+    gs.forEach(function (g) {
+      var dele = cs.filter(function (c) { return c.grupo === g.id; });
+      h += '<div class="g"><span class="cor" style="background:' + esc(g.cor || "#666") + '"></span>' + esc(g.nome) + "<small>" + dele.length + "</small></div>";
+      dele.forEach(function (c) { h += '<label class="c"><input type="checkbox" data-ent-org="' + c.id + '"' + (ORGON[c.id] ? " checked" : "") + "><span>" + esc(c.nome) + '</span><button type="button" data-ent-orgir="' + c.id + '" title="Ir para">↗</button></label>'; });
+      if (!dele.length) h += '<div class="s">Ainda sem camadas.</div>';
+    });
+    return h + "</div>";
+  }
+  // Ferramentas: as do Atlas, filtradas pelo que a entidade tem ligado.
+  var FERR = [
+    ["data-agua-sim", "Simular água", "cheias"], ["data-fogo-sim", "Simular fogo", "perigo"],
+    ['data-tool="desenhar"', "Desenhar"], ['data-tool="marcador"', "Notas no mapa"], ['data-tool="importar"', "Carregar ficheiro"],
+    ['data-tool="area"', "Medir área"], ['data-tool="regua"', "Medir distância"], ['data-tool="parcelas"', "Parcelas do cadastro", "cadastro"],
+    ['data-tool="foto"', "Fotografia georreferenciada"], ['data-tool="gps"', "A minha posição"], ['data-tool="3d"', "Vista 3D"],
+    ['data-tool="sol"', "Sol e sombras"], ['data-tool="historico"', "Imagens antigas"]
+  ];
+  function ferrHtml() {
+    var h = '<div class="ipr-ent-fe">', n = 0;
+    FERR.forEach(function (f, i) {
+      if (f[2] && !S.mods[f[2]]) return;
+      if (!D.querySelector("[" + f[0] + "]")) return;
+      n++; h += '<button type="button" class="ipr-ent-b" data-ent-ferr="' + i + '">' + esc(f[1]) + "</button>";
+    });
+    if (!S.mods.cheias && !S.mods.perigo) h += '<p class="s">Os simuladores de água e de fogo entram com os módulos «Cheias e simulador de água» e «Perigosidade e simulador de fogo».</p>';
+    return n ? h + "</div>" : '<p class="s">As ferramentas do Atlas ainda estão a carregar.</p>';
+  }
+  function comMostrar(on) {
+    var c = D.getElementById("ipe-com"); if (!c) return;
+    if (on) {
+      if (!COMV) COMV = {pai: c.parentNode, prox: c.nextSibling};
+      var alvo = D.getElementById("ipr-ent-comc"); if (alvo && c.parentNode !== alvo) alvo.appendChild(c);
+    } else if (COMV && c.parentNode !== COMV.pai) { COMV.pai.insertBefore(c, COMV.prox && COMV.prox.parentNode === COMV.pai ? COMV.prox : null); }
   }
 
   // ---------- Painel da direita ----------
@@ -247,7 +329,19 @@
       }
       h += "</div>";
     });
-    p.innerHTML = '<div class="h"><b>' + esc(ENT.nome) + '</b><button type="button" class="ipr-ent-b" data-ent="wiz">' + (PODE ? "Configurar" : "Configuração") + '</button><button type="button" class="ipr-ent-b" data-ent="fechar" aria-label="Mostrar ou esconder o painel">' + (p.classList.contains("fechado") ? "Painel" : "×") + '</button></div><div class="c">' + h + "</div>";
+    var tabs = [["painel", "Painel"], ["proj", "Projectos"], ["ferr", "Ferramentas"], ["com", "Comunidade"]];
+    var corpo = TAB === "proj" ? (orgBloco() || '<p class="s">Esta entidade ainda não está ligada a uma organização.</p>') + (ORG ? '<p class="s">Cada camada é um projecto ou um conjunto de locais da organização. Para acrescentar, use «Carregar ficheiro» ou «Desenhar» em Ferramentas.</p>' : "")
+      : TAB === "ferr" ? ferrHtml()
+      : TAB === "com" ? '<div id="ipr-ent-comc"></div>'
+      : h;
+    comMostrar(false);
+    p.innerHTML = '<div class="h"><b>' + esc(ENT.nome) + '</b><button type="button" class="ipr-ent-b" data-ent="wiz">' + (PODE ? "Configurar" : "Configuração") + '</button><button type="button" class="ipr-ent-b" data-ent="fechar" aria-label="Mostrar ou esconder o painel" title="' + (p.classList.contains("fechado") ? "Abrir o painel da entidade" : "Fechar e ver o Atlas de sempre") + '">' + (p.classList.contains("fechado") ? "Painel" : "×") + '</button></div>' +
+      '<div class="tb" role="tablist">' + tabs.map(function (t) { return '<button type="button" role="tab" data-ent-tab="' + t[0] + '" aria-selected="' + (TAB === t[0]) + '">' + t[1] + "</button>"; }).join("") + "</div>" +
+      '<div class="c">' + corpo + "</div>";
+    if (TAB === "com" && !p.classList.contains("fechado")) {
+      var nt = D.querySelector('#ipe .ipe-tab[data-tab="com"]'); if (nt && !D.getElementById("ipe-com").childNodes.length) try { nt.click(); } catch (e) {}
+      setTimeout(function () { comMostrar(true); }, 60);
+    }
   }
 
   // ---------- Assistente ----------
@@ -322,8 +416,12 @@
 
   // ---------- Eventos ----------
   D.addEventListener("click", function (e) {
-    var t = e.target.closest && e.target.closest("[data-ent],[data-ent-mod],[data-ent-perfil],[data-ent-bacia],[data-ent-cat],[data-ent-cam],[data-ent-abrir]");
+    var t = e.target.closest && e.target.closest("[data-ent],[data-ent-mod],[data-ent-perfil],[data-ent-bacia],[data-ent-cat],[data-ent-cam],[data-ent-abrir],[data-ent-tab],[data-ent-org],[data-ent-orgir],[data-ent-ferr]");
     if (!t) return;
+    if (t.hasAttribute("data-ent-org")) { var oc = orgCam(t.getAttribute("data-ent-org")); orgLigar(oc, t.checked); setTimeout(function () { marcarEsq(); if (TAB === "proj") painel(); }, 0); return; }
+    if (t.hasAttribute("data-ent-orgir")) { e.preventDefault(); e.stopPropagation(); var oi = orgCam(t.getAttribute("data-ent-orgir")); if (oi && !ORGON[oi.id]) orgLigar(oi, true); orgIr(oi); marcarEsq(); return; }
+    if (t.hasAttribute("data-ent-tab")) { e.preventDefault(); e.stopPropagation(); TAB = t.getAttribute("data-ent-tab"); painel(); return; }
+    if (t.hasAttribute("data-ent-ferr")) { e.preventDefault(); e.stopPropagation(); var fe = FERR[+t.getAttribute("data-ent-ferr")], nb = fe && D.querySelector("[" + fe[0] + "]"); if (nb) nb.click(); return; }
     var a = t.getAttribute("data-ent"), v = viz();
     e.preventDefault(); e.stopPropagation();
     if (a === "wiz") { S.passo = 1; wiz(true); return; }
@@ -347,6 +445,7 @@
   // ---------- Arranque ----------
   espera(function () {
     aplicar(true);
+    try { orgCarregar(); } catch (e) {}
     // O arranque do Atlas (vista inicial, camadas guardadas da visita anterior) corre depois e repõe o país inteiro e as
     // camadas de sempre. Nos primeiros 10 s volta-se a pôr a zona e as camadas de partida, enquanto a pessoa não mexer no mapa.
     var mexeu = false, m0 = W.__ipe.mapa;

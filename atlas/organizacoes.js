@@ -41,6 +41,9 @@
   }
   function abrir(id, url) {
     var o = O(); if (!o) return;
+    // Organização com configurador: abre o Atlas da entidade (camadas deles à esquerda, painel à direita); o entidade.js
+    // torna-a a organização activa se for preciso.
+    if (ENT[String(id)]) { location.href = "/atlas/?entidade=" + encodeURIComponent(ENT[String(id)]) + "&completo=1"; return; }
     ls("ipr_topo_org", "1"); mostrarSeparador();
     if (+id !== +o.activa && o.nonce) {
       location.href = "/atlas/?ipr_org=" + encodeURIComponent(id) + "&_ipr_org=" + encodeURIComponent(o.nonce) + "&separador=org";
@@ -49,6 +52,8 @@
     abrirSeparador(!!url);
   }
   W.iprAbrirOrganizacao = abrir;
+  // Volta do entidade.js depois de mudar a organização activa.
+  try { var volta = W.sessionStorage.getItem("ipr_ent_volta"); if (volta && /^[a-z0-9_-]{2,40}$/.test(volta)) { W.sessionStorage.removeItem("ipr_ent_volta"); location.replace("/atlas/?entidade=" + volta + "&completo=1"); return; } } catch (e) {}
 
   // 2. ?org=<id>. Sem sessão iniciada, vai primeiro ao «Entrar» e volta a esta mesma ligação.
   (function () {
@@ -78,7 +83,7 @@
     "#ipr-orgs h3{margin:0 0 8px;font:600 11px Inter,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--mu,#9aa08f)}" +
     "#ipr-orgs .l{display:flex;align-items:center;gap:8px;padding:7px 0;border-top:1px solid var(--ln,#3a3f33)}#ipr-orgs .l:first-of-type{border-top:0}" +
     "#ipr-orgs .n{flex:1 1 auto;min-width:0}#ipr-orgs .n b{display:block;font-weight:600;overflow-wrap:anywhere}" +
-    "#ipr-orgs .n small{color:var(--mu,#9aa08f)}#ipr-orgs .act{color:#94BE39}" +
+    "#ipr-orgs .n small{color:var(--mu,#9aa08f)}#ipr-orgs small.cf{flex:0 0 auto;max-width:90px;text-align:right;font-size:11px;color:#B8A83A}#ipr-orgs .act{color:#94BE39}" +
     "#ipr-orgs button{flex:0 0 auto;font:600 12px Inter,sans-serif;border-radius:7px;padding:5px 9px;cursor:pointer;border:1px solid var(--ln,#3a3f33);background:transparent;color:var(--tx,#e9eadf)}" +
     "#ipr-orgs button.p{background:#94BE39;border-color:#94BE39;color:#111}";
   function bloco() {
@@ -93,7 +98,7 @@
         var act = +x.id === +o.activa, ent = ENT[String(x.id)];
         h += '<div class="l"><div class="n"><b title="' + esc(x.nome) + '">' + esc(x.nome) + "</b><small>" + esc(x.papel || "") +
           (act ? ' · <span class="act">' + (en() ? "active" : "activa") + "</span>" : "") + "</small></div>" +
-          (ent ? '<button type="button" data-orgs-ent="' + esc(ent) + '" title="' + (en() ? "SOT-IPR configurator" : "Configurador SOT-IPR") + '">' + (en() ? "Configurator" : "Configurador") + "</button>" : "") +
+          (ent ? '<small class="cf">' + (en() ? "with SOT-IPR configurator" : "com configurador SOT-IPR") + "</small>" : "") +
           '<button type="button" class="p" data-orgs-abrir="' + esc(x.id) + '">' + (en() ? "Open" : "Abrir") + "</button></div>";
       });
       b.innerHTML = h;
