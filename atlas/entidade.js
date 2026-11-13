@@ -349,8 +349,8 @@
       '<div class="tb" role="tablist">' + tabs.map(function (t) { return '<button type="button" role="tab" data-ent-tab="' + t[0] + '" aria-selected="' + (TAB === t[0]) + '">' + t[1] + "</button>"; }).join("") + "</div>" +
       '<div class="c">' + corpo + "</div>";
     if (TAB === "com" && !p.classList.contains("fechado")) {
-      var nt = D.querySelector('#ipe .ipe-tab[data-tab="com"]'); if (nt && !D.getElementById("ipe-com").childNodes.length) try { nt.click(); } catch (e) {}
-      setTimeout(function () { comMostrar(true); }, 60);
+      var nt = D.querySelector('#ipe .ipe-tab[data-tab="com"]'); var ic = D.getElementById("ipe-com"); if (nt && ic && !ic.querySelector(".ipc-nav")) try { nt.click(); } catch (e) {}
+      setTimeout(function () { comMostrar(true); }, 60); setTimeout(function () { if (TAB === "com") comMostrar(true); }, 900);
     }
   }
 
