@@ -167,6 +167,7 @@
     "#ipr-ent-dir .g{display:flex;align-items:center;gap:6px;margin:8px 0 4px;font-weight:600;color:#C3C5BC}#ipr-ent-dir .g .cor{width:10px;height:10px;border-radius:2px}" +
     "#ipr-ent-dir button.it{display:flex;justify-content:space-between;gap:8px;width:100%;text-align:left;background:#1b1c16;border:1px solid #2a2c25;border-radius:6px;color:#E6E7E0;padding:8px 10px;margin:4px 0;cursor:pointer;font:13px Inter,sans-serif}#ipr-ent-dir button.it span{color:#9aa08f;font-size:12px;white-space:nowrap}#ipr-ent-dir button.it:hover{border-color:#94BE39}" +
     "#ipr-ent-dir a.mais{display:inline-block;margin-top:6px;color:#94BE39;font-size:12px;text-decoration:none}#ipr-ent-dir .rod{display:flex;gap:8px;flex-wrap:wrap}" +
+    "html.ipr-ent-so #ipe li.ipr-dl{display:none!important}" +
     "#ipr-ent-esq .ap{display:flex;align-items:center;justify-content:space-between;margin-top:10px;font:600 11px Inter;letter-spacing:.06em;text-transform:uppercase;color:#B8A83A}" +
     ".ipr-ent-b{all:unset;box-sizing:border-box;cursor:pointer;min-height:32px;padding:5px 10px;border:1px solid #383A33;border-radius:2px;color:#C3C5BC;font:500 12px/1.3 Inter,sans-serif;display:inline-flex;align-items:center;gap:6px}" +
     ".ipr-ent-b:hover{border-color:#94BE39;color:#94BE39}.ipr-ent-b:focus-visible{outline:2px solid #94BE39;outline-offset:1px}" +
@@ -507,6 +508,8 @@
   espera(function () {
     aplicar(true);
     try { orgCarregar(); } catch (e) {}
+    // O mapa é da organização: fecha o tema que o Atlas abre sozinho ao arrancar, enquanto a pessoa não mexer.
+    [2500, 6000, 11000].forEach(function (ms) { setTimeout(function () { var x = D.querySelector("#ipr-t62 .ipr-t62-x"); if (x && x.offsetParent !== null) try { x.click(); } catch (e) {} }, ms); });
     // O arranque do Atlas (vista inicial, camadas guardadas da visita anterior) corre depois e repõe o país inteiro e as
     // camadas de sempre. Nos primeiros 10 s volta-se a pôr a zona e as camadas de partida, enquanto a pessoa não mexer no mapa.
     var mexeu = false, m0 = W.__ipe.mapa;
