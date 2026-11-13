@@ -99,23 +99,63 @@
   }
   var CSS = "#ipr-apt{margin:0 0 10px;padding:10px 10px 8px;border:1px solid var(--ln,#383A33);border-radius:6px;background:var(--bg2,rgba(148,190,57,.06))}" +
     "#ipr-apt h4{margin:0 0 6px;font:600 13px Inter,system-ui,sans-serif;color:var(--tx,#e8e8e0)}#ipr-apt label{display:flex;gap:7px;align-items:flex-start;font:13px/1.35 Inter,system-ui,sans-serif;color:var(--tx,#ddd);padding:3px 0;cursor:pointer}" +
-    "#ipr-apt label input{margin-top:2px}#ipr-apt .lg{display:flex;gap:2px;margin:6px 0 2px}#ipr-apt .lg span{flex:1;height:8px;border-radius:2px}#ipr-apt .lgt{display:flex;justify-content:space-between;font-size:10.5px;color:var(--mu,#9a9b90)}" +
+    "#ipr-apt label input{margin-top:2px}#ipr-apt label .ipr-ii-b{margin-left:auto;flex:none}#ipr-apt .lg{display:flex;gap:2px;margin:6px 0 2px}#ipr-apt .lg span{flex:1;height:8px;border-radius:2px}#ipr-apt .lgt{display:flex;justify-content:space-between;font-size:10.5px;color:var(--mu,#9a9b90)}" +
     "#ipr-apt small{display:block;margin-top:6px;font-size:11px;line-height:1.4;color:var(--mu,#9a9b90)}" +
     ".ipr-apt-pp .maplibregl-popup-content{background:#16170f;color:#d8dacf;border:1px solid #383A33;border-radius:6px;padding:10px 12px}.ipr-apt-pp .maplibregl-popup-tip{border-top-color:#16170f;border-bottom-color:#16170f}" +
     ".ipr-apt-pop{font:12px/1.4 Inter,system-ui,sans-serif}.ipr-apt-pop .k{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:#94BE39}.ipr-apt-pop .t{font:600 14px Inter,sans-serif;margin:3px 0;display:flex;align-items:center;gap:6px;color:#fff}" +
     ".ipr-apt-pop .sw{width:12px;height:12px;border-radius:2px;display:inline-block}.ipr-apt-pop .cc{color:#9a9b90;margin-bottom:6px}.ipr-apt-pop table{width:100%;border-collapse:collapse}.ipr-apt-pop td{padding:2px 0;vertical-align:middle}" +
     ".ipr-apt-pop table,.ipr-apt-pop tr,.ipr-apt-pop td{border:0!important;background:none!important}.ipr-apt-pop td:first-child{padding-right:8px;white-space:nowrap}.ipr-apt-pop td:last-child{display:flex;align-items:center;gap:6px;justify-content:flex-end}.ipr-apt-pop .b{width:80px;height:6px;background:#2a2c25;border-radius:3px;overflow:hidden}" +
     ".ipr-apt-pop .b i{display:block;height:100%;background:#94BE39}.ipr-apt-pop b{width:22px;text-align:right;font-weight:600}.ipr-apt-pop .sd{color:#77786f;font-size:11px}.ipr-apt-pop .n{margin:6px 0 0;color:#9a9b90;font-size:11px}";
+  // «i» das três camadas próprias: abre o mesmo painel do camadas-info (#ipr-ii), com o mesmo aspecto.
+  function iBot(k) { var tt = t("Sobre esta camada: o que é, fonte, legenda", "About this layer: what it is, source, legend"); return '<button type="button" class="ipr-ii-b" data-iia="' + k + '" title="' + tt + '" aria-label="' + tt + '">i</button>'; }
+  function infoHtml(k) {
+    var E = en(), h = '<button type="button" class="x" aria-label="' + (E ? "Close" : "Fechar") + '">×</button>';
+    function dl(rows) { return "<dl>" + rows.map(function (r) { return "<dt>" + r[0] + "</dt><dd>" + r[1] + "</dd>"; }).join("") + "</dl>"; }
+    if (k === "apt") {
+      h += "<h3>" + t("Aptidão para jovens agricultores biológicos", "Suitability for young organic farmers") + '</h3><div class="ii-g">' + t("Biológico · produção IPR", "Organic · IPR product") + "</div>";
+      h += "<h4>" + t("O que é", "What it is") + "</h4><p>" + t("Zonas boas para um jovem agricultor biológico se instalar. Só critérios positivos, numa malha hexagonal de 3 km no continente e 1,2 km nas ilhas. Cada critério vai de 0 a 100; a nota é a média pesada. As classes comparam os hexágonos do continente entre si (quintis), e os das ilhas entre si.", "Areas suited for a young organic farmer to settle. Positive criteria only, on a 3 km hexagonal grid on the mainland and 1.2 km on the islands. Each criterion runs from 0 to 100; the score is the weighted mean. Classes compare mainland hexagons with each other (quintiles), and island hexagons with each other.") + "</p>";
+      h += "<h4>" + t("Critérios e fontes", "Criteria and sources") + "</h4>";
+      if (DADOS) h += dl(DADOS.criterios.map(function (c, j) { return [esc(c[1]) + " · " + (DADOS.pesos[j] || 0) + "%", esc(c[2])]; }));
+      else h += "<p>" + t("A carregar…", "Loading…") + "</p>";
+      h += "<h4>" + t("Fonte", "Source") + "</h4>" + dl([[t("Entidade", "Entity"), "IPR · Terracrua Design (cálculo próprio)"], [t("Dados", "Data"), "APA (SNIAmb, Atlas do Ambiente, Atlas da Qualidade dos Solos), ICNF, DGADR, INE, CAOP, Agrobio"], [t("Licença", "Licence"), t("Dados de origem em CC BY 4.0 ou de uso livre com indicação da fonte; leitura indicativa.", "Source data under CC BY 4.0 or free use with attribution; indicative reading.")], [t("Data", "Date"), esc(DADOS ? DADOS.data : "")]]);
+      h += "<h4>" + t("Legenda", "Legend") + '</h4><div class="ii-leg">' + CORES.map(function (c, i) { return '<div style="display:flex;align-items:center;gap:8px;margin:2px 0"><span style="width:14px;height:14px;border-radius:2px;background:' + c + '"></span>' + NOMES[i] + "</div>"; }).join("") + "</div>";
+    } else if (k === "reg") {
+      h += "<h3>" + t("Perímetros de rega públicos", "Public irrigation schemes") + '</h3><div class="ii-g">' + t("Água · Biológico", "Water · Organic") + "</div>";
+      h += "<h4>" + t("O que é", "What it is") + "</h4><p>" + t("Limites das áreas beneficiadas pelos 74 aproveitamentos hidroagrícolas públicos em exploração (cerca de 159 mil ha), com o nome, a entidade gestora, o grupo e a área. Não inclui o Alqueva (EFMA), cujos limites a EDIA não publica em dados abertos. Geometria simplificada para o mapa.", "Boundaries of the areas served by the 74 public irrigation schemes in operation (about 159,000 ha), with name, managing body, group and area. Alqueva (EFMA) is not included: EDIA does not publish its boundaries as open data. Geometry simplified for the map.") + "</p>";
+      h += "<h4>" + t("Fonte", "Source") + "</h4>" + dl([[t("Entidade", "Entity"), '<a href="https://www.dgadr.gov.pt/" target="_blank" rel="noopener">DGADR, Direção-Geral de Agricultura e Desenvolvimento Rural</a>'], [t("Conjunto", "Dataset"), "Limites dos Aproveitamentos Hidroagrícolas · AH_Portugal_Exploracao_Set24"], [t("Licença", "Licence"), "CC BY 4.0 (dados.gov.pt / SNIG)"], [t("Serviço", "Service"), "geoservices.dgadr.pt/geoserver/ahportugal"]]);
+      h += "<h4>" + t("Legenda", "Legend") + '</h4><div class="ii-leg"><div style="display:flex;align-items:center;gap:8px"><span style="width:14px;height:14px;border-radius:2px;background:rgba(30,136,229,.35);border:1.5px solid #0d47a1"></span>' + t("Área beneficiada", "Area served") + "</div></div>";
+    } else {
+      h += "<h3>" + t("Mercados, quintas, cabazes e escolas", "Markets, farms, box schemes and schools") + '</h3><div class="ii-g">' + t("Biológico · referências públicas", "Organic · public references") + "</div>";
+      h += "<h4>" + t("O que é", "What it is") + "</h4><p>" + t("Pontos de referência da agricultura biológica no continente, nos Açores e na Madeira: mercados, feiras e lojas, quintas e produtores, cabazes e AMAP, escolas agrárias e certificação, bio-regiões. Cada ponto tem ficha com o que é, onde, dia e horário, visitas, venda, sítio e a fonte própria. Posições aproximadas pela localidade.", "Organic farming reference points on the mainland, the Azores and Madeira: markets, fairs and shops, farms and producers, box schemes and CSAs, agricultural schools and certification, bio-regions. Each point has a profile with what it is, where, day and hours, visits, sales, website and its own source. Positions approximated by locality.") + "</p>";
+      h += "<h4>" + t("Fonte", "Source") + "</h4>" + dl([[t("Entidade", "Entity"), "IPR · Terracrua Design (levantamento)"], [t("Origem", "Origin"), "agrobio.pt, reformaagraria.pt, Agroportal (Lusa), Governo Regional da Madeira, Visit Madeira, Campo Aberto, sítios dos produtores e municípios"], [t("Estado", "Status"), t("Referências públicas por confirmar; cada ficha indica a sua fonte.", "Public references to be confirmed; each profile gives its source.")]]);
+      h += "<h4>" + t("Legenda", "Legend") + '</h4><div class="ii-leg">' + [["#e0a42b", "#111", t("Quinta ou produtor", "Farm or producer")], ["#94BE39", "#111", t("Mercado, feira ou loja", "Market, fair or shop")], ["#ffffff", "#8e5fb3", t("Cabazes e AMAP", "Box schemes and CSAs")], ["#5c9bd5", "#111", t("Ensino e certificação", "Education and certification")], ["transparent", "#2e7d32", t("Bio-região", "Bio-region")]].map(function (r) { return '<div style="display:flex;align-items:center;gap:8px;margin:2px 0"><span style="width:12px;height:12px;border-radius:50%;background:' + r[0] + ";border:2px solid " + r[1] + '"></span>' + r[2] + "</div>"; }).join("") + "</div>";
+    }
+    return h;
+  }
+  function infoAbrir(k, b) {
+    var p = D.getElementById("ipr-ii");
+    if (!p && W.__iprInfoAbrir) { try { W.__iprInfoAbrir("sroa"); } catch (e) {} p = D.getElementById("ipr-ii"); }
+    if (!p) return;
+    function por() { p.innerHTML = infoHtml(k); p.hidden = false;
+      var r = b.getBoundingClientRect(), w = p.offsetWidth || 380, vw = W.innerWidth, vh = W.innerHeight, hh = p.offsetHeight || 300;
+      if (vw > 700 && r.width) { var x = r.right + 14; if (x + w > vw - 8) x = r.left - w - 14; if (x < 8) x = 8; p.style.left = x + "px"; p.style.right = "auto"; p.style.top = Math.min(Math.max(56, r.top - 24), Math.max(56, vh - hh - 16)) + "px"; } }
+    if (k === "apt" && !DADOS) dados(function () { por(); });
+    por();
+  }
+  W.addEventListener("click", function (ev) {
+    var b = ev.target.closest && ev.target.closest("[data-iia]"); if (!b) return;
+    ev.preventDefault(); ev.stopPropagation(); infoAbrir(b.getAttribute("data-iia"), b);
+  }, true);
   function bloco() {
     var cam = D.getElementById("ipe-cam"); if (!cam) return false;
     if (D.getElementById("ipr-apt")) return true;
     var st = D.createElement("style"); st.textContent = CSS; D.head.appendChild(st);
     var d = D.createElement("div"); d.id = "ipr-apt";
     d.innerHTML = "<h4>" + t("Biológico · onde instalar-se", "Organic · where to settle") + "</h4>" +
-      '<label><input type="checkbox" data-apt="apt"' + (ON.apt ? " checked" : "") + "> <span>" + t("Aptidão para jovens agricultores biológicos", "Suitability for young organic farmers") + "</span></label>" +
+      '<label><input type="checkbox" data-apt="apt"' + (ON.apt ? " checked" : "") + "> <span>" + t("Aptidão para jovens agricultores biológicos", "Suitability for young organic farmers") + "</span>" + iBot("apt") + "</label>" +
       '<div class="lg">' + CORES.map(function (c) { return '<span style="background:' + c + '"></span>'; }).join("") + '</div><div class="lgt"><span>' + t("Boa", "Good") + "</span><span>" + t("As melhores", "The best") + "</span></div>" +
-      '<label><input type="checkbox" data-apt="reg"' + (ON.reg ? " checked" : "") + "> <span>" + t("Perímetros de rega públicos (DGADR)", "Public irrigation schemes (DGADR)") + "</span></label>" +
-      '<label><input type="checkbox" data-apt="pts"' + (ON.pts ? " checked" : "") + "> <span>" + t("Mercados, quintas, cabazes e escolas (com ficha)", "Markets, farms, box schemes and schools (with profile)") + "</span></label>" +
+      '<label><input type="checkbox" data-apt="reg"' + (ON.reg ? " checked" : "") + "> <span>" + t("Perímetros de rega públicos (DGADR)", "Public irrigation schemes (DGADR)") + "</span>" + iBot("reg") + "</label>" +
+      '<label><input type="checkbox" data-apt="pts"' + (ON.pts ? " checked" : "") + "> <span>" + t("Mercados, quintas, cabazes e escolas (com ficha)", "Markets, farms, box schemes and schools (with profile)") + "</span>" + iBot("pts") + "</label>" +
       "<small>" + t("Dez critérios positivos: solo, matéria orgânica, longe de pressões, chuva, água subterrânea, água de rega, mercado, terra acessível, zonas pouco procuradas e rede de apoio. Carregue num hexágono para ver a leitura. Fontes: APA, ICNF, DGADR, INE, Agrobio.", "Ten positive criteria: soil, organic matter, distance from pressures, rain, groundwater, irrigation water, market, affordable land, less sought-after areas and support network. Click a hexagon to see the reading. Sources: APA, ICNF, DGADR, INE, Agrobio.") + "</small>";
     cam.insertBefore(d, cam.firstChild);
     d.addEventListener("change", function (e) { var c = e.target.closest("[data-apt]"); if (!c) return; var k = c.getAttribute("data-apt"); ON[k] = c.checked; if (AUTO) delete AUTO[k]; guardar(); if (k === "apt") desenharApt(); else if (k === "reg") desenharReg(); else desenharPts(); });
