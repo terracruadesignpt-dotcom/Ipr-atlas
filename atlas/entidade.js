@@ -330,7 +330,7 @@
 
   // ---- Pessoas, convites e fichas dos associados (m91486) ----
   var EO = W.IPR_ENT_ORG || null, PESS = null, FICHAS = null, FFORM = null, MARCAR = false, ENVCONF = false, SEL = {};
-  var EM = {};
+  var EM = {}, FARQ = null;
   function eo(op, extra) {
     // Envios e gravações: um de cada vez, para um duplo clique não mandar dois mails.
     if (/^(enviar|teste|aviso|aviso_teste|juntar|ficha_guardar|calendario_guardar)$/.test(op)) {
@@ -482,6 +482,13 @@
       fformLer(); var f = FFORM;
       if (!f.nome) { aviso("Falta o nome."); return true; }
       eo("ficha_guardar", {ficha: JSON.stringify(f)}).then(function (d) { aviso("Ficha guardada."); fichasCarregar(function () { var nf = (FICHAS || []).filter(function (x) { return x.id === d.id; })[0]; if (nf && nf.x != null && nf.x !== "") { FICHA = {pr: fichaProps(nf), xy: [+nf.x, +nf.y], cam: {id: "fichas", nome: "Fichas dos associados"}}; TAB = "ficha"; } else TAB = EO.gestor ? "pessoas" : "painel"; painel(); }); }).catch(function (e) { aviso("Não foi possível guardar: " + e.message); });
+      return true;
+    }
+    if (a === "farquivar" && FICHA && FICHA.pr.fid && EO && EO.gestor) {
+      var fid = FICHA.pr.fid;
+      if (FARQ !== fid) { FARQ = fid; painel(); return true; }
+      FARQ = null; aviso("A arquivar…");
+      eo("ficha_arquivar", {id: fid}).then(function () { aviso("Ficha arquivada. Deixa de aparecer no mapa; a equipa do IPR pode repô-la."); TAB = "painel"; FICHA = null; fichasCarregar(); }).catch(function (e) { aviso("Não foi possível arquivar: " + e.message); painel(); });
       return true;
     }
     if (a === "feditar" && FICHA && FICHA.pr.fid) { var ef = (FICHAS || []).filter(function (x) { return x.id === FICHA.pr.fid; })[0]; if (ef) fformAbrir(ef); return true; }
@@ -723,7 +730,7 @@
     }
     if (falta.length) h += '<div class="sec falta"><div class="t">Por confirmar</div><p class="s">' + falta.map(esc).join(" · ") + '</p><p class="s">' + (tp === "produtor" ? "Completa-se quando o produtor aceitar o convite para o mapa, ou pela Agrobio em nome dele." : "A Agrobio pode completar estes dados.") + "</p></div>";
     var xy = F.xy || [];
-    if (pr.fid && EO && (EO.gestor || +pr.minha)) h += '<div class="sec"><button type="button" class="ipr-ent-b p" data-ent="feditar">Editar ficha</button></div>';
+    if (pr.fid && EO && (EO.gestor || +pr.minha)) h += '<div class="sec"><button type="button" class="ipr-ent-b p" data-ent="feditar">Editar ficha</button>' + (EO.gestor ? ' <button type="button" class="ipr-ent-b" data-ent="farquivar">' + (FARQ === pr.fid ? "Confirmar: tirar do mapa" : "Arquivar ficha") + '</button>' : "") + '</div>';
     h += '<div class="sec"><a class="ipr-ent-b" href="https://www.google.com/maps/dir/?api=1&destination=' + (+xy[1]).toFixed(5) + "," + (+xy[0]).toFixed(5) + '" target="_blank" rel="noopener">Como chegar</a> <button type="button" class="ipr-ent-b" data-ent="fichair">Ver no mapa</button></div>';
     h += '<p class="s">' + (pr.fonte ? "Fonte: " + esc(pr.fonte) + ". " : "") + (pr.posicao ? "Posição " + esc(pr.posicao) + "." : "") + "</p>";
     return h + "</div>";
