@@ -407,30 +407,56 @@
       '<button type="button" class="ipr-ent-b" data-ent="fnova">Nova ficha de produtor</button></div>';
     return h + "</div>";
   }
+  // Uma linha de CSV com aspas ("Silva, João") e aspas dobradas.
+  function csvLinha(l, sep) {
+    var v = [], cur = "", q = false;
+    for (var i = 0; i < l.length; i++) {
+      var ch = l[i];
+      if (q) { if (ch === '"') { if (l[i + 1] === '"') { cur += '"'; i++; } else q = false; } else cur += ch; }
+      else if (ch === '"') q = true; else if (ch === sep) { v.push(cur.trim()); cur = ""; } else cur += ch;
+    }
+    v.push(cur.trim()); return v;
+  }
   function csvContactos(txt) {
     var ls = txt.replace(/^﻿/, "").split(/\r?\n/).filter(function (l) { return l.trim(); }); if (!ls.length) return [];
     var sep = /;/.test(ls[0]) ? ";" : (/\t/.test(ls[0]) ? "\t" : ",");
-    var cab = ls[0].split(sep).map(function (x) { return x.trim().toLowerCase().replace(/^"|"$/g, ""); });
+    var cab = csvLinha(ls[0], sep).map(function (x) { return x.toLowerCase(); });
     function col(re) { for (var j = 0; j < cab.length; j++) if (re.test(cab[j])) return j; return -1; }
-    var ce = col(/^(e-?mail|mail|correio)/), cn = col(/^(nome|name|contacto)/), cp = col(/^(papel|tipo|fun[cç][aã]o|role)/), ini = 1;
-    if (ce < 0) { ini = 0; }
+    var ce = col(/^(e-?mail|mail|correio|endere[cç]o de e-?mail)/), cn = col(/^(nome|name|contacto|nome completo|full name)$/), cp = col(/^(papel|tipo|fun[cç][aã]o|role|categoria)/);
+    var c1 = col(/^(first name|given name|primeiro nome|nome pr[oó]prio)/), c2 = col(/^(last name|family name|apelido|[uú]ltimo nome)/);
+    if (cn < 0) cn = col(/nome|name/);
+    var ini = ce < 0 && !(cn >= 0 || c1 >= 0) ? 0 : 1, vistos = {};
     return ls.slice(ini).map(function (l) {
-      var v = l.split(sep).map(function (x) { return x.trim().replace(/^"|"$/g, ""); });
-      var em = ce >= 0 ? v[ce] : (v.filter(function (x) { return /@/.test(x); })[0] || "");
+      var v = csvLinha(l, sep);
+      var em = ce >= 0 && /@/.test(v[ce] || "") ? v[ce] : (v.filter(function (x) { return /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(x); })[0] || "");
+      if (!em) { var mm = l.match(/[^\s@<>;,"]+@[^\s@<>;,"]+\.[a-z]{2,}/i); em = mm ? mm[0] : ""; }
+      var antes = /</.test(l) ? l.split("<")[0].replace(/["']/g, "").trim() : "";
+      em = em.replace(/^.*<([^>]+)>.*$/, "$1").trim().toLowerCase();
       var pa = cp >= 0 ? String(v[cp] || "").toLowerCase() : "associado";
-      pa = /produt/.test(pa) ? "produtor" : /t[eé]cn/.test(pa) ? "tecnico" : /parc/.test(pa) ? "parceiro" : /gest/.test(pa) ? "gestor" : "associado";
-      return {nome: cn >= 0 ? v[cn] : (ce < 0 ? v.filter(function (x) { return !/@/.test(x); })[0] || "" : ""), email: em, papel: pa};
-    }).filter(function (r) { return r.email; });
+      pa = /produt|agricult/.test(pa) ? "produtor" : /t[eé]cn/.test(pa) ? "tecnico" : /parc/.test(pa) ? "parceiro" : /gest/.test(pa) ? "gestor" : "associado";
+      var nm = cn >= 0 && c1 < 0 ? v[cn] : [c1 >= 0 ? v[c1] : (cn >= 0 ? v[cn] : ""), c2 >= 0 ? v[c2] : ""].join(" ").trim();
+      if (!nm && antes) nm = antes;
+      if (!nm && ce < 0) nm = v.filter(function (x) { return x && !/@/.test(x); })[0] || "";
+      return {nome: nm || "", email: em, papel: pa};
+    }).filter(function (r) { if (!r.email || vistos[r.email]) return false; vistos[r.email] = 1; return true; });
+  }
+  // Excel em português grava muitas vezes em Windows-1252: tentar UTF-8 e, se falhar, ler como Windows-1252.
+  function lerTexto(f) {
+    return f.arrayBuffer().then(function (buf) {
+      try { return new TextDecoder("utf-8", {fatal: true}).decode(buf); } catch (e) { return new TextDecoder("windows-1252").decode(buf); }
+    });
   }
   function pesAccao(a, t) {
     if (a === "pesjuntar") {
       var r = {nome: (D.getElementById("ipr-pes-nome") || {}).value || "", email: (D.getElementById("ipr-pes-email") || {}).value || "", papel: (D.getElementById("ipr-pes-papel") || {}).value || "associado"};
+      if (!/@/.test(r.email)) { aviso("Falta o e-mail."); return true; }
+      aviso("A juntar…");
       eo("juntar", {linhas: JSON.stringify([r])}).then(function (d) { PESS = d; if (d.maus && d.maus.length) aviso("E-mail inválido: " + d.maus.join(", ")); painel(); }).catch(function (e) { aviso("Não foi possível juntar: " + e.message); });
       return true;
     }
     if (a === "pesimportar") {
-      var i = D.createElement("input"); i.type = "file"; i.accept = ".csv,.txt,text/csv";
-      i.addEventListener("change", function () { var f = i.files && i.files[0]; if (!f) return; f.text().then(function (txt) { var rs = csvContactos(txt); if (!rs.length) { aviso("Não encontrei e-mails no ficheiro."); return; } eo("juntar", {linhas: JSON.stringify(rs)}).then(function (d) { PESS = d; aviso(d.novos + (d.novos === 1 ? " pessoa juntada" : " pessoas juntadas") + " à lista" + (d.maus && d.maus.length ? "; " + d.maus.length + " e-mails inválidos" : "") + ". Ainda não foi enviado nada."); painel(); }); }); });
+      var i = D.createElement("input"); i.type = "file"; i.accept = ".csv,.txt,.xls,.xlsx,text/csv";
+      i.addEventListener("change", function () { var f = i.files && i.files[0]; if (!f) return; if (/\.xlsx?$/i.test(f.name)) { aviso("Isto é um ficheiro Excel. No Excel: Ficheiro › Guardar como › CSV, e carregue esse."); return; } lerTexto(f).then(function (txt) { var rs = csvContactos(txt); if (!rs.length) { aviso("Não encontrei e-mails no ficheiro."); return; } eo("juntar", {linhas: JSON.stringify(rs)}).then(function (d) { PESS = d; aviso(d.novos + (d.novos === 1 ? " pessoa juntada" : " pessoas juntadas") + " à lista" + (d.maus && d.maus.length ? "; " + d.maus.length + " e-mails inválidos" : "") + ". Ainda não foi enviado nada."); painel(); }); }); });
       i.click(); return true;
     }
     if (a === "pesenviar") { ENVCONF = true; painel(); return true; }
@@ -1051,7 +1077,8 @@
     });
     return {n: n, bx: bx};
   }
-  W.__iprEntLer = function (fs) { lerFicheiros(fs); }; // para testes de formatos
+  W.__iprEntLer = function (fs) { lerFicheiros(fs); };
+  W.__iprEntCsv = csvContactos; // para testes de formatos
   function lerFicheiros(fs) {
     if (!(W.__ipe && W.__ipe.locais)) { aviso("O mapa ainda está a carregar. Tente daqui a uns segundos."); return; }
     aviso("A ler " + (fs.length > 1 ? fs.length + " ficheiros" : fs[0].name) + "…");
