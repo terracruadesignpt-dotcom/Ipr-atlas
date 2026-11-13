@@ -18,7 +18,7 @@
       d_2d: "Simulação dinâmica 2D (SFINCS) sobre o MDT LiDAR: altura e velocidade máximas, tempo até ao máximo e caudal à saída do terreno. Fica em fila e demora alguns minutos.",
       d_ad: "Desenhe charcas, valas em curva de nível, açudes ou mudanças de ocupação e compare a mesma chuva com e sem elas.",
       d_mira: "Cenários regionais da bacia do Mira, das nascentes à foz (10–25 m com subgrid LiDAR, maré em Vila Nova de Milfontes e Santa Clara).",
-      cenarios: "Alturas de chuva (mm, separadas por vírgulas)", semRetorno: "Sem período de retorno: são alturas de chuva, não probabilidades.",
+      cenarios: "Alturas de chuva (mm, separadas por vírgulas)", grande: "Base grande ({ha} ha): começa com uma só chuvada, para o resultado chegar mais depressa. Pode juntar outras, por exemplo 20, 50, 100 (cada uma acrescenta tempo).", semRetorno: "Sem período de retorno: são alturas de chuva, não probabilidades.",
       chuva: "Chuva", m_livre: "Chuva livre", m_proj: "Chuva de projecto (IDF)", m_obs: "Evento observado",
       total: "Altura total", duracao: "Duração", forma: "Forma", f_uni: "Uniforme", f_tri: "Triangular (pico a 3/8)",
       T: "Período de retorno", anos: "anos", obsH: "Cole a série: uma linha por intervalo, «tempo,mm» (ex.: 2025-11-01T10:00,4.2). Intervalos iguais.", fonte: "Fonte (IPMA, SNIRH…)",
@@ -53,7 +53,7 @@
       d_2d: "2D dynamic simulation (SFINCS) on the LiDAR DTM: maximum depth and velocity, time to peak and outflow. Queued; takes a few minutes.",
       d_ad: "Draw ponds, contour swales, small dams or land-cover changes and compare the same rainfall with and without them.",
       d_mira: "Regional scenarios for the Mira basin, source to mouth (10–25 m with LiDAR subgrid, tide at Vila Nova de Milfontes and Santa Clara).",
-      cenarios: "Rainfall depths (mm, comma-separated)", semRetorno: "No return period: these are rainfall depths, not probabilities.",
+      cenarios: "Rainfall depths (mm, comma-separated)", grande: "Large Base ({ha} ha): starts with a single rainfall so the result arrives sooner. You can add others, e.g. 20, 50, 100 (each one adds time).", semRetorno: "No return period: these are rainfall depths, not probabilities.",
       chuva: "Rainfall", m_livre: "Free rainfall", m_proj: "Design storm (IDF)", m_obs: "Observed event",
       total: "Total depth", duracao: "Duration", forma: "Shape", f_uni: "Uniform", f_tri: "Triangular (peak at 3/8)",
       T: "Return period", anos: "years", obsH: "Paste the series: one line per interval, «time,mm» (e.g. 2025-11-01T10:00,4.2). Equal intervals.", fonte: "Source (IPMA, SNIRH…)",
@@ -150,11 +150,17 @@
     P.addEventListener("input", mudar);
     return P;
   }
+  // 13/11/2026: numa Base grande, uma só chuvada por omissão. Na Base de demonstração (16 400 ha) as três chuvadas levaram
+  // 10 min 37 s; o motor corre o Fill-Spill-Merge uma vez por chuvada. Quem mexer no campo fica com o que escreveu.
+  var GRANDE_HA = 2000;
+  function haBase() { var a = actual(); return a ? +(a.area_ha || 0) : 0; }
+  function cenariosPorOmissao() { if (!S.cenMexeu) S.cenarios = haBase() >= GRANDE_HA ? "50" : "20, 50, 100"; }
   function abrir() { painel().hidden = false; pintar(); listar(); }
   function fechar() { if (P) P.hidden = true; pararDesenho(); }
 
   function pintar() {
     if (!P || P.hidden) return;
+    cenariosPorOmissao();   // acompanha a Base escolhida depois de o painel abrir
     var h = '<div class="as-cab">' + IC + "<b>" + esc(t("titulo")) + BETA + '</b><button class="as-ib" data-as="min" title="' + esc(t("min")) + '">–</button><button class="as-ib" data-as="x" title="' + esc(t("fechar")) + '">×</button></div>';
     h += '<div class="as-tabs" role="tablist">' + ["ret", "2d", "ad", "mira"].map(function (k) { return '<button role="tab" data-tab="' + k + '" aria-selected="' + (S.tab === k) + '">' + esc(t("tab_" + k)) + "</button>"; }).join("") + "</div>";
     h += '<div class="as-corpo">' + corpo() + "</div>";
@@ -190,7 +196,8 @@
     return '<label class="f">' + esc(t(rot)) + '<span class="ln"><input type="number" data-k="' + k + '" value="' + esc(v) + '" min="' + mn + '" max="' + mx + '" step="' + st + '"><span class="un">' + esc(un) + "</span></span></label>";
   }
   function formRet() {
-    return '<label class="f">' + esc(t("cenarios")) + '<input type="text" data-k="cenarios" value="' + esc(S.cenarios) + '"></label><p class="nota">' + esc(t("semRetorno")) + "</p>";
+    var ha = haBase(), gr = ha >= GRANDE_HA ? '<p class="nota">' + esc(t("grande").replace("{ha}", n(ha, 0))) + "</p>" : "";
+    return '<label class="f">' + esc(t("cenarios")) + '<input type="text" data-k="cenarios" value="' + esc(S.cenarios) + '"></label>' + gr + '<p class="nota">' + esc(t("semRetorno")) + "</p>";
   }
   function formChuva() {
     var c = S.chuva, h = '<span class="as-h">' + esc(t("chuva")) + "</span>";
@@ -571,7 +578,7 @@
     if (k === "modoAD") { S.modoAD = el.value; pintar(); return; }
     if (k === "avisoChk") { S.avisoChk = el.checked; pintar(); return; }
     if (k === "opTexto") { if (S.res && S.res.id && S.opin[S.res.id]) S.opin[S.res.id].texto = el.value; return; }
-    if (k === "cenarios") { S.cenarios = el.value; return; }
+    if (k === "cenarios") { S.cenarios = el.value; S.cenMexeu = true; return; }
     if (k === "horas") { S.horas = +el.value; return; }
     if (k === "obs" || k === "fonte" || k === "forma") { S.chuva[k] = el.value; return; }
     S.chuva[k] = +el.value;
