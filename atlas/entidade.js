@@ -217,7 +217,7 @@
     "#ipr-ent-wiz .op .t{min-width:0}#ipr-ent-wiz .wb{overflow-x:hidden}" +
     "#ipr-ent-wiz .wf{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:12px 20px;border-top:1px solid #2a2c25;flex-wrap:wrap}" +
     "#ipr-ent-wiz .res{font-size:12.5px;color:#A9AC9F}" +
-    "@media (max-width:800px){#ipr-ent-dir{top:auto;left:0;width:auto;max-height:55%;border-left:0;border-top:1px solid #383A33}#ipr-ent-dir.fechado{left:auto;right:8px;bottom:70px}}";
+    "@media (max-width:800px){#ipr-ent-dir{position:fixed;top:auto;left:0;right:0;bottom:52px;width:auto;height:58vh;max-height:none;border-left:0;border-top:1px solid #383A33;border-radius:12px 12px 0 0;box-shadow:0 -6px 18px rgba(0,0,0,.35);z-index:60}#ipr-ent-dir.fechado{left:auto;right:8px;bottom:118px;height:auto;border-radius:6px}}";
   var st = D.createElement("style"); st.id = "ipr-ent-css"; st.textContent = css; (D.head || D.documentElement).appendChild(st);
 
   // ---------- Aplicar ao mapa ----------
@@ -849,6 +849,9 @@
   function painel() {
     var p = D.getElementById("ipr-ent-dir"), dir = D.getElementById("ipe-dir"), ipe = D.getElementById("ipe");
     if (!p) { p = D.createElement("aside"); p.id = "ipr-ent-dir"; p.setAttribute("aria-label", "Painel da organização"); }
+    // No telemóvel o painel nativo da direita é uma barra de 52 px em baixo: o da organização vai por cima dela, não dentro.
+    var estreito = W.matchMedia && W.matchMedia("(max-width:800px)").matches;
+    if (estreito) dir = null;
     var casa = dir || ipe || D.body;
     if (p.parentNode !== casa) { if (dir && getComputedStyle(dir).position === "static") dir.style.position = "relative"; casa.appendChild(p); p.classList.toggle("dentro", !!dir); }
     if (TAB === "com") { painelCom(p); return; }
