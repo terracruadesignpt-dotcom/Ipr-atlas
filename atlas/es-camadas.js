@@ -26,6 +26,15 @@
       fmt + "&TileMatrix={z}&TileCol={x}&TileRow={y}";
   }
   var IGN = "CC BY 4.0 scne.es";
+  /* 14/11/2026 (Nuno: «quero mais camadas em Espanha [...] Copernicus e aquelas coisas todas europeias avançadas»). Fontes
+     testadas a 14/11 a partir do servidor do site (POST /tcd/v1/viz/diag): resposta 200, imagem e CORS aberto para
+     terracruadesign.pt. Mesma regra de níveis de Portugal: ocupação do solo, água, floresta e solo/geologia são do
+     Intelligence (no Explorer aparecem trancadas). */
+  var EXPL = window.IPR_NIVEL === "explorer";
+  var GL = "https://image.discomap.eea.europa.eu/arcgis/rest/services/GioLandPublic/", CLMS = "Copernicus Land Monitoring Service (EEA)";
+  function img(svc) { return GL + svc + "/ImageServer/exportImage?bbox={bbox-epsg-3857}&bboxSR=3857&imageSR=3857&size=256,256&format=png&transparent=true&f=image"; }
+  function msx(base) { return base + "/export?bbox={bbox-epsg-3857}&bboxSR=3857&imageSR=3857&size=256,256&format=png32&transparent=true&dpi=96&f=image"; }
+  var IGME = "https://mapas.igme.es/gis/services/";
   var CAT = [
     { sub: t("Fundo", "Fondo"), itens: [
       { id: "es-pnoa", nome: t("Ortofoto PNOA (IGN)", "Ortofoto PNOA (IGN)"), tipo: "raster", url: wmts("https://www.ign.es/wmts/pnoa-ma", "OI.OrthoimageCoverage", "image/jpeg"), min: 0, max: 20, op: 1, attr: "PNOA " + IGN },
@@ -44,9 +53,33 @@
     ] },
     { sub: t("Água e relevo", "Agua y relieve"), itens: [
       { id: "es-pontosagua", nome: t("Pontos de água (IGME)", "Puntos de agua (IGME)"), tipo: "raster", url: wms("https://mapas.igme.es/gis/services/BasesDatos/IGME_PuntosAgua/MapServer/WMSServer", "0,1"), min: 10, max: 22, op: 1, attr: "IGME-CSIC CC BY 4.0" },
-      { id: "es-curvas", nome: t("Curvas de nível (IGN)", "Curvas de nivel (IGN)"), tipo: "raster", url: wms("https://servicios.idee.es/wms-inspire/mdt", "EL.ContourLine"), min: 13, max: 22, op: 0.9, attr: "MDT " + IGN }
+      { id: "es-curvas", nome: t("Curvas de nível (IGN)", "Curvas de nivel (IGN)"), tipo: "raster", url: wms("https://servicios.idee.es/wms-inspire/mdt", "EL.ContourLine"), min: 13, max: 22, op: 0.9, attr: "MDT " + IGN },
+      { id: "es-masas", nome: t("Massas de água (IGN)", "Masas de agua (IGN)"), tipo: "raster", url: wms("https://servicios.idee.es/wms-inspire/hidrografia", "HY.PhysicalWaters.Waterbodies"), min: 8, max: 22, op: 0.9, attr: "Hidrografía " + IGN },
+      { id: "es-eudem", nome: t("Relevo europeu (EU-DEM)", "Relieve europeo (EU-DEM)"), tipo: "raster", url: msx(GL + "DEM/MapServer"), min: 5, max: 22, op: 0.6, attr: "EU-DEM, " + CLMS },
+      { id: "es-hrlagua", nome: t("Água e zonas húmidas 2018 (Copernicus)", "Agua y zonas húmedas 2018 (Copernicus)"), tipo: "raster", url: img("HRL_WaterWetness_2018"), min: 8, max: 22, op: 0.8, attr: CLMS, intel: 1 }
+    ] },
+    { sub: t("Ocupação do solo e floresta", "Ocupación del suelo y bosque"), itens: [
+      { id: "es-siose", nome: t("Ocupação do solo SIOSE (IGN)", "Ocupación del suelo SIOSE (IGN)"), tipo: "raster", url: wms("https://servicios.idee.es/wms-inspire/ocupacion-suelo", "LC.LandCoverSurfaces"), min: 11, max: 22, op: 0.65, attr: "SIOSE " + IGN, intel: 1 },
+      { id: "es-clc", nome: t("CORINE Land Cover 2018", "CORINE Land Cover 2018"), tipo: "raster", url: msx("https://image.discomap.eea.europa.eu/arcgis/rest/services/Corine/CLC2018_WM/MapServer"), min: 6, max: 22, op: 0.55, attr: "CORINE 2018, " + CLMS, intel: 1 },
+      { id: "es-copa", nome: t("Densidade de copa 2018 (Copernicus)", "Densidad de copa 2018 (Copernicus)"), tipo: "raster", url: img("HRL_TreeCoverDensity_2018"), min: 8, max: 22, op: 0.7, attr: CLMS, intel: 1 },
+      { id: "es-folha", nome: t("Folhosas e resinosas 2018 (Copernicus)", "Frondosas y coníferas 2018 (Copernicus)"), tipo: "raster", url: img("HRL_DominantLeafType2018"), min: 8, max: 22, op: 0.7, attr: CLMS, intel: 1 },
+      { id: "es-floresta", nome: t("Tipo de floresta 2018 (Copernicus)", "Tipo de bosque 2018 (Copernicus)"), tipo: "raster", url: img("HRL_ForestType_2018"), min: 8, max: 22, op: 0.7, attr: CLMS, intel: 1 },
+      { id: "es-copamud", nome: t("Perda e ganho de copa 2015 a 2018 (Copernicus)", "Cambio de copa 2015 a 2018 (Copernicus)"), tipo: "raster", url: img("HRL_TreeCoverChangeMask_15_18"), min: 8, max: 22, op: 0.85, attr: CLMS, intel: 1 },
+      { id: "es-sebes", nome: t("Sebes e árvores isoladas 2021, 5 m (Copernicus)", "Setos y árboles aislados 2021, 5 m (Copernicus)"), tipo: "raster", url: img("HRL_SmallWoodyFeatures_2021_005m"), min: 12, max: 22, op: 0.85, attr: CLMS, intel: 1 },
+      { id: "es-sebesd", nome: t("Densidade de sebes 2021 (Copernicus)", "Densidad de setos 2021 (Copernicus)"), tipo: "raster", url: img("HRL_SmallWoodyFeaturesDensity_2021_100m"), min: 7, max: 22, op: 0.7, attr: CLMS, intel: 1 },
+      { id: "es-imperm", nome: t("Solo impermeabilizado 2018 (Copernicus)", "Suelo sellado 2018 (Copernicus)"), tipo: "raster", url: img("HRL_ImperviousnessDensity_2018"), min: 8, max: 22, op: 0.75, attr: CLMS, intel: 1 },
+      { id: "es-edif", nome: t("Área edificada 2018 (Copernicus)", "Área edificada 2018 (Copernicus)"), tipo: "raster", url: img("HRL_BuiltUp_2018"), min: 9, max: 22, op: 0.8, attr: CLMS, intel: 1 }
+    ] },
+    { sub: t("Fogo", "Incendios"), itens: [
+      { id: "es-ardidas", nome: t("Áreas ardidas (EFFIS, Copernicus)", "Áreas quemadas (EFFIS, Copernicus)"), tipo: "raster", url: wms("https://maps.effis.emergency.copernicus.eu/effis", "modis.ba.poly"), min: 6, max: 22, op: 0.8, attr: "EFFIS, Copernicus Emergency Management Service" }
+    ] },
+    { sub: t("Solo e geologia", "Suelo y geología"), itens: [
+      { id: "es-magna", nome: t("Geologia MAGNA 1:50 000 (IGME)", "Geología MAGNA 1:50.000 (IGME)"), tipo: "raster", url: wms(IGME + "Cartografia_Geologica/IGME_MAGNA_50/MapServer/WMSServer", "0"), min: 10, max: 22, op: 0.65, attr: "IGME-CSIC CC BY 4.0", intel: 1 },
+      { id: "es-geode", nome: t("Geologia contínua GEODE 1:50 000 (IGME)", "Geología continua GEODE 1:50.000 (IGME)"), tipo: "raster", url: wms(IGME + "Cartografia_Geologica/IGME_Geode_50/MapServer/WMSServer", "0"), min: 9, max: 22, op: 0.65, attr: "IGME-CSIC CC BY 4.0", intel: 1 },
+      { id: "es-perm", nome: t("Permeabilidade 1:200 000 (IGME)", "Permeabilidad 1:200.000 (IGME)"), tipo: "raster", url: wms(IGME + "Cartografia_Tematica/IGME_Permeabilidad_200/MapServer/WMSServer", "0"), min: 7, max: 22, op: 0.65, attr: "IGME-CSIC CC BY 4.0", intel: 1 }
     ] }
   ];
+  function tranc(it) { return EXPL && it.intel; }
   function wmws(b, c) { return wms(b, c); }
   var CHAVE = "tcd_atlas_es";
   var ligados = {};
@@ -87,7 +120,10 @@
     var h = "<h4>" + t("Espanha", "España") + "</h4>";
     CAT.forEach(function (g) {
       h += "<h5>" + g.sub + "</h5>";
-      g.itens.forEach(function (it) { h += '<label><input type="checkbox" data-tes="' + it.id + '"' + (ligados[it.id] ? " checked" : "") + "> " + it.nome + "</label>"; });
+      g.itens.forEach(function (it) {
+        if (tranc(it)) { h += '<label class="bl" title="IPR Atlas Intelligence"><input type="checkbox" disabled> ' + it.nome + ' <i style="font-style:normal;font-size:11px;color:var(--mu,#777)">Intelligence</i></label>'; return; }
+        h += '<label><input type="checkbox" data-tes="' + it.id + '"' + (ligados[it.id] ? " checked" : "") + "> " + it.nome + "</label>";
+      });
     });
     h += "<small>" + t("Fontes oficiais espanholas e europeias. Informação indicativa; a referência vinculativa é a publicada pelo organismo.", "Fuentes oficiales españolas y europeas. Información orientativa; la referencia vinculante es la publicada por cada organismo.") + "</small>";
     d.innerHTML = h;
@@ -96,7 +132,7 @@
     d.addEventListener("click", function (e) { if (!e.target.closest("h4")) return; var a = d.classList.toggle("aberto"); try { localStorage.setItem(CHAVE + "_ab", a ? "1" : "0"); } catch (x) {} });
     d.addEventListener("change", function (e) {
       var c = e.target.closest("[data-tes]"); if (!c) return;
-      var it = itemPor(c.getAttribute("data-tes")); if (!it) return;
+      var it = itemPor(c.getAttribute("data-tes")); if (!it || tranc(it)) return;
       if (c.checked) { ligados[it.id] = 1; ligar(it); } else { delete ligados[it.id]; desligar(it); }
       guardar();
     });
@@ -107,7 +143,7 @@
     var c = I.getCenter(), em = dentro(c.lng, c.lat);
     if (d.hidden === em) d.hidden = !em;
   }
-  function repor() { Object.keys(ligados).forEach(function (id) { var it = itemPor(id); if (it) ligar(it); }); }
+  function repor() { Object.keys(ligados).forEach(function (id) { var it = itemPor(id); if (it && !tranc(it)) ligar(it); }); }
   function arrancar(n) {
     if (!montar() || !mapa()) { if (n < 60) setTimeout(function () { arrancar(n + 1); }, 500); return; }
     var I = mapa();
