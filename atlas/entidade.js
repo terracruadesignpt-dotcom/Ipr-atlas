@@ -327,13 +327,14 @@
   function orgCam(id) { return ORG ? (ORG.camadas || []).filter(function (c) { return +c.id === +id; })[0] : null; }
   function orgLigar(c, on) {
     var m = W.__ipe && W.__ipe.mapa; if (!m || !c) return;
-    var sid = "ent-org-" + c.id, ls = [sid + "-f", sid + "-l", sid + "-p"];
+    var sid = "ent-org-" + c.id, ls = [sid + "-f", sid + "-l", sid + "-p", sid + "-s"];
     ORGON[c.id] = !!on;
     if (m.getSource(sid)) { ls.forEach(function (l) { if (m.getLayer(l)) m.setLayoutProperty(l, "visibility", on ? "visible" : "none"); }); return; }
     if (!on) return;
     pedirCam(c.url, true).then(function (gj) {
       if (!gj || gj.type !== "FeatureCollection" || m.getSource(sid) || !ORGON[c.id]) return;
-      var cor = c.cor || "#94BE39";
+      var cor = c.cor || "#94BE39", SB = W.IPR_SIMB;
+      if (SB) SB.anotar(gj); // código de cores e ícones comum a todas as organizações
       m.addSource(sid, {type: "geojson", data: gj});
       m.addLayer({id: sid + "-f", type: "fill", source: sid, filter: ["==", ["geometry-type"], "Polygon"], paint: {"fill-color": cor, "fill-opacity": 0.15}});
       m.addLayer({id: sid + "-l", type: "line", source: sid, filter: ["!=", ["geometry-type"], "Point"], paint: {"line-color": cor, "line-width": 2}});
@@ -343,6 +344,15 @@
         "circle-radius": ["interpolate", ["linear"], ["zoom"], 5, ["match", ["get", "tipo"], "cabaz", 6, "bioregiao", 11, "sede", 6, 4.5], 10, ["match", ["get", "tipo"], "cabaz", 8, "bioregiao", 14, "sede", 8, 6.5], 14, ["match", ["get", "tipo"], "cabaz", 10, "bioregiao", 16, "sede", 9, 8]],
         "circle-stroke-color": ["match", ["get", "tipo"], "cabaz", "#8e5fb3", "mercado", "#ffffff", "feira", "#ffffff", "loja", "#ffffff", "bioregiao", cor, "#111"],
         "circle-stroke-width": ["match", ["get", "tipo"], "cabaz", 3.5, "bioregiao", 2.5, 1.5]}});
+      // Com o código de símbolos, o círculo fica quase invisível (continua a receber os toques) e o ícone vai por cima.
+      // Os tipos próprios do Atlas que já têm marca (cabaz, bioregião) ficam como estão.
+      if (SB) {
+        var esp = ["match", ["get", "tipo"], ["cabaz", "bioregiao"], true, false];
+        m.setPaintProperty(sid + "-p", "circle-opacity", ["case", esp, 1, 0.01]);
+        m.setPaintProperty(sid + "-p", "circle-stroke-opacity", ["case", esp, 1, 0]);
+        m.setPaintProperty(sid + "-p", "circle-radius", ["interpolate", ["linear"], ["zoom"], 6, 6, 10, 8, 13, 11, 16, 13]);
+        try { SB.camadaIcones(m, sid, sid + "-s"); m.setFilter(sid + "-s", ["all", ["==", ["geometry-type"], "Point"], ["has", "_fam"], ["!", esp]]); } catch (e) {}
+      }
       PONTOS[c.id] = gj; redesDesenhar();
       pontoEventos(sid + "-p", c);
       clearTimeout(W.__iprEntRp); W.__iprEntRp = setTimeout(function () { if (TAB === "painel") painel(); if (ALERTAS === null && EO) alertasCarregar(); }, 600);
@@ -796,7 +806,8 @@
     var pr = F.pr, tp = pr.tipo || (AGRO ? "produtor" : ""), cs = CAMPOS[tp] || (AGRO ? CAMPOS.produtor : CAMPOS.geral), falta = [];
     var ORGN = (ENT.nome || "").split(" ·")[0];
     var h = '<div class="h"><button type="button" class="ipr-ent-b" data-ent-tab="painel">← Organização</button><b>Ficha</b></div><div class="c ipr-ent-ficha">';
-    h += '<div class="q"><div class="tipo">' + esc(rotuloTipo(tp)) + (F.cam ? " · " + esc(F.cam.nome) : "") + "</div><h2>" + esc(pr.nome || rotuloTipo(tp)) + "</h2>" + (pr.local ? '<div class="loc">' + esc(pr.local) + "</div>" : "") + "</div>";
+    var fam = W.IPR_SIMB ? W.IPR_SIMB.familia(tp) : "";
+    h += '<div class="q"><div class="tipo">' + (fam ? '<span style="display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:1px;background:' + W.IPR_SIMB.cor(fam) + '" title="' + esc(W.IPR_SIMB.nome(fam)) + '"></span>' : "") + esc(rotuloTipo(tp)) + (F.cam ? " · " + esc(F.cam.nome) : "") + "</div><h2>" + esc(pr.nome || rotuloTipo(tp)) + "</h2>" + (pr.local ? '<div class="loc">' + esc(pr.local) + "</div>" : "") + "</div>";
     if (pr.estado) h += '<div class="estado">' + esc(pr.estado) + "</div>";
     h += "<dl>";
     if (pr.nota && /^heritage:\s*\d/.test(String(pr.nota))) pr.nota = "Património classificado (OpenStreetMap: nível " + String(pr.nota).replace(/\D+/g, "") + ")";
@@ -954,6 +965,7 @@
     var px = proximo();
     h += '<div class="px"><div class="t">Próximo passo</div><p>' + esc(px[0]) + '</p>' + (px[2] === "#wiz" ? '<button type="button" class="ipr-ent-b p" data-ent="wiz">' + esc(px[1]) + "</button>" : px[2] === "#carregar" ? '<button type="button" class="ipr-ent-b p" data-ent-carregar="f">' + esc(px[1]) + "</button>" : '<a class="ipr-ent-b p" href="' + px[2] + '" target="_blank" rel="noopener">' + esc(px[1]) + "</a>") + "</div>";
     h += alertasResumo() + aptResumo() + calResumo() + opResumo();
+    if (W.IPR_SIMB && ORG) { var lg = W.IPR_SIMB.legenda((ORG.camadas || []).filter(function (c) { return ORGON[c.id] !== false; }).map(function (c) { return PONTOS[c.id]; })); if (lg) h += '<div class="sec"><div class="t">Código dos pontos</div>' + lg + "</div>"; }
     h += '<div class="sec"><div class="t">Os nossos locais e projectos</div>';
     var cs = ORG ? ORG.camadas || [] : [];
     if (!ORG) h += '<p class="s">A carregar…</p>';
