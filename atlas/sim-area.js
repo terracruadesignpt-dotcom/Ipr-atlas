@@ -15,7 +15,8 @@
       dica: "Clique no mapa para marcar os cantos da área. Feche no primeiro ponto ou em «Usar esta área».",
       max: "máximo {m} ha", desfazer: "Desfazer", cancelar: "Cancelar", usar: "Usar esta área", grande: "Área acima do máximo",
       poucos: "Marque pelo menos 3 cantos.", enviar: "A pedir a área…",
-      t: "Área de simulação", tempo: "Normalmente fica pronta em 5 a 15 minutos, consoante a fila. Pode continuar a usar o Atlas; esta caixa avisa quando estiver pronta.",
+      t: "Área de simulação", tempo: "Depois de começar, a preparação leva normalmente 5 a 15 minutos. Se o servidor estiver ocupado com outro terreno, a espera pode ser maior. Pode continuar a usar o Atlas; esta caixa avisa quando estiver pronta.",
+      ocupado: "À espera que o servidor acabe outro trabalho{n}.",
       fila: "Na fila de preparação{n}.", antes: " ({k} antes desta)",
       a_descarregar: "A descarregar o LiDAR da DGT…", a_processar: "A gerar o terreno e as camadas…", fim: "A terminar…",
       pronta: "A área está pronta.", abrir_agua: "Abrir o simulador de água", abrir_fogo: "Abrir o simulador de fogo",
@@ -26,7 +27,8 @@
       dica: "Click on the map to mark the corners of the area. Close on the first point or use «Use this area».",
       max: "maximum {m} ha", desfazer: "Undo", cancelar: "Cancel", usar: "Use this area", grande: "Area above the maximum",
       poucos: "Mark at least 3 corners.", enviar: "Requesting the area…",
-      t: "Simulation area", tempo: "It is usually ready in 5 to 15 minutes, depending on the queue. You can keep using the Atlas; this box tells you when it is ready.",
+      t: "Simulation area", tempo: "Once started, preparation usually takes 5 to 15 minutes. If the server is busy with another site, the wait may be longer. You can keep using the Atlas; this box tells you when it is ready.",
+      ocupado: "Waiting for the server to finish another job{n}.",
       fila: "Queued for preparation{n}.", antes: " ({k} ahead)",
       a_descarregar: "Downloading DGT LiDAR…", a_processar: "Building the terrain and layers…", fim: "Finishing…",
       pronta: "The area is ready.", abrir_agua: "Open the water simulator", abrir_fogo: "Open the fire simulator",
@@ -189,7 +191,7 @@
     })();
   }
   function etapa(a) {
-    if (a.estado === "fila") return t("fila").replace("{n}", a.antes ? t("antes").replace("{k}", a.antes) : "");
+    if (a.estado === "fila") return t(a.ocupado ? "ocupado" : "fila").replace("{n}", a.antes ? t("antes").replace("{k}", a.antes) : "");
     if (a.etapa === "a_descarregar") return t("a_descarregar");
     if (a.etapa === "a_processar") return t("a_processar");
     return t("fim");

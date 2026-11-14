@@ -70,7 +70,7 @@
       intelTx: "O simulador de {n} faz parte do IPR Atlas Intelligence. Com o Intelligence, simula sobre o terreno da sua Base Cartográfica.",
       intelAnon: "O simulador de {n} faz parte do IPR Atlas Intelligence. Entre na sua conta ou registe-se para continuar.",
       verIntel: "Ver o Intelligence", entrar: "Entrar ou registar", baseRot: "Base", trocar: "Trocar",
-      area: "Desenhar uma área (sem Base)", areaTx: "Ou desenhe uma área até {h} ha em qualquer sítio de Portugal continental: o terreno é preparado a partir do LiDAR da DGT e fica pronto em poucos minutos."
+      area: "Desenhar uma área (sem Base)", areaTx: "Ou desenhe uma área até {h} ha em qualquer sítio de Portugal continental: o terreno é preparado a partir do LiDAR da DGT, normalmente em alguns minutos (mais, se o servidor estiver ocupado)."
     },
     en: {
       n_agua: "water", n_fogo: "fire", b_agua: "Water simulator", b_fogo: "Fire simulator",
@@ -92,7 +92,7 @@
       intelTx: "The {n} simulator is part of IPR Atlas Intelligence. With Intelligence, you simulate on the land of your Base Map.",
       intelAnon: "The {n} simulator is part of IPR Atlas Intelligence. Sign in or register to continue.",
       verIntel: "See Intelligence", entrar: "Sign in or register", baseRot: "Base Map", trocar: "Change",
-      area: "Draw an area (no Base Map)", areaTx: "Or draw an area of up to {h} ha anywhere in mainland Portugal: the land is prepared from DGT LiDAR and is ready in a few minutes."
+      area: "Draw an area (no Base Map)", areaTx: "Or draw an area of up to {h} ha anywhere in mainland Portugal: the land is prepared from DGT LiDAR, usually in a few minutes (longer if the server is busy)."
     }
   };
   function L() { return String(W.IPR_LINGUA || document.documentElement.lang || "pt").slice(0, 2) === "en" ? "en" : "pt"; }
