@@ -224,7 +224,8 @@
       try { sessionStorage.setItem("ipr_sim_base", JSON.stringify({ tipo: tipo, id: String(id), t: Date.now() })); } catch (x) {}
       // 14/11/2026 (teste como conta Intelligence): a visita guiada do terreno (capitulos-cliente.js) abria por cima do
       // simulador numa área acabada de preparar; quem vem simular não a vê (fica no botão «Visita guiada», minimizada).
-      try { localStorage.setItem("ipr_cap_bv_" + id, "1"); localStorage.setItem("ipr_cap_min_" + id, "1"); } catch (x) {}
+      // O guia da área de cliente (app.js, ipe_tour_cli1, uma vez por navegador) também abria por cima; continua no menu de ajuda.
+      try { localStorage.setItem("ipr_cap_bv_" + id, "1"); localStorage.setItem("ipr_cap_min_" + id, "1"); if (!localStorage.getItem("ipe_tour_cli1")) localStorage.setItem("ipe_tour_cli1", "1"); } catch (x) {}
       var q = new URLSearchParams(location.search); q.set("mapa", id); q.delete("modo");
       location.href = location.pathname + "?" + q.toString();
     }
