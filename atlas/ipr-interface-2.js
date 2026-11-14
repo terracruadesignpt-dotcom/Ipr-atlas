@@ -2195,3 +2195,33 @@ if (window.IPR_A2_DEMO) (function(){
   }
   liga();
 })();
+
+;/* ===== prod-js ===== */
+/* 14/11 (Nuno: «o Atlas ainda não carregou as alterações da barra lateral»): em produção o admin.js (20/10) tira o corpo de
+   «Os meus locais» da sua secção e mete-o num grupo dentro de Camadas (#ipc-loc). O Atlas 2 não carrega o admin.js, por isso a
+   barra lateral do Bolito conta com a secção no topo. Aqui devolve-se o corpo à secção e tira-se o grupo; a secção fica com a
+   marca ipc-movido para o admin.js não voltar a mudá-la, e mostra-se por cima da regra dele que a esconde. O separador «Rever»
+   do admin.js fica igual. */
+(function () {
+  if (window.__tpLoc) return; window.__tpLoc = 1;
+  var D = document;
+  function css() {
+    if (D.getElementById('tp-loc-css')) return;
+    var s = D.createElement('style'); s.id = 'tp-loc-css';
+    s.textContent = '#ipe #ipe-esq .ipe-sb[data-sb=locais].ipc-movido{display:block!important}';
+    (D.head || D.documentElement).appendChild(s);
+  }
+  function repor() {
+    var g = D.getElementById('ipc-loc'), sec = D.querySelector('#ipe-esq .ipe-sb[data-sb="locais"]');
+    if (!sec) return;
+    css();
+    if (!g) return;
+    var corpo = g.querySelector(':scope > .ipe-sbc');
+    if (corpo) { corpo.style.display = ''; var velho = sec.querySelector(':scope > .ipe-sbc'); if (velho && velho !== corpo) velho.remove(); sec.appendChild(corpo); }
+    sec.classList.add('ipc-movido');
+    if (!g.classList.contains('fechado')) sec.classList.remove('fechado');
+    g.remove();
+  }
+  var n = 0;
+  (function ciclo() { try { repor(); } catch (e) {} n++; setTimeout(ciclo, n > 60 ? 1200 : 250); })();
+})();
