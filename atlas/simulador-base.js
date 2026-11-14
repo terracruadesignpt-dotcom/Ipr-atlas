@@ -333,7 +333,7 @@
     if (tinha) { var fo = M.querySelector("[data-sb-foco]") || M.querySelector("h2"); if (fo) { try { fo.focus(); } catch (x) {} } }
   }
   // 14/11/2026 (m91234, Nuno: «vamos avançar sem base»): desenhar uma área sem Base (sim-area.js).
-  function temArea() { return !!(W.IPR_SIM_AREA && typeof W.IPR_SIM_AREA.desenhar === "function"); }
+  function temArea() { return !!(W.IPR_SIM_AREA && W.IPR_SIM_AREA.max_ha && typeof W.IPR_SIM_AREA.desenhar === "function"); } // max_ha só vem do servidor (m91234), para quem pode
   function txArea() { return t("areaTx").replace("{h}", nfmt(W.IPR_SIM_AREA.max_ha || 10)); }
   function nomeBase(b) { return b.local || b.nome || ("Base #" + (b.encomenda || b.id)); }
 
