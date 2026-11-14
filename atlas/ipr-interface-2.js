@@ -2208,7 +2208,13 @@ if (window.IPR_A2_DEMO) (function(){
   function css() {
     if (D.getElementById('tp-loc-css')) return;
     var s = D.createElement('style'); s.id = 'tp-loc-css';
-    s.textContent = '#ipe #ipe-esq .ipe-sb[data-sb=locais].ipc-movido{display:block!important}';
+    s.textContent = '#ipe #ipe-esq .ipe-sb[data-sb=locais].ipc-movido{display:block!important}'
+      /* 14/11 (Bolito: «a Formiga não está no menu ⋯»): com a sessão iniciada a barra de topo tem mais botões que no Atlas 2 e o
+         grupo da direita passava da largura do ecrã, levando o «⋯» (onde está a Formiga) e o Comprar para fora. O grupo da
+         direita deixa de encolher e cede a caixa de procura, que tinha 300 px fixos. */
+      + '#ipe header.ipe-top>.ipe-tr{flex-shrink:0!important}'
+      + '#ipe header.ipe-top>#ipr-be-pq{flex:1 1 300px!important;width:auto!important;min-width:110px!important;max-width:300px!important}'
+      + '#ipe header.ipe-top>.ipe-nivel,#ipe header.ipe-top>.ipe-beta{flex-shrink:0}';
     (D.head || D.documentElement).appendChild(s);
   }
   function repor() {
@@ -2224,4 +2230,41 @@ if (window.IPR_A2_DEMO) (function(){
   }
   var n = 0;
   (function ciclo() { try { repor(); } catch (e) {} n++; setTimeout(ciclo, n > 60 ? 1200 : 250); })();
+})();
+
+;/* ===== prod-topo-js ===== */
+/* 14/11: em ecrãs mais estreitos (iPad ao baixo, portáteis pequenos) a barra de topo com sessão não cabe. Para o «⋯», o Entrar
+   e o Comprar nunca saírem do ecrã, escondem-se primeiro os elementos dispensáveis, por esta ordem, só enquanto não couber:
+   etiqueta Beta, zoom «− Auto +», ligação, «Vista simples», histórico, App, recarregar, tema, etiqueta do nível.
+   Nada é apagado: só leva a classe tp-cabe-fora e volta a aparecer quando houver espaço. */
+(function () {
+  if (window.__tpCabe) return; window.__tpCabe = 1;
+  var D = document, W = window;
+  var ORDEM = ['.ipe-beta', '#ipr-z67', '#tp-net-t,.tp-net-t', '#ipr-modo', '#tp-crono-t,.tp-crono-t', '#ipr-app-b', '#ipr-ref', '#ipe-tema,.ipe-tema', '.ipe-nivel'];
+  function css() {
+    if (D.getElementById('tp-cabe-css')) return;
+    var s = D.createElement('style'); s.id = 'tp-cabe-css'; s.textContent = 'html body #ipe header.ipe-top .tp-cabe-fora,html body #ipe header.ipe-top>.tp-cabe-fora,html body #ipe header.ipe-top .ipe-tr>.tp-cabe-fora{display:none!important}';
+    (D.head || D.documentElement).appendChild(s);
+  }
+  function fim(h) {
+    var m = 0;
+    [].forEach.call(h.querySelectorAll('.ipe-tr > *'), function (e) { var r = e.getBoundingClientRect(); if (r.width > 0 && r.right > m) m = r.right; });
+    return m;
+  }
+  var ocupado = false;
+  function arruma() {
+    if (ocupado) return; ocupado = true;
+    try {
+      var h = D.querySelector('#ipe header.ipe-top'); if (!h || !h.querySelector('.ipe-tr')) return;
+      css();
+      [].forEach.call(h.querySelectorAll('.tp-cabe-fora'), function (e) { e.classList.remove('tp-cabe-fora'); e.style.removeProperty('display'); });
+      var lim = Math.min(W.innerWidth, D.documentElement.clientWidth || W.innerWidth) - 8;
+      for (var i = 0; i < ORDEM.length && fim(h) > lim; i++) {
+        [].forEach.call(h.querySelectorAll(ORDEM[i]), function (e) { if (e.style.display && !e.classList.contains('tp-cabe-fora')) return; e.classList.add('tp-cabe-fora'); e.style.setProperty('display', 'none', 'important'); });
+      }
+    } catch (e) {} finally { ocupado = false; }
+  }
+  W.addEventListener('resize', function () { clearTimeout(W.__tpCabeT); W.__tpCabeT = setTimeout(arruma, 120); });
+  var n = 0;
+  (function ciclo() { arruma(); n++; setTimeout(ciclo, n > 40 ? 2000 : 400); })();
 })();
