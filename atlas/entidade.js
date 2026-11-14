@@ -763,6 +763,7 @@
     h += '<div class="q"><div class="tipo">' + esc(rotuloTipo(tp)) + (F.cam ? " · " + esc(F.cam.nome) : "") + "</div><h2>" + esc(pr.nome || rotuloTipo(tp)) + "</h2>" + (pr.local ? '<div class="loc">' + esc(pr.local) + "</div>" : "") + "</div>";
     if (pr.estado) h += '<div class="estado">' + esc(pr.estado) + "</div>";
     h += "<dl>";
+    if (pr.nota && /^heritage:\s*\d/.test(String(pr.nota))) pr.nota = "Património classificado (OpenStreetMap: nível " + String(pr.nota).replace(/\D+/g, "") + ")";
     cs.forEach(function (k) {
       var v = pr[k[0]];
       if (v == null || v === "") { falta.push(k[1]); return; }
@@ -778,7 +779,8 @@
     var xy = F.xy || [];
     if (pr.fid && EO && (EO.gestor || +pr.minha)) h += '<div class="sec"><button type="button" class="ipr-ent-b p" data-ent="feditar">Editar ficha</button>' + (EO.gestor ? ' <button type="button" class="ipr-ent-b" data-ent="farquivar">' + (FARQ === pr.fid ? "Confirmar: tirar do mapa" : "Arquivar ficha") + '</button>' : "") + '</div>';
     h += '<div class="sec"><a class="ipr-ent-b" href="https://www.google.com/maps/dir/?api=1&destination=' + (+xy[1]).toFixed(5) + "," + (+xy[0]).toFixed(5) + '" target="_blank" rel="noopener">Como chegar</a> <button type="button" class="ipr-ent-b" data-ent="fichair">Ver no mapa</button></div>';
-    if (pr.osm && /^(node|way|relation)\/\d+$/.test(String(pr.osm))) h += '<p class="s"><a href="https://www.openstreetmap.org/' + esc(pr.osm) + '" target="_blank" rel="noopener">Ver e corrigir no OpenStreetMap</a></p>';
+    var osm = String(pr.osm || "").replace(/^https?:\/\/(www\.)?openstreetmap\.org\//, "");
+    if (/^(node|way|relation)\/\d+$/.test(osm)) h += '<p class="s"><a href="https://www.openstreetmap.org/' + esc(osm) + '" target="_blank" rel="noopener">Ver e corrigir no OpenStreetMap</a></p>';
     h += '<p class="s">' + (pr.fonte ? "Fonte: " + esc(pr.fonte) + ". " : "") + (pr.posicao ? "Posição " + esc(pr.posicao) + "." : "") + "</p>";
     return h + "</div>";
   }
