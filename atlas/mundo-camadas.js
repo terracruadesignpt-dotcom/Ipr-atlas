@@ -165,7 +165,19 @@
     ".tao{padding:8px 10px;border-bottom:1px solid var(--ln,#ddd)}.tao h5{margin:8px 0 3px;font:600 11.5px Inter,system-ui,sans-serif;color:var(--mu,#666);text-transform:uppercase;letter-spacing:.04em}" +
     ".tao label{display:flex;gap:7px;align-items:flex-start;font:13px/1.35 Inter,system-ui,sans-serif;color:var(--tx,#222);padding:3px 0;cursor:pointer}.tao label.bl{opacity:.6;cursor:default}.tao label i{display:block;font-style:normal;font-size:11.5px;color:var(--mu,#777)}" +
     ".tao small{display:block;margin-top:6px;font-size:11px;color:var(--mu,#777)}";
-  function tranc(it) { return EXPL && it.intel; }
+  /* 14/11/2026 (Nuno: parceria RAMO Earth, «Atlas em Angola»): window.IPR_ZONAS_INTEL, posto pelo site (m91966) só para
+     certas contas, é uma lista de caixas [lon mín., lat mín., lon máx., lat máx.] onde as camadas do Intelligence abrem
+     mesmo no Explorer. Fora delas (ou sem a lista) fica tudo como antes. */
+  function explAqui() {
+    if (window.IPR_NIVEL !== "explorer") return false;
+    var z = window.IPR_ZONAS_INTEL, I = mapa();
+    if (!z || !z.length || !I || !I.getCenter) return EXPL;
+    var c = I.getCenter();
+    for (var i = 0; i < z.length; i++) { var b = z[i]; if (c.lng >= b[0] && c.lng <= b[2] && c.lat >= b[1] && c.lat <= b[3]) return false; }
+    return true;
+  }
+  var EXPL_AGORA = null;
+  function tranc(it) { return it.intel && (EXPL_AGORA === null ? explAqui() : EXPL_AGORA); }
   function caixa(it) {
     if (tranc(it)) return '<label class="bl" title="Do IPR Atlas Intelligence"><input type="checkbox" disabled><span>' + it.nome + '<i>Intelligence</i></span></label>';
     return '<label><input type="checkbox" data-tao="' + it.id + '"' + (ligados[it.id] ? " checked" : "") + "><span>" + it.nome + (it.nota ? "<i>" + it.nota + "</i>" : "") + "</span></label>";
@@ -200,6 +212,12 @@
   function verificar() {
     var I = mapa(), d = document.getElementById("tao"); if (!I || !d || !I.getCenter) return;
     if (d.hidden) d.hidden = false;
+    var e = explAqui();
+    if (e !== EXPL_AGORA) {   /* primeira vez com o mapa, ou entrou/saiu de uma zona aberta: refaz a lista */
+      var antes = EXPL_AGORA; EXPL_AGORA = e;
+      if (antes !== null || window.IPR_ZONAS_INTEL) { preencher(d); }
+      if (e) { Object.keys(ligados).forEach(function (id) { var it = itemPor(id); if (it && it.intel) desligar(it); }); } else if (antes !== null) { repor(); }
+    }
   }
   function repor() { Object.keys(ligados).forEach(function (id) { var it = itemPor(id); if (it && !tranc(it)) ligar(it); }); }
   function arrancar(n) {
