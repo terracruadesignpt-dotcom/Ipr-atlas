@@ -41,8 +41,10 @@ jobs:
           L=$(ogrinfo -q "$G" | sed -nE 's/^[0-9]+: ([^ ]+).*/\1/p' | head -1)
           echo "camada: $L"
           ogrinfo -so "$G" "$L" | tee campos.txt
+          # Até 512 MB: acima disso a cache da Cloudflare ignora os pedidos por partes (Range) e o PMTiles não abre (14/11, 22h30).
+          # Por isso zoom máximo 13 (o mapa amplia a partir daí) e sem o ID.
           # Só os campos das classes (níveis 1 a 4, código e designação) e a área: o resto não serve ao mapa e pesa.
-          F=$(sed -nE 's/^([A-Za-z0-9_]+): .*/\1/p' campos.txt | grep -iE '_n[1-4]_|area|^ID$|^OBJECTID$' | grep -viE 'shape_(len|area)' | paste -sd, -)
+          F=$(sed -nE 's/^([A-Za-z0-9_]+): .*/\1/p' campos.txt | grep -iE '_n[1-4]_|area' | grep -viE 'shape_(len|area)' | paste -sd, -)
           echo "campos: $F"
           ogr2ogr -f GeoJSONSeq -t_srs EPSG:4326 -lco COORDINATE_PRECISION=6 -makevalid ${F:+-select "$F"} cos.geojsons "$G" "$L"
           ls -la cos.geojsons
@@ -52,7 +54,7 @@ jobs:
           cd d
           tippecanoe -o cos2023v1.pmtiles -l cos2023v1 -n "COS2023v1 (DGT)" \
             -A "DGT · COS2023v1 · CC BY 4.0 · cópia IPR Atlas" \
-            -Z5 -z14 --coalesce-densest-as-needed --detect-shared-borders --simplify-only-low-zooms \
+            -Z5 -z13 --coalesce-densest-as-needed --detect-shared-borders --simplify-only-low-zooms \
             --extend-zooms-if-still-dropping --hilbert -P --force cos.geojsons
           ls -la cos2023v1.pmtiles
       - name: Publicar como versão
