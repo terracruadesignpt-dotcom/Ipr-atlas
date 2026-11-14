@@ -185,7 +185,7 @@
   var confP = null, BASE = ((D.currentScript && D.currentScript.src) || "").split("?")[0].replace(/[^\/]*$/, "");
   function chv(s) { return String(s || "").normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9;]+/g, " ").replace(/\s+/g, " ").replace(/^[ ;]+|[ ;]+$/g, ""); }
   function confJ() {
-    if (!confP) { var u = W.TCD_PDM_CONF || "https://cdn.jsdelivr.net/gh/terracruadesignpt-dotcom/Ipr-atlas@5a9faa2c53ac7f8ba4285957aca67ed87ccc91af/atlas/dados/pdm-confianca.json";
+    if (!confP) { var u = W.TCD_PDM_CONF || "https://cdn.jsdelivr.net/gh/terracruadesignpt-dotcom/Ipr-atlas@275d14687f294397b7a99c1bbb7008a08f5a287b/atlas/dados/pdm-confianca.json";
       confP = fetch(u).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }).catch(function () { return null; }); }
     return confP;
   }
