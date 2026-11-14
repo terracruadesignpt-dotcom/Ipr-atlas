@@ -1,0 +1,68 @@
+# IPR Atlas · COS2023 (DGT, Série 2, v1) em PMTiles para o nosso depósito (Nuno, 14/11/2026: «descarregar tudo e inserir
+# no nosso site já»). Descarrega o GeoPackage oficial da DGT, converte para mosaicos vectoriais (PMTiles) com o tippecanoe
+# e publica o ficheiro como anexo de uma versão («release») deste repositório. Um Worker da Cloudflare copia-o depois para
+# o R2 tcd-camadas (camadas.terracruadesign.pt/pmtiles/dgt/cos2023v1.pmtiles). Dados abertos da DGT, CC BY 4.0.
+name: dados-cos2023
+on:
+  push:
+    branches: [dados-cos2023]
+    paths: [".github/workflows/dados-cos2023.yml"]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  cos:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 300
+    steps:
+      - name: Ferramentas
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq gdal-bin unzip
+          if ! sudo apt-get install -y -qq tippecanoe; then
+            sudo apt-get install -y -qq build-essential libsqlite3-dev zlib1g-dev
+            git clone --depth 1 https://github.com/felt/tippecanoe.git /tmp/tc && make -C /tmp/tc -j4 && sudo make -C /tmp/tc install
+          fi
+          tippecanoe --version || true
+          ogr2ogr --version
+          df -h /
+      - name: Descarregar da DGT
+        run: |
+          mkdir -p d && cd d
+          curl -fL --retry 5 --retry-delay 20 -o cos.zip "https://geo2.dgterritorio.gov.pt/cos/S2/COS2023/COS2023v1-S2-gpkg.zip"
+          ls -la cos.zip
+          unzip -o cos.zip
+          find . -name "*.gpkg" -exec ls -la {} \;
+      - name: Converter para GeoJSON (WGS84)
+        run: |
+          cd d
+          G=$(find . -name "*.gpkg" | head -1)
+          ogrinfo -so "$G" | tee info.txt
+          L=$(ogrinfo -q "$G" | sed -nE 's/^[0-9]+: ([^ ]+).*/\1/p' | head -1)
+          echo "camada: $L"
+          ogrinfo -so "$G" "$L" | tee campos.txt
+          # Só os campos das classes (níveis 1 a 4, código e designação) e a área: o resto não serve ao mapa e pesa.
+          F=$(sed -nE 's/^([A-Za-z0-9_]+): .*/\1/p' campos.txt | grep -iE '_n[1-4]_|area|^ID$|^OBJECTID$' | grep -viE 'shape_(len|area)' | paste -sd, -)
+          echo "campos: $F"
+          ogr2ogr -f GeoJSONSeq -t_srs EPSG:4326 -lco COORDINATE_PRECISION=6 -makevalid ${F:+-select "$F"} cos.geojsons "$G" "$L"
+          ls -la cos.geojsons
+          rm -f cos.zip
+      - name: Mosaicos (tippecanoe)
+        run: |
+          cd d
+          tippecanoe -o cos2023v1.pmtiles -l cos2023v1 -n "COS2023v1 (DGT)" \
+            -A "DGT · COS2023v1 · CC BY 4.0 · cópia IPR Atlas" \
+            -Z5 -z14 --coalesce-densest-as-needed --detect-shared-borders --simplify-only-low-zooms \
+            --extend-zooms-if-still-dropping --hilbert -P --force cos.geojsons
+          ls -la cos2023v1.pmtiles
+      - name: Publicar como versão
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cd d
+          if gh release view cos2023v1-pmtiles --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload cos2023v1-pmtiles cos2023v1.pmtiles --repo "$GITHUB_REPOSITORY" --clobber; exit 0
+          fi
+          gh release create cos2023v1-pmtiles cos2023v1.pmtiles --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
+            --title "COS2023v1 em PMTiles (DGT, CC BY 4.0)" \
+            --notes "Carta de Uso e Ocupação do Solo 2023, Série 2, v1, da Direção-Geral do Território (dados abertos, CC BY 4.0). Convertida para PMTiles para o IPR Atlas. Fonte: https://geo2.dgterritorio.gov.pt/cos/S2/COS2023/COS2023v1-S2-gpkg.zip"
