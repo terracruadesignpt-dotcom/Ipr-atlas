@@ -69,7 +69,8 @@
       intelT: "Incluído no IPR Atlas Intelligence",
       intelTx: "O simulador de {n} faz parte do IPR Atlas Intelligence. Com o Intelligence, simula sobre o terreno da sua Base Cartográfica.",
       intelAnon: "O simulador de {n} faz parte do IPR Atlas Intelligence. Entre na sua conta ou registe-se para continuar.",
-      verIntel: "Ver o Intelligence", entrar: "Entrar ou registar", baseRot: "Base", trocar: "Trocar"
+      verIntel: "Ver o Intelligence", entrar: "Entrar ou registar", baseRot: "Base", trocar: "Trocar",
+      area: "Desenhar uma área (sem Base)", areaTx: "Ou desenhe uma área até {h} ha em qualquer sítio de Portugal continental: o terreno é preparado a partir do LiDAR da DGT e fica pronto em poucos minutos."
     },
     en: {
       n_agua: "water", n_fogo: "fire", b_agua: "Water simulator", b_fogo: "Fire simulator",
@@ -90,7 +91,8 @@
       intelT: "Included in IPR Atlas Intelligence",
       intelTx: "The {n} simulator is part of IPR Atlas Intelligence. With Intelligence, you simulate on the land of your Base Map.",
       intelAnon: "The {n} simulator is part of IPR Atlas Intelligence. Sign in or register to continue.",
-      verIntel: "See Intelligence", entrar: "Sign in or register", baseRot: "Base Map", trocar: "Change"
+      verIntel: "See Intelligence", entrar: "Sign in or register", baseRot: "Base Map", trocar: "Change",
+      area: "Draw an area (no Base Map)", areaTx: "Or draw an area of up to {h} ha anywhere in mainland Portugal: the land is prepared from DGT LiDAR and is ready in a few minutes."
     }
   };
   function L() { return String(W.IPR_LINGUA || document.documentElement.lang || "pt").slice(0, 2) === "en" ? "en" : "pt"; }
@@ -300,7 +302,9 @@
       if (!F.bases) h += '<div class="prog"><i></i></div><p class="sub">' + esc(t("aCarregar")) + "</p>";
       else if (!F.bases.length) {
         h += "<p><b>" + esc(t("semBaseT")) + "</b></p><p class=\"sub\">" + esc(tn("semBase", tp)) + "</p>";
-        acc += '<button type="button" class="sb-b" data-sb="x">' + esc(t("fechar")) + '</button><a class="sb-b pri" href="' + esc(U.encomenda) + '" data-sb-foco>' + esc(t("encomendar")) + "</a>";
+        if (temArea()) h += '<p class="sub">' + esc(txArea()) + "</p>";
+        acc += '<button type="button" class="sb-b" data-sb="x">' + esc(t("fechar")) + '</button><a class="sb-b' + (temArea() ? "" : " pri") + '" href="' + esc(U.encomenda) + '"' + (temArea() ? "" : " data-sb-foco") + ">" + esc(t("encomendar")) + "</a>";
+        if (temArea()) acc += '<button type="button" class="sb-b pri" data-sb="area" data-sb-foco>' + esc(t("area")) + "</button>";
       } else {
         var aberta = actualId();
         h += '<p class="sub">' + esc(tn("escSub", tp)) + '</p>';
@@ -317,6 +321,7 @@
             (String(b.id) === aberta ? '<span class="sb-e">' + esc(t("aberta")) + "</span>" : "") + (b.dono === false ? '<span class="sb-e">' + esc(t("partilhada")) + "</span>" : "") + "</span></label></li>";
         });
         h += "</ul>";
+        if (temArea()) h += '<p class="sub">' + esc(txArea()) + '</p><p><button type="button" class="sb-b" data-sb="area">' + esc(t("area")) + "</button></p>";
         acc += '<button type="button" class="sb-b" data-sb="x">' + esc(t("cancelar")) + '</button><button type="button" class="sb-b pri" data-sb="simular"' + (F.sel != null && !F.ocupado ? "" : " disabled") + ">" + esc(t("simular")) + "</button>";
       }
       if (F.bases === null && F.erro) acc += '<button type="button" class="sb-b" data-sb="x" data-sb-foco>' + esc(t("fechar")) + "</button>";
@@ -327,6 +332,9 @@
     filtrarLista();
     if (tinha) { var fo = M.querySelector("[data-sb-foco]") || M.querySelector("h2"); if (fo) { try { fo.focus(); } catch (x) {} } }
   }
+  // 14/11/2026 (m91234, Nuno: «vamos avançar sem base»): desenhar uma área sem Base (sim-area.js).
+  function temArea() { return !!(W.IPR_SIM_AREA && typeof W.IPR_SIM_AREA.desenhar === "function"); }
+  function txArea() { return t("areaTx").replace("{h}", nfmt(W.IPR_SIM_AREA.max_ha || 10)); }
   function nomeBase(b) { return b.local || b.nome || ("Base #" + (b.encomenda || b.id)); }
 
   function textoBase(b) { return (nomeBase(b) + " " + (b.pedido || "") + " " + (b.encomenda || "") + " " + b.id).toLowerCase(); }
@@ -348,6 +356,7 @@
     if (a === "x") return cancelar();
     if (a === "aceitar") return aceitar();
     if (a === "simular") return confirmar();
+    if (a === "area" && temArea()) { var tpa = F.tipo; cancelar(); try { W.IPR_SIM_AREA.desenhar(tpa); } catch (x) {} return; }
   }
   function mudarCaixa(e) {
     var el = e.target; if (!F) return;
