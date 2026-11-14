@@ -307,16 +307,21 @@
   }
   // O mapa desenha as camadas assim que existe e tem o estilo carregado, sem esperar pelo resto do Atlas.
   var ORGESP = null;
+  // isStyleLoaded() fica falso enquanto houver mosaicos a carregar; para juntar fontes basta o estilo estar lido.
+  function estiloPronto(m) { return !!(m && m.style && (m.style._loaded || (m.isStyleLoaded && m.isStyleLoaded()))); }
   function orgEsperarMapa() {
     if (ORGESP) return; var n = 0;
-    ORGESP = setInterval(function () { n++; var m = W.__ipe && W.__ipe.mapa; if ((m && m.isStyleLoaded && m.isStyleLoaded()) || n > 240) { clearInterval(ORGESP); orgMapa(); } }, 250);
+    ORGESP = setInterval(function () { n++; var m = W.__ipe && W.__ipe.mapa; if (estiloPronto(m) || n > 480) { clearInterval(ORGESP); ORGESP = null; if (estiloPronto(m)) orgMapa(); } }, 250);
   }
   var ORGMAPA = false;
   function orgMapa() {
     var mp = W.__ipe && W.__ipe.mapa;
     if (!ORG || ORGMAPA) return;
-    if (!mp || (mp.isStyleLoaded && !mp.isStyleLoaded())) { orgEsperarMapa(); return; }
+    if (!estiloPronto(mp)) { orgEsperarMapa(); return; }
     ORGMAPA = true; (ORG.camadas || []).forEach(function (c) { try { orgLigar(c, true); } catch (e) {} });
+    // Se o Atlas trocar o estilo (fundo, arranque), as camadas voltam a pôr-se a partir da cache, sem novo pedido.
+    var tRep = null;
+    mp.on("styledata", function () { clearTimeout(tRep); tRep = setTimeout(function () { if (!estiloPronto(mp)) return; (ORG.camadas || []).forEach(function (c) { if (ORGON[c.id] && !mp.getSource("ent-org-" + c.id)) try { orgLigar(c, true); } catch (e) {} }); }, 400); });
     if (FICHAS) fichasMapa();
   }
   function orgCam(id) { return ORG ? (ORG.camadas || []).filter(function (c) { return +c.id === +id; })[0] : null; }
