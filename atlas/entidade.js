@@ -320,7 +320,7 @@
       var f = e.features && e.features[0]; if (!f || !W.maplibregl) return; var pr = f.properties || {};
       if (DICA) DICA.remove();
       DICA = new W.maplibregl.Popup({closeButton: false, closeOnClick: false, offset: 10, className: "ipr-ent-dica"}).setLngLat(f.geometry.coordinates)
-        .setHTML("<b>" + esc(pr.nome || "") + "</b><span>" + esc(TIPOS[pr.tipo || "produtor"] || pr.tipo || "") + (pr.local ? " · " + esc(pr.local) : "") + "</span><i>Carregue para abrir a ficha</i>").addTo(m);
+        .setHTML("<b>" + esc(pr.nome || rotuloTipo(pr.tipo)) + "</b><span>" + esc(rotuloTipo(pr.tipo || (AGRO ? "produtor" : ""))) + (pr.local ? " · " + esc(pr.local) : "") + "</span><i>Carregue para abrir a ficha</i>").addTo(m);
     });
     m.on("mouseleave", lid, function () { m.getCanvas().style.cursor = ""; if (DICA) { DICA.remove(); DICA = null; } });
     m.on("click", lid, function (e) {
@@ -726,6 +726,22 @@
   var PONTOS = {}, DICA = null, FICHA = null;
   var TIPOS = {produtor: "Produtor", mercado: "Mercado", feira: "Feira", loja: "Loja", cabaz: "Cabazes (AMAP / CSA)", escola: "Ensino e formação", cert: "Certificação", bioregiao: "Bio-região", territorio: "Território", sede: "Sede", sementes: "Sementes", demo: "Campo de demonstração"};
   if (X.tipos) Object.keys(X.tipos).forEach(function (k) { TIPOS[k] = X.tipos[k]; });
+  // Pontos vindos do OpenStreetMap trazem o tipo como etiqueta («amenity=school»): mostra-se o nome em português (14/11/2026).
+  var OSMT = {"amenity=school": "Escola", "amenity=kindergarten": "Jardim de infância", "amenity=townhall": "Câmara ou junta", "amenity=library": "Biblioteca", "amenity=pharmacy": "Farmácia", "amenity=clinic": "Clínica", "amenity=doctors": "Médico", "amenity=hospital": "Hospital", "amenity=fire_station": "Bombeiros", "amenity=police": "Polícia / GNR", "amenity=post_office": "Correios", "amenity=community_centre": "Centro comunitário", "amenity=social_facility": "Equipamento social", "amenity=place_of_worship": "Igreja ou capela", "amenity=grave_yard": "Cemitério", "amenity=marketplace": "Mercado", "amenity=fountain": "Fonte", "amenity=drinking_water": "Água potável", "amenity=water_point": "Ponto de água", "amenity=shelter": "Abrigo", "amenity=restaurant": "Restaurante", "amenity=cafe": "Café", "amenity=bar": "Bar", "amenity=bank": "Banco", "amenity=atm": "Multibanco", "amenity=fuel": "Combustível", "amenity=parking": "Estacionamento", "amenity=toilets": "Sanitários", "amenity=recycling": "Reciclagem", "amenity=bus_station": "Estação de autocarros", "amenity=theatre": "Teatro", "amenity=arts_centre": "Centro cultural", "amenity=public_bath": "Balneário", "amenity=bbq": "Churrasqueira", "amenity=bench": "Banco de jardim",
+    "man_made=water_well": "Poço", "man_made=water_tower": "Depósito de água", "man_made=water_works": "Captação / tratamento", "man_made=reservoir_covered": "Reservatório", "man_made=windmill": "Moinho de vento", "man_made=watermill": "Moinho de água", "man_made=tower": "Torre", "man_made=cross": "Cruzeiro", "man_made=lighthouse": "Farol", "man_made=communications_tower": "Torre de comunicações",
+    "natural=spring": "Nascente", "natural=water": "Água", "natural=peak": "Cume", "natural=cave_entrance": "Gruta", "natural=tree": "Árvore notável", "natural=wetland": "Zona húmida", "natural=beach": "Praia",
+    "water=pond": "Charca", "water=reservoir": "Albufeira", "water=lake": "Lagoa", "water=river": "Rio", "waterway=dam": "Barragem / açude", "waterway=weir": "Açude", "landuse=reservoir": "Albufeira", "landuse=basin": "Bacia de retenção",
+    "historic=castle": "Castelo", "historic=church": "Igreja histórica", "historic=chapel": "Capela", "historic=monument": "Monumento", "historic=memorial": "Memorial", "historic=archaeological_site": "Sítio arqueológico", "historic=ruins": "Ruínas", "historic=mill": "Moinho", "historic=wayside_cross": "Cruzeiro", "historic=wayside_shrine": "Alminhas", "historic=building": "Edifício histórico", "historic=manor": "Solar", "historic=bridge": "Ponte histórica", "historic=milestone": "Marco", "historic=tomb": "Túmulo", "historic=boundary_stone": "Marco de fronteira",
+    "tourism=viewpoint": "Miradouro", "tourism=museum": "Museu", "tourism=information": "Informação turística", "tourism=picnic_site": "Parque de merendas", "tourism=camp_site": "Parque de campismo", "tourism=hotel": "Hotel", "tourism=guest_house": "Alojamento local", "tourism=hostel": "Hostel", "tourism=apartment": "Apartamento turístico", "tourism=chalet": "Casa de campo", "tourism=attraction": "Atracção", "tourism=artwork": "Arte pública", "tourism=wilderness_hut": "Abrigo de montanha",
+    "leisure=park": "Parque", "leisure=playground": "Parque infantil", "leisure=pitch": "Campo desportivo", "leisure=sports_centre": "Pavilhão desportivo", "leisure=swimming_pool": "Piscina", "leisure=bird_hide": "Abrigo de observação", "leisure=nature_reserve": "Reserva natural", "leisure=garden": "Jardim", "leisure=fitness_station": "Estação de exercício",
+    "shop=supermarket": "Supermercado", "shop=convenience": "Mercearia", "shop=bakery": "Padaria", "shop=butcher": "Talho", "shop=farm": "Venda na quinta", "shop=greengrocer": "Frutaria", "shop=hairdresser": "Cabeleireiro", "shop=hardware": "Ferragens", "office=government": "Serviço público", "office=association": "Associação", "office=ngo": "Organização sem fins lucrativos", "craft=winery": "Adega", "power=line": "Linha eléctrica", "power=tower": "Poste de alta tensão", "power=substation": "Subestação", "power=generator": "Central / gerador", "information=board": "Painel informativo", "information=guidepost": "Placa de percurso", "highway=bus_stop": "Paragem de autocarro", "railway=station": "Estação de comboio"};
+  function rotuloTipo(tp) {
+    if (!tp) return "Local";
+    if (TIPOS[tp]) return TIPOS[tp];
+    if (OSMT[tp]) return OSMT[tp];
+    if (tp.indexOf("=") > 0) { var v = tp.split("=")[1].replace(/_/g, " "); return v.charAt(0).toUpperCase() + v.slice(1); }
+    return tp.charAt(0).toUpperCase() + tp.slice(1);
+  }
   // Campos de cada tipo de ficha: [chave, rótulo]. O que não está preenchido aparece em «Por confirmar».
   var CAMPOS = {
     produtor: [["o_que", "O que produz"], ["certificacao", "Certificação"], ["venda", "Venda directa"], ["visitas", "Visitas"], ["terras", "Terra para jovens agricultores"], ["cabaz", "Faz parte de"], ["site", "Site"], ["contacto", "Contacto"]],
@@ -737,12 +753,14 @@
     cert: [["o_que", "O que faz"], ["site", "Site"], ["contacto", "Contacto"]],
     bioregiao: [["o_que", "Quem faz parte"], ["site", "Site"]],
     territorio: [["o_que", "Porquê"], ["site", "Site"]],
-    sede: [["o_que", "O que é"], ["site", "Site"], ["contacto", "Contacto"]]
+    sede: [["o_que", "O que é"], ["site", "Site"], ["contacto", "Contacto"]],
+    geral: [["nota", "Nota"], ["o_que", "O que é"], ["morada", "Morada"], ["horario", "Horário"], ["site", "Site"], ["contacto", "Contacto"]]
   };
   function fichaHtml(F) {
-    var pr = F.pr, tp = pr.tipo || "produtor", cs = CAMPOS[tp] || CAMPOS.produtor, falta = [];
+    var pr = F.pr, tp = pr.tipo || (AGRO ? "produtor" : ""), cs = CAMPOS[tp] || (AGRO ? CAMPOS.produtor : CAMPOS.geral), falta = [];
+    var ORGN = (ENT.nome || "").split(" ·")[0];
     var h = '<div class="h"><button type="button" class="ipr-ent-b" data-ent-tab="painel">← Organização</button><b>Ficha</b></div><div class="c ipr-ent-ficha">';
-    h += '<div class="q"><div class="tipo">' + esc(TIPOS[tp] || tp) + (F.cam ? " · " + esc(F.cam.nome) : "") + "</div><h2>" + esc(pr.nome || "") + "</h2>" + (pr.local ? '<div class="loc">' + esc(pr.local) + "</div>" : "") + "</div>";
+    h += '<div class="q"><div class="tipo">' + esc(rotuloTipo(tp)) + (F.cam ? " · " + esc(F.cam.nome) : "") + "</div><h2>" + esc(pr.nome || rotuloTipo(tp)) + "</h2>" + (pr.local ? '<div class="loc">' + esc(pr.local) + "</div>" : "") + "</div>";
     if (pr.estado) h += '<div class="estado">' + esc(pr.estado) + "</div>";
     h += "<dl>";
     cs.forEach(function (k) {
@@ -756,10 +774,11 @@
       var ps = produtoresDe(pr.nome);
       h += '<div class="sec"><div class="t">Produtores deste cabaz</div>' + (ps.length ? ps.map(function (n) { return "<div>" + esc(n) + "</div>"; }).join("") : '<p class="s">Ainda nenhum produtor indicou que entrega aqui. Quando indicarem, aparecem ligados no mapa.</p>') + "</div>";
     }
-    if (falta.length) h += '<div class="sec falta"><div class="t">Por confirmar</div><p class="s">' + falta.map(esc).join(" · ") + '</p><p class="s">' + (tp === "produtor" ? "Completa-se quando o produtor aceitar o convite para o mapa, ou pela Agrobio em nome dele." : "A Agrobio pode completar estes dados.") + "</p></div>";
+    if (falta.length) h += '<div class="sec falta"><div class="t">Por confirmar</div><p class="s">' + falta.map(esc).join(" · ") + '</p><p class="s">' + (AGRO && tp === "produtor" ? "Completa-se quando o produtor aceitar o convite para o mapa, ou pela Agrobio em nome dele." : (ORGN ? ORGN + ": quem gere a organização pode completar estes dados." : "Quem gere a organização pode completar estes dados.")) + "</p></div>";
     var xy = F.xy || [];
     if (pr.fid && EO && (EO.gestor || +pr.minha)) h += '<div class="sec"><button type="button" class="ipr-ent-b p" data-ent="feditar">Editar ficha</button>' + (EO.gestor ? ' <button type="button" class="ipr-ent-b" data-ent="farquivar">' + (FARQ === pr.fid ? "Confirmar: tirar do mapa" : "Arquivar ficha") + '</button>' : "") + '</div>';
     h += '<div class="sec"><a class="ipr-ent-b" href="https://www.google.com/maps/dir/?api=1&destination=' + (+xy[1]).toFixed(5) + "," + (+xy[0]).toFixed(5) + '" target="_blank" rel="noopener">Como chegar</a> <button type="button" class="ipr-ent-b" data-ent="fichair">Ver no mapa</button></div>';
+    if (pr.osm && /^(node|way|relation)\/\d+$/.test(String(pr.osm))) h += '<p class="s"><a href="https://www.openstreetmap.org/' + esc(pr.osm) + '" target="_blank" rel="noopener">Ver e corrigir no OpenStreetMap</a></p>';
     h += '<p class="s">' + (pr.fonte ? "Fonte: " + esc(pr.fonte) + ". " : "") + (pr.posicao ? "Posição " + esc(pr.posicao) + "." : "") + "</p>";
     return h + "</div>";
   }
