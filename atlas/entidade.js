@@ -273,6 +273,7 @@
           W.__iprEntOrg = {quando: Date.now(), org: d && d.org ? d.org.id : null, camadas: d && d.camadas ? d.camadas.length : null};
           if (!d || !d.org || +d.org.id !== ORGID) throw new Error("org");
           ORG = d;
+          (d.camadas || []).forEach(function (c) { if (c.url) pedirCam(c.url).catch(function () {}); }); // começam já a vir
           orgMapa();
           if (!W.__iprEntEO) { W.__iprEntEO = 1; eoIniciar(); }
           if (!ZONA) { var bx = null; (d.camadas || []).forEach(function (c) { var b = c.bbox; if (!b || b.length !== 4) return; bx = bx ? [Math.min(bx[0], b[0]), Math.min(bx[1], b[1]), Math.max(bx[2], b[2]), Math.max(bx[3], b[3])] : b.slice(); });
@@ -282,9 +283,39 @@
         .catch(function (e) { W.__iprEntOrgErro = String(e); if (++n < 6) setTimeout(pedir, 2500); });
     })();
   }
+  // Pedidos das camadas: no máximo 3 ao mesmo tempo, com nova tentativa quando o servidor responde 5xx/429 ou a rede falha
+  // (com muitos pedidos em paralelo o servidor dava 500). Cada URL pede-se uma vez: o mapa, o painel e a Base reusam a resposta.
+  var FILA = [], ACTIVOS = 0, CACHE = {};
+  function filaCorrer() {
+    while (ACTIVOS < 3 && FILA.length) (function (t) {
+      ACTIVOS++;
+      fetch(t.url, {credentials: "same-origin", headers: {"X-WP-Nonce": ENT.nonce}}).then(function (r) {
+        if (r.status >= 500 || r.status === 429) throw {repetir: 1, st: r.status};
+        if (!r.ok) throw {st: r.status};
+        return r.json();
+      }).then(function (j) { ACTIVOS--; t.ok(j); filaCorrer(); }, function (e) {
+        ACTIVOS--;
+        if ((!e || e.repetir || e instanceof TypeError) && t.n < 4) { t.n++; setTimeout(function () { FILA.unshift(t); filaCorrer(); }, 1200 * Math.pow(2, t.n - 1)); }
+        else { delete CACHE[t.url]; t.ko(e); }
+        filaCorrer();
+      });
+    })(FILA.shift());
+  }
+  function pedirCam(url, primeiro) {
+    if (CACHE[url]) return CACHE[url];
+    return (CACHE[url] = new Promise(function (ok, ko) { var t = {url: url, n: 0, ok: ok, ko: ko}; if (primeiro) FILA.unshift(t); else FILA.push(t); filaCorrer(); }));
+  }
+  // O mapa desenha as camadas assim que existe e tem o estilo carregado, sem esperar pelo resto do Atlas.
+  var ORGESP = null;
+  function orgEsperarMapa() {
+    if (ORGESP) return; var n = 0;
+    ORGESP = setInterval(function () { n++; var m = W.__ipe && W.__ipe.mapa; if ((m && m.isStyleLoaded && m.isStyleLoaded()) || n > 240) { clearInterval(ORGESP); orgMapa(); } }, 250);
+  }
   var ORGMAPA = false;
   function orgMapa() {
-    if (!ORG || ORGMAPA || !(W.__ipe && W.__ipe.mapa && W.__ipe.viz)) return;
+    var mp = W.__ipe && W.__ipe.mapa;
+    if (!ORG || ORGMAPA) return;
+    if (!mp || (mp.isStyleLoaded && !mp.isStyleLoaded())) { orgEsperarMapa(); return; }
     ORGMAPA = true; (ORG.camadas || []).forEach(function (c) { try { orgLigar(c, true); } catch (e) {} });
     if (FICHAS) fichasMapa();
   }
@@ -295,8 +326,8 @@
     ORGON[c.id] = !!on;
     if (m.getSource(sid)) { ls.forEach(function (l) { if (m.getLayer(l)) m.setLayoutProperty(l, "visibility", on ? "visible" : "none"); }); return; }
     if (!on) return;
-    fetch(c.url, {credentials: "same-origin", headers: {"X-WP-Nonce": ENT.nonce}}).then(function (r) { return r.json(); }).then(function (gj) {
-      if (!gj || gj.type !== "FeatureCollection" || m.getSource(sid)) return;
+    pedirCam(c.url, true).then(function (gj) {
+      if (!gj || gj.type !== "FeatureCollection" || m.getSource(sid) || !ORGON[c.id]) return;
       var cor = c.cor || "#94BE39";
       m.addSource(sid, {type: "geojson", data: gj});
       m.addLayer({id: sid + "-f", type: "fill", source: sid, filter: ["==", ["geometry-type"], "Polygon"], paint: {"fill-color": cor, "fill-opacity": 0.15}});
@@ -1202,7 +1233,7 @@
     }
     if (!camId) { abrirForm(""); return; }
     var c = orgCam(camId); if (!c) return;
-    fetch(c.url, {credentials: "same-origin", headers: {"X-WP-Nonce": ENT.nonce}}).then(function (r) { return r.json(); }).then(function (gj) {
+    pedirCam(c.url, true).then(function (gj) {
       var L = W.__ipe && W.__ipe.locais, k = 0;
       (gj.features || []).forEach(function (f) {
         var g = f.geometry || {}, nm = (f.properties && (f.properties.nome || f.properties.name)) || c.nome;
