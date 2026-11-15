@@ -104,10 +104,19 @@
   function arrancar() {
     if (!montar()) return setTimeout(arrancar, 300);
     var g = guardada();
-    if (g === "es" || (!g && String(W.IPR_LANG || "").toLowerCase() === "es")) { W.IPR_LINGUA = "es"; }
+    // Em /es o Atlas abre em castelhano mesmo que outra visita tenha gravado «pt»; só não abre se a pessoa escolheu
+    // outra língua nesta sessão.
+    var off = false; try { off = W.sessionStorage.getItem("ipr_tres_off") === "1"; } catch (e) {}
+    if (g === "es" || (pagEs() && !off)) { W.IPR_LINGUA = "es"; }
+    arrancou = true;
     aplicar();
     try { D.dispatchEvent(new CustomEvent("ipr:lingua", { detail: W.IPR_LINGUA })); } catch (e) {}
   }
-  D.addEventListener("ipr:lingua", function () { setTimeout(aplicar, 0); });
+  var arrancou = false;
+  function pagEs() { return String(W.IPR_LANG || "").toLowerCase() === "es" || /^\/es(\/|$)/.test(W.location.pathname); }
+  D.addEventListener("ipr:lingua", function () {
+    if (arrancou && pagEs()) { try { if (W.IPR_LINGUA === "es") W.sessionStorage.removeItem("ipr_tres_off"); else W.sessionStorage.setItem("ipr_tres_off", "1"); } catch (e) {} }
+    setTimeout(aplicar, 0);
+  });
   if (D.readyState === "loading") D.addEventListener("DOMContentLoaded", function () { setTimeout(arrancar, 50); }); else setTimeout(arrancar, 50);
 })();
