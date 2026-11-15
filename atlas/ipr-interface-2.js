@@ -2102,10 +2102,38 @@ if (window.IPR_A2_DEMO) (function(){
     var s = r.nextElementSibling;
     if (s) { if (s.classList.contains('c2-pct')) { if (s.textContent !== r.value + '%') s.textContent = r.value + '%'; } }
   }
+  /* 15/11 (Bolito: gestão nova em todos os subgrupos): a linha nova dependia de a camada trazer «cor» no registo; as que não
+     traziam, ou traziam cinzento, branco ou quase preto (relevo sombreado, curvas de nível, OSM do Contexto...), ficavam com o
+     aspecto antigo ou sem bolinha. Agora todas as caixas (não o Fundo, que é escolha única) levam a linha nova; a cor vem do
+     registo e, quando falta ou é neutra, de uma paleta fixa escolhida pelo identificador da camada (sempre a mesma cor). Só
+     muda a bolinha, a barra e o cabeçalho; o mapa e os dados ficam iguais. */
+  var C2PAL = ['#C9A227', '#7FB069', '#4FA3A5', '#D17A43', '#9C7BC0', '#5B8DD9', '#C85C70', '#B8A83A', '#6FB7C9', '#E08E5A', '#8FBF5A', '#B07CC6'];
+  var C2FIX = { r_somb: '#B39B72', r_curvas: '#E2B56B', r_curvas_of: '#D9A55B', r_cotas: '#E8C77E', o_estradas: '#D9A05B', o_edif: '#C98B6B', o_nomes: '#D8C38A', o_fronteiras: '#C85C70' };
+  function c2rgb(c) {
+    var m = /rgba?\(\s*(\d+)[ ,]+(\d+)[ ,]+(\d+)/.exec(c || ''); if (m) return [+m[1], +m[2], +m[3]];
+    m = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec((c || '').trim()); if (!m) return null;
+    var h = m[1]; if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
+    return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+  }
+  function c2neutra(c) {
+    var v = c2rgb(c); if (!v) return true;
+    var mx = Math.max(v[0], v[1], v[2]) / 255, mn = Math.min(v[0], v[1], v[2]) / 255, l = (mx + mn) / 2;
+    var sat = mx === mn ? 0 : (mx - mn) / (1 - Math.abs(2 * l - 1));
+    return sat < 0.22 || l > 0.9 || l < 0.15;
+  }
+  function c2cor(li, cor) {
+    var c = cor ? (cor.style.background || cor.style.backgroundColor) : '';
+    if (c && !c2neutra(c)) return c;
+    var id = li.getAttribute('data-id') || txtNome(li);
+    if (C2FIX[id]) return C2FIX[id];
+    var h = 0; for (var i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
+    return C2PAL[h % C2PAL.length];
+  }
   function trata(li) {
     var cor = li.querySelector('.ipr-cor'), ck = li.querySelector('input.ipr-ck');
-    if (cor) li.style.setProperty('--k', cor.style.background || cor.style.backgroundColor);
-    if (ck) { if (ck.type === 'checkbox') { if (cor) cls(li, 'c2-t', true); } }
+    var k = c2cor(li, cor);
+    if (li.style.getPropertyValue('--k') !== k) li.style.setProperty('--k', k);
+    if (ck) { if (ck.type === 'checkbox') cls(li, 'c2-t', true); }
     var lab = li.querySelector('label'), opc = li.querySelector('.ipr-opc-b');
     var desc = null, est = null;
     li.querySelectorAll('.ipr-nome small').forEach(function (s) {
