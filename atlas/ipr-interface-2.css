@@ -995,3 +995,5 @@ body #ipr-bd .bd-rod{flex:none;display:flex;flex-wrap:wrap;align-items:center;ga
 body #ipr-bd .bd-rod>.row{margin:0 0 0 auto}
 body #ipr-bd .bd-est{flex:1;font-size:12px;color:#E8B84A}
 body #ipr-bd .bd-rod>.msg{flex-basis:100%;margin:0;order:-1}
+/* 17/11/2026 · pedido do Bolito: a lista de resultados da pesquisa fica por cima da barra de Temas (#tb-bar, z 30). O cabeçalho (z 8) prendia a lista; sobe só enquanto a pesquisa está em uso. */
+#ipe header.ipe-top:focus-within,#ipe header.ipe-top:has(#ipe-qres:not(:empty)),#ipe header.ipe-top:has(#ipr-pb-sug:not(:empty)){z-index:40}
