@@ -32,23 +32,28 @@
       "#ipr-fs.ipr-mv-pick .des,#ipr-as.ipr-mv-pick .des{margin:2px 0!important}" +
     "}";
   var st = D.createElement("style"); st.id = "ipr-movel-css"; st.textContent = CSS; D.head.appendChild(st);
-  function estreito() { return W.matchMedia ? W.matchMedia("(max-width:640px)").matches : W.innerWidth <= 640; }
+  var MQ = W.matchMedia ? W.matchMedia("(max-width:640px)") : null;
+  function estreito() { return MQ ? MQ.matches : W.innerWidth <= 640; }
   function rever() {
     ["ipr-fs", "ipr-as"].forEach(function (id) {
       var p = D.getElementById(id); if (!p) return;
       var on = estreito() && !p.hidden && !!p.querySelector(".des");
       if (p.classList.contains("ipr-mv-pick") !== on) p.classList.toggle("ipr-mv-pick", on);
     });
-    // Mostrar o botão Camadas na faixa visível, uma vez, quando a barra desliza.
+  }
+  // Mostrar o botão Camadas na faixa visível, uma vez, quando a barra desliza.
+  // 17/11/2026 (Nuno: «avança»): isto saiu do rever(), que corre a cada mudança da página. Ler scrollWidth e clientWidth obriga o
+  // navegador a recalcular a disposição; no telemóvel eram ~1 s em 25 s. Agora só no arranque, a 3 s e 8 s, e ao mudar o tamanho.
+  function verBarra() {
     var tr = D.querySelector("#ipe .ipe-tr");
-    if (tr && estreito() && tr.scrollWidth > tr.clientWidth && !tr.__mv) { tr.__mv = 1; tr.scrollLeft = 0; }
+    if (tr && !tr.__mv && estreito() && tr.scrollWidth > tr.clientWidth) { tr.__mv = 1; tr.scrollLeft = 0; }
   }
   var pend = 0;
   function agendar() { if (pend) return; pend = 1; (W.requestAnimationFrame || setTimeout)(function () { pend = 0; rever(); }); }
   function arrancar() {
     try { new MutationObserver(agendar).observe(D.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["hidden", "class"] }); } catch (e) {}
-    W.addEventListener("resize", agendar);
-    rever();
+    W.addEventListener("resize", function () { agendar(); verBarra(); });
+    rever(); verBarra(); setTimeout(verBarra, 3000); setTimeout(verBarra, 8000);
   }
   if (D.readyState === "loading") D.addEventListener("DOMContentLoaded", arrancar); else arrancar();
 })();
