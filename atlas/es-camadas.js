@@ -383,7 +383,44 @@
     modoES = em;
   }
   var CSS_ES = "body.tcd-es #tb-bar,body.tcd-es #ipe [data-be-prod=planta],body.tcd-es #ipe [data-be-prod=leitura],body.tcd-es #ipr-pacote," +
-    "body.tcd-es #ipe li.ipr-mb-b[data-mb='18032'],body.tcd-es #ipe-form label.ipe-chk:has(input[name=leitura]){display:none!important}";
+    "body.tcd-es #ipe li.ipr-mb-b[data-mb='18032'],body.tcd-es #ipe-form label.ipe-chk:has(input[name=leitura])," +
+    "body.tcd-es #ipe-res .tcd-fn,body.tcd-es #ipe-res .ipr-tcam,body.tcd-es #ipe-res details.ipv,body.tcd-es #ipe-res [data-tcd-lt]{display:none!important}" +
+    "#tcd-es-misto{margin:8px 0;padding:8px 10px;border-left:3px solid #c9a227;background:rgba(201,162,39,.12);font-size:13px;line-height:1.4}";
+  /* terrenos desenhados: quantos em Espanha e quantos em Portugal (um pedido com os dois países falha no motor: #20179) */
+  function terrenos() {
+    var I = mapa(), cs = (I && I._controls) || [];
+    for (var i = 0; i < cs.length; i++) if (cs[i] && typeof cs[i].getAll === "function") {
+      try { return (cs[i].getAll().features || []).filter(function (f) { return f.geometry && /Polygon/.test(f.geometry.type); }); } catch (e) {}
+    }
+    return [];
+  }
+  function centro(f) {
+    var r = f.geometry.type === "Polygon" ? f.geometry.coordinates[0] : f.geometry.coordinates[0][0], x = 0, y = 0;
+    r.forEach(function (c) { x += c[0]; y += c[1]; }); return [x / r.length, y / r.length];
+  }
+  function avisoMisto() {
+    var fm = document.getElementById("ipe-form"); if (!fm) return;
+    var nES = 0, nPT = 0;
+    terrenos().forEach(function (f) { var c = centro(f); if (dentro(c[0], c[1])) nES++; else if (c[0] >= PTB[0] && c[0] <= PTB[2] && c[1] >= PTB[1] && c[1] <= PTB[3]) nPT++; });
+    var av = document.getElementById("tcd-es-misto"), bts = fm.querySelectorAll("button[type=submit],input[type=submit]");
+    if (nES && nPT) {
+      if (!av) { av = document.createElement("p"); av.id = "tcd-es-misto"; fm.insertBefore(av, fm.firstChild); }
+      var t = ES ? "Hay terrenos en España y en Portugal en el mismo pedido. Cada país tiene su Base: encargue primero los de un país y después los del otro."
+                 : "Há terrenos em Espanha e em Portugal no mesmo pedido. Cada país tem a sua Base: encomende primeiro os de um país e depois os do outro.";
+      if (av.textContent !== t) av.textContent = t;
+      [].forEach.call(bts, function (b) { if (!b.disabled) { b.disabled = true; b.setAttribute("data-tcd-misto", "1"); } });
+    } else {
+      if (av) av.parentNode.removeChild(av);
+      [].forEach.call(fm.querySelectorAll("[data-tcd-misto]"), function (b) { b.disabled = false; b.removeAttribute("data-tcd-misto"); });
+    }
+  }
+  /* frases da ficha que remetem para a Leitura Territorial (só existe em Portugal) */
+  function marcaLT() {
+    var r = document.getElementById("ipe-res"); if (!r) return;
+    [].forEach.call(r.querySelectorAll("p,li,small"), function (e) {
+      if (!e.hasAttribute("data-tcd-lt") && /Le(c|i)tura Territorial/i.test(e.textContent) && !e.querySelector("button,input,.ipr-fg-out")) e.setAttribute("data-tcd-lt", "1");
+    });
+  }
   var RG = [[/Fora de Portugal: /, "Fuera de Portugal: "], [/ camadas de outras regiões escondidas/, " capas de otras regiones ocultas"], [/ camada de outra região escondida/, " capa de otra región oculta"],
     [/A mostrar todas as camadas\./, "Mostrando todas las capas."], [/Só as desta zona/, "Solo las de esta zona"]];
   function traduzRegn() {
@@ -396,7 +433,7 @@
     if (window.MutationObserver) new MutationObserver(traduzRegn).observe(cam, { childList: true, subtree: true, characterData: true });
     var tmo = 0, I = mapa(); function ag() { clearTimeout(tmo); tmo = setTimeout(modoEspanha, 300); }
     if (I && I.on) { I.on("moveend", ag); I.on("styledata", ag); }
-    setInterval(modoEspanha, 3000); modoEspanha(); traduzRegn();
+    setInterval(function () { modoEspanha(); avisoMisto(); marcaLT(); }, 2000); modoEspanha(); traduzRegn();
   }
   window.__tcdEsCamadas = { dentro: dentro, CAT: CAT, modo: modoEspanha };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", function () { arrancar(0); }); else arrancar(0);
