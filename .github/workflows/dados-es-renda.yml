@@ -18,7 +18,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Ferramentas
         run: |
-          sudo apt-get update -qq && sudo apt-get install -y -qq gdal-bin
+          sudo apt-get update -qq && sudo apt-get install -y -qq gdal-bin jq
           if ! sudo apt-get install -y -qq tippecanoe; then
             sudo apt-get install -y -qq build-essential libsqlite3-dev zlib1g-dev
             git clone --depth 1 https://github.com/felt/tippecanoe.git /tmp/tc && make -C /tmp/tc -j4 && sudo make -C /tmp/tc install
@@ -48,3 +48,8 @@ jobs:
           R="$GITHUB_REPOSITORY"
           gh release view es-dados --repo "$R" >/dev/null 2>&1 || gh release create es-dados --repo "$R" --target "$GITHUB_SHA" --title "Espanha: dados próprios do IPR Atlas" --notes "Cópias próprias de dados abertos de Espanha para o IPR Atlas. Renda: © INE (ADRH), CC BY 4.0." || true
           gh release upload es-dados es-renda.pmtiles mun/*.json --repo "$R" --clobber
+          # manifesto: nome, tamanho e sha256 de todos os anexos da versão (o ipr-copia-es só copia o que mudou)
+          mkdir -p tudo && gh release download es-dados --repo "$R" --dir tudo --skip-existing --pattern '*' || true
+          (cd tudo && rm -f manifesto.json && for f in *; do echo "{\"n\":\"$f\",\"t\":$(stat -c %s "$f"),\"h\":\"$(sha256sum "$f" | cut -c1-64)\"}"; done | jq -s '{versao:"es-dados",quando:(now|todate),ficheiros:.}' > ../manifesto.json)
+          gh release upload es-dados manifesto.json --repo "$R" --clobber
+          cat manifesto.json | head -c 600
