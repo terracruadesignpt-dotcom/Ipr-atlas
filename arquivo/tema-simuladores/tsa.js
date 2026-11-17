@@ -1,0 +1,18 @@
+const {chromium}=require('playwright');const fs=require('fs');
+(async()=>{const b=await chromium.launch();const p=await b.newPage({viewport:{width:1000,height:700}});
+p.on('console',m=>console.log('C:',m.text()));p.on('pageerror',e=>console.log('ERR',e.message));
+await p.setContent('<html><body style="background:#cde"></body></html>');
+await p.evaluate(()=>{const h={};const src={setData(d){window.__data=d}};
+window.__ipe={mapa:{getZoom:()=>15,on:(e,f)=>{h[e]=f},off:(e)=>{delete h[e]},getSource:()=>window.__s,addSource:()=>{window.__s=src},getLayer:()=>window.__l,addLayer:()=>{window.__l=1},project:(c)=>({x:c[0]*1e5,y:c[1]*1e5}),getCanvas:()=>({style:{}}),doubleClickZoom:{isEnabled:()=>true,disable(){},enable(){}}}};
+window.__h=h;window.tcdNonce='x';window.IPR_SIM_AREA={rest:'/r/',max_ha:10};
+let n=0;window.fetch=(u,o)=>{console.log('fetch',u,o&&o.method,o&&o.body);n++;const area={id:99,local:'Área de simulação · Odemira · 1,0 ha',estado:n>2?'pronta':'fila',antes:2,etapa:'aguarda'};return Promise.resolve({ok:true,status:200,json:()=>Promise.resolve({ok:true,area,areas:[area]})})};});
+await p.addScriptTag({content:fs.readFileSync('atlas/sim-area.js','utf8')});
+await p.evaluate(()=>window.IPR_SIM_AREA.desenhar('fogo'));await p.waitForTimeout(300);
+await p.evaluate(()=>{const la=38.5,dl=100/(111194.9*Math.cos(la*Math.PI/180)),dt=100/111194.9;
+[[-8,la],[-8+dl,la],[-8+dl,la+dt],[-8,la+dt]].forEach(c=>window.__h.click({lngLat:{lng:c[0],lat:c[1]},point:{x:0,y:0}}));});
+console.log(await p.textContent('#ipr-sa-bar'));
+await p.screenshot({path:process.argv[2]+'/sa1.png'});
+await p.click('[data-sa=ok]');await p.waitForTimeout(500);
+console.log(await p.textContent('#ipr-sa-card'));
+await p.screenshot({path:process.argv[2]+'/sa2.png'});
+await b.close();})();
