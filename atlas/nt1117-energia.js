@@ -7,7 +7,7 @@
    água mineral natural (268), exploração experimental de depósitos minerais e áreas de petróleo.
    Licença: confirmar na ficha de metadados da DGEG antes de publicar em lote; aqui só se mostram as imagens do serviço.
    Indica centros electroprodutores registados; não distingue licença, operação confirmada e pedido de ligação.
-   Grupo «Ambiente e actividades», subgrupo «Energia (DGEG)»; os títulos vão para Solo e Água.
+   Grupo «Condicionantes» (junto da rede eléctrica; o grupo «Ambiente e actividades» não aparece no painel), subgrupo «Energia (DGEG)»; os títulos vão para Solo e Água.
    Desligar: ?energia=0. */
 (function () {
   "use strict";
@@ -21,15 +21,15 @@
   var NOTA_D = "Indicativo; faz fé o título publicado pela DGEG e em Diário da República";
   // [id, grupo, sub, nome pt, nome en, serviço, camadas, cor, opacidade, zoom mínimo, nota]
   var C = [
-    ["en_eolicas", "amb", EN, "Centrais eólicas", "Wind power plants", "CE", null, "#26a69a", 1, 7, NE],
-    ["en_solares", "amb", EN, "Centrais solares", "Solar power plants", "CS", null, "#fbc02d", 1, 7, NE],
-    ["en_hidricas", "amb", EN, "Centrais hídricas", "Hydro power plants", "CH", null, "#1e88e5", 1, 7, NE],
-    ["en_termicas", "amb", EN, "Centrais térmicas", "Thermal power plants", "CT", null, "#e53935", 1, 6, NE],
-    ["en_cogeracao", "amb", EN, "Centrais de cogeração", "Cogeneration plants", "CC", null, "#8e24aa", 1, 7, NE],
-    ["en_biogas", "amb", EN, "Consumidores de biogás", "Biogas consumers", "Biogas", null, "#6d4c41", 1, 7, NE],
-    ["en_autocons", "amb", EN, "Autoconsumo colectivo e comunidades de energia", "Collective self-consumption", "ACC", null, "#43a047", 1, 8, "Registo da DGEG"],
-    ["en_gas", "amb", EN, "Distribuição de gás natural por município", "Natural gas distribution by municipality", "DistribuicaoGas", null, "#5c6bc0", .45, 6, "Concessão, licença local ou sem rede"],
-    ["en_postos", "amb", EN, "Postos de abastecimento de combustíveis", "Fuel stations", "PACVR", null, "#546e7a", 1, 10, "Registo da DGEG"],
+    ["en_eolicas", "cond", EN, "Centrais eólicas", "Wind power plants", "CE", null, "#26a69a", 1, 7, NE],
+    ["en_solares", "cond", EN, "Centrais solares", "Solar power plants", "CS", null, "#fbc02d", 1, 7, NE],
+    ["en_hidricas", "cond", EN, "Centrais hídricas", "Hydro power plants", "CH", null, "#1e88e5", 1, 7, NE],
+    ["en_termicas", "cond", EN, "Centrais térmicas", "Thermal power plants", "CT", null, "#e53935", 1, 6, NE],
+    ["en_cogeracao", "cond", EN, "Centrais de cogeração", "Cogeneration plants", "CC", null, "#8e24aa", 1, 7, NE],
+    ["en_biogas", "cond", EN, "Consumidores de biogás", "Biogas consumers", "Biogas", null, "#6d4c41", 1, 7, NE],
+    ["en_autocons", "cond", EN, "Autoconsumo colectivo e comunidades de energia", "Collective self-consumption", "ACC", null, "#43a047", 1, 8, "Registo da DGEG"],
+    ["en_gas", "cond", EN, "Distribuição de gás natural por município", "Natural gas distribution by municipality", "DistribuicaoGas", null, "#5c6bc0", .45, 6, "Concessão, licença local ou sem rede"],
+    ["en_postos", "cond", EN, "Postos de abastecimento de combustíveis", "Fuel stations", "PACVR", null, "#546e7a", 1, 10, "Registo da DGEG"],
     ["dgeg_pee", "solo", DIR, "Exploração experimental de depósitos minerais", "Experimental mining (mineral deposits)", "PEE", null, "#c2185b", .5, 6, NOTA_D],
     ["dgeg_petroleo", "solo", DIR, "Petróleo: áreas de pesquisa e exploração", "Oil: exploration areas", "PPEP", "show:0,1,3", "#37474f", .4, 6, NOTA_D],
     ["dgeg_ppro_amn", "agua", PROT, "Perímetros de protecção de água mineral natural", "Natural mineral water protection perimeters", "PPROTAMN", null, "#0097a7", .4, 8, NOTA_D]
