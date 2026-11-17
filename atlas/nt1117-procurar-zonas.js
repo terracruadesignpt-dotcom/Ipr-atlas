@@ -184,7 +184,7 @@
   function css() {
     if (D.getElementById("ipr-pz-css")) return;
     var s = D.createElement("style"); s.id = "ipr-pz-css";
-    s.textContent = "#ipr-pz{position:fixed;z-index:60;top:64px;left:12px;width:min(380px,calc(100vw - 24px));max-height:calc(100vh - 90px);overflow:auto;background:#1d2316;color:#efeee6;border:1px solid rgba(227,212,154,.35);border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.45);font:13px/1.45 Inter,Helvetica,Arial,sans-serif}" +
+    s.textContent = "#ipr-pz{position:fixed;z-index:100000;top:64px;left:12px;width:min(380px,calc(100vw - 24px));max-height:calc(100vh - 90px);overflow:auto;background:#1d2316;color:#efeee6;border:1px solid rgba(227,212,154,.35);border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.45);font:13px/1.45 Inter,Helvetica,Arial,sans-serif}" +
       "#ipr-pz .pz-cab{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.1);position:sticky;top:0;background:#1d2316}" +
       "#ipr-pz .pz-cab b{flex:1;font-size:14px}#ipr-pz button{font:inherit;color:inherit;cursor:pointer}" +
       "#ipr-pz .pz-x,#ipr-pz .pz-v{background:transparent;border:1px solid rgba(255,255,255,.25);border-radius:6px;padding:3px 9px}" +
