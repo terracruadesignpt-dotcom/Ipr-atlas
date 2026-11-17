@@ -123,7 +123,7 @@
   function itemPor(id) { for (var g = 0; g < CAT.length; g++) for (var i = 0; i < CAT[g].itens.length; i++) if (CAT[g].itens[i].id === id) return CAT[g].itens[i]; return null; }
   var CORES = { TA: "#e0c36b", TH: "#e8d48a", PS: "#9bc46a", PR: "#b8d68c", PA: "#7fae55", FO: "#3f7d3a", OV: "#8a9a3c", VI: "#a0558a", FY: "#c48a4a", CI: "#e39d3a", IM: "#9a9a9a", ZU: "#c9c9c9", AG: "#6aa6d8", CA: "#bdbdbd" };
   /* Fundos (ortofoto, mapa base, voos antigos) ficam por baixo de todas as outras camadas: logo acima da primeira camada do estilo. */
-  function antesFundo(I) { var L = (I.getStyle() && I.getStyle().layers) || []; for (var i = 1; i < L.length; i++) if (!/^es-(pnoa|ignbase|crono)$/.test(L[i].id)) return L[i].id; return antes(I); }
+  function antesFundo(I) { if (I.getLayer && I.getLayer("iprv-s-raster")) return "iprv-s-raster"; /* marcador do Atlas: fim dos fundos, antes do relevo sombreado */ var L = (I.getStyle() && I.getStyle().layers) || []; for (var i = 1; i < L.length; i++) if (!/^es-(pnoa|ignbase|crono)$/.test(L[i].id)) return L[i].id; return antes(I); }
   var SONDA = {};
   function aviso(txt) {
     var a = document.createElement("div"); a.textContent = txt;
