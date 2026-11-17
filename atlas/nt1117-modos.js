@@ -134,7 +134,7 @@
     if (!bar.querySelector('[data-tab="iprproj"]')) {
       css();
       var tb = D.createElement("button"); tb.type = "button"; tb.className = "ipe-tab"; tb.setAttribute("role", "tab"); tb.setAttribute("data-tab", "iprproj");
-      tb.setAttribute("aria-selected", "false"); tb.title = t("Desenhos, dados, observações e simulações da Base aberta", "Drawings, data, observations and simulations of the open Base"); tb.textContent = t("Projecto", "Project");
+      tb.setAttribute("aria-selected", "false"); tb.style.order = "2"; /* logo a seguir a «Bases» (a barra ordena por CSS order) */ tb.title = t("Desenhos, dados, observações e simulações da Base aberta", "Drawings, data, observations and simulations of the open Base"); tb.textContent = t("Projecto", "Project");
       var ref = bar.querySelector('[data-tab="proj"]'); if (ref && ref.nextSibling) bar.insertBefore(tb, ref.nextSibling); else bar.appendChild(tb);
       tb.addEventListener("click", function (e) {
         e.preventDefault(); e.stopPropagation();
