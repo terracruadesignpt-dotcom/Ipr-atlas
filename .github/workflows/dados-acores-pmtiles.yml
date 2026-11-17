@@ -1,0 +1,73 @@
+# IPR Atlas · PMTiles próprias dos conjuntos grandes dos Açores (Nuno, 17/11/2026: «Tudo o que pudermos copiar, em vez de
+# ficarmos dependentes deles [...] é melhor»; 11h39: «vê lá o que é que podemos fazer para melhorar essas cópias»).
+# Lê a nossa cópia em GeoJSON (camadas.terracruadesign.pt/acores/, worker ipr-copia-acores) ou, para o que é grande demais
+# para o Worker, o WFS da IDEA por páginas; converte com o tippecanoe e publica como anexo da versão «acores-pmtiles».
+# O worker ipr-copia-acores copia depois cada anexo para pmtiles/acores/<id>.pmtiles no R2. Dados abertos SRAAC, CC BY 4.0.
+name: dados-acores-pmtiles
+on:
+  push:
+    branches: [dados-acores-pmtiles]
+    paths: [".github/workflows/dados-acores-pmtiles.yml", "ferramentas/acores_wfs.py"]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  pmtiles:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 300
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        include:
+          - { id: riscos-galgamentos-inundacoes-costeiras-risco, z: 14, tipo: area }
+          - { id: riscos-galgamentos-inundacoes-costeiras-vulnerabilidade, z: 14, tipo: area }
+          - { id: riscos-zonas-ameacadas-mar, z: 14, tipo: area }
+          - { id: riscos-zonas-inundaveis, z: 14, tipo: area }
+          - { id: pgria-riscocheiasfluviais, z: 14, tipo: area }
+          - { id: sria-baciashidrograficas-azo, z: 13, tipo: area }
+          - { id: sria-linhasagua-azo, z: 14, tipo: linha }
+          - { id: riscos-movimentos-vertente-suscetibilidade, z: 14, tipo: area, wfs: "idea/public/riscosnaturais", camada: movimentos_vertente_suscetibilidade }
+    steps:
+      - uses: actions/checkout@v4
+      - name: Ferramentas
+        run: |
+          sudo apt-get update -qq
+          if ! sudo apt-get install -y -qq tippecanoe; then
+            sudo apt-get install -y -qq build-essential libsqlite3-dev zlib1g-dev
+            git clone --depth 1 https://github.com/felt/tippecanoe.git /tmp/tc && make -C /tmp/tc -j4 && sudo make -C /tmp/tc install
+          fi
+          sudo mkdir -p /mnt/d && sudo chown $USER /mnt/d
+      - name: Dados
+        run: |
+          cd /mnt/d
+          C=${{ matrix.id }}
+          if [ -n "${{ matrix.wfs }}" ]; then
+            python3 $GITHUB_WORKSPACE/ferramentas/acores_wfs.py "${{ matrix.wfs }}" "${{ matrix.camada }}" $C.geojsons
+            gzip -k -9 $C.geojsons
+          else
+            curl -sSf --retry 3 -A "IPR-Atlas-pmtiles/1.0" -o $C.geojson "https://camadas.terracruadesign.pt/acores/$C.geojson"
+          fi
+          ls -la
+      - name: Mosaicos (tippecanoe)
+        run: |
+          cd /mnt/d
+          C=${{ matrix.id }}; Z=${{ matrix.z }}
+          F=$C.geojson; [ -f $C.geojsons ] && F=$C.geojsons
+          O="--drop-densest-as-needed --extend-zooms-if-still-dropping"
+          [ "${{ matrix.tipo }}" = area ] && O="--coalesce-densest-as-needed --detect-shared-borders --simplify-only-low-zooms --extend-zooms-if-still-dropping"
+          for z in $Z $((Z-1)) $((Z-2)); do
+            tippecanoe -o $C.pmtiles -l $C -n "$C (SRAAC)" -A "© SRAAC/GRA · CC BY 4.0 · cópia IPR Atlas" -Z6 -z$z $O --hilbert -P -t /mnt/d --force $F
+            S=$(stat -c %s $C.pmtiles); echo "z$z: $S bytes"
+            [ $S -lt 500000000 ] && break
+          done
+          ls -la $C.pmtiles
+      - name: Publicar
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cd /mnt/d
+          C=${{ matrix.id }}
+          gh release view acores-pmtiles --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1 || gh release create acores-pmtiles --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "Açores em PMTiles (SRAAC, CC BY 4.0)" --notes "Mosaicos vectoriais dos dados abertos do Governo dos Açores (SRAAC/GRA, CC BY 4.0), feitos para o IPR Atlas." || true
+          gh release upload acores-pmtiles $C.pmtiles --repo "$GITHUB_REPOSITORY" --clobber
+          [ -f $C.geojsons.gz ] && gh release upload acores-pmtiles $C.geojsons.gz --repo "$GITHUB_REPOSITORY" --clobber || true
