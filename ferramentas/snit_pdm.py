@@ -229,6 +229,12 @@ def camara(dico, srv, pasta, fim_t):
         except Exception as e:  # noqa: BLE001
             print('  legenda', nome, str(e)[:80], flush=True)
         boas = [c[2] for c in cs if c[2] and c[2][2] - c[2][0] < 1.5 and c[2][3] - c[2][1] < 1.5]
+        if not boas:   # as plantas do SNIT costumam não ter caixa própria: vale a do PDM (camada de cima)
+            g = re.search(r'<LatLonBoundingBox[^>]*minx="([-\d.eE]+)"[^>]*miny="([-\d.eE]+)"[^>]*maxx="([-\d.eE]+)"[^>]*maxy="([-\d.eE]+)"', cap)
+            if g:
+                g = [float(v) for v in g.groups()]
+                if g[2] - g[0] < 1.5 and g[3] - g[1] < 1.5:
+                    boas = [g]
         if not bb or bb[2] - bb[0] >= 1.5 or bb[3] - bb[1] >= 1.5:   # caixa em falta ou do país inteiro: usa a das outras plantas
             if not boas:
                 print('  sem caixa utilizável:', nome, bb, flush=True)
