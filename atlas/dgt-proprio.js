@@ -22,7 +22,7 @@
     // GeoPackage oficial da DGT (Série 2), convertida em PMTiles por GitHub Actions e copiada para o R2.
     cos2023v1: 1 };
   var PMT = "https://cdn.jsdelivr.net/npm/pmtiles@3.2.1/dist/pmtiles.js", pronto = null, fontes = {}, LIG = 0;
-  var DEP = "https://camadas.terracruadesign.pt/mvt/", WK = "https://ipr-mvt.terracrua-ipr.workers.dev/",
+  var DEP = "https://camadas.terracruadesign.pt/mvt/", WK = "https://terracruadesign.pt/ipr-mvt/",
     OGC = "https://ogcapi.dgterritorio.gov.pt/collections/", MVT = { deposito: 0, copiador: 0, dgt: 0, falhas: 0 }, mvtPronto = false;
   W.__iprDgtProprioEstado = function () { return { fontes: fontes, protocolo: !!pronto, mvt: MVT, mvtProtocolo: mvtPronto }; };
   function buscar(u, sinal) {
@@ -38,7 +38,39 @@
       .catch(function () { return buscar(OGC + c + "/tiles/WebMercatorQuad/" + z + "/" + y + "/" + x + "?f=mvt", sinal).then(function (d) { MVT.dgt++; return { data: d }; }); })
       .catch(function (e) { MVT.falhas++; throw e; });
   }
-  function registarMvt() { try { if (W.maplibregl && !mvtPronto) { W.maplibregl.addProtocol("ipr-mvt", mvtTile); mvtPronto = true; } } catch (e) {} }
+  // 17/11/2026: as imagens WMS da DGT que o Atlas ainda pedia directamente (ortofotos históricas, Sentinel-2 2025, hipsometria,
+  // COS conjuntural, COS-S2) passam pelo protocolo ipr-wms://: depósito R2 (camadas.terracruadesign.pt/wms/...), depois o Worker
+  // (terracruadesign.pt/ipr-mvt/w/...), depois a DGT com o endereço de sempre. As Ortos 2025 e a OrtoSat 2023 já vinham da cópia (ipr-orto512).
+  var WTAB = {
+    "https://cartografia.dgterritorio.gov.pt/wms/ortos2018|Ortos2018-RGB": ["o18", "jpg"], "https://cartografia.dgterritorio.gov.pt/wms/ortos2021|Ortos2021-RGB": ["o21", "jpg"],
+    "https://cartografia.dgterritorio.gov.pt/wms/ortos2015|Ortos2015-RGB": ["o15", "jpg"], "https://cartografia.dgterritorio.gov.pt/wms/ortos2012|Ortos2012-RGB": ["o12", "jpg"],
+    "https://cartografia.dgterritorio.gov.pt/wms/ortos2010|Ortos2010-RGB": ["o10", "jpg"], "https://cartografia.dgterritorio.gov.pt/wms/ortos2007|Ortos2007-RGB": ["o07", "jpg"],
+    "https://cartografia.dgterritorio.gov.pt/wms/ortos2004-2006|Ortos2004-2006-RGB": ["o04", "jpg"], "https://cartografia.dgterritorio.gov.pt/wms/ortos1995|Ortos1995-FalsaCor": ["o95", "jpg"],
+    "https://ortos.dgterritorio.gov.pt/wms/IPSentinel2PT-2025|2025-jul-RGB": ["s2jul", "jpg"], "https://ortos.dgterritorio.gov.pt/wms/IPSentinel2PT-2025|2025-jan-RGB": ["s2jan", "jpg"],
+    "https://ortos.dgterritorio.gov.pt/wms/IPSentinel2PT-2025|2025-out-IRG": ["s2out", "jpg"], "https://geo2.dgterritorio.gov.pt/wms/hipsometria|Hipsometria": ["hipso", "png"],
+    "https://geo2.dgterritorio.gov.pt/wms/COSc2025|COSc2025": ["cosc25", "png"], "https://geo2.dgterritorio.gov.pt/geoserver/COS-S2/wms|cos2023v1-s2": ["coss2", "png"]
+  }, WORIG = {}, WMSC = { deposito: 0, copiador: 0, dgt: 0, falhas: 0 }, OO = 20037508.342789244;
+  MVT.wms = WMSC;
+  function wmsId(src) {
+    if (!src || src.type !== "raster" || !src.tiles || !src.tiles[0]) return null;
+    var u = String(src.tiles[0]); if (u.indexOf("{bbox-epsg-3857}") < 0) return null;
+    var i = u.indexOf("?"); if (i < 0) return null;
+    var q; try { q = new URLSearchParams(u.slice(i + 1)); } catch (e) { return null; }
+    var t = WTAB[u.slice(0, i) + "|" + (q.get("LAYERS") || q.get("layers") || "")]; if (!t) return null;
+    var px = +(q.get("WIDTH") || q.get("width") || 256); if (px !== 256 && px !== 512) return null;
+    WORIG[t[0] + "/" + px] = u; return { id: t[0], ext: t[1], px: px };
+  }
+  function wmsTile(params, ac) {
+    var m = String(params.url).match(/^ipr-wms:\/\/([a-z0-9]+)\/(\d+)\/(\d+)\/(\d+)\/(\d+)\.([a-z]+)/), sinal = ac && ac.signal;
+    if (!m) return Promise.reject(new Error("ipr-wms"));
+    var c = m[1] + "/" + m[2] + "/" + m[3] + "/" + m[4] + "/" + m[5], z = +m[3], x = +m[4], y = +m[5], ln = 2 * OO / Math.pow(2, z);
+    var bb = [-OO + x * ln, OO - (y + 1) * ln, -OO + (x + 1) * ln, OO - y * ln].join(","), orig = WORIG[m[1] + "/" + m[2]];
+    return buscar("https://camadas.terracruadesign.pt/wms/" + c + "." + m[6], sinal).then(function (d) { WMSC.deposito++; return { data: d }; })
+      .catch(function () { return buscar("https://terracruadesign.pt/ipr-mvt/w/" + c, sinal).then(function (d) { WMSC.copiador++; return { data: d }; }); })
+      .catch(function () { if (!orig) throw new Error("sem origem"); return buscar(orig.replace("{bbox-epsg-3857}", bb), sinal).then(function (d) { WMSC.dgt++; return { data: d }; }); })
+      .catch(function (e) { WMSC.falhas++; throw e; });
+  }
+  function registarMvt() { try { if (W.maplibregl && !mvtPronto) { W.maplibregl.addProtocol("ipr-mvt", mvtTile); W.maplibregl.addProtocol("ipr-wms", wmsTile); mvtPronto = true; } } catch (e) {} }
   // A biblioteca PMTiles (a mesma versão que o viz.js usa) carrega logo ao arranque; enquanto não estiver pronta, as camadas
   // ficam na origem antiga (DGT), para não haver mapas vazios por corrida.
   function registar() { try { if (W.pmtiles && W.maplibregl && !pronto) { var p = new W.pmtiles.Protocol(); W.maplibregl.addProtocol("pmtiles", p.tile); pronto = true; } } catch (e) {} }
@@ -63,6 +95,8 @@
     var aS = P.addSource, aL = P.addLayer;
     P.addSource = function (id, src) {
       var c = colecao(src), o = c ? null : outraColecao(src);
+      var w = (c || o) ? null : wmsId(src);
+      if (w) { registarMvt(); if (mvtPronto) src = Object.assign({}, src, { tiles: ["ipr-wms://" + w.id + "/" + w.px + "/{z}/{x}/{y}." + w.ext] }); }
       if (o) { registarMvt(); if (mvtPronto) src = Object.assign({}, src, { tiles: ["ipr-mvt://" + o + "/{z}/{x}/{y}"], attribution: (src.attribution || "DGT") + " · cópia IPR Atlas" }); }
       if (c && !pronto) registar();
       if (c && pronto) {
