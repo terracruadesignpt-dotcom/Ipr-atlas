@@ -1,0 +1,64 @@
+# IPR Atlas · Espanha: zonas DOP e IGP do MAPA (calidad diferenciada) em PMTiles próprias e num GeoJSON simplificado para a ficha.
+# Nuno, 17/11/2026, 12h17: «tudo o que podemos copiar da informação de Espanha para servir a partir do nosso próprio servidor,
+# eu prefiro»; escolheu «Tudo, pela ordem». Fonte: descargas IDE do MAPA, licença CC BY 4.0 («Ministerio de Agricultura, Pesca
+# y Alimentación»). Publica na versão «es-agro»; o worker ipr-copia-ficheiro copia depois os anexos para pmtiles/es/ no R2.
+name: dados-es-agro
+on:
+  push:
+    branches: [dados-es-agro]
+    paths: [".github/workflows/dados-es-agro.yml"]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  dop:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - name: Ferramentas
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq gdal-bin p7zip-full unar jq
+          if ! sudo apt-get install -y -qq tippecanoe; then
+            sudo apt-get install -y -qq build-essential libsqlite3-dev zlib1g-dev
+            git clone --depth 1 https://github.com/felt/tippecanoe.git /tmp/tc && make -C /tmp/tc -j4 && sudo make -C /tmp/tc install
+          fi
+          sudo mkdir -p /mnt/d && sudo chown $USER /mnt/d
+      - name: Descarregar e converter (uma família de cada vez)
+        run: |
+          cd /mnt/d
+          B="https://www.mapa.gob.es/app/descargas/descargafichero.aspx?f="
+          : > dop.geojsons
+          for par in aceites:calidaddiferenciada_aceites.rar aceitunas:calidaddiferenciada-aceitunas.zip arroces:calidaddiferenciada-arroces.zip \
+                     espirituosas:calidaddiferenciada_bebidasesp.zip carnes:calidaddiferenciada_carnes.zip condimentos:calidaddiferenciada_condimentos.zip \
+                     embutidos:calidaddiferenciada_embutidos.zip frutas:calidaddiferenciada_frutas.zip jamones:calidaddiferenciada_jamones.zip \
+                     legumbres:calidaddiferenciada_legumbres.zip mieles:cd_mieles.zip pescado:cd_pescado.zip panaderia:calidaddiferenciada_prodpanaderia.zip \
+                     quesos:calidaddiferenciada_quesos.zip sidra:calidaddiferenciada_sidra.zip vinagres:calidaddiferenciada-vinagres.zip vinos:calidaddiferenciada_vinos.zip; do
+            F=${par%%:*}; A=${par#*:}
+            mkdir -p x/$F
+            if ! curl -sSfL --retry 3 -A "IPR-Atlas-copia/1.0 (Terracrua Design; CC BY 4.0 MAPA)" -o x/$F/$A "$B$A"; then echo "FALHOU $F"; continue; fi
+            (cd x/$F && (7z x -y -bd "$A" >/dev/null || unar -q -f "$A"))
+            find x/$F -iname '*.shp' | while read S; do
+              echo "== $F · $(basename "$S")"; ogrinfo -so -al "$S" | sed -n '1,40p' | grep -iv "^  *$" | head -30
+              ogr2ogr -f GeoJSONSeq -t_srs EPSG:4326 -lco RS=NO -lco COORDINATE_PRECISION=6 /vsistdout/ "$S" \
+                | jq -c --arg f "$F" --arg s "$(basename "$S" .shp)" '.properties += {ipr_familia:$f, ipr_ficheiro:$s}' >> dop.geojsons
+            done
+          done
+          wc -l dop.geojsons; ls -la
+      - name: PMTiles (tippecanoe) e GeoJSON simplificado
+        run: |
+          cd /mnt/d
+          tippecanoe -o es-dop-igp.pmtiles -l dop -n "DOP e IGP de Espanha (MAPA)" -A "© Ministerio de Agricultura, Pesca y Alimentación · CC BY 4.0 · cópia IPR Atlas" \
+            -Z4 -z12 --coalesce-densest-as-needed --detect-shared-borders --simplify-only-low-zooms --extend-zooms-if-still-dropping --hilbert -P -t /mnt/d --force dop.geojsons
+          ogr2ogr -f GeoJSON -simplify 0.0008 -lco COORDINATE_PRECISION=5 es-dop-igp-simpl.geojson dop.geojsons
+          gzip -k -9 es-dop-igp-simpl.geojson
+          ls -la es-dop-igp*
+          jq -r '.properties | keys | join(",")' dop.geojsons | sort | uniq -c | sort -rn | head -20
+      - name: Publicar
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cd /mnt/d
+          R="$GITHUB_REPOSITORY"
+          gh release view es-agro --repo "$R" >/dev/null 2>&1 || gh release create es-agro --repo "$R" --target "$GITHUB_SHA" --title "Espanha: agricultura (MAPA, FEGA)" --notes "Cópias próprias para o IPR Atlas. DOP e IGP: © Ministerio de Agricultura, Pesca y Alimentación, CC BY 4.0." || true
+          gh release upload es-agro es-dop-igp.pmtiles es-dop-igp-simpl.geojson es-dop-igp-simpl.geojson.gz --repo "$R" --clobber
