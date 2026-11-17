@@ -30,6 +30,7 @@
       prop: "Escolher a propriedade nesta zona", propNota: "Aproxime e clique numa parcela do cadastro (ou desenhe o limite) para abrir a Ficha da propriedade.",
       det: "Critérios determinantes", hex: "hexágonos", media: "média", comDado: "com dado", passa: "cumpre",
       metodo: "Método: malha de aptidão IPR v1 (13/11/2026), critérios de 0 a 100; os limiares e pesos são seus e ainda estão por calibrar.",
+      minp: "Pontuação mínima das preferências", minpN: "Só aparecem as zonas cuja média das preferências chega a este valor; suba para manchas mais pequenas e melhores.",
       ajuda: "Escolha um tema, diga o que é obrigatório e o que só conta como preferência, e o Atlas mostra as manchas que cumprem." },
     en: { nome: "Find areas", passo: "Step", de: "of", voltar: "Back", fechar: "Close", seguinte: "Show areas",
       t1: "What are you looking for?", t2: "Your conditions", t3: "Areas found", t4: "Area sheet",
@@ -43,6 +44,7 @@
       prop: "Choose the property in this area", propNota: "Zoom in and click a cadastral parcel (or draw the boundary) to open the Property sheet.",
       det: "Deciding criteria", hex: "hexagons", media: "mean", comDado: "with data", passa: "meets",
       metodo: "Method: IPR suitability grid v1 (13/11/2026), criteria 0–100; thresholds and weights are yours and not yet calibrated.",
+      minp: "Minimum preference score", minpN: "Only areas whose preference average reaches this value are shown; raise it for smaller, better areas.",
       ajuda: "Pick a theme, say what is required and what is only a preference, and the Atlas shows the areas that meet them." }
   };
   TX.es = Object.assign({}, TX.pt, { nome: "Buscar zonas", voltar: "Volver", fechar: "Cerrar", seguinte: "Ver manchas", t1: "¿Qué busca?",
@@ -67,7 +69,7 @@
   // Condições de partida (por calibrar, como diz o documento): solo e afastamento de pressões obrigatórios; o resto ordena.
   var PADRAO = { e1: ["o", 40], e3: ["o", 40], e2: ["p", 0], a1: ["p", 0], a2: ["p", 0], a3: ["p", 0], m1: ["p", 0], m2: ["p", 0], s1: ["p", 0], s2: ["p", 0] };
 
-  var ST = { passo: 1, tema: "bio", cond: JSON.parse(JSON.stringify(PADRAO)), onde: "cont", res: null, sel: null };
+  var ST = { passo: 1, tema: "bio", cond: JSON.parse(JSON.stringify(PADRAO)), onde: "cont", min: 65, res: null, sel: null };
   var DADOS = null, A_CARREGAR = null;
   function dados() {
     if (DADOS) return Promise.resolve(DADOS);
@@ -97,7 +99,9 @@
         if (cf[0] === "p") { var w = pesos[k] || 1; sp += v * w; sw += w; }
       });
       if (excl) return;
-      cel.push({ i: i, r: r, est: est, falta: falta, pont: sw ? sp / sw : (falta ? null : 100) });
+      var pt = sw ? sp / sw : (falta ? null : 100);
+      if (pt != null && pt < ST.min) return; // só as zonas com a pontuação mínima pedida (as preferências ordenam e filtram)
+      cel.push({ i: i, r: r, est: est, falta: falta, pont: pt });
     });
     return manchas(d, cel);
   }
@@ -226,6 +230,7 @@
             '<select data-c="' + c[0] + '" data-k="m"><option value="i"' + (cf[0] === "i" ? " selected" : "") + ">" + esc(t("ign")) + '</option><option value="p"' + (cf[0] === "p" ? " selected" : "") + ">" + esc(t("pref")) + '</option><option value="o"' + (cf[0] === "o" ? " selected" : "") + ">" + esc(t("obr")) + "</option></select>" +
             (cf[0] === "o" ? ' <span>' + esc(t("min")) + ' <input type="range" min="0" max="100" step="5" value="' + cf[1] + '" data-c="' + c[0] + '" data-k="v"> <b>' + cf[1] + "</b></span>" : "") + "</div>";
         });
+        h += '<div class="pz-cr"><label>' + esc(t("minp")) + '</label><input type="range" min="0" max="90" step="5" value="' + ST.min + '" data-k="min"> <b>' + ST.min + '</b>/100<small>' + esc(t("minpN")) + '</small></div>';
         h += '<div class="pz-cr"><label>' + esc(t("onde")) + '</label><select data-k="onde">' + ["cont", "acor", "mad", "tudo", "vis"].map(function (o) { return '<option value="' + o + '"' + (ST.onde === o ? " selected" : "") + ">" + esc(t(o)) + "</option>"; }).join("") + '</select><small>' + esc(t("esp")) + "</small></div>";
         h += '<button class="pz-go" data-a="calcular">' + esc(t("seguinte")) + "</button>";
       }
@@ -287,6 +292,7 @@
     if (k === "m") { var v = el.value; ST.cond[c] = [v, v === "o" ? (ST.cond[c] && ST.cond[c][1]) || 40 : 0]; pintar(); }
     else if (k === "v") { ST.cond[c][1] = +el.value; var bl = el.nextElementSibling; if (bl) bl.textContent = el.value; }
     else if (k === "onde") { ST.onde = el.value; }
+    else if (k === "min") { ST.min = +el.value; var bm = el.nextElementSibling; if (bm) bm.textContent = el.value; }
   }
 
   // ───── botões de entrada ─────
