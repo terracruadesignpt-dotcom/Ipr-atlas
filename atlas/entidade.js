@@ -238,7 +238,9 @@
     marcarEsq(); painel();
   }
   function marcarEsq() {
-    var setE = {}; apoio().forEach(function (i) { setE[i] = 1; }); act().forEach(function (i) { setE[i] = 1; });
+    // 17/11/2026 (Bernardo): à esquerda entram também as camadas dos módulos activos no configurador; antes só as de apoio
+    // do perfil, e ligar ou desligar um módulo não mudava nada na árvore.
+    var setE = {}; apoio().forEach(function (i) { setE[i] = 1; }); camadasEnt().forEach(function (i) { setE[i] = 1; }); act().forEach(function (i) { setE[i] = 1; });
     [].forEach.call(D.querySelectorAll("#ipe .ipr-it[data-id]"), function (li) {
       var id = li.getAttribute("data-id"), c = cat(id), fundo = c && c.g === "fundo";
       li.classList.toggle("ipr-ent-fora", !setE[id] && !fundo);
@@ -247,7 +249,7 @@
     var esq = D.getElementById("ipe-esq"); if (!esq) return;
     var b = D.getElementById("ipr-ent-esq");
     if (!b) { b = D.createElement("div"); b.id = "ipr-ent-esq"; esq.insertBefore(b, esq.firstChild); }
-    var hh = orgBloco() + '<div class="ap"><span>Camadas de apoio</span><button type="button" class="ipr-ent-b" data-ent="so">' + (S.so ? "Ver todas" : "Só as de apoio") + "</button></div>";
+    var hh = orgBloco() + '<div class="ap"><span>Camadas da configuração</span><button type="button" class="ipr-ent-b" data-ent="so">' + (S.so ? "Ver todas" : "Só as da configuração") + "</button></div>";
     if (b.innerHTML !== hh) b.innerHTML = hh;
   }
 
@@ -1406,6 +1408,11 @@
         if (mexeu) return;
         var v = viz(), a = act(), falta = false;
         activos().forEach(function (m) { (m.liga || []).forEach(function (i) { if (existe(i) && a.indexOf(i) < 0) { falta = true; try { v.ligar(i, true); } catch (e) {} } }); });
+        // 17/11/2026: o Atlas repõe ao arrancar as camadas da visita anterior; as de módulos que a organização desligou
+        // no configurador voltam a desligar-se (só as do catálogo do configurador, como no aplicar()).
+        var setE2 = {}; camadasEnt().forEach(function (i) { setE2[i] = 1; }); apoio().forEach(function (i) { setE2[i] = 1; });
+        var conh = {}; MOD.forEach(function (m) { m.ids.forEach(function (i) { conh[i] = 1; }); });
+        act().forEach(function (i) { if (conh[i] && !setE2[i]) { falta = true; try { v.ligar(i, false); } catch (e) {} } });
         if (ZONA && m0 && m0.getZoom && m0.getZoom() < 7.5) try { m0.fitBounds(ZONA, {padding: 40, duration: 0}); } catch (e) {}
         if (falta) painel();
       }, ms);
