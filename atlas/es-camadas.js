@@ -123,6 +123,10 @@
       { id: "es-soc", nome: t("Carbono orgânico do solo, 0-5 cm (SoilGrids)", "Carbono orgánico del suelo, 0-5 cm (SoilGrids)"), tipo: "raster", url: isric("soc", "soc_0-5cm_mean"), min: 5, max: 22, op: 0.6, attr: ISRIC, intel: 1 },
       { id: "es-argila", nome: t("Argila, 0-5 cm (SoilGrids)", "Arcilla, 0-5 cm (SoilGrids)"), tipo: "raster", url: isric("clay", "clay_0-5cm_mean"), min: 5, max: 22, op: 0.6, attr: ISRIC, intel: 1 }
     ] },
+    /* 17/11/2026: economia local, servida das nossas cópias (PMTiles no R2, worker ipr-copia-es). */
+    { sub: t("Economia local", "Economía local"), itens: [
+      { id: "es-renda", nome: t("Renda líquida por pessoa, por secção censal, 2024 (INE)", "Renta neta por persona, por sección censal, 2024 (INE)"), tipo: "renda", min: 6, max: 22, op: 0.55, attr: "© INE, Atlas de Distribución de Renta de los Hogares · CC BY 4.0" }
+    ] },
     { sub: t("Referências", "Referencias"), itens: [
       { id: "es-camino", nome: t("Caminhos de Santiago (IGN)", "Caminos de Santiago (IGN)"), tipo: "raster", url: wms("https://www.ign.es/wms-inspire/camino-santiago", "camino_frances,caminos_galicia,caminos_norte,caminos_andaluces,caminos_centro,caminos_este,caminos_nordeste,caminos_sureste,caminos_insulares,caminos_portugueses"), min: 6, max: 22, op: 1, attr: "Camino de Santiago " + IGN },
       { id: "es-cp", nome: t("Códigos postais (CartoCiudad)", "Códigos postales (CartoCiudad)"), tipo: "raster", url: wms("https://www.cartociudad.es/wms-inspire/direcciones-ccpp", "codigo-postal"), min: 9, max: 22, op: 0.8, attr: "CartoCiudad " + IGN }
@@ -230,6 +234,11 @@
         var cor = ["match", ["get", "uso_sigpac"]]; Object.keys(CORES).forEach(function (k) { cor.push(k, CORES[k]); }); cor.push("#d6cfa8");
         if (!I.getLayer(it.id + "-f")) I.addLayer({ id: it.id + "-f", type: "fill", source: it.id, "source-layer": "recinto", minzoom: it.min, paint: { "fill-color": cor, "fill-opacity": 0.35 } }, antes(I));
         if (!I.getLayer(it.id + "-l")) I.addLayer({ id: it.id + "-l", type: "line", source: it.id, "source-layer": "recinto", minzoom: it.min, paint: { "line-color": "#6b5a2e", "line-width": 0.6 } }, antes(I));
+      } else if (it.tipo === "renda") {
+        if (!I.getSource(it.id)) I.addSource(it.id, { type: "vector", url: "pmtiles://https://camadas.terracruadesign.pt/pmtiles/es/es-renda.pmtiles", attribution: it.attr });
+        var esc = ["step", ["coalesce", ["get", "r"], 0], "rgba(0,0,0,0)", 1, "#b2182b", 9000, "#d6604d", 11000, "#f4a582", 13000, "#fddbc7", 15000, "#d1e5f0", 17000, "#92c5de", 20000, "#4393c3", 24000, "#2166ac"];
+        if (!I.getLayer(it.id + "-f")) I.addLayer({ id: it.id + "-f", type: "fill", source: it.id, "source-layer": "renda", minzoom: it.min, paint: { "fill-color": esc, "fill-opacity": it.op } }, antes(I));
+        if (!I.getLayer(it.id + "-l")) I.addLayer({ id: it.id + "-l", type: "line", source: it.id, "source-layer": "renda", minzoom: 11, paint: { "line-color": "#555", "line-width": 0.4, "line-opacity": 0.5 } }, antes(I));
       } else {
         if (!I.getSource(it.id)) I.addSource(it.id, { type: "raster", tiles: [it.url], tileSize: 256, attribution: it.attr, minzoom: 0, maxzoom: it.max > 19 ? 19 : it.max });
         if (!I.getLayer(it.id)) I.addLayer({ id: it.id, type: "raster", source: it.id, minzoom: it.min, paint: { "raster-opacity": it.op } }, it.fundo ? antesFundo(I) : antes(I));
@@ -414,6 +423,36 @@
       [].forEach.call(fm.querySelectorAll("[data-tcd-misto]"), function (b) { b.disabled = false; b.removeAttribute("data-tcd-misto"); });
     }
   }
+  /* 17/11/2026: cartão «renda do município» na ficha grátis de Espanha (INE, ADRH 2024, cópia própria no R2). A secção censal
+     debaixo do terreno vem da camada es-renda (fonte PMTiles, camada invisível só para consulta); o resto vem de
+     camadas.terracruadesign.pt/es/mun/renda/<província>.json. */
+  var RENDA_PROV = {}, rendaPend = false;
+  function fmtE(v) { return v == null ? "—" : Number(v).toLocaleString(ES ? "es-ES" : "pt-PT") + " €"; }
+  function seccaoEm(I, c) {
+    if (!I.getSource("es-renda")) I.addSource("es-renda", { type: "vector", url: "pmtiles://https://camadas.terracruadesign.pt/pmtiles/es/es-renda.pmtiles" });
+    if (!I.getLayer("es-renda-q")) I.addLayer({ id: "es-renda-q", type: "fill", source: "es-renda", "source-layer": "renda", minzoom: 6, paint: { "fill-opacity": 0 } });
+    var f = I.queryRenderedFeatures(I.project(c), { layers: ["es-renda-q"] });
+    return f && f[0] ? f[0].properties : null;
+  }
+  function cartaoRenda() {
+    var g = document.querySelector('#ipe-res .ipr-fg-out[data-es="1"] .ipr-fn2-g'); if (!g || g.querySelector("[data-renda]") || rendaPend) return;
+    var I = mapa(); if (!I || !I.queryRenderedFeatures) return;
+    var fs = terrenos().filter(function (f) { var c = centro(f); return dentro(c[0], c[1]); }); if (!fs.length) return;
+    var c = centro(fs[0]), p = seccaoEm(I, c);
+    if (!p) { rendaPend = true; I.once("idle", function () { rendaPend = false; }); return; }
+    var mun = String(p.s || "").slice(0, 5); if (mun.length !== 5) return;
+    var pr = mun.slice(0, 2);
+    var marca = document.createElement("div"); marca.setAttribute("data-renda", mun); marca.hidden = true; g.appendChild(marca);
+    var pedir = RENDA_PROV[pr] || (RENDA_PROV[pr] = fetch("https://camadas.terracruadesign.pt/es/mun/renda/" + pr + ".json").then(function (r) { if (!r.ok) throw 0; return r.json(); }));
+    pedir.then(function (d) {
+      var m = d && d.renda && d.renda[mun]; if (!m) return;
+      var h = m.hist || {}, a0 = h["2015"], var15 = a0 && m.r ? Math.round(100 * (m.r - a0) / a0) : null;
+      var sec = p.r ? t("secção censal ", "sección censal ") + fmtE(p.r) + " · " : "";
+      marca.outerHTML = '<div class="ipr-c" data-renda="' + mun + '"><span class="ipr-c-t">' + t("Renda do município", "Renta del municipio") + '</span><b class="ipr-c-v">' + fmtE(m.r) +
+        '</b><span class="ipr-c-f">' + t("líquida por pessoa, ", "neta por persona, ") + m.ano + " · " + sec + t("mediana ", "mediana ") + fmtE(m.med) +
+        (var15 != null ? " · " + (var15 >= 0 ? "+" : "") + var15 + " % " + t("desde 2015", "desde 2015") : "") + " · " + (m.n || "") + " · INE</span></div>";
+    }).catch(function () { delete RENDA_PROV[pr]; });
+  }
   /* frases da ficha que remetem para a Leitura Territorial (só existe em Portugal) */
   function marcaLT() {
     var r = document.getElementById("ipe-res"); if (!r) return;
@@ -433,7 +472,7 @@
     if (window.MutationObserver) new MutationObserver(traduzRegn).observe(cam, { childList: true, subtree: true, characterData: true });
     var tmo = 0, I = mapa(); function ag() { clearTimeout(tmo); tmo = setTimeout(modoEspanha, 300); }
     if (I && I.on) { I.on("moveend", ag); I.on("styledata", ag); }
-    setInterval(function () { modoEspanha(); avisoMisto(); marcaLT(); }, 2000); modoEspanha(); traduzRegn();
+    setInterval(function () { modoEspanha(); avisoMisto(); marcaLT(); try { cartaoRenda(); } catch (e) {} }, 2000); modoEspanha(); traduzRegn();
   }
   window.__tcdEsCamadas = { dentro: dentro, CAT: CAT, modo: modoEspanha };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", function () { arrancar(0); }); else arrancar(0);
