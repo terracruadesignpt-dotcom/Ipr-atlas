@@ -24,11 +24,19 @@ jobs:
             git clone --depth 1 https://github.com/felt/tippecanoe.git /tmp/tc && make -C /tmp/tc -j4 && sudo make -C /tmp/tc install
           fi
           sudo mkdir -p /mnt/d && sudo chown $USER /mnt/d
-      - name: Cadeia de certificados do MAPA
+      - name: Raiz FNMT G2R (verificada pela impressão digital publicada pela FNMT)
         run: |
-          echo | openssl s_client -connect www.mapa.gob.es:443 -servername www.mapa.gob.es -showcerts 2>/dev/null | grep -E "^ *[0-9]+ s:|^ *i:" || true
-          echo | openssl s_client -connect www.mapa.gob.es:443 -servername www.mapa.gob.es 2>&1 | grep -iE "verify|depth" | head -8 || true
-          ls /usr/share/ca-certificates/mozilla | grep -iE "fnmt|accv|izenpe|firmaprofesional|camerfirma" || true
+          # O servidor do MAPA usa a raiz «AC RAIZ FNMT-RCM SERVIDORES SEGUROS G2R», que ainda não está no armazém do Ubuntu.
+          # Só se aceita o certificado se a SHA-1 for igual à publicada em sede.fnmt.gob.es/descargas/certificados-raiz-de-la-fnmt.
+          ESPERADA="19:87:94:8D:AB:7D:62:00:9E:2D:6B:BE:D8:83:DC:3A:F5:67:99:E8"
+          cd /mnt/d && mkdir -p cad && cd cad
+          echo | openssl s_client -connect www.mapa.gob.es:443 -servername www.mapa.gob.es -showcerts 2>/dev/null | awk '/BEGIN CERT/,/END CERT/' > cadeia.pem
+          csplit -s -z -f c- cadeia.pem '/-----BEGIN CERTIFICATE-----/' '{*}'
+          : > ../fnmt-g2r.pem
+          for c in c-*; do F=$(openssl x509 -in $c -noout -fingerprint -sha1 | cut -d= -f2); echo "$F $(openssl x509 -in $c -noout -subject | cut -c1-90)"; [ "$F" = "$ESPERADA" ] && cat $c >> ../fnmt-g2r.pem; done
+          [ -s ../fnmt-g2r.pem ] || { echo "raiz G2R não encontrada ou impressão digital diferente"; exit 1; }
+          cat /etc/ssl/certs/ca-certificates.crt ../fnmt-g2r.pem > ../ca-mapa.pem
+          curl -sS --cacert ../ca-mapa.pem -o /dev/null -w "teste MAPA: %{http_code}\n" https://www.mapa.gob.es/
       - name: Descarregar e converter (uma família de cada vez)
         run: |
           cd /mnt/d
@@ -41,7 +49,7 @@ jobs:
                      quesos:calidaddiferenciada_quesos.zip sidra:calidaddiferenciada_sidra.zip vinagres:calidaddiferenciada-vinagres.zip vinos:calidaddiferenciada_vinos.zip; do
             F=${par%%:*}; A=${par#*:}
             mkdir -p x/$F
-            if ! curl -sSfL --retry 3 -A "IPR-Atlas-copia/1.0 (Terracrua Design; CC BY 4.0 MAPA)" -o x/$F/$A "$B$A"; then echo "FALHOU $F"; continue; fi
+            if ! curl -sSfL --cacert /mnt/d/ca-mapa.pem --retry 3 -A "IPR-Atlas-copia/1.0 (Terracrua Design; CC BY 4.0 MAPA)" -o x/$F/$A "$B$A"; then echo "FALHOU $F"; continue; fi
             (cd x/$F && (7z x -y -bd "$A" >/dev/null || unar -q -f "$A"))
             find x/$F -iname '*.shp' | while read S; do
               echo "== $F · $(basename "$S")"; ogrinfo -so -al "$S" | sed -n '1,40p' | grep -iv "^  *$" | head -30
