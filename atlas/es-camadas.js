@@ -17,10 +17,11 @@
     }
     return dentro || (x >= 1.1 && x <= 4.4 && y >= 38.6 && y <= 40.2); // Baleares
   }
-  function wms(base, camada, extra) {
+  function wms(base, camada, extra, fmt) {
     return base + (base.indexOf("?") < 0 ? "?" : "&") + "SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&LAYERS=" + encodeURIComponent(camada) +
-      "&STYLES=&CRS=EPSG:3857&BBOX={bbox-epsg-3857}&WIDTH=256&HEIGHT=256&FORMAT=image/png&TRANSPARENT=true" + (extra || "");
+      "&STYLES=&CRS=EPSG:3857&BBOX={bbox-epsg-3857}&WIDTH=256&HEIGHT=256&FORMAT=" + (fmt || "image/png") + (fmt ? "" : "&TRANSPARENT=true") + (extra || "");
   }
+  var HIST = "https://www.ign.es/wms/pnoa-historico", MIT = "https://wms.mapama.gob.es/sig/Biodiversidad/";
   function wmts(base, camada, fmt) {
     return base + "?layer=" + camada + "&style=default&tilematrixset=GoogleMapsCompatible&Service=WMTS&Request=GetTile&Version=1.0.0&Format=" +
       fmt + "&TileMatrix={z}&TileCol={x}&TileRow={y}";
@@ -37,16 +38,27 @@
   var IGME = "https://mapas.igme.es/gis/services/";
   var CAT = [
     { sub: t("Fundo", "Fondo"), itens: [
-      { id: "es-pnoa", nome: t("Ortofoto PNOA (IGN)", "Ortofoto PNOA (IGN)"), tipo: "raster", url: wmts("https://www.ign.es/wmts/pnoa-ma", "OI.OrthoimageCoverage", "image/jpeg"), min: 0, max: 20, op: 1, attr: "PNOA " + IGN },
-      { id: "es-ignbase", nome: t("Mapa IGN Base", "Mapa IGN Base"), tipo: "raster", url: wmts("https://www.ign.es/wmts/ign-base", "IGNBaseTodo", "image/png"), min: 0, max: 18, op: 1, attr: "IGN Base " + IGN }
+      { id: "es-pnoa", nome: t("Ortofoto PNOA (IGN)", "Ortofoto PNOA (IGN)"), tipo: "raster", fundo: 1, url: wmts("https://www.ign.es/wmts/pnoa-ma", "OI.OrthoimageCoverage", "image/jpeg"), min: 0, max: 20, op: 1, attr: "PNOA " + IGN },
+      { id: "es-ignbase", nome: t("Mapa IGN Base", "Mapa IGN Base"), tipo: "raster", fundo: 1, url: wmts("https://www.ign.es/wmts/ign-base", "IGNBaseTodo", "image/png"), min: 0, max: 18, op: 1, attr: "IGN Base " + IGN }
     ] },
     { sub: t("Propriedade e limites", "Propiedad y límites"), itens: [
       { id: "es-catastro", nome: t("Cadastro (Catastro)", "Catastro (parcelas)"), tipo: "raster", url: wmws("https://ovc.catastro.meh.es/cartografia/INSPIRE/spadgcwms.aspx", "CP.CadastralParcel"), min: 15, max: 22, op: 0.9, attr: "Fuente: Dirección General del Catastro" },
       { id: "es-sigpac", nome: t("Recintos SIGPAC (uso agrícola)", "Recintos SIGPAC (uso agrícola)"), tipo: "sigpac", min: 13, max: 22, attr: "Fuente: SIGPAC - FEGA" },
+      /* 17/11/2026: planeamento urbanístico do SIU (Ministerio de Vivienda), classes de solo; ArcGIS REST testado a 17/11 a
+         partir do navegador (200, imagem, CORS). É um mosaico nacional simplificado: o plano vigente de cada município
+         está no seu ayuntamiento ou no serviço da comunidade autónoma. */
+      { id: "es-siu", nome: t("Classes de solo do planeamento (SIU)", "Clases de suelo del planeamiento (SIU)"), tipo: "raster", url: msx("https://mapas.fomento.gob.es/arcgis/rest/services/SIU/CLASES_DE_SUELO/MapServer"), min: 9, max: 22, op: 0.6, attr: "SIU - Ministerio de Vivienda y Agenda Urbana" },
       { id: "es-limites", nome: t("Limites administrativos", "Límites administrativos"), tipo: "raster", url: wms("https://www.ign.es/wms-inspire/unidades-administrativas", "AU.AdministrativeBoundary"), min: 6, max: 22, op: 0.9, attr: "Límites " + IGN }
     ] },
     { sub: t("Condicionantes", "Condicionantes"), itens: [
       { id: "es-natura", nome: t("Rede Natura 2000", "Red Natura 2000"), tipo: "raster", url: wms("https://bio.discomap.eea.europa.eu/arcgis/services/ProtectedSites/Natura2000Sites/MapServer/WMSServer", "0,1,2"), min: 7, max: 22, op: 0.6, attr: "Natura 2000 © EEA" },
+      /* 17/11/2026: espaços naturais protegidos nacionais e autonómicos (base CDDA da Agência Europeia do Ambiente, que
+         recebe os ENP do MITECO). O WMS do MITECO para ENP, montes, vias pecuárias e Mapa Florestal devolvia erro interno
+         a 17/11 (ConstruirServiceArcGISBaseUrl); as três camadas só do MITECO levam «sonda»: antes de as pôr no mapa
+         pergunta-se ao serviço se está a responder e, se não estiver, avisa-se em vez de mostrar um mapa vazio. */
+      { id: "es-enp", nome: t("Espaços naturais protegidos (ENP)", "Espacios naturales protegidos (ENP)"), tipo: "raster", url: wms("https://bio.discomap.eea.europa.eu/arcgis/services/ProtectedSites/CDDA_Dyna_WM/MapServer/WMSServer", "0,1,2,3,4"), min: 6, max: 22, op: 0.6, attr: "CDDA © EEA, MITECO" },
+      { id: "es-montes", nome: t("Montes de utilidade pública (MITECO)", "Montes de utilidad pública (MITECO)"), tipo: "raster", sonda: MIT + "PropiedadMontes_UP/wms.aspx", url: wms(MIT + "PropiedadMontes_UP/wms.aspx", "PS.ProtectedSite"), min: 8, max: 22, op: 0.6, attr: "MITECO CC BY 4.0" },
+      { id: "es-vp", nome: t("Vias pecuárias (MITECO)", "Vías pecuarias (MITECO)"), tipo: "raster", sonda: MIT + "ViasPecuarias", url: wms(MIT + "ViasPecuarias", "TN.RoadTransportNetwork.RoadLink"), min: 9, max: 22, op: 0.9, attr: "MITECO CC BY 4.0" },
       { id: "es-inund10", nome: t("Zona inundável T10", "Zona inundable T10"), tipo: "raster", url: wms("https://servicios.idee.es/wms-inspire/riesgos-naturales/inundaciones", "NZ.Flood.FluvialT10"), min: 9, max: 22, op: 0.6, attr: "SNCZI - MITECO" },
       { id: "es-inund100", nome: t("Zona inundável T100", "Zona inundable T100"), tipo: "raster", url: wms("https://servicios.idee.es/wms-inspire/riesgos-naturales/inundaciones", "NZ.Flood.FluvialT100"), min: 9, max: 22, op: 0.6, attr: "SNCZI - MITECO" },
       { id: "es-inund500", nome: t("Zona inundável T500", "Zona inundable T500"), tipo: "raster", url: wms("https://servicios.idee.es/wms-inspire/riesgos-naturales/inundaciones", "NZ.Flood.FluvialT500"), min: 9, max: 22, op: 0.5, attr: "SNCZI - MITECO" }
@@ -61,6 +73,7 @@
     { sub: t("Ocupação do solo e floresta", "Ocupación del suelo y bosque"), itens: [
       { id: "es-siose", nome: t("Ocupação do solo SIOSE (IGN)", "Ocupación del suelo SIOSE (IGN)"), tipo: "raster", url: wms("https://servicios.idee.es/wms-inspire/ocupacion-suelo", "LC.LandCoverSurfaces"), min: 11, max: 22, op: 0.65, attr: "SIOSE " + IGN, intel: 1 },
       { id: "es-clc", nome: t("CORINE Land Cover 2018", "CORINE Land Cover 2018"), tipo: "raster", url: msx("https://image.discomap.eea.europa.eu/arcgis/rest/services/Corine/CLC2018_WM/MapServer"), min: 6, max: 22, op: 0.55, attr: "CORINE 2018, " + CLMS, intel: 1 },
+      { id: "es-mfe", nome: t("Mapa Florestal de Espanha (MITECO)", "Mapa Forestal de España (MITECO)"), tipo: "raster", sonda: MIT + "MFE/wms.aspx", url: wms(MIT + "MFE/wms.aspx", "LC.LandCoverSurfaces"), min: 9, max: 22, op: 0.6, attr: "MFE, MITECO CC BY 4.0", intel: 1 },
       { id: "es-copa", nome: t("Densidade de copa 2018 (Copernicus)", "Densidad de copa 2018 (Copernicus)"), tipo: "raster", url: img("HRL_TreeCoverDensity_2018"), min: 8, max: 22, op: 0.7, attr: CLMS, intel: 1 },
       { id: "es-folha", nome: t("Folhosas e resinosas 2018 (Copernicus)", "Frondosas y coníferas 2018 (Copernicus)"), tipo: "raster", url: img("HRL_DominantLeafType2018"), min: 8, max: 22, op: 0.7, attr: CLMS, intel: 1 },
       { id: "es-floresta", nome: t("Tipo de floresta 2018 (Copernicus)", "Tipo de bosque 2018 (Copernicus)"), tipo: "raster", url: img("HRL_ForestType_2018"), min: 8, max: 22, op: 0.7, attr: CLMS, intel: 1 },
@@ -81,6 +94,27 @@
   ];
   function tranc(it) { return EXPL && it.intel; }
   function wmws(b, c) { return wms(b, c); }
+  /* 17/11/2026: cronologia de Espanha (voos do IGN, WMS pnoa-historico, testado a 17/11 a partir do navegador: 200, imagem,
+     CORS *). A Cronologia do Atlas usa as ortofotos da DGT, que só cobrem Portugal; em Espanha a régua deste grupo troca o
+     fundo pelos voos do IGN, do voo americano de 1956 ao PNOA mais recente. Fica por baixo de todas as outras camadas. */
+  var CRONO_ES = [
+    { a: "1956", c: "AMS_1956-1957", t: t("Voo americano, série B (1956-1957)", "Vuelo americano, serie B (1956-1957)") },
+    { a: "1977", c: "Interministerial_1973-1986", t: t("Voo interministerial (1973-1986)", "Vuelo interministerial (1973-1986)") },
+    { a: "1984", c: "Nacional_1981-1986", t: t("Voo nacional (1981-1986)", "Vuelo nacional (1981-1986)") },
+    { a: "2004", c: "PNOA2004", t: "PNOA 2004" }, { a: "2008", c: "PNOA2008", t: "PNOA 2008" }, { a: "2012", c: "PNOA2012", t: "PNOA 2012" },
+    { a: "2016", c: "PNOA2016", t: "PNOA 2016" }, { a: "2020", c: "PNOA2020", t: "PNOA 2020" }, { a: "2024", c: "PNOA2024", t: "PNOA 2024" }
+  ];
+  var cronoSel = -1;
+  function cronoMostrar(k) {
+    var I = mapa(); if (!I || !I.getStyle) return;
+    try { if (I.getLayer("es-crono")) I.removeLayer("es-crono"); if (I.getSource("es-crono")) I.removeSource("es-crono"); } catch (e) {}
+    cronoSel = k; if (k < 0) return;
+    var c = CRONO_ES[k];
+    try {
+      I.addSource("es-crono", { type: "raster", tiles: [wms(HIST, c.c, "", "image/jpeg")], tileSize: 256, attribution: c.t + " " + IGN, maxzoom: 19 });
+      I.addLayer({ id: "es-crono", type: "raster", source: "es-crono", paint: { "raster-opacity": 1 } }, antesFundo(I));
+    } catch (e) { if (window.console) console.warn("[es-camadas] crono", e && e.message); }
+  }
   var CHAVE = "tcd_atlas_es";
   var ligados = {};
   try { ligados = JSON.parse(localStorage.getItem(CHAVE) || "{}") || {}; } catch (e) { ligados = {}; }
@@ -88,6 +122,34 @@
   function mapa() { return window.__ipe && window.__ipe.mapa ? window.__ipe.mapa : null; }
   function itemPor(id) { for (var g = 0; g < CAT.length; g++) for (var i = 0; i < CAT[g].itens.length; i++) if (CAT[g].itens[i].id === id) return CAT[g].itens[i]; return null; }
   var CORES = { TA: "#e0c36b", TH: "#e8d48a", PS: "#9bc46a", PR: "#b8d68c", PA: "#7fae55", FO: "#3f7d3a", OV: "#8a9a3c", VI: "#a0558a", FY: "#c48a4a", CI: "#e39d3a", IM: "#9a9a9a", ZU: "#c9c9c9", AG: "#6aa6d8", CA: "#bdbdbd" };
+  /* Fundos (ortofoto, mapa base, voos antigos) ficam por baixo de todas as outras camadas: logo acima da primeira camada do estilo. */
+  function antesFundo(I) { var L = (I.getStyle() && I.getStyle().layers) || []; for (var i = 1; i < L.length; i++) if (!/^es-(pnoa|ignbase|crono)$/.test(L[i].id)) return L[i].id; return antes(I); }
+  var SONDA = {};
+  function aviso(txt) {
+    var a = document.createElement("div"); a.textContent = txt;
+    a.style.cssText = "position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:99999;max-width:440px;background:#2b2b2b;color:#fff;font:13px Inter,system-ui,sans-serif;padding:10px 14px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.25)";
+    document.body.appendChild(a); setTimeout(function () { a.remove(); }, 7000);
+  }
+  function sondar(it, depois) {
+    if (!it.sonda) return depois(true);
+    if (SONDA[it.sonda] !== undefined) return depois(SONDA[it.sonda]);
+    var feito = false, c = window.AbortController ? new AbortController() : null;
+    var tm = setTimeout(function () { if (c) c.abort(); fim(false); }, 12000);
+    function fim(ok) { if (feito) return; feito = true; clearTimeout(tm); SONDA[it.sonda] = ok; setTimeout(function () { delete SONDA[it.sonda]; }, 600000); depois(ok); }
+    fetch(it.sonda + (it.sonda.indexOf("?") < 0 ? "?" : "&") + "request=GetCapabilities&service=WMS", c ? { signal: c.signal } : {})
+      .then(function (r) { return r.text(); }).then(function (x) {
+        var ok = /<(WMS_)?Capabilities/i.test(x) && !/ServiceException/.test(x.slice(0, 400));
+        /* Os nomes das camadas do MITECO não puderam ser confirmados a 17/11 (serviço em baixo): se o nome previsto não
+           existir no GetCapabilities, usa-se a primeira camada com nome que não seja a raiz. */
+        if (ok) {
+          var nomes = [], m, re = /<Layer[^>]*>\s*<Name>([^<]+)<\/Name>/g; while ((m = re.exec(x))) nomes.push(m[1]);
+          var cur = decodeURIComponent((it.url.match(/LAYERS=([^&]+)/) || [])[1] || "");
+          if (nomes.length && nomes.indexOf(cur) < 0) { var n = nomes.length > 1 ? nomes[1] : nomes[0]; it.url = it.url.replace(/LAYERS=[^&]+/, "LAYERS=" + encodeURIComponent(n)); }
+        }
+        fim(ok);
+      })
+      .catch(function () { fim(false); });
+  }
   function antes(I) { var L = (I.getStyle() && I.getStyle().layers) || []; for (var i = 0; i < L.length; i++) if (/^tme-|^gl-draw|^tcd-terreno/.test(L[i].id)) return L[i].id; return undefined; }
   function ligar(it) {
     var I = mapa(); if (!I || !I.getStyle) return;
@@ -100,7 +162,7 @@
         if (!I.getLayer(it.id + "-l")) I.addLayer({ id: it.id + "-l", type: "line", source: it.id, "source-layer": "recinto", minzoom: it.min, paint: { "line-color": "#6b5a2e", "line-width": 0.6 } }, antes(I));
       } else {
         if (!I.getSource(it.id)) I.addSource(it.id, { type: "raster", tiles: [it.url], tileSize: 256, attribution: it.attr, minzoom: 0, maxzoom: it.max > 19 ? 19 : it.max });
-        if (!I.getLayer(it.id)) I.addLayer({ id: it.id, type: "raster", source: it.id, minzoom: it.min, paint: { "raster-opacity": it.op } }, antes(I));
+        if (!I.getLayer(it.id)) I.addLayer({ id: it.id, type: "raster", source: it.id, minzoom: it.min, paint: { "raster-opacity": it.op } }, it.fundo ? antesFundo(I) : antes(I));
       }
     } catch (e) { if (window.console) console.warn("[es-camadas]", it.id, e && e.message); }
   }
@@ -125,16 +187,32 @@
         h += '<label><input type="checkbox" data-tes="' + it.id + '"' + (ligados[it.id] ? " checked" : "") + "> " + it.nome + "</label>";
       });
     });
+    h += "<h5>" + t("Cronologia (voos do IGN)", "Cronología (vuelos del IGN)") + "</h5>" +
+      '<label><input type="checkbox" data-tes-crono> ' + t("Ver o terreno noutro ano", "Ver el terreno en otro año") + "</label>" +
+      '<div class="tes-crono" hidden><input type="range" min="0" max="' + (CRONO_ES.length - 1) + '" step="1" value="0" style="width:100%" aria-label="' + t("Ano", "Año") + '">' +
+      '<div style="display:flex;justify-content:space-between;font:10.5px Inter,system-ui,sans-serif;color:var(--mu,#777)">' + CRONO_ES.map(function (c) { return "<span>" + c.a.slice(2) + "</span>"; }).join("") + "</div>" +
+      '<p class="tes-crono-t" style="margin:4px 0 0;font:12px Inter,system-ui,sans-serif"></p></div>';
     h += "<small>" + t("Fontes oficiais espanholas e europeias. Informação indicativa; a referência vinculativa é a publicada pelo organismo.", "Fuentes oficiales españolas y europeas. Información orientativa; la referencia vinculante es la publicada por cada organismo.") + "</small>";
     d.innerHTML = h;
     cam.insertBefore(d, cam.firstChild);
     try { if (localStorage.getItem(CHAVE + "_ab") === "1" || Object.keys(ligados).length) d.classList.add("aberto"); } catch (e) {}
     d.addEventListener("click", function (e) { if (!e.target.closest("h4")) return; var a = d.classList.toggle("aberto"); try { localStorage.setItem(CHAVE + "_ab", a ? "1" : "0"); } catch (x) {} });
+    var cx = d.querySelector("[data-tes-crono]"), cd = d.querySelector(".tes-crono"), cr = cd.querySelector("input"), ct = cd.querySelector(".tes-crono-t");
+    function cronoAplicar() { var k = +cr.value; cronoMostrar(k); ct.textContent = CRONO_ES[k].t + " · IGN"; }
+    cx.addEventListener("change", function () { cd.hidden = !cx.checked; if (cx.checked) cronoAplicar(); else cronoMostrar(-1); });
+    cr.addEventListener("input", cronoAplicar);
     d.addEventListener("change", function (e) {
       var c = e.target.closest("[data-tes]"); if (!c) return;
       var it = itemPor(c.getAttribute("data-tes")); if (!it || tranc(it)) return;
-      if (c.checked) { ligados[it.id] = 1; ligar(it); } else { delete ligados[it.id]; desligar(it); }
-      guardar();
+      if (c.checked) {
+        ligados[it.id] = 1; guardar();
+        sondar(it, function (ok) {
+          if (!ligados[it.id]) return;
+          if (ok) { ligar(it); return; }
+          delete ligados[it.id]; guardar(); c.checked = false;
+          aviso(t("O serviço do MITECO não está a responder neste momento. Tente mais tarde.", "El servicio del MITECO no responde en este momento. Inténtelo más tarde."));
+        });
+      } else { delete ligados[it.id]; desligar(it); guardar(); }
     });
     return true;
   }
@@ -142,8 +220,19 @@
     var I = mapa(), d = document.getElementById("tes"); if (!I || !d || !I.getCenter) return;
     var c = I.getCenter(), em = dentro(c.lng, c.lat);
     if (d.hidden === em) d.hidden = !em;
+    if (em) pnoaAuto();
   }
-  function repor() { Object.keys(ligados).forEach(function (id) { var it = itemPor(id); if (it && !tranc(it)) ligar(it); }); }
+  function repor() { if (cronoSel > -1) { var I0 = mapa(); if (I0 && I0.getLayer && !I0.getLayer("es-crono")) cronoMostrar(cronoSel); } Object.keys(ligados).forEach(function (id) { var it = itemPor(id); if (it && !tranc(it)) sondar(it, function (ok) { if (ok && ligados[id]) ligar(it); }); }); }
+  /* 17/11/2026 (Nuno: ortofoto PNOA por omissão em Espanha). Na primeira vez que o mapa entra em Espanha, se a pessoa
+     ainda não escolheu nada neste grupo, liga-se a ortofoto PNOA (fica por baixo de tudo). Depois respeita-se a escolha. */
+  var CH_AUTO = CHAVE + "_pnoa_auto";
+  function pnoaAuto() {
+    try { if (localStorage.getItem(CH_AUTO)) return; localStorage.setItem(CH_AUTO, "1"); } catch (e) { return; }
+    if (Object.keys(ligados).length) return;
+    var it = itemPor("es-pnoa"); if (!it) return;
+    ligados[it.id] = 1; guardar(); ligar(it);
+    var c = document.querySelector('[data-tes="es-pnoa"]'); if (c) c.checked = true;
+  }
   function arrancar(n) {
     if (!montar() || !mapa()) { if (n < 60) setTimeout(function () { arrancar(n + 1); }, 500); return; }
     var I = mapa();
