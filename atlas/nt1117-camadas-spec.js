@@ -53,6 +53,18 @@
     var V = W.IPRViz; if (!V || typeof V.juntar !== "function" || !V.catalogo) return false;
     grupo();
     var ja = {}; V.catalogo.forEach(function (e) { if (e && e.id) ja[e.id] = 1; });
+    // AIA e Seveso: mesmos ids e campos do agua.js (que as junta tarde demais para o painel). Só fora do Explorer, como lá.
+    if (W.IPR_NIVEL !== "explorer") {
+      var RA = "https://sniambgeoogc.apambiente.pt/getogc/rest/services/";
+      [["aia", "AIA", "EIA", "Projectos sujeitos a avaliação de impacte ambiental", "Projects subject to environmental impact assessment", "AIA/AIA_externo", "41", "#6d4c41", .5],
+       ["seveso", "Riscos industriais", "Industrial hazards", "Estabelecimentos Seveso (DL 150/2015)", "Seveso establishments (Decree-Law 150/2015)", "SNIAmb/Prevencao_Acidentes_Graves", "0", "#d50000", 1]
+      ].forEach(function (a) {
+        if (ja[a[0]]) return;
+        V.juntar({ id: a[0], g: "amb", sub: a[1], subEn: a[2], n: a[3], en: a[4], t: "ags", url: RA + a[5] + "/MapServer", layers: "show:" + a[6], lic: "a",
+          op: a[8], cor: a[7], fonte: "APA · SNIAmb (" + a[5].split("/").pop() + ")", nota: "Intelligence", agua: 1, niv: "i" });
+        ja[a[0]] = 1;
+      });
+    }
     C.forEach(function (d) {
       if (ja[d[0]]) return;
       var e = { id: d[0], g: d[1], sub: d[2], subEn: d[3], n: d[4], en: d[5], t: d[6], url: d[7], lic: d[13], op: d[10], cor: d[9], fonte: d[12] };
