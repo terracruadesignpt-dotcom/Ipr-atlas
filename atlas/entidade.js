@@ -1381,7 +1381,13 @@
     if (t.hasAttribute("data-ent-perfil")) { S.perfil = t.getAttribute("data-ent-perfil"); perfil(S.perfil); }
     else if (t.hasAttribute("data-ent-bacia")) { var b = t.getAttribute("data-ent-bacia"); S.bacias[b] = !S.bacias[b]; }
     else if (t.hasAttribute("data-ent-cat")) { var c = t.getAttribute("data-ent-cat"); S.cats[c] = !S.cats[c]; }
-    else if (t.hasAttribute("data-ent-mod")) { mudaMod(t.getAttribute("data-ent-mod")); }
+    else if (t.hasAttribute("data-ent-mod")) {
+      // 17/11/2026 (Bernardo): desligar um módulo tirava as camadas do mapa, mas voltar a ligá-lo não as repunha.
+      // Agora, ao ligar, entram as camadas de arranque do módulo (as mesmas do «Guardar e aplicar»).
+      var idm = t.getAttribute("data-ent-mod"); mudaMod(idm);
+      var mm = mod(idm), vv = viz();
+      if (mm && vv && on(mm) && !falta(mm).length) (mm.liga || []).forEach(function (i) { if (existe(i) && act().indexOf(i) < 0) try { vv.ligar(i, true); } catch (e) {} });
+    }
     wiz(true); aplicar(false); // ao seleccionar, aparece já à esquerda e à direita
   }, true);
   D.addEventListener("keydown", function (e) { if (e.key === "Escape" && D.getElementById("ipr-ent-wiz")) wiz(false); });
