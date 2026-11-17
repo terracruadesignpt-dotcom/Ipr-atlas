@@ -2296,3 +2296,56 @@ if (window.IPR_A2_DEMO) (function(){
   var n = 0;
   (function ciclo() { arruma(); n++; setTimeout(ciclo, n > 40 ? 2000 : 400); })();
 })();
+
+
+/* Bolito 16/11/2026 · janela «Desenho» da Base: reorganiza o HTML do nt1110-base-desenho.js (só aspecto) */
+(function(){var D=document;
+function sub(t){var d=D.createElement('div');d.className='bd-sub';d.textContent=t;return d}
+function arruma(s){
+ var h=s.querySelector(':scope>h4,:scope>.tp-wtop>h4');if(!h)return;var w=s.querySelector(':scope>.tp-wtop');
+ if(w&&h.parentNode!==w){var f=w.querySelector('.tp-wfade');if(f&&f.nextSibling)w.insertBefore(h,f.nextSibling);else w.appendChild(h);}
+ if(s.querySelector(':scope>.bd-corpo'))return;
+ var en=(D.documentElement.lang||'').indexOf('en')===0;
+ var sp=h.querySelector('span');
+ if(sp&&!sp.classList.contains('bd-t')){var tx=sp.textContent,k=tx.indexOf(' · '),a=k>0?tx.slice(0,k):tx,b=k>0?tx.slice(k+3):'';
+  b=b.replace(/\s*\((pelo mapa|from the map)\)\s*$/,'');
+  sp.className='bd-t';sp.textContent='';var B=D.createElement('b');B.textContent=a;sp.appendChild(B);if(b){var I=D.createElement('i');I.textContent=b;sp.appendChild(I);}
+  var ic=D.createElement('span');ic.className='bd-ic';ic.textContent='✎';h.insertBefore(ic,sp);}
+ var corpo=D.createElement('div');corpo.className='bd-corpo';var rod=D.createElement('div');rod.className='bd-rod';
+ var filhos=[].slice.call(s.children).filter(function(c){return c!==w&&c!==h});
+ var gn=s.querySelector('[data-a=gravar-notas]'),rg=gn&&gn.closest('.row');
+ filhos.forEach(function(c){if(c===rg||c.classList.contains('msg'))rod.appendChild(c);else corpo.appendChild(c)});
+ s.appendChild(corpo);if(rod.children.length)s.appendChild(rod);
+ if(gn&&!gn.disabled){var e=D.createElement('span');e.className='bd-est';e.textContent=en?'● Unsaved changes':'● Alterações por guardar';rod.insertBefore(e,rod.firstChild);}
+ var r0=corpo.querySelector('button[data-m=limite]');r0=r0&&r0.closest('.row');
+ if(r0){r0.classList.add('bd-seg');var g=D.createElement('div');g.className='bd-g';r0.insertBefore(g,r0.firstChild);
+  [].slice.call(r0.querySelectorAll(':scope>button[data-m],:scope>button[data-geo]')).forEach(function(b){g.appendChild(b)});
+  var gp=r0.querySelector('[data-a=gps]');if(gp){gp.title=gp.textContent.replace(/^◎\s*/,'');gp.setAttribute('aria-label',gp.title);gp.textContent='◎';}}
+ var lim=corpo.querySelector('.bd-g [data-m=limite].on');if(lim)[].slice.call(corpo.querySelectorAll('.bd-g [data-geo].on')).forEach(function(b){b.classList.remove('on')});
+ var tps=corpo.querySelector('.tps');if(tps&&lim){tps.style.display='none';var nx=tps.nextElementSibling;if(nx&&nx.matches('p.aj')&&!/^(Arraste|Drag)/.test(nx.textContent))nx.style.display='none';tps=null;}
+ if(tps){var on=corpo.querySelector('.bd-g [data-geo].on'),geo=on?on.getAttribute('data-geo'):'';
+  var L={ponto:en?'Point type':'Tipo de ponto',linha:en?'Line type':'Tipo de linha',area:en?'Area type':'Tipo de área'};
+  corpo.insertBefore(sub(L[geo]||(en?'Type':'Tipo')),tps);}
+ [].slice.call(corpo.querySelectorAll(':scope>p.aj')).forEach(function(p){if(/^(Carregue|Click)/.test(p.textContent)){p.classList.add('bd-aj');
+  if(/ponto a ponto|point by point/.test(p.textContent))p.innerHTML=en?'Click the map point by point. Finish with a double click or <kbd>Enter</kbd>, cancel with <kbd>Esc</kbd>.':'Carregue no mapa ponto a ponto. Acabe com duplo clique ou <kbd>Enter</kbd>, cancele com <kbd>Esc</kbd>.';}});
+ var ul=corpo.querySelector(':scope>ul');
+ if(ul){corpo.insertBefore(sub(en?'Notes in this Base':'Notas nesta Base'),ul);
+  [].slice.call(ul.querySelectorAll('li>button')).forEach(function(b){var t=b.textContent;b.title=t;b.setAttribute('aria-label',t);
+   b.textContent=b.hasAttribute('data-ir')?'⌖':b.hasAttribute('data-ed')?'✎':'✕';});}
+ var ta=corpo.querySelector(':scope>textarea[data-a=texto]');
+ if(ta){var cur=s.__bdCur,li=ul&&cur&&ul.querySelector('li [data-ir="'+cur+'"]');li=li&&li.parentNode;
+  if(!li&&ul)li=ul.lastElementChild;
+  var ok=corpo.querySelector('[data-a=ok-texto]'),rOk=ok&&ok.closest('.row'),rT=ta.previousElementSibling,rN=rT&&rT.previousElementSibling;
+  if(li){var edr=D.createElement('div');edr.className='bd-edr';
+   var sel=rT&&rT.querySelector('select,input');if(sel){sel.title=en?'Type':'Tipo';edr.appendChild(sel);}
+   edr.appendChild(ta);if(ok)edr.appendChild(ok);li.appendChild(edr);li.classList.add('bd-ed');
+   [rOk,rT,rN].forEach(function(x){if(x&&x.classList&&x.classList.contains('row'))x.classList.add('bd-esc')});}}
+}
+function liga(s){if(s.__bd)return;s.__bd=1;
+ s.addEventListener('click',function(e){var b=e.target.closest('[data-ed]');if(b)s.__bdCur=b.getAttribute('data-ed');var n=s.querySelectorAll('li').length;s.__bdN=n;},true);
+ var mo=new MutationObserver(function(){var n=s.querySelectorAll('li').length;if(s.__bdN!=null&&n>s.__bdN){var l=s.querySelector('ul li:last-child [data-ir]');if(l)s.__bdCur=l.getAttribute('data-ir');}s.__bdN=n;arruma(s);});
+ mo.observe(s,{childList:true});arruma(s);}
+function ve(){var s=D.getElementById('ipr-bd');if(s)liga(s);}
+new MutationObserver(ve).observe(D.body||D.documentElement,{childList:true});ve();
+})();
+

@@ -944,3 +944,54 @@ html.cm-intel #ipe-tabs .ipe-tab[data-tab=a2b]{display:block}
 #c2-pop b{display:block;color:#F5F4EE;font-size:13px;font-weight:600;margin-bottom:4px}
 #c2-pop .c2-x{position:absolute;right:6px;top:4px;width:20px;height:20px;border:0;background:none;color:#8A8C83;font-size:16px;cursor:pointer;padding:0}
 #c2-pop .c2-x:hover{color:#F5F4EE}
+
+/* Bolito 16/11/2026 · painel «Camadas ligadas»: fichas abertas limpas */
+#ipe #ipr-be-cqp li.ipr-cq-it .ipr-cq-n>small:not(.tp-sub),#ipe #ipr-be-cqp li.ipr-cq-it .ipr-cq-mais,#ipe #ipr-be-cqp li.ipr-cq-it:not(.tp-sel) .ipr-cq-op{display:none!important}#ipe #ipr-be-cqp li.ipr-cq-it.iac-ab{background:transparent!important}
+
+
+/* Bolito 16/11/2026 · janela «Desenho» da Base (#ipr-bd) */
+body #ipr-bd{display:flex;flex-direction:column;overflow:hidden;padding:0;width:min(520px,calc(100vw - 24px));hyphens:none;-webkit-hyphens:none}
+body #ipr-bd>.tp-wtop{margin:0;padding:12px 12px 8px;border-bottom:1px solid #2C2F27;gap:8px;flex-wrap:wrap}
+body #ipr-bd>.tp-wtop>.tp-wpega{top:-2px}
+body #ipr-bd>.tp-wtop>.tp-wfade{width:24px;height:24px}
+body #ipr-bd .tp-wtop>h4{flex:1;min-width:0;display:flex;align-items:center;gap:8px;margin:0}
+body #ipr-bd .bd-ic{flex:none;color:#94BE39;font-size:14px;line-height:1}
+body #ipr-bd h4 .bd-t{flex:1;min-width:0;display:block;white-space:normal}
+body #ipr-bd h4 .bd-t b{display:block;font:600 10.5px/1.2 "IBM Plex Mono",monospace;letter-spacing:.08em;color:#94BE39;text-transform:uppercase}
+body #ipr-bd h4 .bd-t i{display:block;font:400 12.5px/1.3 Inter,system-ui,sans-serif;font-style:normal;color:#CFD2C6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body #ipr-bd h4 .x{color:#ABADA1;padding:2px 4px}
+body #ipr-bd .bd-corpo{flex:1 1 auto;min-height:0;overflow:auto;padding:10px 12px 10px}
+body #ipr-bd .bd-corpo>.row:first-child{margin-top:0}
+body #ipr-bd .bd-seg{flex-wrap:nowrap}
+body #ipr-bd .bd-g{flex:1;display:flex;background:#24271F;border:1px solid #383A33;border-radius:8px;padding:2px;gap:2px}
+body #ipr-bd .bd-g button{flex:1;border:0;background:none;min-height:30px;padding:6px 4px;border-radius:6px;color:#D9DBD1;white-space:nowrap}
+body #ipr-bd .bd-g button.on{background:#94BE39;color:#1B1D18}
+body #ipr-bd .bd-g button:hover:not(.on){background:#2E3128}
+body #ipr-bd .bd-seg>button[data-a=gps]{flex:none;width:36px;padding:0;font-size:15px;color:#CFD6BD}
+body #ipr-bd .bd-seg>button[data-a=terminar]{flex:none}
+body #ipr-bd .bd-sub{margin:12px 0 6px;font:600 10px/1 "IBM Plex Mono",monospace;letter-spacing:.08em;color:#8C8F84;text-transform:uppercase}
+body #ipr-bd .tps{grid-template-columns:repeat(3,1fr);gap:4px;margin:0}
+body #ipr-bd .tps button{min-height:30px;padding:5px 8px;border-color:#33362D;background:none;white-space:nowrap;overflow:hidden}
+body #ipr-bd .tps button span{overflow:hidden;text-overflow:ellipsis}
+body #ipr-bd .tps button.on{border-color:#94BE39;background:rgba(148,190,57,.16)}
+body #ipr-bd .bd-aj{opacity:1;color:#94BE39}
+body #ipr-bd .bd-aj kbd{font:500 11px "IBM Plex Mono",monospace;border:1px solid #4A4D43;border-radius:4px;padding:0 4px;color:#D9DBD1}
+body #ipr-bd ul{margin:0;border:1px solid #2C2F27;border-radius:8px}
+body #ipr-bd li{padding:5px 6px 5px 9px;border-top:1px solid #2C2F27;flex-wrap:wrap}
+body #ipr-bd li:first-child{border-top:0}
+body #ipr-bd li .t{font-size:12.5px}
+body #ipr-bd li>button{width:26px;height:26px;padding:0;border:0;background:none;color:#BFC2B6;font-size:13px;display:inline-flex;align-items:center;justify-content:center}
+body #ipr-bd li>button:hover{background:#2E3128;color:#F5F4EE}
+body #ipr-bd li>button[data-del]{color:#D9725B}
+body #ipr-bd li.bd-ed{background:#20231C}
+body #ipr-bd li.bd-ed>button[data-ed]{display:none}
+body #ipr-bd .bd-edr{flex-basis:100%;display:flex;gap:6px;align-items:stretch;margin:4px 0 2px}
+body #ipr-bd .bd-edr select{flex:none;font-size:12px;padding:5px}
+body #ipr-bd .bd-edr input[data-a=type]{flex:none!important;width:150px}
+body #ipr-bd .bd-edr textarea{flex:1;min-height:34px;height:34px;margin:0;resize:vertical;border-color:#94BE39;font-size:12.5px}
+body #ipr-bd .bd-edr button{min-height:0;padding:0 10px}
+body #ipr-bd .bd-esc{display:none!important}
+body #ipr-bd .bd-rod{flex:none;display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px 12px 10px;border-top:1px solid #2C2F27}
+body #ipr-bd .bd-rod>.row{margin:0 0 0 auto}
+body #ipr-bd .bd-est{flex:1;font-size:12px;color:#E8B84A}
+body #ipr-bd .bd-rod>.msg{flex-basis:100%;margin:0;order:-1}
