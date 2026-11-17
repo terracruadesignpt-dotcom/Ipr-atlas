@@ -97,7 +97,7 @@ def camadas(cap):
             bb = re.search(r'<LatLonBoundingBox[^>]*minx="([-\d.eE]+)"[^>]*miny="([-\d.eE]+)"[^>]*maxx="([-\d.eE]+)"[^>]*maxy="([-\d.eE]+)"', resto)
             cs.append([nome, tit or nome.replace('_', ' '), [float(v) for v in bb.groups()] if bb else None])
     cs.sort(key=lambda c: (0 if 'ordenamento' in c[0].lower() else 1, c[0].lower()))
-    return cs[:10]
+    return cs   # copiam-se todas; o servico.json leva as 10 primeiras, como o worker sempre fez
 
 
 def lon2x(lon, z): return int(math.floor((lon + 180) / 360 * 2 ** z))
@@ -134,10 +134,13 @@ def getmap(fim, cam, z, x0, y0, n):
     q = urllib.parse.urlencode({'SERVICE': 'WMS', 'VERSION': '1.3.0', 'REQUEST': 'GetMap', 'LAYERS': cam, 'STYLES': '',
                                 'CRS': 'EPSG:3857', 'BBOX': ','.join('%.2f' % v for v in bb), 'WIDTH': str(256 * n),
                                 'HEIGHT': str(256 * n), 'FORMAT': 'image/png', 'TRANSPARENT': 'TRUE'})
-    st, ct, b = get(fim + '?' + q, 120, 3)
-    if st != 200 or not ct.startswith('image/'):
-        raise RuntimeError('SNIT %s %s %s' % (st, ct, b[:120]))
-    return Image.open(io.BytesIO(b)).convert('RGBA')
+    for k in range(3):   # o SNIT responde por vezes com ServiceException (servidor ocupado): espera e repete
+        st, ct, b = get(fim + '?' + q, 120, 3)
+        if st == 200 and ct.startswith('image/'):
+            return Image.open(io.BytesIO(b)).convert('RGBA')
+        time.sleep(8 + 12 * k)
+    m = re.search(rb'<ServiceException[^>]*>([\s\S]{0,200})', b)
+    raise RuntimeError('SNIT %s %s %s' % (st, ct, (m.group(1) if m else b[:200]).decode('utf-8', 'replace').strip()))
 
 
 def bloco(fim, cam, x0, y0, pasta):
@@ -161,6 +164,33 @@ def bloco(fim, cam, x0, y0, pasta):
                     f.write(png(t))
                 feitos += 1
     return feitos
+
+
+def sondar(fim, cam, bb, todos):
+    """Vê a planta a z14 (um pedido cobre 4×4 blocos de z16) e devolve só os blocos de z16 onde há desenho, com uma margem.
+    Se a sondagem não mostrar nada (planta que só desenha perto), copia todos os blocos."""
+    z, n = 14, META
+    sx0, sx1 = lon2x(bb[0], z) // n * n, lon2x(bb[2], z)
+    sy0, sy1 = lat2y(bb[3], z) // n * n, lat2y(bb[1], z)
+    cheios = set()
+    try:
+        for x in range(sx0, sx1 + 1, n):
+            for y in range(sy0, sy1 + 1, n):
+                im = getmap(fim, cam, z, x, y, n)
+                a = im.getchannel('A')
+                for i in range(n):
+                    for j in range(n):
+                        if a.crop((i * 256, j * 256, i * 256 + 256, j * 256 + 256)).getextrema()[1] > 0:
+                            for di in (-1, 0, 1):
+                                for dj in (-1, 0, 1):
+                                    cheios.add((x + i + di, y + j + dj))
+    except Exception as e:  # noqa: BLE001
+        print('  sondagem falhou (%s); copia tudo' % str(e)[:100], flush=True)
+        return todos
+    if not cheios:
+        return todos
+    # bloco z16 (x, y) de 8 mosaicos = mosaicos z14 de x//4 a (x+7)//4
+    return [(x, y) for x, y in todos if any((tx, ty) in cheios for tx in range(x // 4, (x + META - 1) // 4 + 1) for ty in range(y // 4, (y + META - 1) // 4 + 1))]
 
 
 def baixar(pasta, z):
@@ -219,7 +249,8 @@ def camara(dico, srv, pasta, fim_t):
     os.makedirs(pc, exist_ok=True)
     peq = {'snit/%s/cap.xml' % dico: cap.encode('utf-8'),
            'snit/%s/servico.json' % dico: json.dumps({'dico': dico, 'srv': srv, 'fim': fim, 't': int(time.time() * 1000),
-                                                      'camadas': [[c[0], c[1]] for c in cs], 'copia': 'pmtiles'}, ensure_ascii=False).encode('utf-8')}
+                                                      'camadas': [[c[0], c[1]] for c in cs[:10]], 'copia': 'pmtiles',
+                                                      'todas': [[c[0], c[1]] for c in cs]}, ensure_ascii=False).encode('utf-8')}
     ficheiros = []
     for nome, tit, bb in cs:
         try:
@@ -245,23 +276,34 @@ def camara(dico, srv, pasta, fim_t):
             continue
         x0, x1 = lon2x(bb[0], Z) // META * META, lon2x(bb[2], Z)
         y0, y1 = lat2y(bb[3], Z) // META * META, lat2y(bb[1], Z)
-        blocos = [(x, y) for x in range(x0, x1 + 1, META) for y in range(y0, y1 + 1, META)]
+        t0 = time.time()
+        todos = [(x, y) for x in range(x0, x1 + 1, META) for y in range(y0, y1 + 1, META)]
+        blocos = sondar(fim, nome, bb, todos)
         pt = os.path.join(pc, esc(nome))
-        t0, n, falhas = time.time(), 0, 0
+        n, falhas, maus = 0, 0, []
         with ThreadPoolExecutor(FIOS) as ex:
-            fs = [ex.submit(bloco, fim, nome, x, y, pt) for x, y in blocos]
+            fs = {ex.submit(bloco, fim, nome, x, y, pt): (x, y) for x, y in blocos}
             for f in as_completed(fs):
                 try:
                     n += f.result()
                 except Exception as e:  # noqa: BLE001
-                    falhas += 1
-                    if falhas <= 3:
-                        print('  bloco falhou:', str(e)[:160], flush=True)
+                    maus.append(fs[f])
+                    if len(maus) <= 3:
+                        print('  bloco falhou:', str(e)[:200], flush=True)
                 if time.time() > fim_t:
                     for g in fs:
                         g.cancel()
-        print('  %s: %d blocos, %d mosaicos z16, %d falhas, %.0f s (%.1f s/bloco)' % (nome, len(blocos), n, falhas, time.time() - t0,
-              (time.time() - t0) / max(1, len(blocos)) * FIOS), flush=True)
+        if maus and time.time() < fim_t:   # segunda tentativa, devagar
+            time.sleep(30)
+            for x, y in maus:
+                try:
+                    n += bloco(fim, nome, x, y, pt)
+                except Exception as e:  # noqa: BLE001
+                    falhas += 1
+                    print('  bloco falhou outra vez:', str(e)[:200], flush=True)
+        print('  %s: %d de %d blocos com desenho, %d mosaicos z16, %d falhas, %.0f s' % (nome, len(blocos), len(todos), n, falhas, time.time() - t0), flush=True)
+        if not n:
+            continue
         if falhas or time.time() > fim_t:
             print('  incompleta; a câmara fica para a próxima volta', flush=True)
             return None
