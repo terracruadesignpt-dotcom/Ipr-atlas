@@ -1,0 +1,65 @@
+# IPR Atlas · PMTiles próprias das colecções da DGT já copiadas por inteiro para o R2 (Nuno, 17/11/2026, 10h49: «os mosaicos do
+# Atlas, avança com isso … tudo o que falta para o site inteiro correr é para avançar»). Lê os blocos da nossa cópia
+# (camadas.terracruadesign.pt/dgt/<colecção>/), converte com o tippecanoe, publica como anexo da versão «dgt-pmtiles» e pede
+# ao Worker ipr-copia-ficheiro que o copie para pmtiles/dgt/<colecção>.pmtiles. Dados abertos da DGT, CC BY 4.0.
+name: dados-dgt-pmtiles
+on:
+  push:
+    branches: [dados-dgt-pmtiles]
+    paths: [".github/workflows/dados-dgt-pmtiles.yml", "ferramentas/dgt_para_geojsons.py"]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  pmtiles:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 340
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        include:
+          - { col: sgifr_areas, z: 13, tipo: area }
+          - { col: sgifr_linhas, z: 14, tipo: linha }
+          - { col: srup_rede_viaria, z: 14, tipo: linha }
+          - { col: srup_rede_ferroviaria, z: 14, tipo: linha }
+          - { col: srup_marcos_geod, z: 14, tipo: ponto }
+          - { col: srup_arvores_point, z: 14, tipo: ponto }
+          - { col: srup_defesa_militar, z: 14, tipo: area }
+    steps:
+      - uses: actions/checkout@v4
+      - name: Ferramentas
+        run: |
+          sudo apt-get update -qq
+          if ! sudo apt-get install -y -qq tippecanoe; then
+            sudo apt-get install -y -qq build-essential libsqlite3-dev zlib1g-dev
+            git clone --depth 1 https://github.com/felt/tippecanoe.git /tmp/tc && make -C /tmp/tc -j4 && sudo make -C /tmp/tc install
+          fi
+          tippecanoe --version || true
+          sudo mkdir -p /mnt/d && sudo chown $USER /mnt/d && df -h / /mnt
+      - name: Juntar os blocos da cópia
+        run: python3 ferramentas/dgt_para_geojsons.py ${{ matrix.col }} /mnt/d/${{ matrix.col }}.geojsons && ls -la /mnt/d
+      - name: Mosaicos (tippecanoe)
+        run: |
+          cd /mnt/d
+          C=${{ matrix.col }}; Z=${{ matrix.z }}
+          O="--drop-densest-as-needed --extend-zooms-if-still-dropping"
+          [ "${{ matrix.tipo }}" = area ] && O="--coalesce-densest-as-needed --detect-shared-borders --simplify-only-low-zooms --extend-zooms-if-still-dropping"
+          [ "${{ matrix.tipo }}" = ponto ] && O="-r1 --drop-densest-as-needed"
+          # Até 512 MB: acima disso a cache da Cloudflare ignora os pedidos por partes e o PMTiles não abre (ver dados-cos2023).
+          for z in $Z $((Z-1)) $((Z-2)); do
+            tippecanoe -o $C.pmtiles -l $C -n "$C (DGT)" -A "DGT · $C · CC BY 4.0 · cópia IPR Atlas" -Z5 -z$z $O --hilbert -P -t /mnt/d --force $C.geojsons
+            S=$(stat -c %s $C.pmtiles); echo "z$z: $S bytes"
+            [ $S -lt 500000000 ] && break
+          done
+          ls -la $C.pmtiles
+      - name: Publicar e copiar para o R2
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cd /mnt/d
+          C=${{ matrix.col }}
+          gh release view dgt-pmtiles --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1 || gh release create dgt-pmtiles --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "Colecções da DGT em PMTiles (CC BY 4.0)" --notes "Mosaicos vectoriais feitos a partir da cópia integral da OGC API da DGT (dados abertos, CC BY 4.0) para o IPR Atlas." || true
+          gh release upload dgt-pmtiles $C.pmtiles --repo "$GITHUB_REPOSITORY" --clobber
+          sleep 20
+          curl -sS --max-time 900 "https://ipr-copia-ficheiro.terracrua-ipr.workers.dev/?f=$C&ir=1" || true
