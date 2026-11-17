@@ -36,6 +36,18 @@
   function img(svc) { return GL + svc + "/ImageServer/exportImage?bbox={bbox-epsg-3857}&bboxSR=3857&imageSR=3857&size=256,256&format=png&transparent=true&f=image"; }
   function msx(base) { return base + "/export?bbox={bbox-epsg-3857}&bboxSR=3857&imageSR=3857&size=256,256&format=png32&transparent=true&dpi=96&f=image"; }
   var IGME = "https://mapas.igme.es/gis/services/";
+  /* 17/11/2026 (Nuno: «avança com todas as camadas que sugeriste»). Camadas novas, ver espanha/diagnostico-camadas-fontes-
+     2026-11-17 no projecto. Testes a 17/11 a partir do navegador em terracruadesign.pt/es/atlas: IGN geofísica, Caminho de
+     Santiago, CartoCiudad, SoilGrids (ISRIC), urbanismo de Castilla y León e zonas ripárias da Copernicus deram imagem com
+     CORS. O servidor WMS do MITECO (wms.mapama.gob.es) devolvia «Referencia a objeto no establecida» em todos os serviços:
+     as camadas do MITECO levam sonda e só aparecem quando o serviço volta. A REDIAM (Andaluzia) não tem CORS e vai pelo
+     proxy do site (m14554). O ICGC (Catalunha) respondia ao GetCapabilities mas os mapas eram lentos: leva sonda. A IDE de
+     Extremadura tem o certificado com outro nome (falha SSL) e ficou de fora. */
+  var MA = "https://wms.mapama.gob.es/sig/", PX = location.origin + "/wp-json/tcd/v1/viz/px?u=";
+  function px(raw) { return PX + encodeURIComponent(raw.replace("{bbox-epsg-3857}", "__BBOX__")) + "&bbox={bbox-epsg-3857}&ttl=604800"; }
+  function isric(prop, camada) { return wms("https://maps.isric.org/mapserv?map=/map/" + prop + ".map", camada); }
+  var R_CYL = [-7.1, 40.05, -1.75, 43.25], R_CAT = [0.15, 40.5, 3.35, 42.9], R_AND = [-7.55, 35.9, -1.6, 38.75];
+  var ISRIC = "SoilGrids 2.0, ISRIC CC BY 4.0", MITA = "MITECO CC BY 4.0";
   var CAT = [
     { sub: t("Fundo", "Fondo"), itens: [
       { id: "es-pnoa", nome: t("Ortofoto PNOA (IGN)", "Ortofoto PNOA (IGN)"), tipo: "raster", fundo: 1, url: wmts("https://www.ign.es/wmts/pnoa-ma", "OI.OrthoimageCoverage", "image/jpeg"), min: 0, max: 20, op: 1, attr: "PNOA " + IGN },
@@ -61,7 +73,20 @@
       { id: "es-vp", nome: t("Vias pecuárias (MITECO)", "Vías pecuarias (MITECO)"), tipo: "raster", sonda: MIT + "ViasPecuarias", url: wms(MIT + "ViasPecuarias", "TN.RoadTransportNetwork.RoadLink"), min: 9, max: 22, op: 0.9, attr: "MITECO CC BY 4.0" },
       { id: "es-inund10", nome: t("Zona inundável T10", "Zona inundable T10"), tipo: "raster", url: wms("https://servicios.idee.es/wms-inspire/riesgos-naturales/inundaciones", "NZ.Flood.FluvialT10"), min: 9, max: 22, op: 0.6, attr: "SNCZI - MITECO" },
       { id: "es-inund100", nome: t("Zona inundável T100", "Zona inundable T100"), tipo: "raster", url: wms("https://servicios.idee.es/wms-inspire/riesgos-naturales/inundaciones", "NZ.Flood.FluvialT100"), min: 9, max: 22, op: 0.6, attr: "SNCZI - MITECO" },
-      { id: "es-inund500", nome: t("Zona inundável T500", "Zona inundable T500"), tipo: "raster", url: wms("https://servicios.idee.es/wms-inspire/riesgos-naturales/inundaciones", "NZ.Flood.FluvialT500"), min: 9, max: 22, op: 0.5, attr: "SNCZI - MITECO" }
+      { id: "es-inund500", nome: t("Zona inundável T500", "Zona inundable T500"), tipo: "raster", url: wms("https://servicios.idee.es/wms-inspire/riesgos-naturales/inundaciones", "NZ.Flood.FluvialT500"), min: 9, max: 22, op: 0.5, attr: "SNCZI - MITECO" },
+      { id: "es-dph", nome: t("Domínio público hídrico, servidão e polícia (MITECO)", "Dominio público hidráulico, servidumbre y policía (MITECO)"), tipo: "raster", sonda: MA + "Agua/DPHCartografico/wms.aspx", url: wms(MA + "Agua/DPHCartografico/wms.aspx", "DPHCartografico"), min: 11, max: 22, op: 0.7, attr: "SNCZI, " + MITA },
+      { id: "es-dphd", nome: t("Domínio público hídrico deslindado (MITECO)", "Dominio público hidráulico deslindado (MITECO)"), tipo: "raster", sonda: MA + "agua/DPHDeslindado/wms.aspx", url: wms(MA + "agua/DPHDeslindado/wms.aspx", "DPHDeslindado"), min: 11, max: 22, op: 0.8, attr: "SNCZI, " + MITA },
+      { id: "es-dpmt", nome: t("Domínio público marítimo-terrestre (Costas)", "Dominio público marítimo-terrestre (Costas)"), tipo: "raster", sonda: MA + "Costas/DPMT/wms.aspx", url: wms(MA + "Costas/DPMT/wms.aspx", "DPMT"), min: 11, max: 22, op: 0.9, attr: "Costas, " + MITA },
+      { id: "es-nitratos", nome: t("Zonas vulneráveis a nitratos 2024", "Zonas vulnerables a nitratos 2024"), tipo: "raster", sonda: MA + "Agua/ZonasVulnerables/2024", url: wms(MA + "Agua/ZonasVulnerables/2024", "AM.NitrateVulnerableZone"), min: 7, max: 22, op: 0.55, attr: MITA },
+      { id: "es-fv", nome: t("Sensibilidade ambiental para fotovoltaica", "Sensibilidad ambiental para fotovoltaica"), tipo: "raster", wmts: "https://wmts.mapama.gob.es/sig/evaluacionambiental/ea_clasificacion_energia_fotovoltaica", url: "", min: 7, max: 22, op: 0.6, attr: "Evaluación ambiental, " + MITA },
+      { id: "es-eolica", nome: t("Sensibilidade ambiental para eólica", "Sensibilidad ambiental para eólica"), tipo: "raster", wmts: "https://wmts.mapama.gob.es/sig/evaluacionambiental/ea_clasificacion_energia_eolica", url: "", min: 7, max: 22, op: 0.6, attr: "Evaluación ambiental, " + MITA }
+    ] },
+    { sub: t("Riscos", "Riesgos"), itens: [
+      { id: "es-sismo", nome: t("Perigosidade sísmica, aceleração 475 anos (IGN)", "Peligrosidad sísmica, aceleración 475 años (IGN)"), tipo: "raster", url: wms("https://www.ign.es/wms-inspire/geofisica", "HazardArea2015.PGA475_c"), min: 5, max: 22, op: 0.55, attr: "Peligrosidad sísmica 2015 " + IGN },
+      { id: "es-sismos", nome: t("Sismos do último ano (IGN)", "Terremotos del último año (IGN)"), tipo: "raster", url: wms("https://www.ign.es/wms-inspire/geofisica", "Ultimos365dias"), min: 5, max: 22, op: 1, attr: "Red Sísmica Nacional " + IGN },
+      { id: "es-inesl", nome: t("Erosão laminar e em regueiros (INES)", "Erosión laminar y en regueros (INES)"), tipo: "raster", sonda: MIT + "INESErosionLaminarRaster/wms.aspx", url: wms(MIT + "INESErosionLaminarRaster/wms.aspx", "NZ.HazardArea"), min: 8, max: 22, op: 0.6, attr: "INES, " + MITA, intel: 1 },
+      { id: "es-inesm", nome: t("Movimentos em massa (INES)", "Movimientos en masa (INES)"), tipo: "raster", sonda: MIT + "INESMovimientosMasa/wms.aspx", url: wms(MIT + "INESMovimientosMasa/wms.aspx", "NZ.HazardArea"), min: 8, max: 22, op: 0.6, attr: "INES, " + MITA, intel: 1 },
+      { id: "es-inese", nome: t("Erosão eólica (INES)", "Erosión eólica (INES)"), tipo: "raster", sonda: MIT + "INESErosionEolica/wms.aspx", url: wms(MIT + "INESErosionEolica/wms.aspx", "NZ.HazardArea"), min: 8, max: 22, op: 0.6, attr: "INES, " + MITA, intel: 1 }
     ] },
     { sub: t("Água e relevo", "Agua y relieve"), itens: [
       { id: "es-pontosagua", nome: t("Pontos de água (IGME)", "Puntos de agua (IGME)"), tipo: "raster", url: wms("https://mapas.igme.es/gis/services/BasesDatos/IGME_PuntosAgua/MapServer/WMSServer", "0,1"), min: 10, max: 22, op: 1, attr: "IGME-CSIC CC BY 4.0" },
@@ -83,15 +108,38 @@
       { id: "es-imperm", nome: t("Solo impermeabilizado 2018 (Copernicus)", "Suelo sellado 2018 (Copernicus)"), tipo: "raster", url: img("HRL_ImperviousnessDensity_2018"), min: 8, max: 22, op: 0.75, attr: CLMS, intel: 1 },
       { id: "es-edif", nome: t("Área edificada 2018 (Copernicus)", "Área edificada 2018 (Copernicus)"), tipo: "raster", url: img("HRL_BuiltUp_2018"), min: 9, max: 22, op: 0.8, attr: CLMS, intel: 1 }
     ] },
+    { sub: t("Ecologia e paisagem", "Ecología y paisaje"), itens: [
+      { id: "es-hic", nome: t("Habitats de interesse comunitário 2013-2018", "Hábitats de interés comunitario 2013-2018"), tipo: "raster", sonda: MIT + "HabitatArt17/2013-2018/wms.aspx", url: wms(MIT + "HabitatArt17/2013-2018/wms.aspx", "HB.Habitat"), min: 7, max: 22, op: 0.6, attr: "Art. 17 Directiva Hábitats, " + MITA, intel: 1 },
+      { id: "es-mab", nome: t("Reservas da Biosfera (UNESCO)", "Reservas de la Biosfera (UNESCO)"), tipo: "raster", sonda: MIT + "MAB", url: wms(MIT + "MAB", "PS.ProtectedSite"), min: 5, max: 22, op: 0.5, attr: "MaB, " + MITA },
+      { id: "es-paisagem", nome: t("Atlas das Paisagens de Espanha", "Atlas de los Paisajes de España"), tipo: "raster", sonda: MIT + "Paisaje/wms.aspx", url: wms(MIT + "Paisaje/wms.aspx", "LC.LandCoverSurfaces"), min: 6, max: 22, op: 0.55, attr: MITA, intel: 1 },
+      { id: "es-ripar", nome: t("Zonas ripárias, uso do solo (Copernicus)", "Zonas de ribera, uso del suelo (Copernicus)"), tipo: "raster", url: msx("https://image.discomap.eea.europa.eu/arcgis/rest/services/RiparianZones/LCLU/MapServer"), min: 10, max: 22, op: 0.7, attr: "Riparian Zones, " + CLMS, intel: 1 }
+    ] },
     { sub: t("Fogo", "Incendios"), itens: [
       { id: "es-ardidas", nome: t("Áreas ardidas (EFFIS, Copernicus)", "Áreas quemadas (EFFIS, Copernicus)"), tipo: "raster", url: wms("https://maps.effis.emergency.copernicus.eu/effis", "modis.ba.poly"), min: 6, max: 22, op: 0.8, attr: "EFFIS, Copernicus Emergency Management Service" }
     ] },
     { sub: t("Solo e geologia", "Suelo y geología"), itens: [
       { id: "es-magna", nome: t("Geologia MAGNA 1:50 000 (IGME)", "Geología MAGNA 1:50.000 (IGME)"), tipo: "raster", url: wms(IGME + "Cartografia_Geologica/IGME_MAGNA_50/MapServer/WMSServer", "0"), min: 10, max: 22, op: 0.65, attr: "IGME-CSIC CC BY 4.0", intel: 1 },
       { id: "es-geode", nome: t("Geologia contínua GEODE 1:50 000 (IGME)", "Geología continua GEODE 1:50.000 (IGME)"), tipo: "raster", url: wms(IGME + "Cartografia_Geologica/IGME_Geode_50/MapServer/WMSServer", "0"), min: 9, max: 22, op: 0.65, attr: "IGME-CSIC CC BY 4.0", intel: 1 },
-      { id: "es-perm", nome: t("Permeabilidade 1:200 000 (IGME)", "Permeabilidad 1:200.000 (IGME)"), tipo: "raster", url: wms(IGME + "Cartografia_Tematica/IGME_Permeabilidad_200/MapServer/WMSServer", "0"), min: 7, max: 22, op: 0.65, attr: "IGME-CSIC CC BY 4.0", intel: 1 }
+      { id: "es-perm", nome: t("Permeabilidade 1:200 000 (IGME)", "Permeabilidad 1:200.000 (IGME)"), tipo: "raster", url: wms(IGME + "Cartografia_Tematica/IGME_Permeabilidad_200/MapServer/WMSServer", "0"), min: 7, max: 22, op: 0.65, attr: "IGME-CSIC CC BY 4.0", intel: 1 },
+      { id: "es-ph", nome: t("pH do solo, 0-5 cm (SoilGrids)", "pH del suelo, 0-5 cm (SoilGrids)"), tipo: "raster", url: isric("phh2o", "phh2o_0-5cm_mean"), min: 5, max: 22, op: 0.6, attr: ISRIC, intel: 1 },
+      { id: "es-soc", nome: t("Carbono orgânico do solo, 0-5 cm (SoilGrids)", "Carbono orgánico del suelo, 0-5 cm (SoilGrids)"), tipo: "raster", url: isric("soc", "soc_0-5cm_mean"), min: 5, max: 22, op: 0.6, attr: ISRIC, intel: 1 },
+      { id: "es-argila", nome: t("Argila, 0-5 cm (SoilGrids)", "Arcilla, 0-5 cm (SoilGrids)"), tipo: "raster", url: isric("clay", "clay_0-5cm_mean"), min: 5, max: 22, op: 0.6, attr: ISRIC, intel: 1 }
+    ] },
+    { sub: t("Referências", "Referencias"), itens: [
+      { id: "es-camino", nome: t("Caminhos de Santiago (IGN)", "Caminos de Santiago (IGN)"), tipo: "raster", url: wms("https://www.ign.es/wms-inspire/camino-santiago", "camino_frances,caminos_galicia,caminos_norte,caminos_andaluces,caminos_centro,caminos_este,caminos_nordeste,caminos_sureste,caminos_insulares,caminos_portugueses"), min: 6, max: 22, op: 1, attr: "Camino de Santiago " + IGN },
+      { id: "es-cp", nome: t("Códigos postais (CartoCiudad)", "Códigos postales (CartoCiudad)"), tipo: "raster", url: wms("https://www.cartociudad.es/wms-inspire/direcciones-ccpp", "codigo-postal"), min: 9, max: 22, op: 0.8, attr: "CartoCiudad " + IGN }
+    ] },
+    /* Camadas regionais: cada uma só aparece na lista quando o centro do mapa está dentro da comunidade autónoma. */
+    { sub: t("Regional", "Autonómico"), itens: [
+      { id: "es-cyl-clas", reg: R_CYL, nome: t("Castilla y León: classificação do solo (planeamento)", "Castilla y León: clasificación del suelo (planeamiento)"), tipo: "raster", url: wms("https://idecyl.jcyl.es/geoserver/urbanismo/wms", "plau_cyl_clasificacion"), min: 10, max: 22, op: 0.6, attr: "PLAU, Junta de Castilla y León" },
+      { id: "es-cyl-cat", reg: R_CYL, nome: t("Castilla y León: categorias do solo", "Castilla y León: categorías del suelo"), tipo: "raster", url: wms("https://idecyl.jcyl.es/geoserver/urbanismo/wms", "plau_cyl_categorias_desagrupa"), min: 11, max: 22, op: 0.6, attr: "PLAU, Junta de Castilla y León" },
+      { id: "es-cat-sols", reg: R_CAT, nome: t("Catalunha: solos, classificação WRB (ICGC)", "Cataluña: suelos, clasificación WRB (ICGC)"), tipo: "raster", sonda: "https://geoserveis.icgc.cat/servei/catalunya/edafologia/wms", url: wms("https://geoserveis.icgc.cat/servei/catalunya/edafologia/wms", "11_WRB_PA"), min: 9, max: 22, op: 0.6, attr: "ICGC CC BY 4.0", intel: 1 },
+      { id: "es-cat-agro", reg: R_CAT, nome: t("Catalunha: capacidade agrológica (ICGC)", "Cataluña: capacidad agrológica (ICGC)"), tipo: "raster", sonda: "https://geoserveis.icgc.cat/servei/catalunya/capacitat-agrologica/wms", url: wms("https://geoserveis.icgc.cat/servei/catalunya/capacitat-agrologica/wms", "capacitat-agrologica"), min: 9, max: 22, op: 0.6, attr: "ICGC CC BY 4.0", intel: 1 },
+      { id: "es-cat-cob", reg: R_CAT, nome: t("Catalunha: coberturas do solo 2023 (ICGC)", "Cataluña: cubiertas del suelo 2023 (ICGC)"), tipo: "raster", sonda: "https://geoserveis.icgc.cat/servei/catalunya/cobertes-sol/wms", url: wms("https://geoserveis.icgc.cat/servei/catalunya/cobertes-sol/wms", "cobertes_2023"), min: 9, max: 22, op: 0.6, attr: "ICGC CC BY 4.0", intel: 1 },
+      { id: "es-and-hic", reg: R_AND, nome: t("Andaluzia: habitats de interesse comunitário (REDIAM)", "Andalucía: hábitats de interés comunitario (REDIAM)"), tipo: "raster", proxy: 1, sonda: "https://www.juntadeandalucia.es/medioambiente/mapwms/REDIAM_habitats_interes_comunitario", raw: wms("https://www.juntadeandalucia.es/medioambiente/mapwms/REDIAM_habitats_interes_comunitario", "habitats_interes_comunitario"), url: "", min: 9, max: 22, op: 0.6, attr: "REDIAM, Junta de Andalucía", intel: 1 }
     ] }
   ];
+  CAT.forEach(function (g) { g.itens.forEach(function (it) { if (it.proxy && it.raw) it.url = px(it.raw); }); });
   function tranc(it) { return EXPL && it.intel; }
   function wmws(b, c) { return wms(b, c); }
   /* 17/11/2026: cronologia de Espanha (voos do IGN, WMS pnoa-historico, testado a 17/11 a partir do navegador: 200, imagem,
@@ -131,24 +179,48 @@
     document.body.appendChild(a); setTimeout(function () { a.remove(); }, 7000);
   }
   function sondar(it, depois) {
+    if (it.wmts) return sondarWmts(it, depois);
     if (!it.sonda) return depois(true);
     if (SONDA[it.sonda] !== undefined) return depois(SONDA[it.sonda]);
     var feito = false, c = window.AbortController ? new AbortController() : null;
     var tm = setTimeout(function () { if (c) c.abort(); fim(false); }, 12000);
     function fim(ok) { if (feito) return; feito = true; clearTimeout(tm); SONDA[it.sonda] = ok; setTimeout(function () { delete SONDA[it.sonda]; }, 600000); depois(ok); }
-    fetch(it.sonda + (it.sonda.indexOf("?") < 0 ? "?" : "&") + "request=GetCapabilities&service=WMS", c ? { signal: c.signal } : {})
+    var capU = it.sonda + (it.sonda.indexOf("?") < 0 ? "?" : "&") + "request=GetCapabilities&service=WMS";
+    fetch(it.proxy ? PX + encodeURIComponent(capU) : capU, c ? { signal: c.signal } : {})
       .then(function (r) { return r.text(); }).then(function (x) {
         var ok = /<(WMS_)?Capabilities/i.test(x) && !/ServiceException/.test(x.slice(0, 400));
         /* Os nomes das camadas do MITECO não puderam ser confirmados a 17/11 (serviço em baixo): se o nome previsto não
            existir no GetCapabilities, usa-se a primeira camada com nome que não seja a raiz. */
         if (ok) {
           var nomes = [], m, re = /<Layer[^>]*>\s*<Name>([^<]+)<\/Name>/g; while ((m = re.exec(x))) nomes.push(m[1]);
-          var cur = decodeURIComponent((it.url.match(/LAYERS=([^&]+)/) || [])[1] || "");
-          if (nomes.length && nomes.indexOf(cur) < 0) { var n = nomes.length > 1 ? nomes[1] : nomes[0]; it.url = it.url.replace(/LAYERS=[^&]+/, "LAYERS=" + encodeURIComponent(n)); }
+          var base = it.proxy ? it.raw : it.url;
+          var cur = decodeURIComponent((base.match(/LAYERS=([^&]+)/) || [])[1] || "");
+          if (nomes.length && cur.split(",").some(function (k) { return nomes.indexOf(k) < 0; })) {
+            var n = nomes.length > 1 ? nomes[1] : nomes[0]; base = base.replace(/LAYERS=[^&]+/, "LAYERS=" + encodeURIComponent(n));
+            if (it.proxy) { it.raw = base; it.url = px(base); } else it.url = base;
+          }
         }
         fim(ok);
       })
       .catch(function () { fim(false); });
+  }
+  /* WMTS do MITECO (sensibilidade ambiental para renováveis): o nome da camada e o conjunto de matrizes em 3857 lêem-se
+     do GetCapabilities; se não houver conjunto em 3857 (GoogleMapsCompatible ou EPSG:3857), a camada não é mostrada. */
+  function sondarWmts(it, depois) {
+    if (SONDA[it.wmts] !== undefined) return depois(SONDA[it.wmts]);
+    var feito = false, c = window.AbortController ? new AbortController() : null;
+    var tm = setTimeout(function () { if (c) c.abort(); fim(false); }, 12000);
+    function fim(ok) { if (feito) return; feito = true; clearTimeout(tm); SONDA[it.wmts] = ok; setTimeout(function () { delete SONDA[it.wmts]; }, 600000); depois(ok); }
+    fetch(it.wmts + "?REQUEST=GetCapabilities&SERVICE=WMTS", c ? { signal: c.signal } : {}).then(function (r) { return r.ok ? r.text() : ""; }).then(function (x) {
+      var cam = (x.match(/<Layer>[\s\S]*?<ows:Identifier>([^<]+)<\/ows:Identifier>/) || [])[1];
+      var sets = []; var m, re = /<TileMatrixSet>([^<]+)<\/TileMatrixSet>/g; while ((m = re.exec(x))) sets.push(m[1]);
+      var tms = sets.filter(function (s) { return /GoogleMaps|3857|900913/i.test(s); })[0];
+      var fmt = (x.match(/<Format>(image\/(?:png|jpeg))<\/Format>/) || [])[1] || "image/png";
+      if (!cam || !tms) return fim(false);
+      it.url = it.wmts + "?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=" + encodeURIComponent(cam) + "&STYLE=default&FORMAT=" + encodeURIComponent(fmt) +
+        "&TILEMATRIXSET=" + encodeURIComponent(tms) + "&TILEMATRIX=" + (/^EPSG:/.test(tms) ? encodeURIComponent(tms) + ":" : "") + "{z}&TILEROW={y}&TILECOL={x}";
+      fim(true);
+    }).catch(function () { fim(false); });
   }
   function antes(I) { var L = (I.getStyle() && I.getStyle().layers) || []; for (var i = 0; i < L.length; i++) if (/^tme-|^gl-draw|^tcd-terreno/.test(L[i].id)) return L[i].id; return undefined; }
   function ligar(it) {
@@ -173,7 +245,7 @@
   }
   var CSS = ".tes:not(.aberto)>*:not(h4){display:none}.tes h4{cursor:pointer;display:flex;align-items:center;gap:8px;margin:0!important}.tes h4::before{content:\"\";width:0;height:0;border-left:5px solid currentColor;border-top:4px solid transparent;border-bottom:4px solid transparent;transition:transform .15s}.tes.aberto h4::before{transform:rotate(90deg)}.tes.aberto h4{margin:0 0 6px!important}" + ".tes{margin:8px 0 4px;border:1px solid var(--ln2,#ddd);border-radius:8px;padding:8px 10px;background:var(--p2,transparent)}" +
     ".tes h4{margin:0 0 6px;font:600 13px Inter,system-ui,sans-serif;color:var(--tx,#222)}.tes h5{margin:8px 0 3px;font:600 11.5px Inter,system-ui,sans-serif;color:var(--mu,#666);text-transform:uppercase;letter-spacing:.04em}" +
-    ".tes label{display:flex;gap:7px;align-items:center;font:13px Inter,system-ui,sans-serif;color:var(--tx,#222);padding:3px 0;cursor:pointer}.tes small{display:block;margin-top:6px;font-size:11px;color:var(--mu,#777)}";
+    ".tes label{display:flex;gap:7px;align-items:center;font:13px Inter,system-ui,sans-serif;color:var(--tx,#222);padding:3px 0;cursor:pointer}.tes small{display:block;margin-top:6px;font-size:11px;color:var(--mu,#777)}.tes [hidden]{display:none!important}";
   function montar() {
     var cam = document.getElementById("ipe-cam"); if (!cam) return false;
     if (document.getElementById("tes")) return true;
@@ -181,10 +253,10 @@
     var d = document.createElement("div"); d.id = "tes"; d.className = "tes ipr-g"; d.setAttribute("data-g", "es"); d.hidden = true;
     var h = "<h4>" + t("Espanha", "España") + "</h4>";
     CAT.forEach(function (g) {
-      h += "<h5>" + g.sub + "</h5>";
+      h += "<h5" + (g.itens.every(function (i) { return i.reg; }) ? " data-regional" : "") + ">" + g.sub + "</h5>";
       g.itens.forEach(function (it) {
-        if (tranc(it)) { h += '<label class="bl" title="IPR Atlas Intelligence"><input type="checkbox" disabled> ' + it.nome + ' <i style="font-style:normal;font-size:11px;color:var(--mu,#777)">Intelligence</i></label>'; return; }
-        h += '<label><input type="checkbox" data-tes="' + it.id + '"' + (ligados[it.id] ? " checked" : "") + "> " + it.nome + "</label>";
+        if (tranc(it)) { h += '<label class="bl" title="IPR Atlas Intelligence"' + (it.reg ? ' data-reg="' + it.reg.join(",") + '"' : "") + '><input type="checkbox" disabled> ' + it.nome + ' <i style="font-style:normal;font-size:11px;color:var(--mu,#777)">Intelligence</i></label>'; return; }
+        h += '<label' + (it.reg ? ' data-reg="' + it.reg.join(",") + '"' : "") + '><input type="checkbox" data-tes="' + it.id + '"' + (ligados[it.id] ? " checked" : "") + "> " + it.nome + "</label>";
       });
     });
     h += "<h5>" + t("Cronologia (voos do IGN)", "Cronología (vuelos del IGN)") + "</h5>" +
@@ -210,7 +282,7 @@
           if (!ligados[it.id]) return;
           if (ok) { ligar(it); return; }
           delete ligados[it.id]; guardar(); c.checked = false;
-          aviso(t("O serviço do MITECO não está a responder neste momento. Tente mais tarde.", "El servicio del MITECO no responde en este momento. Inténtelo más tarde."));
+          aviso(t("O serviço desta camada (" + it.attr.split(/[,·]/)[0].trim() + ") não está a responder neste momento. Tente mais tarde.", "El servicio de esta capa (" + it.attr.split(/[,·]/)[0].trim() + ") no responde en este momento. Inténtelo más tarde."));
         });
       } else { delete ligados[it.id]; desligar(it); guardar(); }
     });
@@ -221,6 +293,14 @@
     var c = I.getCenter(), em = dentro(c.lng, c.lat);
     if (d.hidden === em) d.hidden = !em;
     if (em) pnoaAuto();
+    if (em) {
+      var vis = 0;
+      Array.prototype.forEach.call(d.querySelectorAll("[data-reg]"), function (l) {
+        var b = l.getAttribute("data-reg").split(",").map(Number), ok = c.lng >= b[0] && c.lng <= b[2] && c.lat >= b[1] && c.lat <= b[3];
+        l.hidden = !ok; if (ok) vis++;
+      });
+      var h5 = d.querySelector("h5[data-regional]"); if (h5) h5.hidden = !vis;
+    }
   }
   function repor() { if (cronoSel > -1) { var I0 = mapa(); if (I0 && I0.getLayer && !I0.getLayer("es-crono")) cronoMostrar(cronoSel); } Object.keys(ligados).forEach(function (id) { var it = itemPor(id); if (it && !tranc(it)) sondar(it, function (ok) { if (ok && ligados[id]) ligar(it); }); }); }
   /* 17/11/2026 (Nuno: ortofoto PNOA por omissão em Espanha). Na primeira vez que o mapa entra em Espanha, se a pessoa
