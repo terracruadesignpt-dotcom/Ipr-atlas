@@ -153,13 +153,14 @@
   }
 
   // ---------- 16462 bacias com cores distintas entre vizinhas ----------
-  var RE_BAC = /^(iprv-l_bacias_l|ipe-am-bacias_l)-f$/;
+  var RE_BAC = /^(iprv-l_bacias_l|ipe-am-(l_)?bacias(_l)?)-f$/; // 17151 (17/11/2026): também as bacias dos mapas da Leitura Territorial
   var CORES_BAC = ["#E8A4C8", "#7ECFC0", "#B5D46A", "#9B8EC4", "#F2B37A", "#7FA8D9", "#E3CF6A", "#D98C8C"];
   function corBacia(i) {
     if (i < CORES_BAC.length) return CORES_BAC[i];
     var h = Math.round((i * 137.508) % 360); return "hsl(" + h + ",55%,68%)"; // cores extra (ângulo de ouro), nunca repetidas
   }
-  function rotulo(p) { p = p || {}; var v = p.label != null ? p.label : (p.LABEL != null ? p.LABEL : p.rotulo); return v == null ? null : String(v); }
+  var CHAVES_BAC = ["label", "LABEL", "rotulo", "bacia", "BACIA", "nome", "name", "id", "fid"]; // 17151: os pacotes da Leitura não trazem «label»
+  function rotulo(p) { p = p || {}; for (var i = 0; i < CHAVES_BAC.length; i++) { var v = p[CHAVES_BAC[i]]; if (v != null && v !== "") return String(v); } return null; }
   var MAX_VERT = 250000; // limite de vértices lidos por cálculo (o resto das bacias fica com a cor do rótulo)
   function coresBacias(feats) {
     var CEL = 0.0002, cel = {}, lista = {}, n = 0;
@@ -202,7 +203,7 @@
   function pintarBacias(M, lid, feats) {
     if (!feats || !feats.length || !M.getLayer(lid)) return false;
     var c = coresBacias(feats), k = Object.keys(c.cor); if (k.length < 2) return false;
-    var ex = ["match", ["to-string", ["coalesce", ["get", "label"], ["get", "LABEL"], ["get", "rotulo"], ""]]];
+    var ex = ["match", ["to-string", ["coalesce"].concat(CHAVES_BAC.map(function (k) { return ["get", k]; }), [""])]];
     k.forEach(function (r) { ex.push(r, corBacia(c.cor[r])); });
     ex.push(CORES_BAC[0]);
     M.setPaintProperty(lid, "fill-color", ex);
