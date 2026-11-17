@@ -86,6 +86,7 @@
       { id: "es-sismos", nome: t("Sismos do último ano (IGN)", "Terremotos del último año (IGN)"), tipo: "raster", url: wms("https://www.ign.es/wms-inspire/geofisica", "Ultimos365dias"), min: 5, max: 22, op: 1, attr: "Red Sísmica Nacional " + IGN },
       { id: "es-inesl", nome: t("Erosão laminar e em regueiros (INES)", "Erosión laminar y en regueros (INES)"), tipo: "raster", sonda: MIT + "INESErosionLaminarRaster/wms.aspx", url: wms(MIT + "INESErosionLaminarRaster/wms.aspx", "NZ.HazardArea"), min: 8, max: 22, op: 0.6, attr: "INES, " + MITA, intel: 1 },
       { id: "es-inesm", nome: t("Movimentos em massa (INES)", "Movimientos en masa (INES)"), tipo: "raster", sonda: MIT + "INESMovimientosMasa/wms.aspx", url: wms(MIT + "INESMovimientosMasa/wms.aspx", "NZ.HazardArea"), min: 8, max: 22, op: 0.6, attr: "INES, " + MITA, intel: 1 },
+      { id: "es-ardidas", nome: t("Áreas ardidas (EFFIS, Copernicus)", "Áreas quemadas (EFFIS, Copernicus)"), tipo: "raster", url: wms("https://maps.effis.emergency.copernicus.eu/effis", "modis.ba.poly"), min: 6, max: 22, op: 0.8, attr: "EFFIS, Copernicus Emergency Management Service" },
       { id: "es-inese", nome: t("Erosão eólica (INES)", "Erosión eólica (INES)"), tipo: "raster", sonda: MIT + "INESErosionEolica/wms.aspx", url: wms(MIT + "INESErosionEolica/wms.aspx", "NZ.HazardArea"), min: 8, max: 22, op: 0.6, attr: "INES, " + MITA, intel: 1 }
     ] },
     { sub: t("Água e relevo", "Agua y relieve"), itens: [
@@ -113,9 +114,6 @@
       { id: "es-mab", nome: t("Reservas da Biosfera (UNESCO)", "Reservas de la Biosfera (UNESCO)"), tipo: "raster", sonda: MIT + "MAB", url: wms(MIT + "MAB", "PS.ProtectedSite"), min: 5, max: 22, op: 0.5, attr: "MaB, " + MITA },
       { id: "es-paisagem", nome: t("Atlas das Paisagens de Espanha", "Atlas de los Paisajes de España"), tipo: "raster", sonda: MIT + "Paisaje/wms.aspx", url: wms(MIT + "Paisaje/wms.aspx", "LC.LandCoverSurfaces"), min: 6, max: 22, op: 0.55, attr: MITA, intel: 1 },
       { id: "es-ripar", nome: t("Zonas ripárias, uso do solo (Copernicus)", "Zonas de ribera, uso del suelo (Copernicus)"), tipo: "raster", url: msx("https://image.discomap.eea.europa.eu/arcgis/rest/services/RiparianZones/LCLU/MapServer"), min: 10, max: 22, op: 0.7, attr: "Riparian Zones, " + CLMS, intel: 1 }
-    ] },
-    { sub: t("Fogo", "Incendios"), itens: [
-      { id: "es-ardidas", nome: t("Áreas ardidas (EFFIS, Copernicus)", "Áreas quemadas (EFFIS, Copernicus)"), tipo: "raster", url: wms("https://maps.effis.emergency.copernicus.eu/effis", "modis.ba.poly"), min: 6, max: 22, op: 0.8, attr: "EFFIS, Copernicus Emergency Management Service" }
     ] },
     { sub: t("Solo e geologia", "Suelo y geología"), itens: [
       { id: "es-magna", nome: t("Geologia MAGNA 1:50 000 (IGME)", "Geología MAGNA 1:50.000 (IGME)"), tipo: "raster", url: wms(IGME + "Cartografia_Geologica/IGME_MAGNA_50/MapServer/WMSServer", "0"), min: 10, max: 22, op: 0.65, attr: "IGME-CSIC CC BY 4.0", intel: 1 },
@@ -316,9 +314,90 @@
   function arrancar(n) {
     if (!montar() || !mapa()) { if (n < 60) setTimeout(function () { arrancar(n + 1); }, 500); return; }
     var I = mapa();
-    verificar(); repor();
+    verificar(); repor(); ligarModo();
     if (I.on) { I.on("moveend", verificar); I.on("styledata", function () { setTimeout(repor, 0); }); }
   }
-  window.__tcdEsCamadas = { dentro: dentro, CAT: CAT };
+  /* 17/11/2026 (Nuno: «deve haver botões que só funcionam para Portugal, isso é para sair fora»). Modo Espanha: com o centro
+     do mapa em Espanha (a) escondem-se os botões e produtos que só existem em Portugal (temas, Plano de situação, Leitura
+     Territorial, pacote dos três, projecto de demonstração do Torgal) e a caixa da Leitura na encomenda é desmarcada (a
+     Leitura usa o PDM e a DGT; vendê-la em Espanha seria cobrar um produto que não se faz); (b) com o mapa todo fora de
+     Portugal, as camadas portuguesas ligadas (hipsometria e curvas da DGT, cadastro da DGT...) são desligadas e voltam a
+     ligar-se quando o mapa regressa a Portugal; os fundos da DGT (ortofoto Sentinel/ortosat), que fora de Portugal pintam
+     branco por cima da PNOA, ficam escondidos no mapa. A linha «Fora de Portugal: ... camadas escondidas» sai em castelhano. */
+  var PTB = [-9.7, 36.8, -6.0, 42.25], PTH = /dgterritorio\.gov\.pt|apambiente\.pt|icnf\.pt|dgeg\.gov\.pt|bupi\.gov\.pt|ifap\.pt|dgadr\.pt|lneg\.pt|madeira\.gov\.pt|azores\.gov\.pt/i;
+  var GLOBAL = /OpenStreetMap|Copernicus|Sentinel|NASA|GBIF|ESA\b|EEA|EOX|SoilGrids|CORINE|Natural Earth|WorldPop|JRC|Esri|GEBCO|FAO|World|Global|Mundo/i;
+  var CH_DESL = CHAVE + "_pt_desligadas", escMapa = {}, modoES = null;
+  function ptCat(id) {
+    var V = window.IPRViz; if (!V || !V.catalogo) return false;
+    var L = Array.isArray(V.catalogo) ? V.catalogo : Object.keys(V.catalogo).map(function (k) { return V.catalogo[k]; });
+    for (var i = 0; i < L.length; i++) if (L[i] && L[i].id === id) {
+      var c = L[i], g = String(c.g || ""), f = String(c.fonte || "") + " " + String(c.n || "");
+      if (/^(es|fr|eu|ao)$/.test(g)) return false;
+      if (/Mapterhorn/.test(f) && !/DGT/.test(f)) return false;
+      if (GLOBAL.test(f) && !/DGT/.test(f)) return false;
+      return true;
+    }
+    return false;
+  }
+  function lerDesl() { try { return JSON.parse(localStorage.getItem(CH_DESL) || "[]") || []; } catch (e) { return []; } }
+  function srcPT(I, l) {
+    var so = l.source && I.getStyle().sources[l.source]; if (!so) return false;
+    var u = (so.tiles || []).concat(so.url ? [so.url] : []).join(" "); try { u = decodeURIComponent(u); } catch (e) {}
+    return PTH.test(u);
+  }
+  function modoEspanha() {
+    var I = mapa(); if (!I || !I.getCenter || !I.getStyle()) return;
+    var c = I.getCenter(), em = dentro(c.lng, c.lat), bb = I.getBounds();
+    var toca = !(bb.getEast() < PTB[0] || bb.getWest() > PTB[2] || bb.getNorth() < PTB[1] || bb.getSouth() > PTB[3]);
+    var forte = em && !toca;
+    document.body.classList.toggle("tcd-es", em);
+    if (em) {
+      var ck = document.querySelector('#ipe-form input[name="leitura"]');
+      if (ck && ck.checked) { ck.checked = false; ck.setAttribute("data-tcd-es", "1"); ["input", "change"].forEach(function (ev) { ck.dispatchEvent(new Event(ev, { bubbles: true })); }); }
+    } else {
+      var ck2 = document.querySelector('#ipe-form input[name="leitura"][data-tcd-es]');
+      if (ck2 && !ck2.checked) { ck2.checked = true; ck2.removeAttribute("data-tcd-es"); ["input", "change"].forEach(function (ev) { ck2.dispatchEvent(new Event(ev, { bubbles: true })); }); }
+    }
+    /* mapa: fontes portuguesas (DGT e afins) escondidas com o mapa todo fora de Portugal */
+    (I.getStyle().layers || []).forEach(function (l) {
+      if (/^es-|^tme-|^ipe-|^gl-draw/.test(l.id)) return;
+      if (forte) {
+        if (srcPT(I, l) && I.getLayoutProperty(l.id, "visibility") !== "none") { try { I.setLayoutProperty(l.id, "visibility", "none"); escMapa[l.id] = 1; } catch (e) {} }
+      } else if (escMapa[l.id]) { try { I.setLayoutProperty(l.id, "visibility", "visible"); } catch (e) {} delete escMapa[l.id]; }
+    });
+    /* lista: camadas portuguesas ligadas desligam-se (e voltam em Portugal) */
+    var desl = lerDesl(), mudou = false;
+    if (forte) {
+      [].forEach.call(document.querySelectorAll("#ipe li.ipr-it[data-id]"), function (li) {
+        var inp = li.querySelector("input.ipr-ck, input[type=checkbox]"); if (!inp || !inp.checked || !ptCat(li.dataset.id)) return;
+        inp.click(); if (desl.indexOf(li.dataset.id) < 0) desl.push(li.dataset.id); mudou = true;
+      });
+    } else if (desl.length && !em) {
+      var c2 = I.getCenter();
+      if (c2.lng >= PTB[0] && c2.lng <= PTB[2] && c2.lat >= PTB[1] && c2.lat <= PTB[3]) {
+        desl.forEach(function (id) { var li = document.querySelector('#ipe li.ipr-it[data-id="' + id + '"]'), inp = li && li.querySelector("input.ipr-ck, input[type=checkbox]"); if (inp && !inp.checked) inp.click(); });
+        desl = []; mudou = true;
+      }
+    }
+    if (mudou) { try { localStorage.setItem(CH_DESL, JSON.stringify(desl)); } catch (e) {} }
+    modoES = em;
+  }
+  var CSS_ES = "body.tcd-es #tb-bar,body.tcd-es #ipe [data-be-prod=planta],body.tcd-es #ipe [data-be-prod=leitura],body.tcd-es #ipr-pacote," +
+    "body.tcd-es #ipe li.ipr-mb-b[data-mb='18032'],body.tcd-es #ipe-form label.ipe-chk:has(input[name=leitura]){display:none!important}";
+  var RG = [[/Fora de Portugal: /, "Fuera de Portugal: "], [/ camadas de outras regiões escondidas/, " capas de otras regiones ocultas"], [/ camada de outra região escondida/, " capa de otra región oculta"],
+    [/A mostrar todas as camadas\./, "Mostrando todas las capas."], [/Só as desta zona/, "Solo las de esta zona"]];
+  function traduzRegn() {
+    if (!ES) return; var x = document.getElementById("ipr-regn"); if (!x) return;
+    var h = x.innerHTML, n = h; RG.forEach(function (r) { n = n.replace(r[0], r[1]); }); if (n !== h) x.innerHTML = n;
+  }
+  function ligarModo() {
+    var st = document.createElement("style"); st.textContent = CSS_ES; document.head.appendChild(st);
+    var cam = document.getElementById("ipe-cam") || document.body;
+    if (window.MutationObserver) new MutationObserver(traduzRegn).observe(cam, { childList: true, subtree: true, characterData: true });
+    var tmo = 0, I = mapa(); function ag() { clearTimeout(tmo); tmo = setTimeout(modoEspanha, 300); }
+    if (I && I.on) { I.on("moveend", ag); I.on("styledata", ag); }
+    setInterval(modoEspanha, 3000); modoEspanha(); traduzRegn();
+  }
+  window.__tcdEsCamadas = { dentro: dentro, CAT: CAT, modo: modoEspanha };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", function () { arrancar(0); }); else arrancar(0);
 })();
