@@ -17,7 +17,10 @@
   try { if (/[?&]dgtproprio=0\b/.test(location.search) || (W.localStorage && W.localStorage.getItem("ipr-dgt-proprio") === "0")) return; } catch (e) {}
   var BASE = "https://camadas.terracruadesign.pt/pmtiles/dgt/";
   var PROPRIAS = { srup_ren_areal: 1, srup_ren_linear: 1, srup_ran: 1, srup_albufeiras: 1, srup_rede_eletrica: 1, srup_zec: 1, srup_zpe: 1,
-    srup_areas_protegidas: 1, srup_aquiferos: 1, srup_defesa_militar_zonas: 1, srup_aeronautica: 1, linhas_agua: 1, crus: 1 };
+    srup_areas_protegidas: 1, srup_aquiferos: 1, srup_defesa_militar_zonas: 1, srup_aeronautica: 1, linhas_agua: 1, crus: 1,
+    // 14/11/2026 (Nuno: «a COS 2023 e a CRUS é para descarregar tudo e inserir no nosso site já»): COS2023v1 a partir do
+    // GeoPackage oficial da DGT (Série 2), convertida em PMTiles por GitHub Actions e copiada para o R2.
+    cos2023v1: 1 };
   var PMT = "https://cdn.jsdelivr.net/npm/pmtiles@3.2.1/dist/pmtiles.js", pronto = null, fontes = {}, LIG = 0;
   var DEP = "https://camadas.terracruadesign.pt/mvt/", WK = "https://ipr-mvt.terracrua-ipr.workers.dev/",
     OGC = "https://ogcapi.dgterritorio.gov.pt/collections/", MVT = { deposito: 0, copiador: 0, dgt: 0, falhas: 0 }, mvtPronto = false;
