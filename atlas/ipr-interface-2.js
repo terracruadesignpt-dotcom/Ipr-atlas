@@ -205,7 +205,7 @@
     if (b) { if (b.parentNode !== pq) pq.appendChild(b); }
   }
   var n = 0;
-  (function ciclo(){ try { go(); } catch (e) {} n++; setTimeout(ciclo, n > 60 ? 1500 : 250); })();
+  (function ciclo(){ try { if (!document.hidden) go(); } catch (e) {} n++; setTimeout(ciclo, n > 60 ? 1500 : 250); })();
 })();
 
 (function(){
@@ -227,7 +227,7 @@
     document.querySelectorAll('#ipe-esq .ipr-it .ipr-nome, #tao label, #tao label > span, #ipr-t62 .ipr-t62-c label').forEach(parte);
   }
   var n = 0;
-  (function ciclo(){ try { corre(); } catch (e) {} n++; setTimeout(ciclo, n > 60 ? 1200 : 300); })();
+  (function ciclo(){ try { if (!document.hidden) corre(); } catch (e) {} n++; setTimeout(ciclo, n > 60 ? 1200 : 300); })();
 })();
 
 (function(){
@@ -302,7 +302,7 @@
     });
   }
   var n = 0;
-  (function ciclo(){ try { poe(); } catch (e) {} n++; setTimeout(ciclo, n > 60 ? 1500 : 300); })();
+  (function ciclo(){ try { if (!document.hidden) poe(); } catch (e) {} n++; setTimeout(ciclo, n > 60 ? 1500 : 300); })();
 })();
 
 (function(){
@@ -472,7 +472,7 @@
   }
   window.addEventListener('pointerdown', function(e){ var t = e.target; if (!t.closest) return; if (!t.closest('#tp-cq')) return; var p = D.getElementById('ipr-be-cqp'); aberto = p ? !p.hidden : false; }, true);
   var k = 0;
-  (function ciclo(){ try { prox(); } catch (e) {} k++; setTimeout(ciclo, k > 60 ? 1000 : 300); })();
+  (function ciclo(){ try { if (!document.hidden) prox(); } catch (e) {} k++; setTimeout(ciclo, k > 60 ? 1000 : 300); })();
 })();
 
 (function(){
@@ -555,7 +555,7 @@
     });
   }
   var n = 0;
-  (function ciclo(){ try { cores(); } catch (e) {} n++; setTimeout(ciclo, n > 60 ? 1500 : 300); })();
+  (function ciclo(){ try { if (!document.hidden) cores(); } catch (e) {} n++; setTimeout(ciclo, n > 60 ? 1500 : 300); })();
 })();
 
 (function(){
@@ -625,7 +625,7 @@
     });
   }
   var n = 0;
-  (function ciclo(){ try { por(); } catch (e) {} n++; setTimeout(ciclo, n > 60 ? 1500 : 300); })();
+  (function ciclo(){ try { if (!document.hidden) por(); } catch (e) {} n++; setTimeout(ciclo, n > 60 ? 1500 : 300); })();
 })();
 
 (function(){
@@ -648,7 +648,7 @@
     L.hidden = largo ? false : !fechado;
   }
   var n = 0;
-  (function ciclo(){ try { lingueta(); } catch (e) {} n++; setTimeout(ciclo, n > 60 ? 1500 : 300); })();
+  (function ciclo(){ try { if (!document.hidden) lingueta(); } catch (e) {} n++; setTimeout(ciclo, n > 60 ? 1500 : 300); })();
   window.addEventListener('resize', function(){ try { lingueta(); } catch (e) {} });
 })();
 
@@ -691,7 +691,7 @@
   }, true);
   window.addEventListener('change', function(e){ if (e.target.closest) { if (e.target.closest('#tes')) setTimeout(aplicar, 0); } }, true);
   var n = 0;
-  (function ciclo(){ try { aplicar(); } catch (e) {} n++; setTimeout(ciclo, n > 60 ? 1500 : 300); })();
+  (function ciclo(){ try { if (!document.hidden) aplicar(); } catch (e) {} n++; setTimeout(ciclo, n > 60 ? 1500 : 300); })();
   window.addEventListener('resize', function(){ });
 })();
 
@@ -715,7 +715,7 @@
     L.hidden = !(window.innerWidth > 900);
   }
   var n = 0;
-  (function ciclo(){ try { aba(); } catch (e) {} n++; setTimeout(ciclo, n > 60 ? 1500 : 300); })();
+  (function ciclo(){ try { if (!document.hidden) aba(); } catch (e) {} n++; setTimeout(ciclo, n > 60 ? 1500 : 300); })();
   window.addEventListener('resize', function(){ try { aba(); } catch (e) {} });
 })();
 
@@ -770,7 +770,7 @@
     SEL = SEL === id ? '' : id; arruma();
   }, true);
   var n = 0;
-  (function ciclo(){ try { arruma(); } catch (e) {} n++; setTimeout(ciclo, n > 60 ? 600 : 300); })();
+  (function ciclo(){ try { if (!document.hidden) arruma(); } catch (e) {} n++; setTimeout(ciclo, n > 60 ? 600 : 300); })();
 })();
 
 (function(){
@@ -786,7 +786,7 @@
     if (av.textContent !== ini) av.textContent = ini;
   }
   var n = 0;
-  (function ciclo(){ try { conta(); } catch (e) {} n++; setTimeout(ciclo, n > 60 ? 1500 : 300); })();
+  (function ciclo(){ try { if (!document.hidden) conta(); } catch (e) {} n++; setTimeout(ciclo, n > 60 ? 1500 : 300); })();
 })();
 
 (function(){
@@ -824,7 +824,7 @@
     if (OPV !== 100) aplica();
   }
   var n = 0;
-  (function ciclo(){ try { deco(); } catch (e) {} n++; setTimeout(ciclo, n > 60 ? 1000 : 300); })();
+  (function ciclo(){ try { if (!document.hidden) deco(); } catch (e) {} n++; setTimeout(ciclo, n > 60 ? 1000 : 300); })();
 })();
 
 (function(){
@@ -891,7 +891,7 @@
   }
   window.addEventListener('change', function(){ setTimeout(function(){ try { sub(); } catch (e) {} }, 0); }, true);
   var n = 0;
-  (function ciclo(){ try { sub(); } catch (e) {} n++; setTimeout(ciclo, n > 60 ? 1200 : 400); })();
+  (function ciclo(){ try { if (!document.hidden) sub(); } catch (e) {} n++; setTimeout(ciclo, n > 60 ? 1200 : 400); })();
 })();
 (function(){
   var D = document, W = window, TAM = null, SIG = '';
@@ -1588,7 +1588,7 @@ if (window.IPR_A2_DEMO) (function(){
     x = t.closest('[data-cm-nota]'); if (x) { nota(x, x.dataset.cmNota); return; }
   }, true);
   var n = 0;
-  (function ciclo(){ try { aplica(); } catch (e) {} n++; setTimeout(ciclo, n > 40 ? 900 : 250); })();
+  (function ciclo(){ try { if (!document.hidden) aplica(); } catch (e) {} n++; setTimeout(ciclo, n > 40 ? 900 : 250); })();
 })();
 
 
@@ -2045,8 +2045,9 @@ if (window.IPR_A2_DEMO) (function(){
       if (Math.abs(y - y0) > 0.5) e.style.setProperty('top', y + 'px', 'important');
     });
   }
-  (function ciclo2(){ try { encosta(); } catch (e) {} setTimeout(ciclo2, 250); })();
-  (function ciclo(){ try { arruma(); } catch (e) {} setTimeout(ciclo, 500); })();
+  var nE = 0, nA = 0;
+  (function ciclo2(){ try { if (!document.hidden) encosta(); } catch (e) {} nE++; setTimeout(ciclo2, nE > 60 ? 500 : 250); })();
+  (function ciclo(){ try { if (!document.hidden) arruma(); } catch (e) {} nA++; setTimeout(ciclo, nA > 60 ? 1000 : 500); })();
 })();
 
 ;/* ===== c2-js ===== */
