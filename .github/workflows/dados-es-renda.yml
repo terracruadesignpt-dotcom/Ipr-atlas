@@ -1,0 +1,50 @@
+# IPR Atlas · Espanha: renda das famílias (INE, ADRH 2024, CC BY 4.0) por secção censal em PMTiles e por município em JSON.
+# Nuno, 17/11/2026: «tudo o que podemos copiar da informação de Espanha para servir a partir do nosso próprio servidor, eu prefiro
+# […] negócios»; escolheu «Tudo, pela ordem». Fonte: tabelas do INE no pacote ineAtlas.data (github.com/pablogguz/ineAtlas.data,
+# CC BY 4.0) e secções censais de 2024. Publica na versão «es-dados»; o worker ipr-copia-es copia os anexos para o R2.
+name: dados-es-renda
+on:
+  push:
+    branches: [dados-es-agro]
+    paths: [".github/workflows/dados-es-renda.yml", "ferramentas/es_renda.py"]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  renda:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - name: Ferramentas
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq gdal-bin
+          if ! sudo apt-get install -y -qq tippecanoe; then
+            sudo apt-get install -y -qq build-essential libsqlite3-dev zlib1g-dev
+            git clone --depth 1 https://github.com/felt/tippecanoe.git /tmp/tc && make -C /tmp/tc -j4 && sudo make -C /tmp/tc install
+          fi
+          sudo mkdir -p /mnt/d && sudo chown $USER /mnt/d
+      - name: Dados do INE (ineAtlas.data)
+        run: |
+          cd /mnt/d
+          R=https://github.com/pablogguz/ineAtlas.data/raw/main/data
+          curl -sSfL -o t.zip $R/income/income_tract.zip && curl -sSfL -o m.zip $R/income/income_municipality.zip
+          curl -sSfL -o g.zip $R/gini_p80p20/gini_p80p20_municipality.zip && curl -sSfL -o geo.zip $R/geometries/census_tracts_2024.gpkg.zip
+          unzip -q -o t.zip -d t && unzip -q -o m.zip -d m && unzip -q -o g.zip -d g && unzip -q -o geo.zip -d geo
+          ogr2ogr -f GeoJSONSeq -t_srs EPSG:4326 -lco RS=NO -lco COORDINATE_PRECISION=6 seccoes.geojsons geo/*.gpkg
+          python3 $GITHUB_WORKSPACE/ferramentas/es_renda.py /mnt/d seccoes.geojsons renda.geojsons mun
+          ls -la mun | head
+      - name: PMTiles (tippecanoe)
+        run: |
+          cd /mnt/d
+          tippecanoe -o es-renda.pmtiles -l renda -n "Renda das famílias por secção censal, Espanha 2024 (INE)" -A "© INE, Atlas de Distribución de Renta de los Hogares · CC BY 4.0 · cópia IPR Atlas" \
+            -Z4 -z13 --coalesce-densest-as-needed --detect-shared-borders --simplify-only-low-zooms --extend-zooms-if-still-dropping --hilbert -P -t /mnt/d --force renda.geojsons
+          ls -la es-renda.pmtiles
+      - name: Publicar
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cd /mnt/d
+          R="$GITHUB_REPOSITORY"
+          gh release view es-dados --repo "$R" >/dev/null 2>&1 || gh release create es-dados --repo "$R" --target "$GITHUB_SHA" --title "Espanha: dados próprios do IPR Atlas" --notes "Cópias próprias de dados abertos de Espanha para o IPR Atlas. Renda: © INE (ADRH), CC BY 4.0." || true
+          gh release upload es-dados es-renda.pmtiles mun/*.json --repo "$R" --clobber
