@@ -24,6 +24,11 @@ jobs:
             git clone --depth 1 https://github.com/felt/tippecanoe.git /tmp/tc && make -C /tmp/tc -j4 && sudo make -C /tmp/tc install
           fi
           sudo mkdir -p /mnt/d && sudo chown $USER /mnt/d
+      - name: Cadeia de certificados do MAPA
+        run: |
+          echo | openssl s_client -connect www.mapa.gob.es:443 -servername www.mapa.gob.es -showcerts 2>/dev/null | grep -E "^ *[0-9]+ s:|^ *i:" || true
+          echo | openssl s_client -connect www.mapa.gob.es:443 -servername www.mapa.gob.es 2>&1 | grep -iE "verify|depth" | head -8 || true
+          ls /usr/share/ca-certificates/mozilla | grep -iE "fnmt|accv|izenpe|firmaprofesional|camerfirma" || true
       - name: Descarregar e converter (uma família de cada vez)
         run: |
           cd /mnt/d
