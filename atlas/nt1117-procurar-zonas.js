@@ -10,6 +10,7 @@
    Não muda nenhum ficheiro do Atlas; só acrescenta uma fonte e duas camadas próprias (ipr-pz) ao mapa enquanto está aberto.
    Desligar: ?zonas=0 ou tcd_m92453_off = 1. Terracrua Design. */
 (function (W, D) {
+  var ASB, RO = null; // 18/11/2026: barra Base/Leitura/Planta e o observador do tamanho dela
   "use strict";
   if (W.__iprPZ) return; W.__iprPZ = true;
   if (/[?&]zonas=0\b/.test(location.search)) return;
@@ -320,10 +321,20 @@
     // por cima e os botões tapavam a fila dos temas. Ficam na fila dos temas (#tb-bar), antes de «Temas».
     // 18/11/2026 (Nuno: «no canto superior direito há um overlap»): a barra Base / Leitura / Planta (#ipr-as-b) fica fixa por cima
     // do fim do cabeçalho; em ecrãs mais estreitos tapava Conta, Sair e Comprar. O cabeçalho reserva-lhe o espaço.
+    // 18/11/2026 (medição com ?perfil=1: este observador gastava 5,4 s em cada 35 s, até 323 ms de cada vez, porque ler
+    // offsetWidth aqui obrigava o navegador a refazer o desenho da página inteira a cada mudança). A largura da barra
+    // passa a ser lida só quando ela muda de tamanho (ResizeObserver).
     var asb = D.getElementById("ipr-as-b"), topo = D.querySelector(".ipe-top");
-    if (topo) {
-      var lugar = asb && asb.offsetParent ? (asb.offsetWidth + 24) + "px" : "";
-      if (topo.style.paddingRight !== lugar) topo.style.paddingRight = lugar;
+    if (topo && asb !== ASB) {
+      ASB = asb;
+      if (RO) { RO.disconnect(); RO = null; }
+      var pr = function () {
+        var t = D.querySelector(".ipe-top"); if (!t) return;
+        var w = ASB && ASB.isConnected ? ASB.getBoundingClientRect().width : 0;
+        var lugar = w > 0 ? (Math.round(w) + 24) + "px" : "";
+        if (t.style.paddingRight !== lugar) t.style.paddingRight = lugar;
+      };
+      if (asb && W.ResizeObserver) { RO = new ResizeObserver(pr); RO.observe(asb); } else { pr(); }
     }
     var bar = D.getElementById("tb-bar"), th = bar && bar.querySelector(".tb-h");
     if (th) {
@@ -340,7 +351,16 @@
   }
   W.IPR_PROCURAR_ZONAS = { abrir: abrir, fechar: fechar, estado: ST };
   var ult = 0, pend = null;
-  function rever() { var n = Date.now(); if (n - ult < 250) { if (!pend) pend = setTimeout(function () { pend = null; rever(); }, 250); return; } ult = n; botoes(); }
+  // 18/11/2026: só refaz quando falta alguma coisa (botões fora do sítio ou barra nova); o resto do tempo não toca no DOM.
+  function emOrdem() {
+    var esq = D.getElementById("ipr-exd-esq"), bar = D.getElementById("tb-bar"), b2 = D.getElementById("ipr-pz-top");
+    if (esq && !esq.querySelector(".ipr-pz-btn")) return false;
+    if (D.getElementById("ipe-q") && !b2) return false;
+    if (bar && bar.querySelector(".tb-h")) { if (b2 && b2.parentElement !== bar) return false; var md = D.getElementById("ipr-modos"); if (md && md.parentElement !== bar) return false; }
+    if (D.getElementById("ipr-as-b") !== ASB) return false;
+    return true;
+  }
+  function rever() { var n = Date.now(); if (n - ult < 250) { if (!pend) pend = setTimeout(function () { pend = null; rever(); }, 250); return; } ult = n; if (!emOrdem()) botoes(); }
   new MutationObserver(rever).observe(D.documentElement, { childList: true, subtree: true });
   rever();
   D.addEventListener("keydown", function (e) { if (e.key === "Escape" && ST.aberto && ST.passo === 1) fechar(); });
