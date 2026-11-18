@@ -2045,9 +2045,17 @@ if (window.IPR_A2_DEMO) (function(){
       if (Math.abs(y - y0) > 0.5) e.style.setProperty('top', y + 'px', 'important');
     });
   }
-  var nE = 0, nA = 0;
-  (function ciclo2(){ try { if (!document.hidden) encosta(); } catch (e) {} nE++; setTimeout(ciclo2, nE > 60 ? 500 : 250); })();
-  (function ciclo(){ try { if (!document.hidden) arruma(); } catch (e) {} nA++; setTimeout(ciclo, nA > 60 ? 1000 : 500); })();
+  /* 18/11 (Nuno: «para não acontecer mais nada disto, saltos, a velocidade»): medido no Chrome do Nuno, estes dois ciclos
+     corriam 4 e 2 vezes por segundo para sempre, e cada volta percorre todas as camadas da barra da esquerda (pies) e mede
+     as janelas. Agora correm quando alguma coisa muda no Atlas (elementos novos, classes, botões carregados, cliques,
+     mudanças de camadas, tamanho da janela), no máximo 4 vezes por segundo, e de 2 em 2 s por segurança. Fazem o mesmo. */
+  var ultE = 0, agE = 0;
+  function correE(){ agE = 0; if (document.hidden) return; ultE = Date.now(); try { encosta(); } catch (e) {} try { arruma(); } catch (e) {} }
+  function pedeE(){ if (agE) return; var f = 250 - (Date.now() - ultE); agE = setTimeout(correE, f > 0 ? f : 0); }
+  try { new MutationObserver(pedeE).observe(D.getElementById('ipe') || D.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'aria-pressed', 'hidden'] }); } catch (e) {}
+  ['change', 'click', 'resize'].forEach(function(t){ window.addEventListener(t, pedeE, true); });
+  D.addEventListener('visibilitychange', pedeE);
+  (function reserva(){ pedeE(); setTimeout(reserva, 2000); })();
 })();
 
 ;/* ===== c2-js ===== */
