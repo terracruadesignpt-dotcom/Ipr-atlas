@@ -73,8 +73,13 @@
   var DADOS = null, A_CARREGAR = null;
   function dados() {
     if (DADOS) return Promise.resolve(DADOS);
-    if (!A_CARREGAR) A_CARREGAR = fetch(BASE + "aptidao-bio.json", { credentials: "same-origin" }).then(function (r) { if (!r.ok) throw new Error("http " + r.status); return r.json(); })
-      .then(function (d) { DADOS = d; return d; }).catch(function (e) { A_CARREGAR = null; throw e; });
+    // 18/11/2026 (Nuno, Firefox com VPN: «dá erro»): se a primeira leitura falhar (cache, página de verificação em vez de
+    // JSON), tenta uma vez sem cache; o erro guarda a razão para a mensagem.
+    function ler(u, o) { return fetch(u, o).then(function (r) { if (!r.ok) throw new Error("resposta " + r.status); return r.text(); })
+      .then(function (t) { try { return JSON.parse(t); } catch (x) { throw new Error("o servidor não devolveu os dados (" + t.slice(0, 40).replace(/</g, "&lt;") + "…)"); } }); }
+    if (!A_CARREGAR) A_CARREGAR = ler(BASE + "aptidao-bio.json", { credentials: "same-origin" })
+      .catch(function () { return ler(BASE + "aptidao-bio.json?n=" + Date.now(), { credentials: "same-origin", cache: "no-store" }); })
+      .then(function (d) { DADOS = d; return d; }).catch(function (e) { A_CARREGAR = null; ST.erro = String(e && e.message || e); throw e; });
     return A_CARREGAR;
   }
 
@@ -280,7 +285,7 @@
     var a = b.getAttribute("data-a");
     if (a === "fechar") return fechar();
     if (a === "voltar") { ST.passo = Math.max(1, ST.passo - 1); if (ST.passo < 4) ST.sel = null; pintar(); desenhar(); return; }
-    if (a === "tema") { ST.tema = b.getAttribute("data-t"); ST.passo = 2; pintar(); dados().then(pintar, function () { var P = D.getElementById("ipr-pz"); if (P) P.querySelector(".pz-c").innerHTML = '<div class="pz-n">Não foi possível carregar os dados do tema.</div>'; }); return; }
+    if (a === "tema") { ST.tema = b.getAttribute("data-t"); ST.passo = 2; pintar(); dados().then(pintar, function () { var P = D.getElementById("ipr-pz"); if (P) P.querySelector(".pz-c").innerHTML = '<div class="pz-n">Não foi possível carregar os dados do tema' + (ST.erro ? ': ' + ST.erro : '') + '. <button type="button" class="pz-b" data-a="tema" data-t="' + ST.tema + '">Tentar outra vez</button></div>'; }); return; }
     if (a === "calcular") { dados().then(function (d) { ST.res = avaliar(d); ST.passo = 3; ST.sel = null; pintar(); desenhar(); var ms = ST.res.ms.filter(function (m) { return m.okHa > 0; }); if (ms.length && ST.onde !== "vis") { var bb = [180, 90, -180, -90]; ms.slice(0, 15).forEach(function (m) { bb = [Math.min(bb[0], m.bb[0]), Math.min(bb[1], m.bb[1]), Math.max(bb[2], m.bb[2]), Math.max(bb[3], m.bb[3])]; }); enquadrar(bb); } }); return; }
     if (a === "mancha") { ST.sel = +b.getAttribute("data-m"); ST.passo = 4; pintar(); desenhar(); var m = ST.res.ms.filter(function (x) { return x.id === ST.sel; })[0]; if (m) enquadrar(m.bb); return; }
     if (a === "ver") { var m2 = ST.res.ms.filter(function (x) { return x.id === ST.sel; })[0]; if (m2) enquadrar(m2.bb); return; }
@@ -313,6 +318,13 @@
     }
     // 18/11/2026 (Miguel: «bugs»): dentro da caixa da pesquisa, o botão e os modos dobravam-lhe a altura, a pesquisa saía
     // por cima e os botões tapavam a fila dos temas. Ficam na fila dos temas (#tb-bar), antes de «Temas».
+    // 18/11/2026 (Nuno: «no canto superior direito há um overlap»): a barra Base / Leitura / Planta (#ipr-as-b) fica fixa por cima
+    // do fim do cabeçalho; em ecrãs mais estreitos tapava Conta, Sair e Comprar. O cabeçalho reserva-lhe o espaço.
+    var asb = D.getElementById("ipr-as-b"), topo = D.querySelector(".ipe-top");
+    if (topo) {
+      var lugar = asb && asb.offsetParent ? (asb.offsetWidth + 24) + "px" : "";
+      if (topo.style.paddingRight !== lugar) topo.style.paddingRight = lugar;
+    }
     var bar = D.getElementById("tb-bar"), th = bar && bar.querySelector(".tb-h");
     if (th) {
       ["ipr-pz-top", "ipr-modos"].forEach(function (id) {
