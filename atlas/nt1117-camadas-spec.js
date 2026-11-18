@@ -100,6 +100,8 @@
     if (on) {
       if (!tag) { tag = D.createElement("span"); tag.className = "ipr-mu-n"; h.appendChild(tag); }
       tag.innerHTML = " · " + on + (on > 1 ? " ligadas " : " ligada ") + '<button type="button" class="ipr-mu-off">Desligar</button>';
+      // ligado no próprio botão: há um ouvinte na janela que trava os cliques do painel antes de chegarem ao documento
+      tag.querySelector("button").addEventListener("click", function (e) { e.preventDefault(); e.stopPropagation(); desligarMundo(); });
       sec.classList.add("aberto");
     } else if (tag) { tag.remove(); }
     return true;
