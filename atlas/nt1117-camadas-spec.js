@@ -100,19 +100,20 @@
     });
     var sec = secMundo(); if (!sec) return false;
     var h = sec.querySelector(":scope > h4"), on = [].filter.call(caixas(), function (c) { return c.checked; }).length;
-    var tag = h.querySelector(".ipr-mu-n");
+    // fora do título: dentro do <h4> os cliques são travados por outro script do painel
+    var tag = sec.querySelector(":scope > .ipr-mu-n");
     if (on) {
-      if (!tag) { tag = D.createElement("span"); tag.className = "ipr-mu-n"; h.appendChild(tag); }
-      tag.innerHTML = " · " + on + (on > 1 ? " ligadas " : " ligada ") + '<button type="button" class="ipr-mu-off">Desligar</button>';
-      // ligado no próprio botão: há um ouvinte na janela que trava os cliques do painel antes de chegarem ao documento
+      var novo = !tag;
+      if (novo) { tag = D.createElement("div"); tag.className = "ipr-mu-n"; h.insertAdjacentElement("afterend", tag); }
+      tag.innerHTML = on + (on > 1 ? " camadas do mundo ligadas " : " camada do mundo ligada ") + '<button type="button" class="ipr-mu-off">Desligar</button>';
       tag.querySelector("button").addEventListener("click", function (e) { e.preventDefault(); e.stopPropagation(); desligarMundo(); });
-      sec.classList.add("aberto");
+      if (novo) sec.classList.add("aberto");
     } else if (tag) { tag.remove(); }
     return true;
   }
   if (!D.getElementById("ipr-mu-css")) {
     var cs = D.createElement("style"); cs.id = "ipr-mu-css";
-    cs.textContent = ".ipr-mu-n{font-weight:400;opacity:.9}.ipr-mu-off{font:inherit;font-size:11px;margin-left:6px;padding:1px 7px;border-radius:5px;border:1px solid rgba(255,255,255,.35);background:transparent;color:inherit;cursor:pointer}.ipr-mu-off:hover{border-color:#94be39}";
+    cs.textContent = ".ipr-mu-n{display:block!important;font-size:12px;padding:3px 8px 5px;opacity:.95}.ipr-mu-off{font:inherit;font-size:11px;margin-left:6px;padding:1px 7px;border-radius:5px;border:1px solid rgba(255,255,255,.35);background:transparent;color:inherit;cursor:pointer}.ipr-mu-off:hover{border-color:#94be39}";
     D.head.appendChild(cs);
   }
   D.addEventListener("click", function (e) {
@@ -121,6 +122,6 @@
   }, true);
   D.addEventListener("change", function (e) { if (e.target.matches && e.target.matches("input[data-tao]")) setTimeout(mundo, 0); }, true);
   // a secção «Mundo» é redesenhada depois de montada; rever de 1,5 em 1,5 s (só lê o estado das caixas, sem observador de DOM)
-  setInterval(function () { if (D.querySelector(".ipr-off:not([data-ipr-mu])")) mundo(); var s = secMundo(); if (s) { var on = [].some.call(caixas(), function (c) { return c.checked; }); var h = s.querySelector(":scope > h4"); if (on !== !!(h && h.querySelector(".ipr-mu-n"))) mundo(); } }, 1500);
+  setInterval(function () { if (D.querySelector(".ipr-off:not([data-ipr-mu])")) mundo(); var s = secMundo(); if (s) { var on = [].some.call(caixas(), function (c) { return c.checked; }); if (on !== !!s.querySelector(":scope > .ipr-mu-n")) mundo(); } }, 1500);
   mundo();
 })();
