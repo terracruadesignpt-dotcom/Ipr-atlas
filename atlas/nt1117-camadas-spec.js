@@ -77,4 +77,42 @@
     return true;
   }
   (function vez(n) { try { if (registar()) return; } catch (e) {} if (n < 60) setTimeout(function () { vez(n + 1); }, 100); })(0);
+
+  // 18/11/2026 (Miguel: «como se tira isto», chuva da NASA por cima da Europa). As camadas da secção «Mundo»
+  // (mundo-camadas.js) ficam guardadas no browser e voltam a cada visita, mas a secção vem fechada e não conta para o
+  // «Desligar» do painel. Aqui: com alguma ligada, a secção abre-se e o título mostra quantas e um «Desligar»;
+  // o «Desligar» do painel também as desliga. Desliga-as pelo próprio interruptor (evento change), sem mexer no mundo-camadas.js.
+  var D = document;
+  function caixas() { return D.querySelectorAll("input[data-tao]"); }
+  function secMundo() {
+    var c = caixas()[0]; if (!c) return null;
+    var p = c.parentElement; while (p && !p.querySelector(":scope > h4")) p = p.parentElement;
+    return p;
+  }
+  function desligarMundo() {
+    [].forEach.call(caixas(), function (c) { if (c.checked) { c.checked = false; c.dispatchEvent(new Event("change", { bubbles: true })); } });
+    setTimeout(mundo, 0);
+  }
+  function mundo() {
+    var sec = secMundo(); if (!sec) return false;
+    var h = sec.querySelector(":scope > h4"), on = [].filter.call(caixas(), function (c) { return c.checked; }).length;
+    var tag = h.querySelector(".ipr-mu-n");
+    if (on) {
+      if (!tag) { tag = D.createElement("span"); tag.className = "ipr-mu-n"; h.appendChild(tag); }
+      tag.innerHTML = " · " + on + (on > 1 ? " ligadas " : " ligada ") + '<button type="button" class="ipr-mu-off">Desligar</button>';
+      sec.classList.add("aberto");
+    } else if (tag) { tag.remove(); }
+    return true;
+  }
+  if (!D.getElementById("ipr-mu-css")) {
+    var cs = D.createElement("style"); cs.id = "ipr-mu-css";
+    cs.textContent = ".ipr-mu-n{font-weight:400;opacity:.9}.ipr-mu-off{font:inherit;font-size:11px;margin-left:6px;padding:1px 7px;border-radius:5px;border:1px solid rgba(255,255,255,.35);background:transparent;color:inherit;cursor:pointer}.ipr-mu-off:hover{border-color:#94be39}";
+    D.head.appendChild(cs);
+  }
+  D.addEventListener("click", function (e) {
+    if (e.target.closest(".ipr-mu-off")) { e.preventDefault(); e.stopPropagation(); desligarMundo(); return; }
+    if (e.target.closest(".ipr-off")) desligarMundo();
+  }, true);
+  D.addEventListener("change", function (e) { if (e.target.matches && e.target.matches("input[data-tao]")) setTimeout(mundo, 0); }, true);
+  (function vm(n) { if (mundo()) return; if (n < 60) setTimeout(function () { vm(n + 1); }, 500); })(0);
 })();

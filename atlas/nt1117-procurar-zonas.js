@@ -311,6 +311,20 @@
       var alvo = q.parentElement && q.parentElement !== D.body ? q.parentElement : q;
       alvo.insertAdjacentElement("afterend", b2);
     }
+    // 18/11/2026 (Miguel: «bugs»): dentro da caixa da pesquisa, o botão e os modos dobravam-lhe a altura, a pesquisa saía
+    // por cima e os botões tapavam a fila dos temas. Ficam na fila dos temas (#tb-bar), antes de «Temas».
+    var bar = D.getElementById("tb-bar"), th = bar && bar.querySelector(".tb-h");
+    if (th) {
+      ["ipr-pz-top", "ipr-modos"].forEach(function (id) {
+        var el = D.getElementById(id);
+        if (el && el.parentElement !== bar) bar.insertBefore(el, th);
+      });
+      if (!D.getElementById("ipr-pz-bar-css")) {
+        var c = D.createElement("style"); c.id = "ipr-pz-bar-css";
+        c.textContent = "#tb-bar #ipr-pz-top,#tb-bar #ipr-modos{flex:0 0 auto;align-self:center}#tb-bar #ipr-pz-top{margin:0 4px 0 6px}";
+        D.head.appendChild(c);
+      }
+    }
   }
   W.IPR_PROCURAR_ZONAS = { abrir: abrir, fechar: fechar, estado: ST };
   var ult = 0, pend = null;
