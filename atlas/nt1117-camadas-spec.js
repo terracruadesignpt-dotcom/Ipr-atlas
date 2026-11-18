@@ -114,5 +114,7 @@
     if (e.target.closest(".ipr-off")) desligarMundo();
   }, true);
   D.addEventListener("change", function (e) { if (e.target.matches && e.target.matches("input[data-tao]")) setTimeout(mundo, 0); }, true);
-  (function vm(n) { if (mundo()) return; if (n < 60) setTimeout(function () { vm(n + 1); }, 500); })(0);
+  // a secção «Mundo» é redesenhada depois de montada; rever de 1,5 em 1,5 s (só lê o estado das caixas, sem observador de DOM)
+  setInterval(function () { var s = secMundo(); if (s) { var on = [].some.call(caixas(), function (c) { return c.checked; }); var h = s.querySelector(":scope > h4"); if (on !== !!(h && h.querySelector(".ipr-mu-n"))) mundo(); } }, 1500);
+  mundo();
 })();
