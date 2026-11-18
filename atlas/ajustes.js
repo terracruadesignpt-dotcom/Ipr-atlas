@@ -16,6 +16,12 @@
    14. Equipa: «Processar» sem formulário de cliente (dados da sessão, via m90297).
    15. Barra da esquerda só com Pesquisar e Camadas; projectos e «Comece aqui» no painel da direita.
    16. Separador Projectos: sem título repetido, projectos em linhas curtas, ficha do terreno na lista de ficheiros (equipa). */
+// 18/11/2026 (medição com ?perfil=1: os observadores deste ficheiro corriam 3 789 vezes em 35 s, 1,8 s no total). Os que
+// vigiam a página inteira e só procuram e acertam elementos passam a correr no máximo uma vez por fotograma (JUNTAR).
+var JUNTAR = window.__iprJuntar || (window.__iprJuntar = function (fn) {
+  var p = 0; return function () { if (p) return; p = 1; (window.requestAnimationFrame || setTimeout)(function () { p = 0; try { fn(); } catch (e) {} }); };
+});
+
 (function () {
   "use strict";
   // §44 No máximo 3 pedidos ao site ao mesmo tempo (24/10, 22h04: «Error establishing a database connection» durante um
@@ -897,7 +903,7 @@
     }
     if (!window.__iprQrObs) { // o cloud.js redesenha a lista: voltar a aplicar
       window.__iprQrObs = 1;
-      new MutationObserver(function () { if (window.qrcode && document.querySelector(".ipc-srv:not([data-ipr-qr])")) aplicar(); }).observe(document.body, { childList: true, subtree: true });
+      new MutationObserver(JUNTAR(function () { if (window.qrcode && document.querySelector(".ipc-srv:not([data-ipr-qr])")) aplicar(); })).observe(document.body, { childList: true, subtree: true });
     }
     return true;
   }
@@ -1217,7 +1223,7 @@
       var b = e.target.closest && e.target.closest("[data-ipr-ficha]"); if (!b) return;
       e.preventDefault(); e.stopPropagation(); fichaAbrir(b.getAttribute("data-ipr-ficha"), b);
     }, true);
-    try { new MutationObserver(function () { por(); }).observe(document.body, { childList: true, subtree: true }); } catch (e) {}
+    try { new MutationObserver(JUNTAR(function () { por(); })).observe(document.body, { childList: true, subtree: true }); } catch (e) {}
     por();
     window.__iprFichas = 1;
     return true;
@@ -1405,9 +1411,9 @@
     if (window.IPR_EMBED) return true;
     if (!window.__iprShqObs) {
       window.__iprShqObs = 1;
-      new MutationObserver(function () {
+      new MutationObserver(JUNTAR(function () {
         var i = document.getElementById("ipe-sh-u"); if (i && i.getAttribute("data-ipr-qr") !== i.value) carregar(aplicar);
-      }).observe(document.body, { childList: true, subtree: true });
+      })).observe(document.body, { childList: true, subtree: true });
     }
     return true;
   }
@@ -1811,7 +1817,7 @@
         if (h && (h.textContent.indexOf(m[1]) >= 0 || /Temas do projecto|Project themes/.test(h.textContent))) { b.title = t; b.textContent = m[2]; }
       });
     }
-    new MutationObserver(limpar).observe(document.body, { childList: true, subtree: true });
+    new MutationObserver(JUNTAR(limpar)).observe(document.body, { childList: true, subtree: true });
     limpar();
     return true;
   }
