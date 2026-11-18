@@ -55,7 +55,7 @@
   if (AGRO) GRUPOS.splice(1, 0, GRUPOS.pop()); // numa associação agrícola, a produção vem logo a seguir ao território
   // ids = camadas do catálogo do viz.js; liga = as que se ligam ao aplicar (poucas, para o mapa não ficar pesado).
   var MOD = [
-    {id: "delim", g: "base", n: "Delimitação de bacias e sub-bacias", d: "Bacias, sub-bacias e troços; limites administrativos só como referência", eb: "Finder", lock: 1, ids: ["bip_23", "bacias", "bac_troco", "l_bacias_l", "rh", "concelhos", "caop"], liga: ["bip_23", "bacias"], k: [["Bacias da entidade", "bacias"], ["Sub-bacias delimitadas", "f1"]]},
+    {id: "delim", g: "base", n: "Delimitação de bacias e sub-bacias", d: "Bacias, sub-bacias e troços; limites administrativos só como referência", eb: "Finder", lock: 1, ids: ["bip_23", "bac_ib", "bac_troco", "l_bacias_l", "concelhos", "caop"], liga: ["bip_23", "bac_ib"], k: [["Bacias da entidade", "bacias"], ["Sub-bacias delimitadas", "f1"]]},
     {id: "base", g: "base", n: "Base cartográfica LiDAR", d: "Ortofoto, relevo, MDT, curvas, declives, exposição, geomorfologia", eb: "Analyzer", lock: 1, ids: ["f_ortosat", "r_somb", "r_curvas", "l_mdt", "l_curvas5", "l_declives", "l_exposicao", "l_geomorphons", "r_hipso"], liga: ["r_somb"], k: [["Cobertura LiDAR verificada", "f1"]]},
     {id: "hidro", g: "agua", n: "Hidrografia e escoamento", d: "Rede hidrográfica, linhas de água de Strahler, acumulação, escorrência, massas de água", eb: "Analyzer", ids: ["hidro", "hidro_g", "l_streams", "l_acumulacao", "l_escorrencia", "massas", "ma_ecol"], liga: ["hidro"], k: [["Km de linhas de água", "f1"], ["Galerias ripícolas em bom estado", "f1"]]},
     {id: "keyline", g: "agua", n: "Cumeadas, selas e humidade topográfica", d: "Festos, TWI, bacias LiDAR: base dos keypoints e keylines", eb: "Analyzer", ids: ["l_festos", "l_twi", "l_bacias_l"], k: []},
@@ -227,12 +227,16 @@
   var st = D.createElement("style"); st.id = "ipr-ent-css"; st.textContent = css; (D.head || D.documentElement).appendChild(st);
 
   // ---------- Aplicar ao mapa ----------
+  // 18/11/2026 (Nuno: «quero a bacia do Douro e do Tejo [...] tudo completo»): as bacias da organização passam a ser as bacias
+  // inteiras e encaixadas (bac_ib, bacias-ibericas.js) em vez das regiões hidrográficas da APA («bacias», «rh»), que se
+  // desligam ao entrar; continuam no catálogo para quem as quiser.
   function aplicar(primeira) {
     var v = viz(); if (!v) return;
     var setE = {}; camadasEnt().forEach(function (i) { setE[i] = 1; });
     // Desliga camadas de módulos que saíram (só as do catálogo do configurador, nunca as escolhas do utilizador fora dele).
     var conhecidas = {}; MOD.forEach(function (m) { m.ids.forEach(function (i) { conhecidas[i] = 1; }); });
     act().forEach(function (i) { if (conhecidas[i] && !setE[i]) try { v.ligar(i, false); } catch (e) {} });
+    if (primeira && existe("bac_ib")) ["bacias", "rh"].forEach(function (i) { if (act().indexOf(i) >= 0) try { v.ligar(i, false); } catch (e) {} });
     if (primeira) activos().forEach(function (m) { (m.liga || []).forEach(function (i) { if (existe(i) && act().indexOf(i) < 0) try { v.ligar(i, true); } catch (e) {} }); });
     if (primeira && ZONA && W.__ipe.mapa && W.__ipe.mapa.fitBounds) try { W.__ipe.mapa.fitBounds(ZONA, {padding: 40, duration: 0}); } catch (e) {}
     marcarEsq(); painel();
@@ -908,7 +912,7 @@
     associacao: ["solos", "sroa", "carbono", "ran", "nitratos", "ifap_p", "cos23", "capt_p", "aquif", "precip", "geada_ano", "temp_med"],
     rede: ["o_nomes", "hidro", "bip_23", "percursos", "o_aguapts", "ard15", "perig_e", "ren", "ran", "cos23"],
     municipio: ["caop", "o_edif", "viaria", "ren", "ran", "crus", "cad", "ard15", "perig_e", "cos23", "hidro"],
-    bacia: ["bacias", "hidro", "l_streams", "o_aguapts", "capt_p", "aquif", "massas", "inund100", "cos23", "sroa"],
+    bacia: ["bac_ib", "hidro", "l_streams", "o_aguapts", "capt_p", "aquif", "massas", "inund100", "cos23", "sroa"],
     conservacao: ["n2k", "rnap", "habitats", "prof_cor", "invasoras", "copa18", "ard15", "perig_e", "hidro", "cos23"],
     propriedade: ["cad", "ren", "ran", "sroa", "l_declives", "l_curvas5", "hidro", "capt_p", "ard15", "perig_e", "cos23"],
     profissional: ["cad", "ren", "ran", "crus", "l_declives", "l_curvas5", "hidro", "ard15", "perig_e", "cos23"]
