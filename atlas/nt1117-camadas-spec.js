@@ -94,6 +94,10 @@
     setTimeout(mundo, 0);
   }
   function mundo() {
+    [].forEach.call(D.querySelectorAll(".ipr-off"), function (b) {
+      if (b.dataset.iprMu) return; b.dataset.iprMu = "1";
+      b.addEventListener("click", function () { desligarMundo(); });
+    });
     var sec = secMundo(); if (!sec) return false;
     var h = sec.querySelector(":scope > h4"), on = [].filter.call(caixas(), function (c) { return c.checked; }).length;
     var tag = h.querySelector(".ipr-mu-n");
@@ -117,6 +121,6 @@
   }, true);
   D.addEventListener("change", function (e) { if (e.target.matches && e.target.matches("input[data-tao]")) setTimeout(mundo, 0); }, true);
   // a secção «Mundo» é redesenhada depois de montada; rever de 1,5 em 1,5 s (só lê o estado das caixas, sem observador de DOM)
-  setInterval(function () { var s = secMundo(); if (s) { var on = [].some.call(caixas(), function (c) { return c.checked; }); var h = s.querySelector(":scope > h4"); if (on !== !!(h && h.querySelector(".ipr-mu-n"))) mundo(); } }, 1500);
+  setInterval(function () { if (D.querySelector(".ipr-off:not([data-ipr-mu])")) mundo(); var s = secMundo(); if (s) { var on = [].some.call(caixas(), function (c) { return c.checked; }); var h = s.querySelector(":scope > h4"); if (on !== !!(h && h.querySelector(".ipr-mu-n"))) mundo(); } }, 1500);
   mundo();
 })();
