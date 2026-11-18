@@ -916,7 +916,23 @@
   var BASE_SEMPRE = ["f_ortosat", "r_somb", "concelhos", "caop"];
   function apoio() { var o = {}; BASE_SEMPRE.concat(APOIO[S.perfil] || APOIO.propriedade).forEach(function (i) { if (existe(i)) o[i] = 1; }); return Object.keys(o); }
   function fmt(n) { return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, " "); }
+  // Área de intervenção: nos municípios, a área do concelho na CAOP 2025 (DGT, colecção «municipios», campo area_ha).
+  var AREA = null, AREA_PEDIDA = false;
+  function areaMunicipio() {
+    if (AREA_PEDIDA) return; AREA_PEDIDA = true;
+    var nome = String(X.municipio || ((S.perfil === "municipio" || /^(Município|Câmara Municipal|Municipio)\b/i.test(ENT.nome || "")) ? (ENT.nome || "").split(" ·")[0].replace(/^(Município|Municipio|Câmara Municipal)\s+(de|da|do|das|dos)\s+/i, "") : "")).trim();
+    if (!nome) return;
+    fetch("https://ogcapi.dgterritorio.gov.pt/collections/municipios/items?f=json&limit=2&skipGeometry=true&municipio=" + encodeURIComponent(nome), {credentials: "omit"})
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        var f = (j && j.features || []).filter(function (x) { return x.properties && String(x.properties.municipio).toLowerCase() === nome.toLowerCase(); })[0];
+        if (!f || !(+f.properties.area_ha > 0)) return;
+        AREA = {n: "Hectares do concelho de " + f.properties.municipio, ha: +f.properties.area_ha};
+        try { if (D.getElementById("ipr-ent-dir")) painel(); } catch (e) {}
+      }).catch(function () {});
+  }
   function numeros() {
+    areaMunicipio();
     var cs = ORG ? ORG.camadas || [] : [], tot = 0, ha = 0, porG = {};
     cs.forEach(function (c) { tot += +c.n || 0; if (c.geom === "poligono") ha += +c.ha || 0; porG[c.grupo] = (porG[c.grupo] || 0) + (+c.n || 0); });
     var r = [];
@@ -924,7 +940,9 @@
     else if (AGRO) { r.push(["Explorações no mapa", porG.exploracoes || 0]); r.push(["Mercados e pontos de venda", Math.max(0, (porG.mercados || 0) - 1)]); }
     else if (ENT.id === "adxtur") { r.push(["Aldeias na rede", 27]); r.push(["Bacias de trabalho", nBacias()]); }
     else r.push(["Locais e áreas no mapa", tot]);
-    if (ha) r.push(["Hectares desenhados", ha]);
+    // Nuno, 18/11/2026, 13h25: em vez dos hectares somados das camadas, a área do território da organização (o concelho, nos
+    // municípios; área da CAOP 2025, DGT).
+    if (AREA) r.push([AREA.n, AREA.ha]);
     if (BACIAS.length && !AGRO && ENT.id !== "adxtur") r.push(["Bacias", nBacias()]);
     if (AGRO) r.push(["Bacias com associados", nBacias()]);
     r.push(["Camadas próprias", cs.length]);
