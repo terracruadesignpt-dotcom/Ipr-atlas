@@ -91,6 +91,10 @@
   }
 
 
+  // 19/11/2026 (J8, Nuno 18/11 23h33): sem Intelligence (sem sessão ou Explorer) a ficha grátis mostra sim/não, sem percentagens,
+  // sem indício de construir e sem as frases por camada; a equipa, as organizações e o Intelligence vêem tudo como antes.
+  function pleno() { return W.IPR_NIVEL === "intelligence" || W.IPR_ORG === true; }
+  var CAD = '<p class="tcd-fn-m">&#128274; ' + "{t}" + '</p>';
   // ---------- 5. O que se sobrepõe a este terreno (explicação curta) ----------
   // Lê o resultado do cruzamento do nt1110-terreno-camadas.js (elemento .ipr-tcam, __tcam[0] = [{e: camada, r: resultado}]).
   // Mostra só os nomes e uma frase; sem percentagens nem mapa (isso fica para a Planta e a Leitura).
@@ -128,6 +132,7 @@
     var vistos = {}, linhas = [], ordem = ["cond", "fogo", "agua", "nat", "solo", "prop"];
     res.slice().sort(function (a, b) { return ordem.indexOf(a.e.g) - ordem.indexOf(b.e.g); }).forEach(function (x) {
       var c = x.e || {}, fr = frase(c), k = fr || nomeC(c); if (!k || vistos[k]) return; vistos[k] = 1;
+      if (!pleno()) { linhas.push('<li><b>' + nomeC(c).replace(/</g, "&lt;") + "</b><span>" + T("toca no terreno", "touches the land") + "</span></li>"); return; }
       linhas.push('<li><b>' + nomeC(c).replace(/</g, "&lt;") + "</b>" + (fr ? "<span>" + fr + "</span>" : "<span>" + T("Camada do grupo ", "Layer in group ") + ((GRUPO[c.g] || [c.g || ""])[en() ? 1 : 0]) + ".</span>") + "</li>");
     });
     var mx = 8, mais = linhas.length > mx ? linhas.length - mx : 0;
@@ -283,6 +288,16 @@
       else if (urb + ed >= 10 && (ren || 0) < 90) { nivel = ["pc", T("Possível em parte", "Possible in part")]; txt = T("Parte do terreno está num espaço onde o PDM prevê edificação. O resto segue as regras do solo rústico.", "Part of the land is in a zone where the PDM provides for building. The rest follows rural land rules."); }
       else if (nat >= 80 || (ren != null && ren >= 95)) { nivel = ["dv", T("Muito condicionada", "Very restricted")]; txt = T("O terreno está quase todo em espaço natural ou de protecção, ou em REN. Construir de novo é raro; obras em edifícios existentes têm regras próprias.", "Almost all the land is in natural or protection zoning, or in REN. New building is rare; works on existing buildings have their own rules."); }
       else { nivel = ["pc", T("Condicionada", "Conditional")]; txt = T("Solo rústico: o PDM admite construir só nos casos que o regulamento prevê para este espaço, como habitação do agricultor, apoio agrícola, turismo em espaço rural ou ampliação de construções existentes, cada um com área e condições próprias.", "Rural land: the PDM allows building only in the cases its regulation sets for this zone, such as a farmer's house, farm buildings, rural tourism or extending existing buildings, each with its own area and conditions."); }
+      if (!pleno()) {
+        var sn = function (v) { return v == null ? T("a verificar…", "checking…") : v > 0 ? T("sim", "yes") : T("não", "no"); };
+        var cl = {}; (C || []).forEach(function (c) { if (c.classe) cl[c.classe] = 1; });
+        var hf = "<h4>" + T("Condicionantes principais", "Main restrictions") + '</h4><ul class="tcd-fe-l">' +
+          "<li><b>" + T("Toca REN", "Touches REN") + "</b>" + sn(ren) + "</li><li><b>" + T("Toca RAN", "Touches RAN") + "</b>" + sn(ran) + "</li>" +
+          (Object.keys(cl).length ? "<li><b>" + T("Classe do solo (PDM)", "Land class (PDM)") + "</b>" + Object.keys(cl).map(function (k) { return k.replace(/</g, "&lt;"); }).join(" e ") + "</li>" : "") +
+          "</ul>" + CAD.replace("{t}", T("Quanto ocupa cada condicionante, as categorias do PDM e se pode construir: na <b>Planta de Localização</b>, na <b>Leitura Territorial</b> ou no Atlas Intelligence.", "How much each restriction covers, the zoning categories and whether you can build: in the <b>Location plan</b>, the <b>Land report</b> or Atlas Intelligence.")) +
+          '<div class="tcd-fn-b"><button type="button" data-fniv="leitura" data-sd="encomendar:edif-leitura">' + T("Leitura Territorial: ver preço", "Land report: see price") + '</button><button type="button" data-fniv="planta" data-sd="encomendar:edif-planta">' + T("Planta de Localização: ver preço", "Location plan: see price") + "</button></div>";
+        box.innerHTML = hf; return;
+      }
       var h = "<h4>" + T("Pode construir? Primeira leitura", "Can you build? First reading") + '</h4>' + confLinha(J, C) + '<p class="tcd-fe-v"><span class="tcd-fe-t ' + nivel[0] + '">' + nivel[1] + "</span> " + txt + "</p>";
       var lin = [];
       if (C && C.length) {
