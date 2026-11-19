@@ -2358,3 +2358,33 @@ function ve(){var s=D.getElementById('ipr-bd');if(s)liga(s);}
 new MutationObserver(ve).observe(D.body||D.documentElement,{childList:true});ve();
 })();
 
+
+/* Pesquisa do topo: só a partir de 3 letras e sem títulos de uma ou duas letras (pedido do Pedro Bolito de 15/11, aplicado a 18/11).
+   O fecho da lista (escolher, Esc, clicar fora, apagar) já existia; isto acrescenta a parte do app.js sem lhe mexer:
+   - com menos de 3 caracteres a pesquisa não corre (coordenadas e NIC têm sempre mais);
+   - num resultado cujo título tem 2 caracteres ou menos, o título passa a ser a parte seguinte do endereço. */
+(function(){
+  var D = document;
+  D.addEventListener('submit', function(e){
+    var f = e.target; if (!f || f.id !== 'ipe-busca') return;
+    var q = D.getElementById('ipe-q'), v = q ? q.value.trim() : '';
+    if (v.length > 0 && v.length < 3) {
+      e.preventDefault(); e.stopImmediatePropagation();
+      var u = D.getElementById('ipe-qres'); if (u) u.innerHTML = '';
+    }
+  }, true);
+  function arruma(){
+    var u = D.getElementById('ipe-qres'); if (!u) return;
+    u.querySelectorAll('[data-res]:not([data-t3])').forEach(function(bt){
+      bt.setAttribute('data-t3', '1');
+      var b = bt.querySelector('b'), s = bt.querySelector('small');
+      if (!b || !s || b.textContent.trim().length > 2) return;
+      var p = s.textContent.split(', '); if (!p[0]) return;
+      b.textContent = p.shift(); s.textContent = p.join(', ');
+    });
+  }
+  var ult = 0, pend = null;
+  function vigia(){ var a = Date.now(); if (a - ult >= 250) { ult = a; arruma(); } else if (!pend) { pend = setTimeout(function(){ pend = null; ult = Date.now(); arruma(); }, 250); } }
+  function liga(){ var u = D.getElementById('ipe-qres'); if (!u || u.__t3) return !!u; u.__t3 = 1; new MutationObserver(vigia).observe(u, { childList: true }); arruma(); return true; }
+  var n = 0; (function ciclo(){ if (liga() || ++n > 120) return; setTimeout(ciclo, 500); })();
+})();
