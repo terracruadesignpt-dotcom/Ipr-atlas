@@ -1,0 +1,13 @@
+/* IPR Atlas · aviso de cookies no sistema IPR escuro (proposta do Pedro Bolito, 18/11; aplicado a 19/11).
+   Carregado só pelo atlas.json (/atlas/, /en/atlas/, /es/atlas/); sem sombra. Terracrua Design. */
+#tcdck .tcdck-c{background:#10170D!important;color:#F5F4EE!important;border-top:1px solid #272C21!important;box-shadow:none!important}
+#tcdck#tcdck .tcdck-c p,#tcdck#tcdck .tcdck-c label,#tcdck .tcdck-c *{color:#C9C7BD!important}
+#tcdck#tcdck .tcdck-c .tcdck-t{color:#F5F4EE!important;font-family:Outfit,Inter,sans-serif;font-weight:600}
+#tcdck .tcdck-c strong,#tcdck .tcdck-c b,#tcdck .tcdck-c h2,#tcdck .tcdck-c h3{color:#F5F4EE!important;font-family:Outfit,Inter,sans-serif}
+#tcdck .tcdck-c a{color:#B5D46A!important}
+#tcdck .tcdck-b button{border-radius:999px!important;background:transparent!important;color:#F5F4EE!important;border:1px solid #3a4230!important}
+#tcdck .tcdck-b button:last-child{background:#94BE39!important;color:#202319!important;border-color:#94BE39!important}
+/* versão curta do telemóvel (m91761 usa ::before com cor clara de fundo) */
+html body #tcdck .tcdck-c>p:not(.tcdck-t)::before{color:#C9C7BD!important}
+html body #tcdck .tcdck-c{background:#10170D!important;border-top:1px solid #2E3A28!important;box-shadow:none!important}
+html body #tcdck#tcdck#tcdck .tcdck-c,html body #tcdck#tcdck#tcdck>.tcdck-c{box-shadow:none!important}
