@@ -1,4 +1,4 @@
-/* IPR Atlas · entidade.js (12/11/2026). Terracrua Design. Só acrescenta; não mexe noutros ficheiros.
+/* IPR Atlas · entidade.js (12/11/2026; cópia do Núcleo com as correcções de 19/11: pontos 15, 16 e 17 da fila, Bernardo 18/11). Terracrua Design. Só acrescenta; não mexe noutros ficheiros.
    Nuno, 12/11/2026, 20h52: «Gostava de termos este assistente e que este assistente realmente funcione. [...] para este tipo
    de entidade, o painel vem [...] no bloco lateral direito. Da esquerda fica as camadas, o da direita fica o bloco de painel.
    [...] Quando uma pessoa seleciona, tem mesmo que aparecer.» Primeira entidade: ADXTUR (Aldeias do Xisto).
@@ -134,6 +134,7 @@
   // ---------- Estado ----------
   var C = ENT.cfg || {};
   var S = {perfil: C.perfil || (AGRO ? "associacao" : "rede"), bacias: {}, mods: {}, cats: {}, feito: !!C.feito, passo: 1, so: true, aberto: {}};
+  try { if (W.localStorage.getItem("ipr_ent_so") === "0") S.so = false; } catch (e) {}
   (C.bacias && C.bacias.length ? C.bacias : BACIAS.map(function (b) { return b.id; })).forEach(function (b) { S.bacias[b] = true; });
   (C.cats && C.cats.length ? C.cats : CATS.map(function (c) { return c[0]; })).forEach(function (c) { S.cats[c] = true; });
   if (C.modulos && C.modulos.length) C.modulos.forEach(function (m) { S.mods[m] = true; }); else perfil(S.perfil);
@@ -205,6 +206,9 @@
     "#ipr-ent-esq{display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:8px 10px;border-bottom:1px solid #2a2c25;font:12px Inter,sans-serif;color:#C3C5BC}" +
     "#ipr-ent-esq b{color:#94BE39}" +
     "html.ipr-ent-so #ipe .ipr-it.ipr-ent-fora{display:none!important}" +
+    ".ipr-ent-cel{position:relative}.ipr-ent-cel>.op{width:100%;padding-right:40px}" +
+    ".ipr-ent-i{position:absolute;right:10px;top:34px;width:22px;height:22px;border-radius:50%;border:1px solid #5a5d52;background:transparent;color:#C3C5BC;font:600 12px/20px Inter,sans-serif;cursor:pointer;padding:0;text-align:center}.ipr-ent-i[aria-expanded=true]{border-color:#94BE39;color:#94BE39}" +
+    ".ipr-ent-info{margin-top:6px;padding:8px 10px;border-left:2px solid #94BE39;background:rgba(148,190,57,.06);font:12px/1.45 Inter,sans-serif;color:#C3C5BC}.ipr-ent-info p{margin:0 0 4px}.ipr-ent-info ul{margin:0 0 4px;padding-left:16px}.ipr-ent-info li{margin:2px 0}.ipr-ent-info .s{opacity:.75}" +
     "#ipr-ent-wiz{position:fixed;inset:0;z-index:100000;background:rgba(10,11,8,.72);display:flex;align-items:center;justify-content:center;padding:16px}" +
     "#ipr-ent-wiz>div{width:min(1040px,100%);max-height:100%;display:flex;flex-direction:column;background:#16170f;color:#C3C5BC;border:1px solid #383A33;border-radius:4px;font:14px/1.5 Inter,system-ui,sans-serif}" +
     "#ipr-ent-wiz .wh{padding:14px 20px 10px;border-bottom:1px solid #2a2c25}" +
@@ -250,10 +254,22 @@
       li.classList.toggle("ipr-ent-fora", !setE[id] && !fundo);
     });
     D.documentElement.classList.toggle("ipr-ent-so", S.so);
+    // 19/11 (Bernardo, ponto 16): o botão só punha uma classe em cada linha; a árvore redesenha-se e perde-a, e os grupos
+    // fechados continuavam iguais, por isso nada mudava. Agora é uma folha de estilo com as camadas da configuração:
+    // esconde as outras linhas, os subgrupos e os grupos sem nenhuma, e o bloco «Mundo» enquanto o filtro estiver ligado.
+    var ok = Object.keys(setE).filter(function (i) { return /^[\w.:-]+$/.test(i); }), fs = D.getElementById("ipr-ent-so-css");
+    if (!fs) { fs = D.createElement("style"); fs.id = "ipr-ent-so-css"; (D.head || D.documentElement).appendChild(fs); }
+    var sel = ok.map(function (i) { return 'li.ipr-it[data-id="' + i + '"]'; }).join(","), css = "";
+    if (sel) css = "html.ipr-ent-so #ipe li.ipr-it:not(" + sel + "){display:none!important}" +
+      "html.ipr-ent-so #ipe li.ipr-sub:not(:has(" + sel + ")){display:none!important}" +
+      "html.ipr-ent-so #ipe .ipr-g:not([data-g=fundo]):not([data-g=simulacoes]):not(:has(" + sel + ")){display:none!important}" +
+      "html.ipr-ent-so #ipe #ipr-mundo,html.ipr-ent-so #ipe .ipr-mundo{display:none!important}";
+    if (fs.textContent !== css) fs.textContent = css;
     var esq = D.getElementById("ipe-esq"); if (!esq) return;
     var b = D.getElementById("ipr-ent-esq");
     if (!b) { b = D.createElement("div"); b.id = "ipr-ent-esq"; esq.insertBefore(b, esq.firstChild); }
-    var hh = orgBloco() + '<div class="ap"><span>Camadas da configuração</span><button type="button" class="ipr-ent-b" data-ent="so">' + (S.so ? "Ver todas" : "Só as da configuração") + "</button></div>";
+    var nl = act().filter(function (i) { var c = cat(i); return !(c && c.g === "fundo"); }).length;
+    var hh = orgBloco() + '<div class="ap"><span>Camadas da configuração<small style="display:block;text-transform:none;letter-spacing:0;opacity:.8">' + camadasEnt().length + " disponíveis · " + nl + (nl === 1 ? " ligada" : " ligadas") + '</small></span><button type="button" class="ipr-ent-b" data-ent="so" aria-pressed="' + (S.so ? "true" : "false") + '" title="' + (S.so ? "Mostrar a árvore inteira de camadas do Atlas" : "Mostrar só as camadas desta configuração") + '">' + (S.so ? "Ver todas" : "Só as da configuração") + "</button></div>";
     if (b.innerHTML !== hh) b.innerHTML = hh;
   }
 
@@ -1296,6 +1312,16 @@
   function op(attr, val, onv, titulo, sub, tag, extra) {
     return '<button type="button" class="op' + (extra || "") + '" aria-pressed="' + onv + '" ' + attr + '="' + val + '"><span class="x">' + (onv ? "✓" : "") + '</span><span class="t"><b>' + esc(titulo) + "</b>" + (sub ? "<span>" + sub + "</span>" : "") + "</span>" + (tag ? '<span class="tag">' + esc(tag) + "</span>" : "") + "</button>";
   }
+  // 19/11 (Bernardo, ponto 17): «i» em cada módulo com as camadas, a fonte de cada uma e o tipo (Finder, Analyzer…).
+  var TIPOS = {Finder: "encontra e delimita (bacias, locais, zonas)", Analyzer: "analisa o terreno com camadas e indicadores", Planner: "apoia o desenho e o plano", Monitor: "acompanha ao longo do tempo", Observatory: "acompanha ao longo do tempo"};
+  function infoMod(m) {
+    var ls = m.ids.map(function (i) { var c = cat(i); return c ? "<li><b>" + esc(c.n) + "</b>" + (c.fonte ? " · " + esc(c.fonte) : "") + (m.liga && m.liga.indexOf(i) >= 0 ? " · <em>liga-se sozinha</em>" : "") + "</li>" : ""; }).join("");
+    var fora = m.ids.filter(function (i) { return !existe(i); }).length;
+    return '<button type="button" class="ipr-ent-i" data-ent-info="' + esc(m.id) + '" aria-expanded="false" title="O que tem este módulo" aria-label="O que tem o módulo ' + esc(m.n) + '">i</button>' +
+      '<div class="ipr-ent-info" data-ent-infob="' + esc(m.id) + '" hidden><p><b>Tipo:</b> ' + esc(m.eb || "Analyzer") + (TIPOS[m.eb] ? ": " + esc(TIPOS[m.eb]) : "") + '</p>' +
+      (ls ? "<p><b>Camadas e fontes</b></p><ul>" + ls + "</ul>" : "<p>Este módulo ainda não tem camadas próprias no Atlas: entra como bloco no painel da direita.</p>") +
+      (fora ? '<p class="s">' + fora + (fora === 1 ? " camada prevista ainda não está" : " camadas previstas ainda não estão") + " no Atlas.</p>" : "") + "</div>";
+  }
   function listaMods() {
     return GRUPOS.map(function (g) {
       var ms = MOD.filter(function (m) { return m.g === g[0]; });
@@ -1303,7 +1329,7 @@
       return '<div class="gh">' + esc(g[1]) + "<span>" + esc(g[2]) + '</span></div><div class="gr">' + ms.map(function (m) {
         var f = falta(m), n = m.ids.filter(existe).length;
         var sub = esc(m.d) + "<br>" + n + " camadas do Atlas" + (m.lock ? " · obrigatório" : "") + (f.length ? '<br><span style="color:#E3D49A">Precisa de: ' + f.map(function (x) { return esc(mod(x).n); }).join(", ") + "</span>" : "");
-        return op("data-ent-mod", m.id, on(m), m.n, sub, m.eb, (m.lock ? " lock" : "") + (f.length ? " bl" : ""));
+        return '<div class="ipr-ent-cel">' + op("data-ent-mod", m.id, on(m), m.n, sub, m.eb, (m.lock ? " lock" : "") + (f.length ? " bl" : "")) + infoMod(m) + "</div>";
       }).join("") + "</div>";
     }).join("");
   }
@@ -1333,12 +1359,18 @@
     } else {
       var am = activos();
       h = "<h2>Rever e guardar</h2><p class='lead'>A plataforma é vossa durante a subscrição. Em cada renovação podem sair e levar o Atlas Territorial Integrado completo (GeoPackage, projecto QGIS e QField, base de dados, documentos e configuração) e uma cópia das camadas do IPR recortada à vossa área, pela bacia e com margem.</p><div class='gr'>" +
-        '<div class="op lock"><span class="t"><b>' + esc(PERFIS.filter(function (p) { return p.id === S.perfil; })[0].n) + "</b><span>" + (BACIAS.length ? nBacias() + " bacias · " : "") + am.length + " módulos · " + camadasEnt().length + " camadas à esquerda · " + am.length + " blocos no painel</span></span></div>" +
+        '<div class="op lock"><span class="t"><b>' + esc(PERFIS.filter(function (p) { return p.id === S.perfil; })[0].n) + "</b><span>" + (BACIAS.length ? nBacias() + " bacias · " : "") + am.length + " módulos activos · " + camadasEnt().length + " camadas disponíveis à esquerda · " + am.length + " blocos no painel</span></span></div>" +
         '<div class="op lock"><span class="t"><b>Acompanhamento técnico do IPR</b><span>Incluído na Fase 1: delimitação, auditorias e linha de base do Observatório</span></span></div></div>';
     }
     return h;
   }
-  function resumo() { return activos().length + " módulos · " + camadasEnt().length + " camadas · " + activos().length + " blocos no painel"; }
+  function resumo() {
+    // 19/11 (Bernardo, ponto 15): o resumo dizia «18 módulos · 71 camadas» e depois ficavam 17 e 3. Agora diz o que acontece:
+    // módulos escolhidos que esperam por outro não contam; as camadas ficam disponíveis à esquerda e só as principais se ligam.
+    var esc1 = MOD.filter(function (m) { return on(m) && falta(m).length; }).length, lg = {};
+    activos().forEach(function (m) { (m.liga || []).forEach(function (i) { if (existe(i)) lg[i] = 1; }); });
+    return activos().length + " módulos activos" + (esc1 ? " (" + esc1 + " à espera de outro módulo)" : "") + " · " + camadasEnt().length + " camadas disponíveis à esquerda, " + Object.keys(lg).length + " ligadas ao abrir · " + activos().length + " blocos no painel";
+  }
   function wiz(abrir) {
     var w = D.getElementById("ipr-ent-wiz");
     if (abrir === false) { if (w) w.remove(); return; }
@@ -1365,6 +1397,8 @@
 
   // ---------- Eventos ----------
   D.addEventListener("click", function (e) {
+    var ib = e.target.closest && e.target.closest("[data-ent-info]");
+    if (ib) { e.preventDefault(); e.stopPropagation(); var bx = D.querySelector('[data-ent-infob="' + ib.getAttribute("data-ent-info") + '"]'); if (bx) { bx.hidden = !bx.hidden; ib.setAttribute("aria-expanded", bx.hidden ? "false" : "true"); } return; }
     var t = e.target.closest && e.target.closest("[data-ent],[data-ent-mod],[data-ent-perfil],[data-ent-bacia],[data-ent-cat],[data-ent-cam],[data-ent-abrir],[data-ent-tab],[data-ent-org],[data-ent-orgir],[data-ent-ferr],[data-ent-carregar],[data-ent-base],[data-ent-sel],[data-ent-pficha],[data-ent-papagar],[data-ent-panular],[data-ent-caljunta],[data-ent-caltira]");
     if (!t) return;
     if (t.hasAttribute("data-ent-org")) { var oc = orgCam(t.getAttribute("data-ent-org")); orgLigar(oc, t.checked); setTimeout(function () { marcarEsq(); if (TAB === "proj") painel(); }, 0); return; }
@@ -1392,7 +1426,7 @@
     if (a === "seguinte") { if (S.passo < 6) S.passo++; var wb = D.querySelector("#ipr-ent-wiz .wb"); if (wb) wb.scrollTop = 0; wiz(true); return; }
     if (a === "voltar") { if (S.passo > 1) S.passo--; wiz(true); return; }
     if (a === "guardar") { guardar(t); return; }
-    if (a === "so") { S.so = !S.so; marcarEsq(); return; }
+    if (a === "so") { S.so = !S.so; try { W.localStorage.setItem("ipr_ent_so", S.so ? "1" : "0"); } catch (er) {} marcarEsq(); return; }
     if (pesAccao(a, t)) return;
     if (extrasAccao(a, t)) return;
     if (a === "fichair") { var mm = W.__ipe && W.__ipe.mapa; if (mm && FICHA && FICHA.xy) mm.flyTo({center: FICHA.xy, zoom: Math.max(mm.getZoom(), 13)}); return; }
