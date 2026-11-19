@@ -2013,6 +2013,10 @@ if (window.IPR_A2_DEMO) (function(){
     try { marcas(); } catch (e) {}
     try { hudCurto(); } catch (e) {}
     try { solB(); } catch (e) {}
+    /* 19/11: sem nenhuma janela aberta não há nada a encostar; sair antes de medir a página (medido no Chrome do Nuno: cada
+       medição custava ~250 ms com a lista de Projectos aberta, e esta função era a que mais pagava). */
+    var algum = JAN.some(function(sel){ var e = D.querySelector(sel); if (!e) return false; if (sel === '#ipe-hud') return e.classList.contains('on'); return !e.hidden; });
+    if (!algum) return;
     var T = D.querySelector('#ipe .ipe-tools.tp-a2'); if (!T) return;
     var M = D.getElementById('ipe-mapa') || D.body, mr = M.getBoundingClientRect(), tr = T.getBoundingClientRect();
     if (!tr.width) return;
