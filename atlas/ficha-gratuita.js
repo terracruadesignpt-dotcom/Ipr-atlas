@@ -185,10 +185,33 @@
   }
   function extras(F, id) {
     var m = medir(F); if (!m) return Promise.resolve(null);
-    return Promise.all([crus(F, m.b, m.G, m.M, m.tot).catch(function () { return null; }), relevo(F, m.b).catch(function () { return null; }), regras(id)])
+    // 19/11 (J8): sem Intelligence e fora dos projectos da própria pessoa, o relevo nem se mede (os números ficam para os produtos).
+    return Promise.all([crus(F, m.b, m.G, m.M, m.tot).catch(function () { return null; }), pleno(id) ? relevo(F, m.b).catch(function () { return null; }) : Promise.resolve(null), regras(id)])
       .then(function (r) { return { C: r[0], R: r[1], P: r[2], areaHa: m.areaHa }; });
   }
+  // 19/11/2026 (J8, Nuno 18/11 23h33: «estamos a dar demasiado na ficha grátis para quem só tem o Explorer»): a ficha completa
+  // (percentagens e hectares por classe do PDM, regras, percentis do relevo) fica para o Intelligence, a equipa e os projectos da
+  // própria pessoa (id). Para os outros: concelho, classe do solo e classes do PDM só pelo nome, sem números, e o caminho para os
+  // produtos que os trazem.
+  function pleno(id) { return !!id || W.IPR_NIVEL === "intelligence" || W.IPR_ORG === true; }
+  function htmlFechado(X) {
+    var C = X.C, h = "<h4>PDM do terreno</h4>";
+    if (C && C.classes.length) {
+      h += '<table class="ipe-tab2 ipe-res-t"><tbody>' +
+        linha(C.muns.length > 1 ? "Concelhos" : "Concelho", C.muns.map(function (m) { return esc(m.nome); }).join(", ")) +
+        (C.solo.length ? linha("Classe do solo", C.solo.map(function (s) { return esc(s.l); }).join(" e ")) : "") +
+        linha("Classes do PDM no terreno", C.classes.slice(0, 6).map(function (g) { return esc(g.designacao); }).join("<br>")) +
+        "</tbody></table>";
+    } else {
+      h += '<p class="ipe-small">' + (C ? "A carta de ordenamento (CRUS) não tem classe neste limite." : "O serviço da carta de ordenamento (CRUS, DGT) não respondeu agora.") + "</p>";
+    }
+    h += '<p class="ipe-small ipr-fg-cad">&#128274; Percentagens e hectares de cada classe, índices e prédio mínimo do regulamento, declives e áreas acima de 15 % e 25 %: '
+      + '<a href="#" data-fg-compra="planta">na Planta de Localização</a>, <a href="#" data-fg-compra="leitura">na Leitura Territorial</a> ou no Atlas Intelligence.</p>';
+    h += '<p class="ipe-small"><b>' + FECHO + "</b> Fonte: carta de regimes de uso do solo (CRUS, DGT, OGC API).</p>";
+    return h;
+  }
   function htmlSeccao(X, id) {
+    if (!pleno(id)) return htmlFechado(X);
     var C = X.C, R = X.R, P = X.P, areaHa = X.areaHa, h = "<h4>PDM e números do terreno</h4>";
     if (C && C.classes.length) {
       h += '<table class="ipe-tab2 ipe-res-t"><tbody>' +
