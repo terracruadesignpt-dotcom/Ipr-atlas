@@ -5,9 +5,9 @@
    sempre»; «o filtrar bases e projectos não faz sentido para as outras organizações [...] nem aqueles separadores todos com
    pedidos, dias abertos [...] no meu Atlas é que vai ficar as propriedades [...] uma ficha de cada terreno, bem sintetizada, que
    aparece a imagem do terreno»; «isto aparece tudo ali dentro, não vai saltar um pop-up novo».
-   Só corre com ?entidade= (window.IPR_ENTIDADE). Não edita outros ficheiros:
-   1. Esconde o bloco «Camadas da organização» (#ipr-ent-esq) e desliga as camadas de licenciamento (o roxo do PDM); os limites
-      das propriedades ficam ligados no mapa.
+   Só corre com ?entidade= (window.IPR_ENTIDADE). Não edita outros ficheiros; tem de carregar antes do entidade.js:
+   1. Esconde o bloco «Camadas da organização» (#ipr-ent-esq). As camadas de licenciamento (o roxo do PDM, centenas de
+      polígonos que prendiam o navegador) não chegam a ser carregadas; os limites das propriedades ficam ligados no mapa.
    2. Em «O meu Atlas» saem os filtros, contadores e a lista de todos os projectos; entram cartões das propriedades da
       organização (imagem de satélite com o limite, área, «Ver no mapa», «Ficha do terreno»).
    3. Separadores Gestão, Projecto e Cloud escondidos em modo organização.
@@ -23,6 +23,30 @@
   var ENT = W.IPR_ENTIDADE;
   if (!ENT || !ENT.id) return;
   D.documentElement.classList.add("ipr-org-modo");
+
+  /* O entidade.js pede logo todas as camadas da organização. As de licenciamento (PDM inteiro de um concelho, centenas de
+     polígonos) prendiam o navegador e pintavam o mapa de roxo. Em modo organização vêm vazias; o resto fica igual. */
+  var LIC = {};
+  function eLic(c, grupos) {
+    var g = ((grupos || []).filter(function (x) { return x.id === c.grupo; })[0] || {});
+    return c.grupo === "licenc" || /licenciamento|\bpdm\b|\bren\b|\bran\b|servid/i.test((g.nome || "") + " " + (c.nome || ""));
+  }
+  if (W.fetch && !W.__iprOrgFetch) {
+    W.__iprOrgFetch = 1;
+    var F0 = W.fetch;
+    W.fetch = function (u, o) {
+      var url = typeof u === "string" ? u : (u && u.url) || "";
+      var m = /\/tcd\/v1\/org\/camada\/(\d+)(?:[?#]|$)/.exec(url);
+      if (m && LIC[m[1]]) return Promise.resolve(new Response('{"type":"FeatureCollection","features":[]}', { status: 200, headers: { "Content-Type": "application/json" } }));
+      var pr = F0.apply(this, arguments);
+      if (/\/tcd\/v1\/org\/camadas(?:[?#]|$)/.test(url)) {
+        pr.then(function (r) { return r.clone().json(); }).then(function (d) {
+          (d && d.camadas || []).forEach(function (c) { if (eLic(c, d.grupos)) LIC[String(c.id)] = 1; });
+        }).catch(function () {});
+      }
+      return pr;
+    };
+  }
 
   var CSS =
     "html.ipr-org-modo #ipr-ent-esq{display:none!important}" +
@@ -58,6 +82,7 @@
         var eo = W.IPR_ENT_ORG && +W.IPR_ENT_ORG.org;
         if (!d || !d.org || (eo && +d.org.id !== eo)) { setTimeout(function () { pedido = false; }, 8000); return; }
         ORGD = d;
+        (d.camadas || []).forEach(function (c) { if (eLic(c, d.grupos)) LIC[String(c.id)] = 1; });
         props().forEach(function (c) {
           if (!c.url) return;
           fetch(c.url, { credentials: "same-origin" }).then(function (r) { return r.json(); }).then(function (gj) { GJ[c.id] = gj; desenhados = null; correr(); }).catch(function () {});
@@ -72,7 +97,7 @@
   function props() {
     if (!ORGD) return [];
     return (ORGD.camadas || []).filter(eProp).map(function (c) {
-      return { id: String(c.id), nome: String(c.nome || "").replace(/\s*·\s*limite do projecto\s*$/i, "").trim(), url: c.url };
+      return { id: String(c.id), nome: String(c.nome || "").replace(/\s*·\s*limite do projecto\s*$/i, "").trim(), url: c.url, bbox: c.bbox, ha: c.ha };
     });
   }
   function semLicenciamento() {
@@ -88,7 +113,11 @@
   function geo(id) {
     var d = GJ[id];
     if (!d) {
-      var M = mapa(), so = M && M.getSource("ent-org-" + id); if (!so) return null;
+      var M = mapa(), so = M && M.getSource("ent-org-" + id);
+      if (!so) {
+        var c = props().filter(function (x) { return x.id === String(id); })[0];
+        return c && c.bbox && c.bbox.length === 4 ? { aneis: [], b: c.bbox, ha: +c.ha || 0 } : null;
+      }
       d = so._data || (so.serialize && so.serialize().data); if (!d) return null;
       if (d.geojson) d = d.geojson;
     }
@@ -154,7 +183,7 @@
     var box = D.getElementById("ipr-orgt");
     if (!box) { box = D.createElement("div"); box.id = "ipr-orgt"; sep.parentNode.insertBefore(box, sep.nextSibling); }
     var gs = props.map(function (p) { return { p: p, g: geo(p.id) }; });
-    var chave = gs.map(function (x) { return x.p.id + (x.g ? "g" : ""); }).join("|");
+    var chave = gs.map(function (x) { return x.p.id + (x.g ? "g" + x.g.aneis.length : ""); }).join("|");
     if (chave === desenhados) return gs;
     desenhados = chave;
     var h = "<h4>Propriedades · " + esc(ENT.nome || ENT.id) + "</h4>";
@@ -164,7 +193,7 @@
       h += '<div class="ct" data-orgt="' + esc(x.p.id) + '"><div class="im" data-orgt-ir="' + esc(x.p.id) + '" title="Ver no mapa">' + (g ? imagem(g) : "") + "</div>" +
         '<div class="tx"><b>' + esc(x.p.nome) + "</b><small>" + (g ? (g.ha >= 10 ? Math.round(g.ha) : g.ha.toFixed(1)).toString().replace(".", ",") + " ha" : "a carregar o limite…") + "</small>" +
         '<div class="bt"><button type="button" class="p" data-orgt-ir="' + esc(x.p.id) + '">Ver no mapa</button>' +
-        (g ? '<a href="' + fichaUrl(g) + '">Ficha do terreno</a>' : "") + "</div></div></div>";
+        (g && g.aneis.length ? '<a href="' + fichaUrl(g) + '">Ficha do terreno</a>' : "") + "</div></div></div>";
     });
     box.innerHTML = h;
     return gs;
