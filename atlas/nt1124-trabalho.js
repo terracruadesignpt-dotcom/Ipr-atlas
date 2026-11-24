@@ -109,6 +109,7 @@
     M.addSource("ipr-an", { type: "geojson", data: AN });
     M.addLayer({ id: "ipr-an-f", type: "fill", source: "ipr-an", filter: ["==", ["geometry-type"], "Polygon"], paint: { "fill-color": ["coalesce", ["get", "cor"], "#3d8fd6"], "fill-opacity": 0.18 } });
     M.addLayer({ id: "ipr-an-l", type: "line", source: "ipr-an", paint: { "line-color": ["coalesce", ["get", "cor"], "#3d8fd6"], "line-width": ["coalesce", ["get", "w"], 2.5], "line-dasharray": [1, 0] } });
+    M.addLayer({ id: "ipr-an-p", type: "circle", source: "ipr-an", filter: ["==", ["geometry-type"], "Point"], paint: { "circle-color": ["coalesce", ["get", "cor"], "#e6e4d9"], "circle-radius": 4, "circle-stroke-color": "#11160d", "circle-stroke-width": 1 } });
     M.addLayer({ id: "ipr-dz-f", type: "fill", source: "ipr-dz", filter: ["==", ["geometry-type"], "Polygon"], paint: { "fill-color": ["get", "cor"], "fill-opacity": ["coalesce", ["get", "op"], 0.22] } });
     M.addLayer({ id: "ipr-dz-l", type: "line", source: "ipr-dz", filter: ["!=", ["geometry-type"], "Point"], paint: { "line-color": ["get", "cor"], "line-width": 2.4 } });
     M.addLayer({ id: "ipr-dz-p", type: "circle", source: "ipr-dz", filter: ["==", ["geometry-type"], "Point"], paint: { "circle-color": ["get", "cor"], "circle-radius": 6, "circle-stroke-color": "#11160d", "circle-stroke-width": 1.5 } });
@@ -169,6 +170,7 @@
         '<span class="sep"></span><span class="lb">Tipo</span>' +
         Object.keys(TIPOS).map(function (k) { return '<button type="button" data-t="' + k + '" class="' + (estado.tipo === k ? "on" : "") + '"><span class="sq" style="background:' + TIPOS[k].cor + '"></span>' + TIPOS[k].n + "</button>"; }).join("") + "</div>";
       h += '<div class="fx">' + L.map(function (x) { return '<button type="button" data-s="' + esc(x) + '" class="' + (estado.sub === x && armado ? "ac" : "") + '">' + esc(x) + "</button>"; }).join("") +
+        (armado && armado.k === "draw" && estado.forma !== "p" ? '<span class="sep"></span><button type="button" data-a="acabar" class="ac">Acabar</button>' : "") +
         '<span class="sep"></span><button type="button" data-a="desfazer">Desfazer</button><button type="button" data-a="exportar">Exportar</button><button type="button" data-a="limpar">Limpar</button><span class="lb" id="ipr-tr-n"></span></div>';
     } else if (estado.modo === "Analisar") {
       h += '<div class="fx"><span class="lb">Novo</span>' +
@@ -191,6 +193,8 @@
     if (s) { estado.sub = s; armarDesenho(); render(); return; }
     if (nn) { armarClique(nn); render(); return; }
     if (r) { recolher(r); return; }
+    if (a === "acabar") { acabar(); return; }
+    if (a === "desfazer" && armado && armado.k === "draw" && armado.v.length) { armado.v.pop(); previa(null); return; }
     if (a === "desfazer") { var u = FC.features.pop(); if (u) { guardar(); aviso("Desfeito: " + (u.properties.sub || "")); } else aviso("Não há nada para desfazer."); }
     else if (a === "exportar") exportar();
     else if (a === "limpar") pedirLimpar();
@@ -202,37 +206,48 @@
   var MODOS = { p: "draw_point", l: "draw_line_string", g: "draw_polygon" };
   function desarmar() {
     var dr = desenho(); armado = null;
+    try { var M0 = mapa(); if (M0) M0.doubleClickZoom.enable(); } catch (e) {}
+    if (AN.features.some(function (x) { return x.properties.k === "tmp"; })) { AN.features = AN.features.filter(function (x) { return x.properties.k !== "tmp"; }); pintar(); }
     try { if (dr && dr.getMode && dr.getMode().indexOf("draw_") === 0) dr.changeMode("simple_select"); } catch (e) {}
     var M = mapa(); if (M) M.getCanvas().style.cursor = "";
     var m = $("ipr-trb-med"); if (m) m.style.display = "none";
   }
   function armarDesenho() {
-    var dr = desenho(); desarmar();
+    desarmar();
     if (estado.tipo === "agua" && estado.forma === "l" && /curva de nível|keyline/i.test(estado.sub)) { armarClique("curva"); aviso("Clique no ponto de partida: a linha segue a cota desse ponto."); return; }
-    if (!dr) { aviso("O desenho ainda não está pronto; tente daqui a nada."); return; }
-    armado = { k: "draw", tipo: estado.tipo, sub: estado.sub, forma: estado.forma };
-    try { dr.changeMode(MODOS[estado.forma]); } catch (e) { aviso("Não consegui abrir o desenho."); armado = null; return; }
-    aviso(estado.forma === "p" ? "Clique no mapa para pôr o ponto." : "Clique para cada vértice; duplo clique para acabar.");
+    var M = mapa(); if (!M) return;
+    armado = { k: "draw", tipo: estado.tipo, sub: estado.sub, forma: estado.forma, v: [] };
+    M.getCanvas().style.cursor = "crosshair";
+    try { M.doubleClickZoom.disable(); } catch (e) {}
+    aviso(estado.forma === "p" ? "Clique no mapa para pôr o ponto." : "Clique em cada vértice. Duplo clique, Enter ou «Acabar» para terminar; Esc cancela.");
   }
-  function criado(e) {
-    if (!armado || armado.k !== "draw") return;
-    var dr = desenho(), fs = (e && e.features) || [];
-    fs.forEach(function (f) {
-      try { dr.delete(f.id); } catch (x) {}
-      var a = armado, T = TIPOS[a.tipo];
-      var nf = { type: "Feature", geometry: f.geometry, properties: { tipo: a.tipo, tn: T.n, sub: a.sub, cor: T.cor, t: Date.now(), op: a.sub === "Faixa de combustível" ? 0.12 : 0.22 } };
-      FC.features.push(nf); guardar();
-      depois(nf);
-    });
-    armado = null; render();
-    var m = $("ipr-trb-med"); if (m) m.style.display = "none";
+  function verticeDesenho(p) {
+    var a = armado; a.v.push(p);
+    if (a.forma === "p") return acabar();
+    previa(null);
   }
-  function aoVivo() {
-    if (!armado || armado.k !== "draw" || armado.forma === "p") return;
-    var dr = desenho(); if (!dr) return;
-    var all = dr.getAll().features, f = all[all.length - 1]; if (!f) return;
-    var t = txtMed(f.geometry); if (!t) return;
-    var m = $("ipr-trb-med"); m.textContent = t; m.style.display = "block"; posMed();
+  function previa(cursor) {
+    var a = armado; if (!a || a.k !== "draw") return;
+    var cs = a.v.slice(); if (cursor) cs.push(cursor);
+    AN.features = AN.features.filter(function (x) { return x.properties.k !== "tmp"; });
+    var cor = TIPOS[a.tipo].cor;
+    if (cs.length > 1) AN.features.push({ type: "Feature", geometry: { type: "LineString", coordinates: a.forma === "g" && cs.length > 2 ? cs.concat([cs[0]]) : cs }, properties: { k: "tmp", cor: cor, w: 2 } });
+    a.v.forEach(function (q) { AN.features.push({ type: "Feature", geometry: { type: "Point", coordinates: q }, properties: { k: "tmp", cor: cor } }); });
+    pintar();
+    var g = a.forma === "g" && cs.length > 2 ? { type: "Polygon", coordinates: [cs.concat([cs[0]])] } : { type: "LineString", coordinates: cs };
+    var t = cs.length > 1 ? txtMed(g) : ""; var m = $("ipr-trb-med");
+    if (m && t) { m.textContent = t; m.style.display = "block"; posMed(); }
+  }
+  function acabar() {
+    var a = armado; if (!a || a.k !== "draw") return;
+    var v = a.v, g;
+    if (a.forma === "p") g = { type: "Point", coordinates: v[0] };
+    else if (a.forma === "l") { if (v.length < 2) { aviso("Uma linha precisa de dois pontos."); return; } g = { type: "LineString", coordinates: v }; }
+    else { if (v.length < 3) { aviso("Um polígono precisa de três pontos."); return; } g = { type: "Polygon", coordinates: [v.concat([v[0]])] }; }
+    var T = TIPOS[a.tipo], nf = { type: "Feature", geometry: g, properties: { tipo: a.tipo, tn: T.n, sub: a.sub, cor: T.cor, t: Date.now(), op: a.sub === "Faixa de combustível" ? 0.12 : 0.22 } };
+    desarmar(); AN.features = AN.features.filter(function (x) { return x.properties.k !== "tmp"; });
+    FC.features.push(nf); guardar(); render();
+    depois(nf);
   }
   function depois(f) {
     var s = f.properties.sub, g = f.geometry;
@@ -352,7 +367,8 @@
     if (k !== "curva") aviso(k === "aqui" ? "Clique no ponto que quer conhecer." : k === "caminho" ? "Clique onde cai a água." : "Clique no vale ou na charca: o Atlas desenha a área que drena para lá.");
   }
   function cliqueMapa(e) {
-    if (!armado || armado.k === "draw") return;
+    if (armado && armado.k === "draw") { verticeDesenho([e.lngLat.lng, e.lngLat.lat]); return; }
+    if (!armado) return;
     var k = armado.k, p = [e.lngLat.lng, e.lngLat.lat];
     armado = null; var M = mapa(); M.getCanvas().style.cursor = ""; render();
     if (k === "aqui") aqui(p); else if (k === "caminho") caminhoAgua(p); else if (k === "bacia") bacia(p); else if (k === "curva") curva(p);
@@ -548,10 +564,10 @@
     if (!ligado) {
       ligado = true;
       M.on("click", cliqueMapa);
-      M.on("draw.create", criado);
-      M.on("draw.render", aoVivo);
+      M.on("dblclick", function (e) { if (armado && armado.k === "draw") { if (e.preventDefault) e.preventDefault(); if (armado.v.length > 1) armado.v.pop(); acabar(); } });
+      M.on("mousemove", function (e) { if (armado && armado.k === "draw" && armado.v.length) previa([e.lngLat.lng, e.lngLat.lat]); });
       M.on("style.load", function () { setTimeout(camadas, 300); });
-      D.addEventListener("keydown", function (e) { if (e.key === "Escape") { desarmar(); fecharC(); render(); } });
+      D.addEventListener("keydown", function (e) { if (e.key === "Escape") { desarmar(); fecharC(); render(); } else if (e.key === "Enter" && armado && armado.k === "draw") { acabar(); } });
     }
     camadas();
     var m = modoAtual(), b = $("ipr-trb");
