@@ -32,6 +32,13 @@
     ".ipr-sep-b button small,.ipr-sep-b a.bt small{font-weight:400;font-size:11px;color:#9a9e8a}" +
     ".ipr-sep-b .pri{border-color:#94BE39;background:rgba(148,190,57,.16)}" +
     "[data-pane=enc]:not(.ipr-sep-base)>.ipr-fd-leg,[data-pane=enc]:not(.ipr-sep-base)>#ipr-proc-sel,[data-pane=enc]:not(.ipr-sep-base)>#ipe-form,[data-pane=enc]:not(.ipr-sep-base)>#ipr-conv,[data-pane=enc]>.ipr-fd-leg{display:none!important}" +
+    /* O meu Atlas: lista das Bases compacta, uma linha baixa por Base */
+    "[data-pane=proj] article.ipr-pc>.ipe-cc{min-height:0!important}" +
+    "[data-pane=proj] article.ipr-pc .ipr-fn-h{padding:1px 30px 1px 4px!important;min-height:0!important;font-size:12px!important;line-height:1.3!important;gap:6px}" +
+    "[data-pane=proj] article.ipr-pc .ipr-fn-h .t{font-weight:500!important;font-size:12px!important}" +
+    "[data-pane=proj] article.ipr-pc .ipr-fn-h .a{font-size:10.5px!important;opacity:.75}" +
+    "[data-pane=proj] article.ipr-pc .ipr-bt-b{height:20px!important;line-height:20px!important;top:1px!important}" +
+    "[data-pane=proj] article.ipr-pc:not(.on){border-bottom:1px solid rgba(255,255,255,.05)!important;margin:0!important}" +
     "[data-pane=enc] .tcd-fila,[data-pane=enc]>.ipr-x-s,[data-pane=enc]>[data-k=ptsk]{display:none!important}" +
     ".tcd-fila .f-i.ipr-sep-par{display:none}.tcd-fila.ipr-sep-mp .f-i.ipr-sep-par{display:block}" +
     ".tcd-fila .ipr-sep-mpb{background:none;border:0;color:#94BE39;text-decoration:underline;cursor:pointer;font:12px Inter,system-ui,sans-serif;padding:4px 0}";

@@ -125,6 +125,7 @@
     try { var q = $("ipe-q"); if (q && !q.getAttribute("data-ph")) { q.setAttribute("data-ph", "1"); q.placeholder = t("Morada, lugar, coordenadas ou NIC", "Address, place, coordinates or parcel ID"); } } catch (e) {}
     try { procurarTerra(); } catch (e) {}
     try { contaMenu(); var b = $("ipr-conta"); if (b && nomeConta() && b.firstChild.textContent !== nomeConta()) b.firstChild.textContent = nomeConta(); } catch (e) {}
+    try { var bta = D.querySelector(".ipe-top>.ipe-beta"); if (bta) bta.style.setProperty("display", "none", "important"); } catch (e) {}
     try { linha2(); } catch (e) {}
     try { comprar(); } catch (e) {}
   }
