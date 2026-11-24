@@ -75,7 +75,7 @@
     Recolher: [[t("Pedir visita técnica", "Request a site visit"), /visita t[eé]cnica|site visit/i]]
   };
   function menus() {
-    var acc = D.getElementById("ipr-modos-acc"); if (!acc || !acc.offsetParent) return;
+    var acc = D.getElementById("ipr-modos-acc"); if (!acc || !acc.getClientRects().length) return;
     var tit = (acc.textContent || "").trim().split(":")[0];
     var lista = EXTRA[tit] || EXTRA[{ Analyse: "Analisar", Analyze: "Analisar", Draw: "Desenhar", Collect: "Recolher" }[tit]];
     if (!lista || acc.getAttribute("data-fe") === tit) return;
