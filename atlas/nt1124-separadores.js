@@ -21,7 +21,7 @@
   var CSS =
     "#ipe-tabs [data-tab=com],#ipe-tabs [data-tab=loc]{display:none!important}" +
     "#ipe-tabs.ipr-sep-eq [data-tab=rever]{display:inline-flex!important}" +
-    "#ipe-tabs [data-tab=enc]{order:1}#ipe-tabs [data-tab=proj]{order:2}#ipe-tabs [data-tab=org]{order:3}#ipe-tabs [data-tab=rever]{order:4}" +
+    "#ipe-tabs [data-tab=enc]{order:1!important}#ipe-tabs [data-tab=proj]{order:2!important}#ipe-tabs [data-tab=org]{order:3!important}#ipe-tabs [data-tab=rever]{order:4!important}" +
     "#ipe-tabs .ipe-tab .ipr-sep-r{font:inherit}" +
     ".ipr-sep-b{margin:0 0 12px;padding:10px 12px;border:1px solid rgba(148,190,57,.3);border-radius:10px;background:rgba(20,26,16,.5);font:13px/1.45 Inter,system-ui,sans-serif;color:#e9e6da}" +
     ".ipr-sep-b h5{margin:0 0 8px;font:600 11px 'IBM Plex Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:#cfe3a0}" +
