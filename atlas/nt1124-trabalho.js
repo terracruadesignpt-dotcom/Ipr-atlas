@@ -245,13 +245,18 @@
   // seguir a curva de nível
   function curva(p) {
     aviso("A calcular a curva de nível…");
-    return Promise.all([relevo(p, 600, 15), d3c()]).then(function (r) {
+    return Promise.all([relevo(p, 700, 13), d3c()]).then(function (r) {
       var G = r[0], d3 = r[1], z0 = G.z_(p);
       if (!isFinite(z0)) throw new Error("sem relevo aqui");
-      var arr = Array.prototype.slice.call(G.a), cs = d3.contours().size([G.W, G.H]).thresholds([z0])(arr)[0];
+      // alisa o relevo (média 3×3) para a curva não se partir em ruído
+      var Wp = G.W, a = G.a, arr = new Array(a.length);
+      for (var y = 0; y < G.H; y++) for (var x = 0; x < Wp; x++) { var sm = 0, c = 0; for (var dy = -1; dy <= 1; dy++) for (var dx = -1; dx <= 1; dx++) { var yy = y + dy, xx = x + dx; if (yy < 0 || xx < 0 || yy >= G.H || xx >= Wp) continue; sm += a[yy * Wp + xx]; c++; } arr[y * Wp + x] = sm / c; }
+      var cs = d3.contours().size([G.W, G.H]).thresholds([z0])(arr)[0];
       var q = G.px(p), best = null;
       (cs.coordinates || []).forEach(function (poly) { poly.forEach(function (ring) {
-        ring.forEach(function (pt, i) { var d = (pt[0] - q[0]) * (pt[0] - q[0]) + (pt[1] - q[1]) * (pt[1] - q[1]); if (!best || d < best.d) best = { d: d, ring: ring, i: i }; });
+        var dm = 1e9, im = 0; ring.forEach(function (pt, i) { var d = (pt[0] - q[0]) * (pt[0] - q[0]) + (pt[1] - q[1]) * (pt[1] - q[1]); if (d < dm) { dm = d; im = i; } });
+        var perto = dm < 9; // a menos de 3 píxeis
+        if (!best || (perto && (!best.perto || ring.length > best.ring.length)) || (!perto && !best.perto && dm < best.d)) best = { d: dm, ring: ring, i: im, perto: perto };
       }); });
       if (!best) throw new Error("sem curva");
       var ring = best.ring, Lr = ring.length, borda = function (pt) { return pt[0] <= 1 || pt[1] <= 1 || pt[0] >= G.W - 1 || pt[1] >= G.H - 1; };
@@ -259,11 +264,11 @@
       for (k = 1; k < Lr; k++) { i = (best.i + k) % Lr; if (borda(ring[i])) break; out.push(ring[i]); }
       var tras = [];
       for (k = 1; k < Lr; k++) { i = (best.i - k + Lr) % Lr; if (borda(ring[i])) break; tras.push(ring[i]); if (out.length + tras.length >= Lr) break; }
-      var pts = tras.reverse().concat(out).filter(function (pt, j) { return j % 2 === 0; }).map(function (pt) { return G.ll(pt[0], pt[1]); });
+      var pts = tras.reverse().concat(out).map(function (pt) { return G.ll(pt[0], pt[1]); });
       if (pts.length < 2) throw new Error("curva curta");
       var T = TIPOS.agua, nf = { type: "Feature", geometry: { type: "LineString", coordinates: pts }, properties: { tipo: "agua", tn: T.n, sub: estado.sub || "Vala em curva de nível", cor: T.cor, cota: Math.round(z0 * 10) / 10, t: Date.now() } };
       FC.features.push(nf); guardar();
-      cartao("Curva de nível", "<dl><dt>Cota</dt><dd>" + n(z0, 1) + " m</dd><dt>Comprimento</dt><dd>" + n(comp(pts), 0) + " m</dd><dt>Resolução</dt><dd>" + n(G.pxM, 1) + " m</dd></dl><p class='nt'>A linha segue a mesma cota até 600 m do ponto. Para a keyline, desloque-a ligeiramente para fora do vale no terreno.</p>");
+      cartao("Curva de nível", "<dl><dt>Cota</dt><dd>" + n(z0, 1) + " m</dd><dt>Comprimento</dt><dd>" + n(comp(pts), 0) + " m</dd><dt>Resolução</dt><dd>" + n(G.pxM, 1) + " m</dd></dl><p class='nt'>A linha segue a mesma cota até 700 m do ponto. Para a keyline, desloque-a ligeiramente para fora do vale no terreno.</p>");
     }).catch(function (e) { aviso("Não consegui traçar a curva: " + (e && e.message || "erro")); });
   }
 
@@ -413,7 +418,7 @@
   }
   function bacia(p) {
     cartao("Bacia a partir de um ponto", "<p class='nt'>A calcular a área que drena para este ponto…</p>");
-    Promise.all([relevo(p, 2200, 14), d3c()]).then(function (r) {
+    Promise.all([relevo(p, 2200, 13), d3c()]).then(function (r) {
       var G = r[0], d3 = r[1], Wp = G.W, H = G.H, N = Wp * H, rec = receptor(G), a = G.a;
       // acumulação: ordena por altitude e soma para o receptor
       var ord = new Uint32Array(N); for (var k = 0; k < N; k++) ord[k] = k;
