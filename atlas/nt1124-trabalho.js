@@ -658,5 +658,5 @@
   }
   (function vez(k) { try { correr(); } catch (e) {} if (k < 80) setTimeout(function () { vez(k + 1); }, 300); })(0);
   setInterval(function () { try { correr(); } catch (e) {} }, 700);
-  W.__iprTrabalho = { aqui: aqui, bacia: bacia, caminho: caminhoAgua, curva: curva, FC: function () { return FC; } };
+  W.__iprTrabalho = { aqui: aqui, bacia: bacia, caminho: caminhoAgua, curva: curva, perfil: perfil, vista: vista, sol: sol, FC: function () { return FC; } };
 })();
