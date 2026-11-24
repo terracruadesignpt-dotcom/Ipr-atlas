@@ -8,7 +8,13 @@
    Mosaicos: PMTiles raster em camadas.terracruadesign.pt/pmtiles/snit/<srv>__<camada>.pmtiles (z12 a z16).
    Câmara ainda não copiada: diz que a cópia está a decorrer e lembra a camada «Ordenamento (PDM)» (CRUS) que já existe.
    Não mexe no viz.js nem no app.js. Mapa: window.__ipe.mapa. API: window.__iprPdmCamara = {ligar(bool), estado()}.
-   Desligar: ?pdmcamara=0. */
+   Desligar: ?pdmcamara=0.
+   v3 (Nuno, 24/11 22h30: «arruma lá as plantas, agrupa-as por concelho e quero ter o download disso tudo pronto»):
+   - todas as plantas da câmara (servico.json «todas»), não só as 10 primeiras;
+   - «Por concelho»: distrito → concelhos, cada um com o número de plantas copiadas (ou «em cópia»); carregar leva o mapa
+     ao concelho e mostra as plantas dele. Nomes e limites dos concelhos: CAOP (ogcapi da DGT, colecção municipios);
+   - Intelligence: descarregar cada planta (PMTiles, abre no QGIS 3.32+ e no GDAL 3.8+), a legenda e a lista de todas
+     as ligações do concelho (.txt). O Explorer não descarrega. */
 (function () {
   "use strict";
   var W = window, D = document;
@@ -16,6 +22,8 @@
   var R2 = "https://camadas.terracruadesign.pt/";
   var PMT = "https://cdn.jsdelivr.net/npm/pmtiles@3.2.1/dist/pmtiles.js";
   var SRC = "ipr-pdmc", LAY = "ipr-pdmc-l";
+  var OGC = "https://ogcapi.dgterritorio.gov.pt/collections/municipios/items";
+  var LISTA = null, LISTA_P = null, DIST = "";
   var S = { antiga: "", antigaOn: false, on: false, dico: "", nome: "", srv: "", camadas: [], escolhida: "", op: 0.75, estado: "", ultimoCentro: "" };
   try { var g = JSON.parse(W.localStorage.getItem("ipr_pdmc") || "{}"); S.op = typeof g.op === "number" ? g.op : 0.75; S.preferida = g.pref || ""; } catch (e) {}
   function guardar() { try { W.localStorage.setItem("ipr_pdmc", JSON.stringify({ op: S.op, pref: S.preferida || "" })); } catch (e) {} }
@@ -59,8 +67,70 @@
   function servico(dico, cb) {
     if (SERV[dico] !== undefined) return cb(SERV[dico]);
     fetch(R2 + "snit/" + dico + "/servico.json", { cache: "no-cache" }).then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (j) {
+      if (j && j.todas && j.todas.length) j.camadas = j.todas;   // v3: todas as plantas
       SERV[dico] = j && j.srv && j.camadas && j.camadas.length ? j : null; cb(SERV[dico]);
     }).catch(function () { SERV[dico] = null; cb(null); });
+  }
+  // ---------- concelhos (CAOP) ----------
+  function lista() {
+    if (LISTA) return Promise.resolve(LISTA);
+    if (LISTA_P) return LISTA_P;
+    try { var c = JSON.parse(W.localStorage.getItem("ipr_pdmc_conc") || "null"); if (c && c.t > Date.now() - 30 * 864e5 && c.l && c.l.length > 250) { LISTA = c.l; return Promise.resolve(LISTA); } } catch (e) {}
+    var l = [];
+    function pag(o) {
+      return fetch(OGC + "?f=json&limit=100&offset=" + o + "&skipGeometry=true").then(function (r) { return r.json(); }).then(function (j) {
+        (j.features || []).forEach(function (f) { var p = f.properties || {}; if (p.dtmn && p.nuts1 === "Continente") l.push([p.dtmn, p.municipio, p.distrito_ilha]); });
+        if ((j.features || []).length === 100 && o < 1000) return pag(o + 100);
+      });
+    }
+    LISTA_P = pag(0).then(function () {
+      l.sort(function (a, b) { return a[1].localeCompare(b[1], "pt"); }); LISTA = l;
+      try { W.localStorage.setItem("ipr_pdmc_conc", JSON.stringify({ t: Date.now(), l: l })); } catch (e) {}
+      return l;
+    }).catch(function () { LISTA_P = null; return []; });
+    return LISTA_P;
+  }
+  function irPara(dico) {
+    fetch(OGC + "?f=json&limit=1&dtmn=" + dico).then(function (r) { return r.json(); }).then(function (j) {
+      var g = j.features && j.features[0] && j.features[0].geometry; if (!g) return;
+      var b = [180, 90, -180, -90];
+      JSON.stringify(g.coordinates).replace(/\[(-?\d+\.?\d*),(-?\d+\.?\d*)\]/g, function (m, x, y) { x = +x; y = +y; b = [Math.min(b[0], x), Math.min(b[1], y), Math.max(b[2], x), Math.max(b[3], y)]; return m; });
+      var I = mapa(); if (!I) return;
+      if (!S.on) ligar(true);
+      S.ultimoCentro = ""; I.fitBounds([[b[0], b[1]], [b[2], b[3]]], { padding: 30, maxZoom: 13 });
+    }).catch(function () {});
+  }
+  function urlPlanta(srv, nome) { return R2 + "pmtiles/snit/" + srv + "__" + nome + ".pmtiles"; }
+  function urlLegenda(srv, nome) { return R2 + "snit/" + srv + "/" + nome + "/leg.png"; }
+  function txtLigacoes() {
+    var l = [t("Plantas do PDM", "PDM plans") + " · " + (S.nome || S.dico) + " (" + S.dico + ")", t("Fonte: Câmara Municipal / DGT, SNIT. Cópia IPR Atlas. Informação indicativa.", "Source: Municipality / DGT, SNIT. Indicative."),
+      t("PMTiles raster, EPSG:3857, zoom 12 a 16. Abre no QGIS 3.32+ (Camada › Adicionar camada raster) e no GDAL 3.8+.", "Raster PMTiles, EPSG:3857, zoom 12-16. Opens in QGIS 3.32+ and GDAL 3.8+."), ""];
+    S.camadas.forEach(function (x) { l.push(x[1]); l.push(urlPlanta(S.srv, x[0])); l.push(urlLegenda(S.srv, x[0])); l.push(""); });
+    var a = D.createElement("a"); a.href = URL.createObjectURL(new Blob([l.join("\r\n")], { type: "text/plain;charset=utf-8" }));
+    a.download = "pdm-" + S.dico + "-" + String(S.nome || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^A-Za-z0-9]+/g, "-").toLowerCase() + ".txt";
+    D.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  }
+  function pintarConcelhos(el) {
+    if (!el) return;
+    lista().then(function (l) {
+      if (!l.length) { el.innerHTML = '<div class="es">' + t("Lista de concelhos indisponível.", "Municipality list unavailable.") + "</div>"; return; }
+      var ds = []; l.forEach(function (x) { if (ds.indexOf(x[2]) < 0) ds.push(x[2]); }); ds.sort(function (a, b) { return a.localeCompare(b, "pt"); });
+      var h = '<select data-pdmc="dist" style="width:100%;margin:4px 0"><option value="">' + t("Escolha o distrito", "Choose district") + "</option>" +
+        ds.map(function (d) { return '<option' + (d === DIST ? " selected" : "") + ">" + esc(d) + "</option>"; }).join("") + "</select><div data-pdmc-lc></div>";
+      el.innerHTML = h;
+      if (DIST) pintarDistrito(el.querySelector("[data-pdmc-lc]"), l);
+    });
+  }
+  function pintarDistrito(box, l) {
+    var cs = l.filter(function (x) { return x[2] === DIST; });
+    box.innerHTML = cs.map(function (x) { return '<div class="lc" data-pdmc-ir="' + x[0] + '"><span>' + esc(x[1]) + '</span><em data-pdmc-n="' + x[0] + '">…</em></div>'; }).join("");
+    cs.forEach(function (x) {
+      servico(x[0], function (j) {
+        var e = box.querySelector('[data-pdmc-n="' + x[0] + '"]'); if (!e) return;
+        e.textContent = j ? j.camadas.length + " " + t("plantas", "plans") : t("em cópia", "copying");
+        if (!j) e.className = "nf";
+      });
+    });
   }
   function grupo(nome) { return /condicionant/i.test(nome) ? "cond" : "ord"; }
   function rotulo(nome) {
@@ -152,7 +222,12 @@
     "#ipr-pdmc[open]>summary:before{transform:rotate(45deg)}#ipr-pdmc .c{padding:0 12px 12px}#ipr-pdmc label{display:flex;gap:8px;align-items:flex-start;margin:4px 0;cursor:pointer}" +
     "#ipr-pdmc details{margin:6px 0;border-top:1px solid rgba(255,255,255,.08);padding-top:6px}#ipr-pdmc details summary{cursor:pointer;font-weight:600;color:#cfe3a0}" +
     "#ipr-pdmc .es{color:#b9bda8;font-size:12px;margin:6px 0}#ipr-pdmc img{max-width:100%;background:#fff;border-radius:4px;margin-top:6px}" +
-    "#ipr-pdmc input[type=range]{width:100%}#ipr-pdmc small{color:#9a9e8a;display:block;margin-top:8px}";
+    "#ipr-pdmc input[type=range]{width:100%}#ipr-pdmc small{color:#9a9e8a;display:block;margin-top:8px}" +
+    "#ipr-pdmc .lc{display:flex;justify-content:space-between;gap:8px;padding:3px 4px;border-radius:4px;cursor:pointer}#ipr-pdmc .lc:hover{background:rgba(148,190,57,.15)}" +
+    "#ipr-pdmc .lc em{font-style:normal;color:#cfe3a0;font-size:12px;white-space:nowrap}#ipr-pdmc .lc em.nf{color:#8d917e}" +
+    "#ipr-pdmc a.dl{color:#cfe3a0;text-decoration:none;margin-left:auto;padding:0 4px;font-size:12px}#ipr-pdmc a.dl:hover{text-decoration:underline}" +
+    "#ipr-pdmc button.dlt{margin-top:8px;width:100%;padding:6px;border:1px solid rgba(148,190,57,.5);border-radius:6px;background:transparent;color:#e9e6da;cursor:pointer}" +
+    "#ipr-pdmc select{background:#1d2417;color:#e9e6da;border:1px solid rgba(255,255,255,.15);border-radius:4px;padding:4px}";
   function pintar() {
     var d = D.getElementById("ipr-pdmc"); if (!d) return;
     var c = d.querySelector(".c"); if (!c) return;
@@ -167,10 +242,13 @@
           var l = S.camadas.filter(function (x) { return grupo(x[1]) === gr; }); if (!l.length) return;
           var aberto = l.some(function (x) { return x[0] === S.escolhida; });
           h += "<details" + (aberto ? " open" : "") + "><summary>" + (gr === "ord" ? t("Planta de Ordenamento", "Zoning plan") : t("Planta de Condicionantes", "Constraints plan")) + " (" + l.length + ")</summary>";
-          l.forEach(function (x) { h += '<label><input type="radio" name="ipr-pdmc-r" data-pdmc-c="' + esc(x[0]) + '"' + (x[0] === S.escolhida ? " checked" : "") + "> <span>" + esc(rotulo(x[1])) + "</span></label>"; });
+          l.forEach(function (x) { h += '<label><input type="radio" name="ipr-pdmc-r" data-pdmc-c="' + esc(x[0]) + '"' + (x[0] === S.escolhida ? " checked" : "") + "> <span>" + esc(rotulo(x[1])) + "</span>" +
+            (explorer() ? "" : '<a class="dl" download href="' + esc(urlPlanta(S.srv, x[0])) + '" title="' + esc(t("Descarregar esta planta (PMTiles)", "Download this plan (PMTiles)")) + '">↓</a>') + "</label>"; });
           h += "</details>";
         });
         h += '<label style="display:block">' + t("Opacidade", "Opacity") + ' <input type="range" min="0.2" max="1" step="0.05" value="' + S.op + '" data-pdmc="op"></label>';
+        if (!explorer()) h += '<button type="button" class="dlt" data-pdmc="txt">' + t("Descarregar todas as plantas deste concelho (lista de ligações)", "Download all plans of this municipality (link list)") + "</button>" +
+          "<small>" + t("Cada ↓ descarrega uma planta em PMTiles (abre no QGIS 3.32+). A lista traz as ligações de todas as plantas e legendas, para descarregar de uma vez.", "Each ↓ downloads one plan as PMTiles. The list has every link.") + "</small>";
         if (S.escolhida) h += '<img alt="' + esc(t("Legenda da planta", "Plan legend")) + '" src="' + esc(R2 + "snit/" + S.srv + "/" + S.escolhida + "/leg.png") + '" onerror="this.remove()">';
         h += "<small>" + t("Fonte: Câmara Municipal, plantas do PDM publicadas no SNIT (DGT), copiadas pelo IPR. Informação indicativa: não substitui as plantas oficiais nem a consulta à câmara.",
           "Source: Municipality, PDM plans published on SNIT (DGT), copied by IPR. Indicative only.") + "</small>";
@@ -179,7 +257,11 @@
       h += "<small>" + t("Uma câmara de cada vez: ao ligar, aparecem só as plantas do concelho onde está o mapa, e mudam sozinhas quando muda de concelho.",
         "One municipality at a time: only the plans of the municipality in view appear, and they change by themselves.") + "</small>";
     }
+    h += '<details data-pdmc="conc"' + (DIST ? " open" : "") + "><summary>" + t("Por concelho", "By municipality") + '</summary><div data-pdmc-cl></div></details>';
     c.innerHTML = h;
+    var dc = c.querySelector('[data-pdmc="conc"]');
+    if (dc && dc.open) pintarConcelhos(dc.querySelector("[data-pdmc-cl]"));
+    if (dc) dc.addEventListener("toggle", function () { if (dc.open) pintarConcelhos(dc.querySelector("[data-pdmc-cl]")); });
   }
   function bloco() {
     var cam = D.getElementById("ipe-cam"); if (!cam) return false;
@@ -192,7 +274,13 @@
       var x = e.target;
       if (x.getAttribute("data-pdmc") === "on") { ligar(x.checked); return; }
       if (x.getAttribute("data-pdmc") === "antiga") { antiga(x.checked); pintar(); return; }
+      if (x.getAttribute("data-pdmc") === "dist") { DIST = x.value; var cl = x.closest("[data-pdmc-cl]"); if (cl) lista().then(function (l) { var b = cl.querySelector("[data-pdmc-lc]"); if (b && DIST) pintarDistrito(b, l); else if (b) b.innerHTML = ""; }); return; }
       if (x.getAttribute("data-pdmc-c")) { S.escolhida = x.getAttribute("data-pdmc-c"); S.preferida = rotulo(S.escolhida).slice(0, 12); guardar(); desenhar(); pintar(); }
+    });
+    d.addEventListener("click", function (e) {
+      var x = e.target.closest ? e.target.closest("[data-pdmc-ir],[data-pdmc=txt]") : null; if (!x) return;
+      if (x.getAttribute("data-pdmc") === "txt") { txtLigacoes(); return; }
+      irPara(x.getAttribute("data-pdmc-ir"));
     });
     d.addEventListener("input", function (e) {
       var x = e.target; if (x.getAttribute("data-pdmc") !== "op") return;
