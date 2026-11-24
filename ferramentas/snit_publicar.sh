@@ -4,7 +4,7 @@
 # partes (1.0.121); o .tar desfaz-se em snit/<dico>/servico.json, cap.xml e legendas.
 P="$1"; shift
 W=https://ipr-copia-ficheiro.terracrua-ipr.workers.dev/
-T=""; for f in "$@"; do case "$f" in *.tar) T="snit-${f:0:2}";; esac; done
+T="${SNIT_TAG:-}"; for f in "$@"; do case "$f" in *.tar) T="snit-${f:0:2}";; esac; done   # 24/11: plantas soltas vêm com SNIT_TAG
 [ -z "$T" ] && exit 0
 gh release view "$T" >/dev/null 2>&1 || gh release create "$T" -t "Plantas do PDM (SNIT) · distrito ${T#snit-}" -n "Cópia IPR Atlas das plantas do PDM publicadas no SNIT (DGT). Um PMTiles por planta; o .tar de cada câmara leva serviço, capacidades e legendas." >/dev/null
 cd "$P"

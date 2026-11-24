@@ -78,7 +78,7 @@ def lista(saida):
 def capacidades(srv):
     for base, f in (('https://' + SNIT, 'WMService.aspx'), ('http://' + SNIT, 'service.svc/get'), ('http://' + SNIT, 'wmservice.aspx')):
         try:
-            st, _, b = get(base + srv + '/' + f + '?service=WMS&request=GetCapabilities&version=1.1.1', 90, 3)
+            st, _, b = get(base + srv + '/' + f + '?service=WMS&request=GetCapabilities&version=1.1.1', 90, 2)
             t = b.decode('utf-8', 'replace')
             if st == 200 and '<Name>' in t:
                 return base + srv + '/' + f, t
@@ -135,7 +135,7 @@ def getmap(fim, cam, z, x0, y0, n):
                                 'CRS': 'EPSG:3857', 'BBOX': ','.join('%.2f' % v for v in bb), 'WIDTH': str(256 * n),
                                 'HEIGHT': str(256 * n), 'FORMAT': 'image/png', 'TRANSPARENT': 'TRUE'})
     for k in range(3):   # o SNIT responde por vezes com ServiceException (servidor ocupado): espera e repete
-        st, ct, b = get(fim + '?' + q, 120, 3)
+        st, ct, b = get(fim + '?' + q, 90, 2)
         if st == 200 and ct.startswith('image/'):
             return Image.open(io.BytesIO(b)).convert('RGBA')
         time.sleep(8 + 12 * k)
@@ -148,7 +148,7 @@ def bloco(fim, cam, x0, y0, pasta):
     feitos = 0
     try:
         partes = [(x0, y0, META, getmap(fim, cam, Z, x0, y0, META))]
-    except Exception:  # noqa: BLE001
+    except RuntimeError:   # 24/11: só se parte em 4 quando o SNIT recusa os 2048 px; se não responde, partir só multiplica a espera
         partes = []
         h = META // 2
         for dx in (0, h):
@@ -238,7 +238,18 @@ def pmtiles(pasta, saida, nome, bbox):
     return len(ids)
 
 
-def camara(dico, srv, pasta, fim_t):
+PLANTA_MIN = float(os.environ.get('SNIT_PLANTA_MIN', '40'))   # 24/11: uma planta que não acaba em 40 min fica para a volta seguinte
+
+
+def publicar(pasta, ficheiros, dico):
+    if os.environ.get('SNIT_DEPOIS'):
+        subprocess.run([os.environ['SNIT_DEPOIS'], pasta] + ficheiros, check=False, env=dict(os.environ, SNIT_TAG='snit-' + dico[:2]))
+
+
+def camara(dico, srv, pasta, fim_t, ja=frozenset()):
+    """24/11/2026: cada planta é publicada logo que fica pronta e não se volta a copiar nas voltas seguintes (ja = PMTiles que
+    já estão nas versões snit-*). Antes, uma planta com blocos falhados deitava fora todas as outras da câmara, que eram
+    copiadas outra vez na volta seguinte: em 7 dias só 27 das 270 câmaras ficaram feitas."""
     print('== %s %s' % (dico, srv), flush=True)
     fim, cap = capacidades(srv)
     if not cap:
@@ -251,8 +262,16 @@ def camara(dico, srv, pasta, fim_t):
            'snit/%s/servico.json' % dico: json.dumps({'dico': dico, 'srv': srv, 'fim': fim, 't': int(time.time() * 1000),
                                                       'camadas': [[c[0], c[1]] for c in cs[:10]], 'copia': 'pmtiles',
                                                       'todas': [[c[0], c[1]] for c in cs]}, ensure_ascii=False).encode('utf-8')}
-    ficheiros = []
+    ficheiros, incompleta = [], False
     for nome, tit, bb in cs:
+        nf = '%s__%s.pmtiles' % (esc(srv), esc(nome))
+        if nf in ja:
+            print('  já copiada:', nf, flush=True)
+            ficheiros.append(nf)
+            continue
+        if time.time() > fim_t - 10 * 60:
+            incompleta = True
+            break
         try:
             st, ct, b = get(fim + '?SERVICE=WMS&VERSION=1.1.1&REQUEST=GetLegendGraphic&LAYER=' + urllib.parse.quote(nome) + '&FORMAT=image/png', 60, 2)
             if st == 200 and ct.startswith('image/'):
@@ -277,6 +296,7 @@ def camara(dico, srv, pasta, fim_t):
         x0, x1 = lon2x(bb[0], Z) // META * META, lon2x(bb[2], Z)
         y0, y1 = lat2y(bb[3], Z) // META * META, lat2y(bb[1], Z)
         t0 = time.time()
+        fim_p = min(fim_t, t0 + PLANTA_MIN * 60)
         todos = [(x, y) for x in range(x0, x1 + 1, META) for y in range(y0, y1 + 1, META)]
         blocos = sondar(fim, nome, bb, todos)
         pt = os.path.join(pc, esc(nome))
@@ -290,54 +310,63 @@ def camara(dico, srv, pasta, fim_t):
                     maus.append(fs[f])
                     if len(maus) <= 3:
                         print('  bloco falhou:', str(e)[:200], flush=True)
-                if time.time() > fim_t:
+                if time.time() > fim_p:
                     for g in fs:
                         g.cancel()
-        if maus and time.time() < fim_t:   # segunda tentativa, devagar
+        if maus and time.time() < fim_p:   # segunda tentativa, devagar
             time.sleep(30)
             for x, y in maus:
+                if time.time() > fim_p:
+                    falhas += 1
+                    continue
                 try:
                     n += bloco(fim, nome, x, y, pt)
                 except Exception as e:  # noqa: BLE001
                     falhas += 1
                     print('  bloco falhou outra vez:', str(e)[:200], flush=True)
         print('  %s: %d de %d blocos com desenho, %d mosaicos z16, %d falhas, %.0f s' % (nome, len(blocos), len(todos), n, falhas, time.time() - t0), flush=True)
-        if not n:
+        if not n and not falhas and not maus:   # planta sem desenho nenhum nesta câmara
             continue
-        if falhas or time.time() > fim_t:
-            print('  incompleta; a câmara fica para a próxima volta', flush=True)
-            return None
+        if falhas or not n or time.time() > fim_p:
+            print('  planta incompleta; fica para a próxima volta (as outras seguem)', flush=True)
+            shutil.rmtree(pt, ignore_errors=True)
+            incompleta = True
+            continue
         for z in range(Z - 1, ZMIN - 1, -1):
             baixar(pt, z)
-        nf = '%s__%s.pmtiles' % (esc(srv), esc(nome))
         k = pmtiles(pt, os.path.join(pasta, nf), '%s · %s' % (tit, dico), bb)
+        shutil.rmtree(pt, ignore_errors=True)
         print('  %s: %d mosaicos, %.1f MB' % (nf, k, os.path.getsize(os.path.join(pasta, nf)) / 1e6), flush=True)
+        publicar(pasta, [nf], dico)   # publicada já: não se perde se a volta for cortada
         ficheiros.append(nf)
+    if incompleta:
+        print('  câmara %s incompleta: %d plantas guardadas; o resto na próxima volta' % (dico, len(ficheiros)), flush=True)
+        return None
     tf = os.path.join(pasta, '%s.tar' % dico)
     with tarfile.open(tf, 'w') as t:
         for k, v in peq.items():
             ti = tarfile.TarInfo(k); ti.size = len(v); ti.mtime = int(time.time())
             t.addfile(ti, io.BytesIO(v))
-    return ficheiros + ['%s.tar' % dico]
+    return ['%s.tar' % dico]   # as plantas já foram publicadas uma a uma
 
 
-def copiar(fl, prefixo, pasta, minutos, feitos_f=None):
+def copiar(fl, prefixo, pasta, minutos, feitos_f=None, plantas_f=None):
     fim_t = time.time() + float(minutos) * 60
     todos = json.load(open(fl))
     feitos = set(open(feitos_f).read().split()) if feitos_f and os.path.exists(feitos_f) else set()
+    ja = frozenset(open(plantas_f).read().split()) if plantas_f and os.path.exists(plantas_f) else frozenset()
     for dico, srv in todos.items():
         if not any(dico.startswith(p) for p in prefixo.split(',') if p) or dico in feitos:
             continue
         if time.time() > fim_t - 20 * 60:
             print('sem tempo para mais câmaras nesta volta', flush=True)
             break
-        r = camara(dico, srv, pasta, fim_t)
+        r = camara(dico, srv, pasta, fim_t, ja)
         shutil.rmtree(os.path.join(pasta, dico), ignore_errors=True)
         if r:
             with open(os.path.join(pasta, 'prontos.txt'), 'a') as f:
                 f.write(' '.join(r) + '\n')
-            if os.environ.get('SNIT_DEPOIS'):   # publica logo cada câmara (se a volta for cortada, o feito fica)
-                subprocess.run([os.environ['SNIT_DEPOIS'], pasta] + r, check=False)
+            publicar(pasta, r, dico)   # o .tar marca a câmara como feita
 
 
 if __name__ == '__main__':

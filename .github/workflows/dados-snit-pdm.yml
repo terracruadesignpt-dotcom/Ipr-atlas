@@ -28,7 +28,10 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release list -L 100 --json tagName -q '.[].tagName' | grep '^snit-' | while read t; do gh release view "$t" --json assets -q '.assets[].name'; done | grep '\.tar$' | sed 's/\.tar$//' > feitos.txt || true
+          gh release list -L 100 --json tagName -q '.[].tagName' | grep '^snit-' | while read t; do gh release view "$t" --json assets -q '.assets[].name'; done > anexos.txt || true
+          grep '\.tar$' anexos.txt | sed 's/\.tar$//' > feitos.txt || true
+          grep '\.pmtiles$' anexos.txt > plantas.txt || true   # 24/11: plantas já copiadas não se repetem
+          echo "plantas já copiadas: $(wc -l < plantas.txt)"
           echo "feitas: $(wc -l < feitos.txt)"
           python3 - <<'PY' >> $GITHUB_OUTPUT
           import json, os
@@ -41,7 +44,7 @@ jobs:
           print('grupos=' + json.dumps(g))
           PY
       - uses: actions/upload-artifact@v4
-        with: { name: lista, path: "lista.json\nfeitos.txt" }
+        with: { name: lista, path: "lista.json\nfeitos.txt\nplantas.txt" }
   copiar:
     needs: lista
     if: needs.lista.outputs.grupos != '[]'
@@ -62,5 +65,5 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}   # 24/11/2026: o publicar corre em /mnt/d, fora do repositório; sem isto o gh falhava e nada era publicado
           SNIT_DEPOIS: ${{ github.workspace }}/ferramentas/snit_publicar.sh
-          SNIT_FIOS: "3"
-        run: python3 ferramentas/snit_pdm.py copiar lista.json "${{ matrix.g }}" /mnt/d 330 feitos.txt
+          SNIT_FIOS: "2"   # 24/11: com 13 grupos × 3 o SNIT deixava de responder (timeouts em série)
+        run: python3 ferramentas/snit_pdm.py copiar lista.json "${{ matrix.g }}" /mnt/d 330 feitos.txt plantas.txt
