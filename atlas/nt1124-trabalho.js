@@ -403,10 +403,10 @@
     aviso("A calcular o que se vê daqui…");
     Promise.all([relevo(p, 3000, 13), d3c()]).then(function (r) {
       var G = r[0], d3 = r[1], Wp = G.W, Hp = G.H, a = G.a, q = G.px(p), ox = q[0], oy = q[1];
-      var oi = Math.round(oy) * Wp + Math.round(ox), z0 = a[oi] + 1.7, mask = new Float32Array(Wp * Hp), Rpx = Math.min(3000 / G.pxM, Math.min(ox, oy, Wp - ox, Hp - oy) - 2);
+      var oi = Math.round(oy) * Wp + Math.round(ox), zt = a[oi]; for (var yy0 = -2; yy0 <= 2; yy0++) for (var xx0 = -2; xx0 <= 2; xx0++) zt = Math.max(zt, a[oi + yy0 * Wp + xx0]); var z0 = zt + 1.7, mask = new Float32Array(Wp * Hp), Rpx = Math.min(3000 / G.pxM, Math.min(ox, oy, Wp - ox, Hp - oy) - 2);
       for (var k = 0; k < 1440; k++) {
         var az = k / 1440 * 2 * Math.PI, dx = Math.cos(az), dy = Math.sin(az), mxA = -1e9;
-        for (var s = 1; s < Rpx; s += 0.7) {
+        for (var s = 3; s < Rpx; s += 0.7) {
           var x = Math.round(ox + dx * s), y = Math.round(oy + dy * s), i = y * Wp + x, dM = s * G.pxM;
           var ang = (a[i] - z0) / dM;
           if (ang >= mxA) { mask[i] = mask[i - 1] = mask[i + 1] = mask[i - Wp] = mask[i + Wp] = 1; mxA = ang; }
