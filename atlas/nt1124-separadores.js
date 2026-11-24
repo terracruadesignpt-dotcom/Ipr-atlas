@@ -84,7 +84,7 @@
         '<button type="button" data-sep-s="1">' + t("Simular fogo", "Simulate fire") + "<small>" + t("Propagação e risco", "Spread and risk") + "</small></button>" +
         "</div></div>" +
         '<div class="ipr-sep-b"><h5>' + t("O seu terreno", "Your land") + '</h5><div class="g g1">' +
-        '<button type="button" data-sep-a="terra">' + t("Encontrar a minha terra", "Find my land") + "<small>" + t("Pela morada, pelo artigo ou desenhando no mapa", "By address, parcel or drawing on the map") + "</small></button>" +
+        '<button type="button" data-sep-a="terra">' + t("Procurar a minha terra", "Look for my land") + "<small>" + t("Assistente: diga o que procura e o Atlas mostra onde há", "Assistant: say what you need and the Atlas shows where") + "</small></button>" +
         "</div></div>" +
         // exemplos reais (Nuno, 24/11): terreno à venda pela Azenhas e Castelos, documentos tal como se entregam (m91556, m93931)
         '<div class="ipr-sep-b" id="ipr-sep-ex"><h5>' + t("Ver exemplos", "See examples") + '</h5>' +
