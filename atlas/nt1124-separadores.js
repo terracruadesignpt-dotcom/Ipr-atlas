@@ -31,7 +31,8 @@
     ".ipr-sep-b button:hover,.ipr-sep-b a.bt:hover{border-color:#94BE39;background:rgba(148,190,57,.12)}" +
     ".ipr-sep-b button small,.ipr-sep-b a.bt small{font-weight:400;font-size:11px;color:#9a9e8a}" +
     ".ipr-sep-b .pri{border-color:#94BE39;background:rgba(148,190,57,.16)}" +
-    "[data-pane=enc] .tcd-fila{display:none!important}" +
+    "[data-pane=enc]:not(.ipr-sep-base)>.ipr-fd-leg,[data-pane=enc]:not(.ipr-sep-base)>#ipr-proc-sel,[data-pane=enc]:not(.ipr-sep-base)>#ipe-form,[data-pane=enc]:not(.ipr-sep-base)>#ipr-conv,[data-pane=enc]>.ipr-fd-leg{display:none!important}" +
+    "[data-pane=enc] .tcd-fila,[data-pane=enc]>.ipr-x-s,[data-pane=enc]>[data-k=ptsk]{display:none!important}" +
     ".tcd-fila .f-i.ipr-sep-par{display:none}.tcd-fila.ipr-sep-mp .f-i.ipr-sep-par{display:block}" +
     ".tcd-fila .ipr-sep-mpb{background:none;border:0;color:#94BE39;text-decoration:underline;cursor:pointer;font:12px Inter,system-ui,sans-serif;padding:4px 0}";
 
@@ -66,21 +67,23 @@
         '<button type="button" data-sep-p="leitura">' + t("Leitura Territorial", "Land report") + "<small>" + t("O que permite e os riscos", "What it allows and the risks") + "</small></button>" +
         '<button type="button" data-sep-p="base">' + t("Base Cartográfica", "Base map") + "<small>" + t("Relevo e água do LiDAR", "LiDAR relief and water") + "</small></button>" +
         "</div></div>" +
-        '<div class="ipr-sep-b"><h5>' + t("O seu terreno", "Your land") + '</h5><div class="g g1">' +
-        '<button type="button" data-sep-a="terra">' + t("Encontrar a minha terra", "Find my land") + "<small>" + t("Pela morada, pelo artigo ou desenhando no mapa", "By address, parcel or drawing on the map") + "</small></button>" +
+        '<div class="ipr-sep-b"><h5>' + t("Simuladores", "Simulators") + '</h5><div class="g">' +
+        '<button type="button" data-sep-s="0">' + t("Simular água", "Simulate water") + "<small>" + t("Escorrência e cheias", "Runoff and floods") + "</small></button>" +
+        '<button type="button" data-sep-s="1">' + t("Simular fogo", "Simulate fire") + "<small>" + t("Propagação e risco", "Spread and risk") + "</small></button>" +
         "</div></div>";
       b.addEventListener("click", function (e) {
         var x = e.target.closest("button"); if (!x) return;
         var pr = x.getAttribute("data-sep-p");
-        if (pr) { var o = D.querySelector('#ipr-be-topo [data-be-prod="' + pr + '"]'); if (o) clicar(o); else if (pr === "base") clicar(tab("enc")); return; }
+        if (pr === "base") { var pe = pane("enc"); if (pe) { pe.classList.add("ipr-sep-base"); var fm = pe.querySelector("#ipe-form, #ipr-proc-sel"); if (fm) fm.scrollIntoView({ behavior: "smooth", block: "start" }); } return; }
+        if (pr) { var o = D.querySelector('#ipr-be-topo [data-be-prod="' + pr + '"]'); if (o) clicar(o); return; }
         if (x.getAttribute("data-sep-a") === "terra") clicar($("ipr-pz-top"));
+        var si = x.getAttribute("data-sep-s");
+        if (si !== null) { var sb = D.querySelectorAll('[data-pane="enc"] .ipr-x-s button, [data-pane="enc"] [data-k="ptsk"] button'); var alvo = [].filter.call(sb, function (y) { return /água|water/i.test(y.textContent) === (si === "0") && /fogo|fire|água|water/i.test(y.textContent); })[0]; if (alvo) clicar(alvo); }
       });
     }
-    if (p.firstElementChild !== b) p.insertBefore(b, p.firstChild);
-    // simuladores logo a seguir (outro módulo põe-nos no topo; volta-se a pô-los depois)
-    [].forEach.call(p.querySelectorAll('.ipr-x-s, [data-k="ptsk"]'), function (sim) {
-      if (sim.parentNode === p && b.nextElementSibling !== sim) p.insertBefore(sim, b.nextSibling);
-    });
+    // não se reordena nada (outro módulo põe os simuladores no topo e a troca fazia piscar):
+    // o bloco entra uma vez e os simuladores originais ficam escondidos; os botões acima carregam neles.
+    if (b.parentNode !== p) p.insertBefore(b, p.firstChild);
   }
 
   function blocoMeu() {

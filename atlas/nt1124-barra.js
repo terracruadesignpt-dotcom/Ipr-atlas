@@ -32,7 +32,9 @@
     "#ipr-conta-m .rt{color:#9a9e8a;font-size:12px;cursor:default}#ipr-conta-m .sep{height:1px;padding:0;margin:4px 0;background:rgba(255,255,255,.1);cursor:default}" +
     "#ipr-conta-m #ipr-z67,#ipr-conta-m #ipr-lg-topo{display:inline-flex!important;padding:0;width:auto}" +
     /* linha 2 */
-    "#tb-bar .ipr-bt-l{font:600 10px 'IBM Plex Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:#9a9e8a;margin:0 4px 0 10px;align-self:center;white-space:nowrap}" +
+    /* um só sítio para comprar: os produtos estão no separador Começar; o «Comprar» abre-o */
+    ".ipe-top>#ipr-be-topo{display:none!important}" +
+        "#tb-bar .ipr-bt-l{font:600 10px 'IBM Plex Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:#9a9e8a;margin:0 4px 0 10px;align-self:center;white-space:nowrap}" +
     "";
 
   function contaMenu() {
@@ -106,6 +108,17 @@
     }
   }
 
+  var cpPreso = false;
+  function comprar() {
+    var b = $("ipr-cp-b"); if (!b || cpPreso) return; cpPreso = true;
+    b.addEventListener("click", function (e) {
+      var tb = D.querySelector('#ipe-tabs [data-tab="enc"]'); if (!tb) return;
+      e.preventDefault(); e.stopImmediatePropagation();
+      tb.click();
+      var enc = D.getElementById("ipr-sep-enc"); if (enc) enc.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, true);
+  }
+
   function correr() {
     if (!D.querySelector(".ipe-top")) return;
     if (!$("ipr-barra-css")) { var s = D.createElement("style"); s.id = "ipr-barra-css"; s.textContent = CSS; D.head.appendChild(s); }
@@ -113,6 +126,7 @@
     try { procurarTerra(); } catch (e) {}
     try { contaMenu(); var b = $("ipr-conta"); if (b && nomeConta() && b.firstChild.textContent !== nomeConta()) b.firstChild.textContent = nomeConta(); } catch (e) {}
     try { linha2(); } catch (e) {}
+    try { comprar(); } catch (e) {}
   }
   (function vez(n) { correr(); if (n < 40) setTimeout(function () { vez(n + 1); }, 250); })(0);
   setInterval(correr, 2500);
