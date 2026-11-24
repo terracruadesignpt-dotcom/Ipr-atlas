@@ -29,7 +29,7 @@
     ".ipe-mapa>.ipe-tools{display:none!important}" +
     "#ipr-eng summary .n{display:none!important}" +
     "#ipr-modos-acc .ipr-fe-x{border-style:dashed}" +
-    "#ipr-nav{position:absolute;left:14px;bottom:40px;z-index:5;display:flex;flex-direction:column;align-items:flex-start;gap:8px;pointer-events:none}" +
+    "#ipr-nav{position:absolute;left:14px;right:auto;bottom:40px;z-index:5;display:flex;flex-direction:column;align-items:flex-start;gap:8px;pointer-events:none}" +
     "#ipr-nav>*{pointer-events:auto}" +
     "#ipr-nav .b,#ipr-nav .g{border:1px solid rgba(255,255,255,.1);background:rgba(13,17,11,.72);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 10px 26px -8px rgba(0,0,0,.55)}" +
     "#ipr-nav .b{width:44px;height:44px;border-radius:50%;padding:0;display:grid;place-items:center;color:#e6e4d9;cursor:pointer;font:600 12px Geist,Inter,system-ui,sans-serif;letter-spacing:.02em}" +
