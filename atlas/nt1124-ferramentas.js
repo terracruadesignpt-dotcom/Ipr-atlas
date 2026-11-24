@@ -10,6 +10,7 @@
       mais, menos, a minha posição e ecrã inteiro.
    3. O logótipo deixa de sair do Atlas: volta à vista de Portugal.
    4. Em «O essencial» saem as contagens por grupo; a única contagem é a do chip das camadas ligadas.
+   5. (18h25) O cartão «Converter AutoCAD para SIG» (m91574) sai do Explorer; o conversor fica no Intelligence.
    Desligar: ?ferramentas=0 ou localStorage ipr_ferr=0. Só acrescenta; não edita outros ficheiros. */
 (function () {
   "use strict";
@@ -27,6 +28,8 @@
 
   var CSS =
     ".ipe-mapa>.ipe-tools{display:none!important}" +
+    /* 18h25, Nuno: «O converter de AutoCAD para SIG sai do Explorer completamente [...] fica só no Intelligence» */
+    "html.ipr-exd #m1574-c{display:none!important}" +
     "#ipr-eng summary .n{display:none!important}" +
     "#ipr-modos-acc .ipr-fe-x{border-style:dashed}" +
     "#ipr-nav{position:absolute;left:14px;right:auto;bottom:40px;z-index:5;display:flex;flex-direction:column;align-items:flex-start;gap:8px;pointer-events:none}" +
