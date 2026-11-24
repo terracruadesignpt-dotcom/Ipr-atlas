@@ -31,6 +31,7 @@
     ".ipr-sep-b button,.ipr-sep-b a.bt{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;padding:8px 10px;border-radius:8px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.04);color:#e9e6da;font:600 13px Inter,system-ui,sans-serif;cursor:pointer;text-decoration:none}" +
     ".ipr-sep-b button:hover,.ipr-sep-b a.bt:hover{border-color:#94BE39;background:rgba(148,190,57,.12)}" +
     ".ipr-sep-b button small,.ipr-sep-b a.bt small{font-weight:400;font-size:11px;color:#9a9e8a}" +
+    ".ipr-sep-ex-l{margin:0 0 6px;font:12px Inter,system-ui,sans-serif;color:#9a9e8a}.ipr-sep-ex-t{display:inline-block;margin-top:6px;font:600 12px Inter,system-ui,sans-serif;color:#94BE39;text-decoration:none}.ipr-sep-ex-t:hover{text-decoration:underline}" +
     ".ipr-sep-b .pri{border-color:#94BE39;background:rgba(148,190,57,.16)}" +
     "[data-pane=enc]:not(.ipr-sep-base)>.ipr-fd-leg,[data-pane=enc]:not(.ipr-sep-base)>#ipr-proc-sel,[data-pane=enc]:not(.ipr-sep-base)>#ipe-form,[data-pane=enc]:not(.ipr-sep-base)>#ipr-conv,[data-pane=enc]>.ipr-fd-leg{display:none!important}" +
     "#tb-bar .tb-m{display:none!important}#ipr-sep-vistas{margin-top:10px}#ipr-sep-vistas .vb{display:flex;flex-wrap:wrap;gap:6px}" +
@@ -84,7 +85,15 @@
         "</div></div>" +
         '<div class="ipr-sep-b"><h5>' + t("O seu terreno", "Your land") + '</h5><div class="g g1">' +
         '<button type="button" data-sep-a="terra">' + t("Encontrar a minha terra", "Find my land") + "<small>" + t("Pela morada, pelo artigo ou desenhando no mapa", "By address, parcel or drawing on the map") + "</small></button>" +
-        "</div></div>";
+        "</div></div>" +
+        // exemplos reais (Nuno, 24/11): terreno à venda pela Azenhas e Castelos, documentos tal como se entregam (m91556, m93931)
+        '<div class="ipr-sep-b" id="ipr-sep-ex"><h5>' + t("Ver exemplos", "See examples") + '</h5>' +
+        '<p class="ipr-sep-ex-l">' + t("São Teotónio, Odemira · 56 ha · terreno real à venda pela Azenhas e Castelos", "São Teotónio, Odemira · 56 ha · real plot for sale through Azenhas e Castelos") + '</p><div class="g">' +
+        '<a class="bt" href="/atlas/?ficha=LTguNjg4OTMsMzcuNDg0OTkgLTguNjg4ODYsMzcuNDgwNjggLTguNjg4MjMsMzcuNDc4MzMgLTguNjg4MjIsMzcuNDc2MjcgLTguNjg4NDEsMzcuNDczOTIgLTguNjg4NTEsMzcuNDcwOTYgLTguNjg4NjYsMzcuNDY4NDIgLTguNjg4NjQsMzcuNDY4MTkgLTguNjg2NzUsMzcuNDY2MTkgLTguNjg2NjQsMzcuNDY4MDIgLTguNjg1NzgsMzcuNDY5ODMgLTguNjg0ODEsMzcuNDcxMTkgLTguNjgzMTQsMzcuNDcyMTQgLTguNjg0MTUsMzcuNDcyODggLTguNjgzNzgsMzcuNDczMzQgLTguNjg1MTcsMzcuNDczNDAgLTguNjg1MzIsMzcuNDczNjYgLTguNjg1NDYsMzcuNDc0MTcgLTguNjg1NDksMzcuNDc0NjggLTguNjg1MzYsMzcuNDc1MzcgLTguNjg1MDAsMzcuNDc4MzkgLTguNjg0NDEsMzcuNDgyMjQgLTguNjg4OTMsMzcuNDg0OTk">' + t("Ficha gratuita", "Free sheet") + "<small>" + t("Abre no mapa", "Opens on the map") + "</small></a>" +
+        '<a class="bt" href="/wp-content/uploads/tcd-demos/sao-teotonio/IPR-19221-YKUKAY_Planta_Localizacao.pdf" target="_blank" rel="noopener">' + t("Planta de Localização", "Location plan") + "<small>PDF</small></a>" +
+        '<a class="bt" href="/wp-content/uploads/tcd-demos/sao-teotonio/IPR-19221-YKUKAY_Leitura_Territorial.pdf" target="_blank" rel="noopener">' + t("Leitura Territorial", "Land report") + "<small>PDF</small></a>" +
+        '<a class="bt" href="/wp-content/uploads/tcd-demos/sao-teotonio/IPR-19221-YKUKAY_Relatorio_Base.pdf" target="_blank" rel="noopener">' + t("Base Cartográfica", "Base map") + "<small>" + t("Relatório PDF", "PDF report") + "</small></a>" +
+        '</div><a class="ipr-sep-ex-t" href="/exemplos/">' + t("Os três terrenos de exemplo", "All three example plots") + " →</a></div>";
       b.addEventListener("click", function (e) {
         var x = e.target.closest("button"); if (!x) return;
         var pr = x.getAttribute("data-sep-p");
