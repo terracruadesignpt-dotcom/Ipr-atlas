@@ -6,7 +6,7 @@
    - Desenhar: forma (ponto, linha, polígono) → tipo (Água, Acessos, Vegetação, Edificado, Limites e zonas) → subtipo.
      Ajudas: seguir a curva de nível (vala, keyline), volume da charca, declive do caminho, linhas de plantação, faixa à
      volta, medidas ao vivo, desfazer, exportar GeoJSON.
-   - Analisar: O que há aqui, Caminho da água, Bacia a partir de um ponto.
+   - Analisar: O que há aqui, Caminho da água, Bacia a partir de um ponto, Perfil do terreno, O que se vê daqui, Horas de sol (18h55).
    - Recolher: Amostra de solo, Ponto de água, Árvore, Problema no terreno, Gravar percurso (fichas com fotografia).
    O relevo vem dos mosaicos de elevação já usados na ficha gratuita (mapterhorn, até z15); o PDM, o cadastro, a COS e as
    freguesias da OGC API da DGT. O desenho fica guardado neste navegador (localStorage ipr_desenho_v1) e exporta-se.
@@ -174,7 +174,7 @@
         '<span class="sep"></span><button type="button" data-a="desfazer">Desfazer</button><button type="button" data-a="exportar">Exportar</button><button type="button" data-a="limpar">Limpar</button><span class="lb" id="ipr-tr-n"></span></div>';
     } else if (estado.modo === "Analisar") {
       h += '<div class="fx"><span class="lb">Novo</span>' +
-        [["aqui", "O que há aqui"], ["caminho", "Caminho da água"], ["bacia", "Bacia a partir de um ponto"]].map(function (x) { return '<button type="button" data-n="' + x[0] + '" class="' + (armado && armado.k === x[0] ? "ac" : "") + '">' + x[1] + "</button>"; }).join("") +
+        [["aqui", "O que há aqui"], ["caminho", "Caminho da água"], ["bacia", "Bacia a partir de um ponto"], ["perfil", "Perfil do terreno"], ["vista", "O que se vê daqui"], ["sol", "Horas de sol"]].map(function (x) { return '<button type="button" data-n="' + x[0] + '" class="' + (armado && armado.k === x[0] ? "ac" : "") + '">' + x[1] + "</button>"; }).join("") +
         '<span class="sep"></span><button type="button" data-a="limpar-an">Limpar análise</button></div>';
     } else if (estado.modo === "Recolher") {
       h += '<div class="fx"><span class="lb">Fichas de campo</span>' +
@@ -364,15 +364,96 @@
   function armarClique(k) {
     desarmar(); var M = mapa(); if (!M) return;
     armado = { k: k }; M.getCanvas().style.cursor = "crosshair";
-    if (k !== "curva") aviso(k === "aqui" ? "Clique no ponto que quer conhecer." : k === "caminho" ? "Clique onde cai a água." : "Clique no vale ou na charca: o Atlas desenha a área que drena para lá.");
+    if (k === "perfil") armado.v = [];
+    var MSG = { aqui: "Clique no ponto que quer conhecer.", caminho: "Clique onde cai a água.", bacia: "Clique no vale ou na charca: o Atlas desenha a área que drena para lá.",
+      perfil: "Clique no início e depois no fim do perfil.", vista: "Clique no sítio onde está de pé: o Atlas mostra o que se vê até 3 km.", sol: "Clique no sítio: o Atlas conta as horas de sol com as sombras dos montes." };
+    if (MSG[k]) aviso(MSG[k]);
   }
   function cliqueMapa(e) {
     if (armado && armado.k === "draw") { verticeDesenho([e.lngLat.lng, e.lngLat.lat]); return; }
     if (!armado) return;
-    var k = armado.k, p = [e.lngLat.lng, e.lngLat.lat];
+    if (armado.k === "perfil" && armado.v.length < 1) { armado.v.push([e.lngLat.lng, e.lngLat.lat]); AN.features.push({ type: "Feature", geometry: { type: "Point", coordinates: armado.v[0] }, properties: { k: "tmp", cor: "#e6e4d9" } }); pintar(); aviso("Agora clique no fim do perfil."); return; }
+    var k = armado.k, p = [e.lngLat.lng, e.lngLat.lat], v0 = armado.v;
     armado = null; var M = mapa(); M.getCanvas().style.cursor = ""; render();
     if (k === "aqui") aqui(p); else if (k === "caminho") caminhoAgua(p); else if (k === "bacia") bacia(p); else if (k === "curva") curva(p);
+    else if (k === "perfil") { AN.features = AN.features.filter(function (x) { return x.properties.k !== "tmp"; }); perfil([v0[0], p]); }
+    else if (k === "vista") vista(p); else if (k === "sol") sol(p);
     else if (RECOLHA[k]) fichaCampo(k, p);
+  }
+
+  // ---------- Perfil, vista e sol (24/11, 18h55; Nuno: «as ferramentas em desenvolvimento [...] há aqui muitas que me interessam») ----------
+  function perfil(lin) {
+    var L = comp(lin); if (L < 5) { aviso("O perfil é curto demais."); return; }
+    var c = [(lin[0][0] + lin[1][0]) / 2, (lin[0][1] + lin[1][1]) / 2];
+    aviso("A ler o relevo ao longo do perfil…");
+    relevo(c, L / 2 + 200, 15).then(function (G) {
+      var N = 160, pts = [], zs = [];
+      for (var i = 0; i <= N; i++) { var t = i / N, q = [lin[0][0] + (lin[1][0] - lin[0][0]) * t, lin[0][1] + (lin[1][1] - lin[0][1]) * t]; pts.push(q); zs.push(G.z_(q)); }
+      var zmin = Math.min.apply(null, zs), zmax = Math.max.apply(null, zs), sub = 0, des = 0, dmax = 0;
+      for (var j = 1; j < zs.length; j++) { var dz = zs[j] - zs[j - 1]; if (dz > 0) sub += dz; else des -= dz; dmax = Math.max(dmax, Math.abs(dz) / (L / N) * 100); }
+      AN.features.push({ type: "Feature", geometry: { type: "LineString", coordinates: lin }, properties: { cor: "#e6e4d9", w: 2.5 } }); pintar();
+      var Wd = 300, Hd = 120, rz = Math.max(1, zmax - zmin);
+      var path = zs.map(function (z, i) { return (i ? "L" : "M") + (i / N * Wd).toFixed(1) + "," + (Hd - 8 - (z - zmin) / rz * (Hd - 20)).toFixed(1); }).join("");
+      var svg = '<svg viewBox="0 0 ' + Wd + " " + Hd + '" style="width:100%;height:auto;display:block;margin:6px 0 8px"><path d="' + path + " L" + Wd + "," + Hd + " L0," + Hd + 'Z" fill="rgba(185,138,82,.28)"/><path d="' + path + '" fill="none" stroke="#d9b98a" stroke-width="1.8"/>' +
+        '<text x="2" y="11" fill="#a9ab9c" font-size="10">' + n(zmax, 0) + ' m</text><text x="2" y="' + (Hd - 2) + '" fill="#a9ab9c" font-size="10">' + n(zmin, 0) + " m</text></svg>";
+      cartao("Perfil do terreno", svg + "<dl><dt>Comprimento</dt><dd>" + n(L, 0) + " m</dd><dt>Sobe / desce</dt><dd>" + n(sub, 0) + " m / " + n(des, 0) + " m</dd><dt>Declive máximo</dt><dd>" + n(dmax, 1) + " %</dd></dl><p class='nt'>Relevo Mapterhorn sobre o LiDAR da DGT, " + n(G.pxM, 1) + " m por píxel. Valores indicativos.</p>");
+    }).catch(function () { aviso("Não consegui ler o relevo aqui."); });
+  }
+  function vista(p) {
+    aviso("A calcular o que se vê daqui…");
+    Promise.all([relevo(p, 3000, 13), d3c()]).then(function (r) {
+      var G = r[0], d3 = r[1], Wp = G.W, Hp = G.H, a = G.a, q = G.px(p), ox = q[0], oy = q[1];
+      var oi = Math.round(oy) * Wp + Math.round(ox), z0 = a[oi] + 1.7, mask = new Float32Array(Wp * Hp), Rpx = Math.min(3000 / G.pxM, Math.min(ox, oy, Wp - ox, Hp - oy) - 2);
+      for (var k = 0; k < 1440; k++) {
+        var az = k / 1440 * 2 * Math.PI, dx = Math.cos(az), dy = Math.sin(az), mxA = -1e9;
+        for (var s = 1; s < Rpx; s += 0.7) {
+          var x = Math.round(ox + dx * s), y = Math.round(oy + dy * s), i = y * Wp + x, dM = s * G.pxM;
+          var ang = (a[i] - z0) / dM; if (ang >= mxA) { mask[i] = 1; mxA = ang; } else if (ang + 1.7 / dM > mxA) mask[i] = Math.max(mask[i], 0.6);
+          if (ang > mxA) mxA = ang;
+        }
+      }
+      var sm = new Float32Array(Wp * Hp);
+      for (var y = 1; y < Hp - 1; y++) for (var x = 1; x < Wp - 1; x++) { var t = 0; for (var yy = -1; yy <= 1; yy++) for (var xx = -1; xx <= 1; xx++) t += mask[(y + yy) * Wp + x + xx]; sm[y * Wp + x] = t / 9; }
+      var cs = d3.contours().size([Wp, Hp]).thresholds([0.45])(sm)[0], nPol = 0, ha = 0;
+      AN.features = AN.features.filter(function (f) { return f.properties.k !== "vista"; });
+      (cs.coordinates || []).forEach(function (poly) {
+        var rings = poly.map(function (ring) { return ring.map(function (pt) { return G.ll(pt[0], pt[1]); }); });
+        if (rings[0].length < 4) return; nPol++; ha += area(rings[0]) / 1e4;
+        AN.features.push({ type: "Feature", geometry: { type: "Polygon", coordinates: rings }, properties: { k: "vista", cor: "#e9c46a", w: 1 } });
+      });
+      AN.features.push({ type: "Feature", geometry: { type: "Point", coordinates: p }, properties: { k: "vista", cor: "#e9c46a" } }); pintar();
+      cartao("O que se vê daqui", "<dl><dt>Área visível</dt><dd>" + n(ha, 0) + " ha até 3 km</dd><dt>Altitude</dt><dd>" + n(a[oi], 0) + " m (olhos a 1,7 m)</dd></dl><p class='nt'>Só o relevo: árvores e casas não entram. Útil para escolher sítios de vigia, de casa e de miradouro.</p>");
+    }).catch(function () { aviso("Não consegui ler o relevo aqui."); });
+  }
+  function solPos(d, lat, lng) {
+    var rad = Math.PI / 180, J = d.getTime() / 864e5 + 2440587.5, n0 = J - 2451545, L = (280.46 + 0.9856474 * n0) % 360, g = (357.528 + 0.9856003 * n0) % 360;
+    var lam = (L + 1.915 * Math.sin(g * rad) + 0.02 * Math.sin(2 * g * rad)) * rad, eps = (23.439 - 4e-7 * n0) * rad;
+    var dec = Math.asin(Math.sin(eps) * Math.sin(lam)), ra = Math.atan2(Math.cos(eps) * Math.sin(lam), Math.cos(lam));
+    var gmst = (18.697374558 + 24.06570982441908 * n0) % 24, ha = ((gmst * 15 + lng) * rad - ra), f = lat * rad;
+    var el = Math.asin(Math.sin(f) * Math.sin(dec) + Math.cos(f) * Math.cos(dec) * Math.cos(ha));
+    var az = Math.atan2(-Math.sin(ha), Math.tan(dec) * Math.cos(f) - Math.sin(f) * Math.cos(ha));
+    return { el: el / rad, az: (az / rad + 360) % 360 };
+  }
+  function sol(p) {
+    aviso("A medir o horizonte à volta…");
+    relevo(p, 4000, 12).then(function (G) {
+      var q = G.px(p), Wp = G.W, a = G.a, oi = Math.round(q[1]) * Wp + Math.round(q[0]), z0 = a[oi] + 1.5, hor = [];
+      for (var k = 0; k < 360; k++) {
+        var az = k * Math.PI / 180, dx = Math.sin(az), dy = -Math.cos(az), m = 0;
+        for (var s = 2; s < 4000 / G.pxM; s += 1) { var x = Math.round(q[0] + dx * s), y = Math.round(q[1] + dy * s); if (x < 1 || y < 1 || x >= Wp - 1 || y >= G.H - 1) break; var an = Math.atan2(a[y * Wp + x] - z0, s * G.pxM) * 180 / Math.PI; if (an > m) m = an; }
+        hor.push(m);
+      }
+      var ano = new Date().getFullYear();
+      function horas(mes, dia) {
+        var t0 = Date.UTC(ano, mes, dia, 0, 0), sem = 0, com = 0;
+        for (var mi = 0; mi < 1440; mi += 5) { var sp = solPos(new Date(t0 + mi * 6e4), p[1], p[0]); if (sp.el > 0) { sem += 5; if (sp.el > hor[Math.round(sp.az) % 360]) com += 5; } }
+        return [com / 60, sem / 60];
+      }
+      var hj = new Date(), H0 = horas(hj.getUTCMonth(), hj.getUTCDate()), V = horas(5, 21), I = horas(11, 21), E = horas(2, 20);
+      function lin(t, h) { return "<dt>" + t + "</dt><dd>" + n(h[0], 1) + " h <small style='color:#a9ab9c'>de " + n(h[1], 1) + " h com o sol acima do horizonte</small></dd>"; }
+      AN.features.push({ type: "Feature", geometry: { type: "Point", coordinates: p }, properties: { cor: "#f2c14e" } }); pintar();
+      cartao("Horas de sol", "<dl>" + lin("Hoje", H0) + lin("21 de Junho", V) + lin("Equinócio", E) + lin("21 de Dezembro", I) + "</dl><p class='nt'>Conta as sombras dos montes à volta (horizonte medido até 4 km no relevo). Não conta árvores, casas nem nuvens.</p>");
+    }).catch(function () { aviso("Não consegui ler o relevo aqui."); });
   }
 
   function aqui(p) {
