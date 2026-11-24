@@ -17,12 +17,12 @@
     /* mapa por baixo de tudo */
     "html.ipr-vidro #ipe-mapa{grid-row:1/-1!important;grid-column:1/-1!important;z-index:0}" +
     "html.ipr-vidro #ipe>.ipe-top,html.ipr-vidro #ipe-esq,html.ipr-vidro #ipe-dir{z-index:3;background:" + G + "!important;backdrop-filter:" + BL + ";-webkit-backdrop-filter:" + BL + ";border:" + B + "!important;box-shadow:" + SH + "!important}" +
-    "html.ipr-vidro #ipe>.ipe-top{margin:12px 12px 0!important;border-radius:16px!important;align-self:start}" +
-    "html.ipr-vidro #ipe-esq{margin:12px 0 12px 12px!important;border-radius:18px!important;overflow:auto}" +
-    "html.ipr-vidro #ipe-dir{margin:12px 12px 12px 0!important;border-radius:18px!important;overflow:hidden;display:flex;flex-direction:column}" +
+    "html.ipr-vidro #ipe>.ipe-top{grid-row:1!important;grid-column:1/-1!important;margin:12px 12px 0!important;border-radius:16px!important;align-self:start}" +
+    "html.ipr-vidro #ipe-esq{grid-row:2!important;grid-column:1!important;margin:12px 0 12px 12px!important;border-radius:18px!important;overflow:auto}" +
+    "html.ipr-vidro #ipe-dir{grid-row:2!important;grid-column:3!important;margin:12px 12px 12px 0!important;border-radius:18px!important;overflow:hidden;display:flex;flex-direction:column}" +
     "html.ipr-vidro #ipe-dir>#ipe-corpo{overflow:auto;flex:1 1 auto}" +
     "html.ipr-vidro #ipe-tabs{background:transparent!important;border-bottom:1px solid rgba(255,255,255,.06)!important}" +
-    "html.ipr-vidro #ipe-st{z-index:3;background:transparent!important;border:0!important;pointer-events:none;opacity:.8}" +
+    "html.ipr-vidro #ipe-st{grid-row:3!important;grid-column:1/-1!important;z-index:3;background:transparent!important;border:0!important;pointer-events:none;opacity:.8}" +
     "html.ipr-vidro #ipe-st *{pointer-events:auto}" +
     "html.ipr-vidro .ipr-px{opacity:0}" +
     /* faixa das ferramentas: cápsula centrada por baixo da barra de cima */
