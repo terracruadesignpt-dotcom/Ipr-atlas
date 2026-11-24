@@ -3,6 +3,7 @@
    O mapa passa a ocupar o ecrã todo; a barra de cima, o painel das camadas (#ipe-esq), o painel da direita (#ipe-dir) e a
    faixa das ferramentas (#tb-bar) flutuam por cima, em vidro escuro com cantos redondos. Uma só letra (Geist), botões em
    cápsula. Só CSS e um map.resize(); não muda nenhum elemento de sítio nem tira eventos.
+   Só no computador (1024 px ou mais); no telemóvel fica o desenho de origem (24/11, 20h55).
    Desligar: ?vidro=0 ou localStorage ipr_vidro=0. */
 (function () {
   "use strict";
@@ -49,7 +50,9 @@
     D.head.appendChild(l);
   }
   var feito = false;
+  function pc() { try { return W.matchMedia("(min-width: 1024px)").matches; } catch (e) { return W.innerWidth >= 1024; } }
   function correr() {
+    if (!pc()) { D.documentElement.classList.remove("ipr-vidro"); return; } /* só no computador (24/11, 20h55) */
     if (!D.getElementById("ipe") || !D.head) return;
     fontes();
     if (!D.getElementById("ipr-vidro-css")) { var s = D.createElement("style"); s.id = "ipr-vidro-css"; s.textContent = CSS; D.head.appendChild(s); }
@@ -58,5 +61,5 @@
     if (M && !feito) { feito = true; setTimeout(function () { try { M.resize(); } catch (e) {} }, 60); }
   }
   (function vez(n) { correr(); if (n < 40 && !feito) setTimeout(function () { vez(n + 1); }, 250); })(0);
-  W.addEventListener("resize", function () { var M = W.__ipe && W.__ipe.mapa; if (M) try { M.resize(); } catch (e) {} });
+  W.addEventListener("resize", function () { correr(); var M = W.__ipe && W.__ipe.mapa; if (M) try { M.resize(); } catch (e) {} });
 })();
