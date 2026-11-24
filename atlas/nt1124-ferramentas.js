@@ -27,7 +27,7 @@
   }
 
   var CSS =
-    ".ipe-mapa>.ipe-tools{display:none!important}" +
+    "@media (min-width:1024px){.ipe-mapa>.ipe-tools{display:none!important}}" + /* no telemóvel ficam os botões de origem */
     /* 18h25, Nuno: «O converter de AutoCAD para SIG sai do Explorer completamente [...] fica só no Intelligence» */
     "html.ipr-exd #m1574-c{display:none!important}" +
     "#ipr-eng summary .n{display:none!important}" +
@@ -51,6 +51,7 @@
   function nav() {
     var M = mapa(), cont = D.querySelector(".ipe-mapa");
     if (!M || !cont || D.getElementById("ipr-nav")) return;
+    try { if (!W.matchMedia("(min-width: 1024px)").matches) return; } catch (e) { if (W.innerWidth < 1024) return; } /* só no computador (24/11, 20h49) */
     var n = D.createElement("div"); n.id = "ipr-nav";
     n.innerHTML = '<button type="button" class="b" data-n="pos" title="' + t("A minha localização", "My location") + '">' + I_POS + "</button>" +
       '<button type="button" class="b" data-n="3d" title="' + t("Alternar 2D e 3D", "Toggle 2D and 3D") + '">3D</button>' +

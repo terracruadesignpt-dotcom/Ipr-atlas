@@ -9,12 +9,15 @@
    2. Uma só bússola: sai o +/− antigo do Explorer (#ipr-exd-zoom); fica o controlo do nt1124-ferramentas.js (posição, 3D,
       bússola, + e −), encostado ao painel da esquerda.
    3. A mesma letra (Geist) e botões em cápsula.
+   Só no computador (largura de 1024 px ou mais); no telemóvel não mexe em nada.
    Desligar: ?vidro=0 ou localStorage ipr_vidro=0 (o mesmo interruptor do Intelligence). */
 (function () {
   "use strict";
   var W = window, D = document, H = D.documentElement;
   try { if (/[?&]vidro=0(&|$)/.test(location.search) || W.localStorage.getItem("ipr_vidro") === "0") return; } catch (e) {}
   if (W.__iprExdVidro) return; W.__iprExdVidro = 1;
+  /* Só no computador (24/11, 20h49: no telemóvel o Explorer tem outro desenho e isto desarrumava-o). */
+  function pc() { try { return W.matchMedia("(min-width: 1024px)").matches; } catch (e) { return W.innerWidth >= 1024; } }
 
   var F = "Geist,Inter,system-ui,-apple-system,'Segoe UI',sans-serif", BL = "blur(18px) saturate(140%)";
   var X = "html.ipr-exd";
@@ -46,6 +49,8 @@
   }
   var redim = false;
   function correr() {
+    var st = D.getElementById("ipr-exdv-css");
+    if (!pc()) { if (st) st.parentNode.removeChild(st); return; }
     if (!H.classList.contains("ipr-exd") || !D.head) return;
     fontes();
     if (!D.getElementById("ipr-exdv-css")) { var s = D.createElement("style"); s.id = "ipr-exdv-css"; s.textContent = CSS; D.head.appendChild(s); }
@@ -53,5 +58,6 @@
     if (M && !redim) { redim = true; setTimeout(function () { try { M.resize(); } catch (e) {} }, 80); }
   }
   (function vez(n) { correr(); if (n < 80) setTimeout(function () { vez(n + 1); }, 400); })(0);
+  W.addEventListener("resize", function () { redim = false; correr(); });
   if (W.MutationObserver) new MutationObserver(function () { if (H.classList.contains("ipr-exd")) { correr(); } else redim = false; }).observe(H, { attributes: true, attributeFilter: ["class"] });
 })();
