@@ -485,6 +485,19 @@
   }
 
   var VIZ = [[1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1], [0, -1], [1, -1]];
+  // Enche as depressões do relevo (priority-flood com epsilon, Barnes 2014): a água deixa de ficar presa em poças falsas.
+  function encher(G) {
+    var Wp = G.W, H = G.H, N = Wp * H, a = G.a, f = new Float32Array(a), fechado = new Uint8Array(N), hp = [], hz = [];
+    function push(i, z) { var k = hp.length; hp.push(i); hz.push(z); while (k > 0) { var p2 = (k - 1) >> 1; if (hz[p2] <= hz[k]) break; var ti = hp[p2], tz = hz[p2]; hp[p2] = hp[k]; hz[p2] = hz[k]; hp[k] = ti; hz[k] = tz; k = p2; } }
+    function pop() { var r = hp[0], li = hp.pop(), lz = hz.pop(); if (hp.length) { hp[0] = li; hz[0] = lz; var k = 0, n2 = hp.length; for (;;) { var l = 2 * k + 1, rr = l + 1, m = k; if (l < n2 && hz[l] < hz[m]) m = l; if (rr < n2 && hz[rr] < hz[m]) m = rr; if (m === k) break; var ti = hp[m], tz = hz[m]; hp[m] = hp[k]; hz[m] = hz[k]; hp[k] = ti; hz[k] = tz; k = m; } } return r; }
+    for (var x = 0; x < Wp; x++) { push(x, f[x]); fechado[x] = 1; var b = (H - 1) * Wp + x; push(b, f[b]); fechado[b] = 1; }
+    for (var y = 1; y < H - 1; y++) { var l0 = y * Wp, r0 = l0 + Wp - 1; push(l0, f[l0]); fechado[l0] = 1; push(r0, f[r0]); fechado[r0] = 1; }
+    while (hp.length) {
+      var c = pop(), cx = c % Wp, cy = (c / Wp) | 0;
+      for (var k = 0; k < 8; k++) { var nx = cx + VIZ[k][0], ny = cy + VIZ[k][1]; if (nx < 0 || ny < 0 || nx >= Wp || ny >= H) continue; var j = ny * Wp + nx; if (fechado[j]) continue; fechado[j] = 1; if (f[j] <= f[c]) f[j] = f[c] + 1e-3; push(j, f[j]); }
+    }
+    var G2 = {}; for (var kk in G) G2[kk] = G[kk]; G2.a = f; return G2;
+  }
   function receptor(G) {
     var Wp = G.W, H = G.H, a = G.a, ok = G.ok, rec = new Int32Array(Wp * H).fill(-1), dg = Math.SQRT2;
     for (var y = 1; y < H - 1; y++) for (var x = 1; x < Wp - 1; x++) {
@@ -516,12 +529,12 @@
   function bacia(p) {
     cartao("Bacia a partir de um ponto", "<p class='nt'>A calcular a área que drena para este ponto…</p>");
     Promise.all([relevo(p, 2200, 13), d3c()]).then(function (r) {
-      var G = r[0], d3 = r[1], Wp = G.W, H = G.H, N = Wp * H, rec = receptor(G), a = G.a;
+      var G = r[0], d3 = r[1], Wp = G.W, H = G.H, N = Wp * H, GF = encher(G), rec = receptor(GF), a = GF.a;
       // acumulação: ordena por altitude e soma para o receptor
       var ord = new Uint32Array(N); for (var k = 0; k < N; k++) ord[k] = k;
       ord.sort(function (x, y) { return a[y] - a[x]; });
       var acc = new Float32Array(N).fill(1); for (k = 0; k < N; k++) { var c = ord[k], t = rec[c]; if (t >= 0) acc[t] += acc[c]; }
-      var q = G.px(p), cx = Math.round(q[0]), cy = Math.round(q[1]), alvo = cy * Wp + cx, ba = 0, rr = Math.max(2, Math.round(25 / G.pxM));
+      var q = G.px(p), cx = Math.round(q[0]), cy = Math.round(q[1]), alvo = cy * Wp + cx, ba = 0, rr = Math.max(3, Math.round(60 / G.pxM));
       for (var dy = -rr; dy <= rr; dy++) for (var dx = -rr; dx <= rr; dx++) { var j = (cy + dy) * Wp + cx + dx; if (j >= 0 && j < N && acc[j] > ba) { ba = acc[j]; alvo = j; } }
       var m = new Uint8Array(N), fila = [alvo], borda = false; m[alvo] = 1;
       while (fila.length) { var i = fila.pop(), x = i % Wp, y = (i / Wp) | 0; if (x < 2 || y < 2 || x > Wp - 3 || y > H - 3) borda = true;
@@ -530,7 +543,7 @@
       var mm = Array.prototype.slice.call(m), cs = d3.contours().size([Wp, H]).thresholds([0.5])(mm)[0];
       var geom = { type: "MultiPolygon", coordinates: (cs.coordinates || []).map(function (pl) { return pl.map(function (ring) { return ring.map(function (pt) { return G.ll(pt[0], pt[1]); }); }); }) };
       var ha = cnt * G.pxM * G.pxM / 1e4, sai = G.ll(alvo % Wp + 0.5, ((alvo / Wp) | 0) + 0.5);
-      AN.features.push({ type: "Feature", geometry: geom, properties: { cor: "#3d8fd6", w: 2 } });
+      geom.coordinates.forEach(function (pl) { if (pl[0] && pl[0].length > 3) AN.features.push({ type: "Feature", geometry: { type: "Polygon", coordinates: pl }, properties: { cor: "#3d8fd6", w: 2 } }); });
       AN.features.push({ type: "Feature", geometry: { type: "Point", coordinates: sai }, properties: {} }); pintar();
       var mm2 = 600; // mm por ano, valor de referência para o Alentejo; o escoamento real depende do solo e do coberto
       cartao("Bacia a partir de um ponto", "<dl><dt>Área que drena</dt><dd><b>" + n(ha, 2) + " ha</b></dd><dt>Altitude máxima</dt><dd>" + n(maxM(a, m), 0) + " m</dd><dt>Saída</dt><dd>" + n(a[alvo], 0) + " m</dd><dt>Chuva caída (600 mm/ano)</dt><dd>" + n(ha * 1e4 * mm2 / 1000, 0) + " m³/ano</dd><dt>Escorrência (10 a 20 %)</dt><dd>" + n(ha * 1e4 * mm2 / 1000 * 0.1, 0) + " a " + n(ha * 1e4 * mm2 / 1000 * 0.2, 0) + " m³/ano</dd></dl>" +
