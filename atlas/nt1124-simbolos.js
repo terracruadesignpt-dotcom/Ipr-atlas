@@ -94,5 +94,5 @@
   }
   (function vez(n) { correr(); if (n < 80) setTimeout(function () { vez(n + 1); }, 500); })(0);
   setInterval(correr, 3000);
-  W.IPR_SIMBOLOS = { estilo: S, cor: cor };
+  W.IPR_SIMBOLOS = { estilo: S, cor: cor, svg: simbolo };
 })();
