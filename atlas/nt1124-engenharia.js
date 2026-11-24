@@ -38,16 +38,38 @@
   var GRUPOS = [
     ["rel", "Relevo (LiDAR da DGT)", "Terrain (DGT LiDAR)", ["r_curvas", "r_somb", "r_hipso", "l_declives", "l_streams", "r_cotas", "r_cdgt"]],
     ["prop", "Propriedade e limites", "Property and boundaries", ["cad", "bupi", "caop", "concelhos"]],
-    ["cond", "Condicionantes e servidões", "Constraints and easements", ["crus", "ren", "ran", "n2k", "rnap", "dph", "poc_area", "srup_rf", "srup_eaf", "srup_ic", "srup_mg", "srup_go", "srup_aa", "srup_dn", "srup_rg"]],
+    ["cond", "Condicionantes e servidões", "Constraints and easements", ["n2k", "rnap", "dph", "poc_area", "srup_rf", "srup_eaf", "srup_ic", "srup_mg", "srup_go", "srup_aa", "srup_dn", "srup_rg"]],
     ["risco", "Riscos", "Hazards", ["perig_s", "perig", "inund"]],
     ["agua", "Água", "Water", ["hidro", "bacias", "srup_casap", "srup_aapc"]],
     ["infra", "Infra-estruturas", "Infrastructure", ["o_estradas", "o_energia", "o_edif"]],
     ["solo", "Solo e ocupação", "Soil and land cover", ["cos23", "geo"]]
   ];
-  var ABERTOS = { rel: 1, cond: 1 };
+  var ABERTOS = { aqui: 1, rel: 1, cond: 1 };
+  // camadas «deste sítio»: o concelho no centro do mapa (mesma rota CAOP do bloco do PDM; uma consulta por ~5 km, só com a lista à vista)
+  var AQUI = ["ren", "ran", "crus"], LOC = { nome: "", k: "" }, LCACHE = {}, ltmp = null;
+  function pdm() { return W.__iprPdmCamara || null; }
+  function fmt(n) { n = String(n || ""); if (n !== n.toUpperCase()) return n; return n.toLowerCase().replace(/(^|[\s-])(\S)/g, function (a, b, x) { return b + x.toUpperCase(); }).replace(/ (De|Da|Do|Das|Dos|E) /g, function (a) { return a.toLowerCase(); }); }
+  function pdmOn() { try { return !!(pdm() && pdm().estado().on); } catch (e) { return false; } }
+  function local() {
+    var I = W.__ipe && W.__ipe.mapa, box = D.getElementById("ipr-eng"); if (!I || !box || !box.offsetParent) return;
+    if (I.getZoom() < 10) { if (LOC.nome) { LOC.nome = ""; LOC.k = ""; pintar(); } return; }
+    try { var e = pdm() && pdm().estado(); if (e && e.on && e.nome && fmt(e.nome) !== LOC.nome) { LOC.nome = fmt(e.nome); pintar(); return; } } catch (er) {}
+    var c = I.getCenter(), k = (Math.round(c.lng * 20) / 20).toFixed(2) + "," + (Math.round(c.lat * 20) / 20).toFixed(2);
+    if (k === LOC.k) return; LOC.k = k;
+    if (LCACHE[k] !== undefined) { if (LCACHE[k] !== LOC.nome) { LOC.nome = LCACHE[k]; pintar(); } return; }
+    var d = 0.002, bb = [c.lng - d, c.lat - d, c.lng + d, c.lat + d].map(function (x) { return x.toFixed(5); }).join(",");
+    fetch("/wp-json/tcd/v1/pedido-produto/caop?bbox=" + bb, { credentials: "same-origin" }).then(function (r) { return r.json(); }).then(function (j) {
+      var f = j && j.features && j.features[0], q = (f && f.properties) || {};
+      var n = String(q.municipio || q.concelho || q.Concelho || q.Municipio || "");
+      n = fmt(n);
+      LCACHE[k] = n; if (n !== LOC.nome) { LOC.nome = n; pintar(); }
+    }).catch(function () { LCACHE[k] = ""; });
+  }
+  var lpreso = false;
+  function prenderLocal() { var I = W.__ipe && W.__ipe.mapa; if (!I || lpreso) return; lpreso = true; I.on("moveend", function () { clearTimeout(ltmp); ltmp = setTimeout(local, 800); }); setTimeout(local, 1200); }
   var ON; try { ON = W.localStorage.getItem("ipr_eng") !== "0"; } catch (e) { ON = true; }
   function guardar() { try { W.localStorage.setItem("ipr_eng", ON ? "1" : "0"); } catch (e) {} }
-  var CSS = "#ipe-cam.ipr-eng-on>:not(#ipr-pdmc):not(#ipr-eng):not(#ipr-expro){display:none!important}" +
+  var CSS = "#ipe-cam.ipr-eng-on>:not(#ipr-pdmc):not(#ipr-eng):not(#ipr-expro){display:none!important}#ipe-cam.ipr-eng-on:not(.ipr-pdm-on)>#ipr-pdmc{display:none!important}" +
     ".ipe-sb--cam:has(#ipe-cam.ipr-eng-on) .tme-todas{display:none!important}" +
     "#ipr-eng{margin:0 0 10px;color:#e9e6da;font:13px/1.45 Inter,system-ui,sans-serif}" +
     "#ipr-eng .eh{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:2px 2px 6px}" +
@@ -81,6 +103,17 @@
       '<div class="es">' + t("Selecção técnica de " + curta + " camadas para projecto. O Atlas tem " + total + ".", "A technical selection of " + curta + " layers for design work. The Atlas has " + total + ".") + "</div>";
     h += '<div class="ef">' + FUNDOS.filter(function (f) { return C[f[0]]; }).map(function (f) {
       return '<button type="button" data-fundo="' + f[0] + '" aria-pressed="' + (on[f[0]] ? "true" : "false") + '">' + esc(t(f[1], f[2])) + "</button>"; }).join("") + "</div>";
+    var aq = AQUI.filter(function (i) { return C[i]; }), pOn = pdmOn(), lgA = aq.filter(function (i) { return on[i]; }).length + (pOn ? 1 : 0);
+    cam.classList.toggle("ipr-pdm-on", pOn);
+    var abA = "aqui" in abertos ? abertos.aqui : true;
+    h += '<details data-g="aqui"' + (abA ? " open" : "") + "><summary>" + esc(LOC.nome ? t("Neste concelho · ", "In this municipality · ") + LOC.nome : t("Neste concelho", "In this municipality")) + (lgA ? '<span class="n">' + lgA + "</span>" : "") + "</summary>";
+    if (pdm()) h += '<label><input type="checkbox" data-pdm="1"' + (pOn ? " checked" : "") + "> <span>" + esc(LOC.nome ? t("PDM de ", "PDM of ") + LOC.nome : t("PDM da câmara", "Municipal PDM")) + "</span></label>";
+    aq.forEach(function (i) {
+      var x = C[i], bl = explorer() && x.lic === "r";
+      h += '<label' + (bl ? ' class="bl"' : "") + '><input type="checkbox" data-cam="' + esc(i) + '"' + (on[i] ? " checked" : "") + (bl ? " disabled" : "") + "> <span>" + esc(nome(x) + (LOC.nome ? " · " + LOC.nome : "")) + "</span>" + (bl ? "<small>Intelligence</small>" : "") + "</label>";
+    });
+    if (!LOC.nome) h += '<div class="es" style="margin:4px 0 0 14px">' + t("Aproxime o mapa a um terreno para ver as plantas da câmara.", "Zoom in to a plot to see the municipal plans.") + "</div>";
+    h += "</details>";
     GRUPOS.forEach(function (g) {
       var ids = g[3].filter(function (i) { return C[i]; }); if (!ids.length) return;
       var lig = ids.filter(function (i) { return on[i]; }).length; n += ids.length;
@@ -97,6 +130,11 @@
       box = D.createElement("div"); box.id = "ipr-eng";
       var ref2 = D.getElementById("ipr-pdmc"); cam.insertBefore(box, ref2 ? ref2.nextSibling : cam.firstChild);
       box.addEventListener("change", function (e) {
+        if (e.target.hasAttribute("data-pdm")) {
+          var P = pdm(); try { if (P) P.ligar(e.target.checked); } catch (er) {}
+          var pd = D.getElementById("ipr-pdmc"); if (pd && e.target.checked) pd.open = true;
+          setTimeout(pintar, 300); setTimeout(pintar, 2500); return;
+        }
         var i = e.target.getAttribute("data-cam"); if (!i) return;
         var z = viz(); try { if (z) z.ligar(i, e.target.checked); } catch (er) {}
         setTimeout(pintar, 300);
@@ -117,7 +155,7 @@
       var cam = D.getElementById("ipe-cam");
       if ((ON && !D.getElementById("ipr-eng")) || (!ON && !D.getElementById("ipr-eng-off")) || cam.classList.contains("ipr-eng-on") !== ON) pintar();
     }
-    porAcc();
+    porAcc(); prenderLocal();
   }
   var ult = "";
   setInterval(function () {
@@ -125,7 +163,7 @@
       arrancar();
       // sincroniza as caixas com o que está ligado (só quando a lista está à vista)
       var box = D.getElementById("ipr-eng"); if (!box || !box.offsetParent) return;
-      var k = activas().join(","); if (k !== ult) { ult = k; pintar(); }
+      var k = activas().join(",") + (pdmOn() ? "|p" : ""); if (k !== ult) { ult = k; pintar(); }
     } catch (e) {}
   }, 1500);
   D.addEventListener("click", function (e) { if (e.target.closest && e.target.closest("#ipr-modos")) setTimeout(porAcc, 60); }, true);
