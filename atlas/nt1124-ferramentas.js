@@ -58,7 +58,8 @@
       '<div class="g"><button type="button" data-n="mais" title="' + t("Aproximar", "Zoom in") + '">+</button><button type="button" data-n="menos" title="' + t("Afastar", "Zoom out") + '">−</button></div>';
     cont.appendChild(n);
     function encostar() {
-      var e = D.getElementById("ipe-esq"), c = cont.getBoundingClientRect(), r = e && e.getBoundingClientRect();
+      var ex = D.getElementById("ipr-exd-esq"), e = ex && ex.getClientRects().length ? ex : D.getElementById("ipe-esq");
+      var c = cont.getBoundingClientRect(), r = e && e.getBoundingClientRect();
       var x = r && r.width > 40 && r.right > c.left ? r.right - c.left + 12 : 14;
       n.style.left = Math.round(x) + "px";
       if (r && r.height > 100) { n.style.bottom = "auto"; n.style.top = Math.max(60, Math.round(r.bottom - c.top - n.offsetHeight)) + "px"; }
