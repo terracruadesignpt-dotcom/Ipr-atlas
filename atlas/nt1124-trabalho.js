@@ -102,8 +102,9 @@
   function guardar() { try { W.localStorage.setItem(CHAVE, JSON.stringify(FC)); } catch (e) { aviso("O desenho é grande demais para guardar neste navegador; exporte-o."); } pintar(); contagem(); }
   function pintar() { var M = mapa(); if (!M) return; var s = M.getSource("ipr-dz"); if (s) s.setData(FC); var t = M.getSource("ipr-an"); if (t) t.setData(AN); }
   function camadas() {
-    var M = mapa(); if (!M || !M.isStyleLoaded || !M.isStyleLoaded()) return false;
+    var M = mapa(); if (!M || !M.getStyle) return false;
     if (M.getSource("ipr-dz")) return true;
+    try { M.getStyle(); } catch (e) { return false; }
     M.addSource("ipr-dz", { type: "geojson", data: FC });
     M.addSource("ipr-an", { type: "geojson", data: AN });
     M.addLayer({ id: "ipr-an-f", type: "fill", source: "ipr-an", filter: ["==", ["geometry-type"], "Polygon"], paint: { "fill-color": ["coalesce", ["get", "cor"], "#3d8fd6"], "fill-opacity": 0.18 } });
@@ -122,44 +123,44 @@
 
   // ---------- interface ----------
   var CSS =
-    "#ipr-tr{position:fixed;z-index:2147480050;display:none;flex-direction:column;align-items:center;gap:6px;transform:translateX(-50%);max-width:min(1100px,calc(100vw - 1300px));min-width:520px}" +
-    "#ipr-tr.on{display:flex}" +
-    "#ipr-tr .fx{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:2px;padding:4px;border-radius:999px;background:rgba(13,17,11,.78);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.08);box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 14px 32px -12px rgba(0,0,0,.6)}" +
-    "#ipr-tr button{height:30px;padding:0 13px;border-radius:999px;border:0;background:none;color:#bdbcb0;font:450 12.5px Geist,Inter,system-ui,sans-serif;cursor:pointer;display:inline-flex;align-items:center;gap:7px;white-space:nowrap}" +
-    "#ipr-tr button:hover{color:#f2f0e6;background:rgba(255,255,255,.06)}" +
-    "#ipr-tr button.on{background:rgba(236,234,224,.94);color:#11160d;font-weight:550}" +
-    "#ipr-tr button.ac{background:rgba(148,190,57,.18);color:#d3e79b}" +
-    "#ipr-tr .sq{width:8px;height:8px;border-radius:2px;display:inline-block}" +
-    "#ipr-tr .sep{width:1px;height:16px;background:rgba(255,255,255,.1);margin:0 4px}" +
-    "#ipr-tr .lb{font:500 10px 'Geist Mono',ui-monospace,monospace;letter-spacing:.1em;text-transform:uppercase;color:#8d907f;padding:0 8px 0 10px}" +
-    "#ipr-tr-med{position:fixed;z-index:2147480050;padding:6px 12px;border-radius:999px;background:rgba(13,17,11,.85);color:#e6e4d9;font:500 12px 'Geist Mono',ui-monospace,monospace;pointer-events:none;display:none;border:1px solid rgba(255,255,255,.1)}" +
-    "#ipr-tr-c{position:fixed;z-index:2147480060;width:340px;max-height:70vh;overflow:auto;padding:16px;border-radius:16px;background:rgba(13,17,11,.9);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.1);box-shadow:0 18px 40px -10px rgba(0,0,0,.6);color:#e6e4d9;font:13px/1.5 Geist,Inter,system-ui,sans-serif;display:none}" +
-    "#ipr-tr-c.on{display:block}" +
-    "#ipr-tr-c h4{margin:0 26px 8px 0;font:550 14px Geist,Inter,system-ui,sans-serif;letter-spacing:-.01em}" +
-    "#ipr-tr-c .x{position:absolute;top:10px;right:10px;width:28px;height:28px;border-radius:50%;border:0;background:rgba(255,255,255,.06);color:#e6e4d9;cursor:pointer}" +
-    "#ipr-tr-c dl{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin:8px 0}#ipr-tr-c dt{color:#8d907f}#ipr-tr-c dd{margin:0}" +
-    "#ipr-tr-c label{display:flex;flex-direction:column;gap:3px;margin:8px 0 0;font-size:11.5px;color:#a9ab98}" +
-    "#ipr-tr-c input,#ipr-tr-c select,#ipr-tr-c textarea{font:13px Geist,Inter,system-ui,sans-serif;color:#e6e4d9;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:6px 8px}" +
-    "#ipr-tr-c .bt{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}" +
-    "#ipr-tr-c .bt button{height:32px;padding:0 14px;border-radius:999px;border:1px solid rgba(255,255,255,.14);background:none;color:#e6e4d9;font:500 12.5px Geist,Inter,system-ui,sans-serif;cursor:pointer}" +
-    "#ipr-tr-c .bt button.p{background:#94BE39;color:#11160d;border:0}" +
-    "#ipr-tr-c .nt{color:#8d907f;font-size:11.5px;margin:8px 0 0}" +
-    "#ipr-tr-c img{max-width:100%;border-radius:8px;margin-top:8px}";
+    "#ipr-trb{position:fixed;z-index:2147480050;display:none;flex-direction:column;align-items:center;gap:6px;transform:translateX(-50%);max-width:min(1100px,calc(100vw - 1300px));min-width:520px}" +
+    "#ipr-trb.on{display:flex}" +
+    "#ipr-trb .fx{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:2px;padding:4px;border-radius:999px;background:rgba(13,17,11,.78);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.08);box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 14px 32px -12px rgba(0,0,0,.6)}" +
+    "#ipr-trb button{height:30px;padding:0 13px;border-radius:999px;border:0;background:none;color:#bdbcb0;font:450 12.5px Geist,Inter,system-ui,sans-serif;cursor:pointer;display:inline-flex;align-items:center;gap:7px;white-space:nowrap}" +
+    "#ipr-trb button:hover{color:#f2f0e6;background:rgba(255,255,255,.06)}" +
+    "#ipr-trb button.on{background:rgba(236,234,224,.94);color:#11160d;font-weight:550}" +
+    "#ipr-trb button.ac{background:rgba(148,190,57,.18);color:#d3e79b}" +
+    "#ipr-trb .sq{width:8px;height:8px;border-radius:2px;display:inline-block}" +
+    "#ipr-trb .sep{width:1px;height:16px;background:rgba(255,255,255,.1);margin:0 4px}" +
+    "#ipr-trb .lb{font:500 10px 'Geist Mono',ui-monospace,monospace;letter-spacing:.1em;text-transform:uppercase;color:#8d907f;padding:0 8px 0 10px}" +
+    "#ipr-trb-med{position:fixed;z-index:2147480050;padding:6px 12px;border-radius:999px;background:rgba(13,17,11,.85);color:#e6e4d9;font:500 12px 'Geist Mono',ui-monospace,monospace;pointer-events:none;display:none;border:1px solid rgba(255,255,255,.1)}" +
+    "#ipr-trb-c{position:fixed;z-index:2147480060;width:340px;max-height:70vh;overflow:auto;padding:16px;border-radius:16px;background:rgba(13,17,11,.9);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.1);box-shadow:0 18px 40px -10px rgba(0,0,0,.6);color:#e6e4d9;font:13px/1.5 Geist,Inter,system-ui,sans-serif;display:none}" +
+    "#ipr-trb-c.on{display:block}" +
+    "#ipr-trb-c h4{margin:0 26px 8px 0;font:550 14px Geist,Inter,system-ui,sans-serif;letter-spacing:-.01em}" +
+    "#ipr-trb-c .x{position:absolute;top:10px;right:10px;width:28px;height:28px;border-radius:50%;border:0;background:rgba(255,255,255,.06);color:#e6e4d9;cursor:pointer}" +
+    "#ipr-trb-c dl{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin:8px 0}#ipr-trb-c dt{color:#8d907f}#ipr-trb-c dd{margin:0}" +
+    "#ipr-trb-c label{display:flex;flex-direction:column;gap:3px;margin:8px 0 0;font-size:11.5px;color:#a9ab98}" +
+    "#ipr-trb-c input,#ipr-trb-c select,#ipr-trb-c textarea{font:13px Geist,Inter,system-ui,sans-serif;color:#e6e4d9;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:6px 8px}" +
+    "#ipr-trb-c .bt{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}" +
+    "#ipr-trb-c .bt button{height:32px;padding:0 14px;border-radius:999px;border:1px solid rgba(255,255,255,.14);background:none;color:#e6e4d9;font:500 12.5px Geist,Inter,system-ui,sans-serif;cursor:pointer}" +
+    "#ipr-trb-c .bt button.p{background:#94BE39;color:#11160d;border:0}" +
+    "#ipr-trb-c .nt{color:#8d907f;font-size:11.5px;margin:8px 0 0}" +
+    "#ipr-trb-c img{max-width:100%;border-radius:8px;margin-top:8px}";
 
   var estado = { modo: "", forma: "l", tipo: "agua", sub: "" }, armado = null, gravar = null;
   function ui() {
-    if ($("ipr-tr")) return;
-    var s = D.createElement("style"); s.id = "ipr-tr-css"; s.textContent = CSS; D.head.appendChild(s);
-    var b = D.createElement("div"); b.id = "ipr-tr"; D.body.appendChild(b);
-    var m = D.createElement("div"); m.id = "ipr-tr-med"; D.body.appendChild(m);
-    var c = D.createElement("div"); c.id = "ipr-tr-c"; D.body.appendChild(c);
+    if ($("ipr-trb")) return;
+    var s = D.createElement("style"); s.id = "ipr-trb-css"; s.textContent = CSS; D.head.appendChild(s);
+    var b = D.createElement("div"); b.id = "ipr-trb"; D.body.appendChild(b);
+    var m = D.createElement("div"); m.id = "ipr-trb-med"; D.body.appendChild(m);
+    var c = D.createElement("div"); c.id = "ipr-trb-c"; D.body.appendChild(c);
     b.addEventListener("click", clique);
   }
-  function aviso(t) { var M = $("ipr-tr-med"); if (!M) return; M.textContent = t; M.style.display = "block"; posMed(); clearTimeout(aviso.t); aviso.t = setTimeout(function () { M.style.display = "none"; }, 4000); }
-  function posMed() { var b = $("ipr-tr"), M = $("ipr-tr-med"); if (!b || !M) return; var r = b.getBoundingClientRect(); M.style.left = Math.round(r.left + r.width / 2 - M.offsetWidth / 2) + "px"; M.style.top = Math.round((r.height ? r.bottom : 140) + 8) + "px"; }
+  function aviso(t) { var M = $("ipr-trb-med"); if (!M) return; M.textContent = t; M.style.display = "block"; posMed(); clearTimeout(aviso.t); aviso.t = setTimeout(function () { M.style.display = "none"; }, 4000); }
+  function posMed() { var b = $("ipr-trb"), M = $("ipr-trb-med"); if (!b || !M) return; var r = b.getBoundingClientRect(); M.style.left = Math.round(r.left + r.width / 2 - M.offsetWidth / 2) + "px"; M.style.top = Math.round((r.height ? r.bottom : 140) + 8) + "px"; }
 
   function render() {
-    var b = $("ipr-tr"); if (!b) return;
+    var b = $("ipr-trb"); if (!b) return;
     var h = "";
     if (estado.modo === "Desenhar") {
       var T = TIPOS[estado.tipo], L = T[estado.forma];
@@ -203,7 +204,7 @@
     var dr = desenho(); armado = null;
     try { if (dr && dr.getMode && dr.getMode().indexOf("draw_") === 0) dr.changeMode("simple_select"); } catch (e) {}
     var M = mapa(); if (M) M.getCanvas().style.cursor = "";
-    var m = $("ipr-tr-med"); if (m) m.style.display = "none";
+    var m = $("ipr-trb-med"); if (m) m.style.display = "none";
   }
   function armarDesenho() {
     var dr = desenho(); desarmar();
@@ -224,14 +225,14 @@
       depois(nf);
     });
     armado = null; render();
-    var m = $("ipr-tr-med"); if (m) m.style.display = "none";
+    var m = $("ipr-trb-med"); if (m) m.style.display = "none";
   }
   function aoVivo() {
     if (!armado || armado.k !== "draw" || armado.forma === "p") return;
     var dr = desenho(); if (!dr) return;
     var all = dr.getAll().features, f = all[all.length - 1]; if (!f) return;
     var t = txtMed(f.geometry); if (!t) return;
-    var m = $("ipr-tr-med"); m.textContent = t; m.style.display = "block"; posMed();
+    var m = $("ipr-trb-med"); m.textContent = t; m.style.display = "block"; posMed();
   }
   function depois(f) {
     var s = f.properties.sub, g = f.geometry;
@@ -491,7 +492,7 @@
 
   // ---------- cartão, ficha de um desenho, exportar ----------
   function cartao(t, h, bts) {
-    var c = $("ipr-tr-c"); if (!c) return;
+    var c = $("ipr-trb-c"); if (!c) return;
     c.innerHTML = "<button type='button' class='x' aria-label='Fechar'>×</button><h4>" + esc(t) + "</h4>" + h + (bts && bts.length ? "<div class='bt'>" + bts.map(function (b, i) { return "<button type='button' data-i='" + i + "' class='" + (b[2] ? "p" : "") + "'>" + esc(b[0]) + "</button>"; }).join("") + "</div>" : "");
     c.classList.add("on");
     var d = $("ipe-dir"), r = d && d.getBoundingClientRect();
@@ -499,7 +500,7 @@
     c.querySelector(".x").onclick = fecharC;
     [].forEach.call(c.querySelectorAll(".bt button"), function (b) { b.onclick = function () { bts[+b.getAttribute("data-i")][1](); }; });
   }
-  function fecharC() { var c = $("ipr-tr-c"); if (c) c.classList.remove("on"); }
+  function fecharC() { var c = $("ipr-trb-c"); if (c) c.classList.remove("on"); }
   function ficha(f, ll) {
     var real = FC.features.filter(function (x) { return x.properties.t === f.properties.t; })[0] || f, P = real.properties, g = real.geometry;
     if (P.tipo === "campo" && P.campo && CAMPOS[P.campo]) return fichaCampo(P.campo, g.coordinates, P.prec, real);
@@ -531,7 +532,7 @@
     return { Analyse: "Analisar", Analyze: "Analisar", Draw: "Desenhar", Collect: "Recolher" }[t] || t;
   }
   function posicionar() {
-    var acc = $("ipr-modos-acc"), b = $("ipr-tr"); if (!b) return;
+    var acc = $("ipr-modos-acc"), b = $("ipr-trb"); if (!b) return;
     var r = acc && acc.getBoundingClientRect();
     if (r && r.width) { b.style.left = Math.round(r.left + r.width / 2) + "px"; b.style.top = Math.round(r.bottom + 6) + "px"; }
   }
@@ -548,7 +549,7 @@
       D.addEventListener("keydown", function (e) { if (e.key === "Escape") { desarmar(); fecharC(); render(); } });
     }
     camadas();
-    var m = modoAtual(), b = $("ipr-tr");
+    var m = modoAtual(), b = $("ipr-trb");
     if (m !== estado.modo) { estado.modo = m; if (!m) desarmar(); render(); }
     b.classList.toggle("on", !!m && /Desenhar|Analisar|Recolher/.test(m));
     if (m) posicionar();
