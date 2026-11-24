@@ -1874,8 +1874,9 @@ if (window.IPR_A2_DEMO) (function(){
   }
   /* Corre no head do iframe: um observador arruma a caixa logo que a app a cria (sem mostrar a versao antiga).
      Depois de 15 s fica so a verificacao a cada 500 ms. */
-  var pend = false;
-  function agenda(){ if (pend) return; pend = true; requestAnimationFrame(function(){ pend = false; try { arruma(); } catch (e) {} }); }
+  var pend = false, ultA = 0;
+  /* 25/11 (T-01): no máximo de 250 em 250 ms (antes a cada fotograma durante os primeiros 15 s: 55 voltas, 1,5 s, quase tudo a recalcular a página) */
+  function agenda(){ if (pend) return; pend = true; var f = 250 - (Date.now() - ultA); setTimeout(function(){ requestAnimationFrame(function(){ pend = false; ultA = Date.now(); try { arruma(); } catch (e) {} }); }, f > 0 ? f : 0); }
   try {
     var mo = new MutationObserver(agenda);
     mo.observe(D.documentElement, { childList: true, subtree: true });
