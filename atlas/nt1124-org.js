@@ -12,7 +12,8 @@
       organização (imagem de satélite com o limite, área, «Ver no mapa», «Ficha do terreno»).
    3. Separadores Gestão, Projecto e Cloud escondidos em modo organização.
    4. Ao entrar: abre «O meu Atlas» e aproxima à propriedade mais recente.
-   5. A janela flutuante «Organização» passa para dentro do separador Organização do painel da direita.
+   5. O painel «Organização» (entidade.js) deixa de tapar os separadores: só aparece no separador Organização, por baixo
+      deles, sem o bloco «Ferramentas» (repetido nos menus Analisar, Desenhar e Recolher).
    Desligar: ?orgatlas=0 ou localStorage ipr_orgatlas=0. */
 (function () {
   "use strict";
@@ -39,39 +40,58 @@
     "#ipr-orgt .bt{display:flex;flex-wrap:wrap;gap:6px;margin-top:2px}" +
     "#ipr-orgt .bt a,#ipr-orgt .bt button{font:500 12px Geist,Inter,system-ui,sans-serif;padding:6px 11px;border-radius:999px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:#e6e4d9;cursor:pointer;text-decoration:none}" +
     "#ipr-orgt .bt .p{background:#94BE39;color:#11160d;border-color:#94BE39}" +
-    "#ipr-orgdock{display:flex;flex-direction:column;gap:12px}";
+    "html.ipr-org-modo #ipr-ent-dir.dentro{top:var(--ipr-tabs-h,48px)!important;border-left:0!important;background:transparent!important}" +
+    "html.ipr-org-modo:not(.ipr-tab-org) #ipr-ent-dir{display:none!important}" +
+    "html.ipr-org-modo #ipr-ent-dir.dentro>.h{display:none!important}" +
+    "html.ipr-org-modo.ipr-tab-org #ipr-ent-dir.fechado{display:none!important}";
 
   function mapa() { return W.__ipe && W.__ipe.mapa; }
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
 
-  /* --- 1. camadas da organização --- */
-  var desligou = false;
-  function camadas() {
-    var og = D.querySelector("#ipr-ent-esq .ipr-ent-og"); if (!og) return [];
-    var props = [], grupo = "", kids = og.children;
-    for (var i = 0; i < kids.length; i++) {
-      var k = kids[i];
-      if (k.classList.contains("g")) { grupo = (k.textContent || "").toLowerCase(); continue; }
-      var inp = k.querySelector && k.querySelector("input[data-ent-org]"); if (!inp) continue;
-      var prop = /projecto|terreno|propriedade|limite/.test(grupo) && !/licenciamento|pdm|ren|ran|servid/.test(grupo);
-      if (prop) {
-        var nome = (k.querySelector("span") || k).textContent.replace(/\s*·\s*limite do projecto\s*$/i, "").trim();
-        props.push({ id: inp.getAttribute("data-ent-org"), nome: nome, inp: inp });
-        if (!inp.checked && !desligou) { inp.checked = true; inp.dispatchEvent(new Event("change", { bubbles: true })); }
-      } else if (inp.checked && !desligou) {
-        inp.checked = false; inp.dispatchEvent(new Event("change", { bubbles: true }));
-      }
-    }
-    if (kids.length) desligou = true;
-    return props;
+  /* --- 1. camadas da organização (lidas do mesmo pedido que o entidade.js faz) --- */
+  var ORGD = null, GJ = {}, pedido = false;
+  function carregar() {
+    if (pedido || !ENT.nonce) return; pedido = true;
+    fetch("/wp-json/tcd/v1/org/camadas", { credentials: "same-origin", headers: { "X-WP-Nonce": ENT.nonce } })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        var eo = W.IPR_ENT_ORG && +W.IPR_ENT_ORG.org;
+        if (!d || !d.org || (eo && +d.org.id !== eo)) { setTimeout(function () { pedido = false; }, 8000); return; }
+        ORGD = d;
+        props().forEach(function (c) {
+          if (!c.url) return;
+          fetch(c.url, { credentials: "same-origin" }).then(function (r) { return r.json(); }).then(function (gj) { GJ[c.id] = gj; desenhados = null; correr(); }).catch(function () {});
+        });
+        correr();
+      }).catch(function () { setTimeout(function () { pedido = false; }, 8000); });
+  }
+  function eProp(c) {
+    var g = ((ORGD.grupos || []).filter(function (x) { return x.id === c.grupo; })[0] || {}).nome || "";
+    return /projecto|terreno|propriedade|quinta|herdade/i.test(g + " " + (c.nome || "")) && !/licenciamento|pdm|\bren\b|\bran\b|servid/i.test(g + " " + (c.nome || ""));
+  }
+  function props() {
+    if (!ORGD) return [];
+    return (ORGD.camadas || []).filter(eProp).map(function (c) {
+      return { id: String(c.id), nome: String(c.nome || "").replace(/\s*·\s*limite do projecto\s*$/i, "").trim(), url: c.url };
+    });
+  }
+  function semLicenciamento() {
+    var M = mapa(); if (!M || !ORGD) return;
+    (ORGD.camadas || []).forEach(function (c) {
+      if (eProp(c)) return;
+      ["-f", "-l", "-p", "-s"].forEach(function (k) { var id = "ent-org-" + c.id + k; try { if (M.getLayer(id) && M.getLayoutProperty(id, "visibility") !== "none") M.setLayoutProperty(id, "visibility", "none"); } catch (e) {} });
+      var inp = D.querySelector('#ipr-ent-esq input[data-ent-org="' + c.id + '"]'); if (inp && inp.checked) inp.checked = false;
+    });
   }
 
   /* --- geometria --- */
   function geo(id) {
-    var M = mapa(); if (!M) return null;
-    var s = M.getSource("ent-org-" + id); if (!s) return null;
-    var d = s._data || (s.serialize && s.serialize().data); if (!d) return null;
-    if (d.geojson) d = d.geojson;
+    var d = GJ[id];
+    if (!d) {
+      var M = mapa(), so = M && M.getSource("ent-org-" + id); if (!so) return null;
+      d = so._data || (so.serialize && so.serialize().data); if (!d) return null;
+      if (d.geojson) d = d.geojson;
+    }
     if (typeof d === "string") return null;
     var fs = d.type === "FeatureCollection" ? d.features : d.type === "Feature" ? [d] : [{ geometry: d }];
     var aneis = [];
@@ -123,7 +143,7 @@
   }
 
   /* --- 2. O meu Atlas --- */
-  var desenhados = "";
+  var desenhados = null;
   function meuAtlas(props) {
     var sep = D.getElementById("ipr-sep-meu"); if (!sep) return;
     var pane = sep.parentElement;
@@ -150,42 +170,25 @@
     return gs;
   }
 
-  /* --- 5. janela «Organização» para dentro do separador --- */
-  function janela() {
-    var cands = D.querySelectorAll("body > div, #ipe > div, #ipe-mapa > div");
-    for (var i = 0; i < cands.length; i++) {
-      var e = cands[i];
-      if (e.id === "ipr-orgdock" || !e.getClientRects().length) continue;
-      var cab = e.firstElementChild; if (!cab) continue;
-      var t = (cab.textContent || "").replace(/[×✕]/g, "").trim();
-      if (t !== "Organização" && t !== "Organization") continue;
-      var st = W.getComputedStyle(e).position; if (st !== "fixed" && st !== "absolute") continue;
-      var tab = D.querySelector('#ipe-tabs .ipe-tab[data-tab="org"]'); if (!tab) return;
-      tab.click();
-      var pane = [].filter.call(D.querySelectorAll("#ipe-corpo > .ipe-pane"), function (p) { return p.getClientRects().length; })[0];
-      if (!pane) return;
-      var dock = D.getElementById("ipr-orgdock");
-      if (!dock) { dock = D.createElement("div"); dock.id = "ipr-orgdock"; pane.insertBefore(dock, pane.firstChild); }
-      dock.innerHTML = "";
-      var corpo = [].slice.call(e.children, 1);
-      corpo.forEach(function (c) { dock.appendChild(c); });
-      [].forEach.call(dock.querySelectorAll("h1,h2,h3,h4,h5,h6,b,strong,div"), function (hh) {
-        if (hh.children.length === 0 && /^(Ferramentas|Tools)$/i.test((hh.textContent || "").trim())) {
-          var s = hh; while (s.parentElement && s.parentElement !== dock && s.parentElement.children.length === 1) s = s.parentElement;
-          s.classList.add("ipr-orgm-x");
-          var n = s.nextElementSibling; for (var j = 0; j < 3 && n; j++) { if (/Desenhar|Medir|Notas no mapa/.test(n.textContent || "")) n.classList.add("ipr-orgm-x"); n = n.nextElementSibling; }
-        }
-      });
-      e.style.display = "none";
-    }
+  /* --- 5. o painel «Organização» (entidade.js, #ipr-ent-dir) fica dentro do separador Organização, por baixo dos separadores --- */
+  function painelOrg() {
+    var dir = D.getElementById("ipe-dir"), tabs = D.getElementById("ipe-tabs"), p = D.getElementById("ipr-ent-dir");
+    if (dir && tabs) { var t = tabs.getBoundingClientRect().bottom - dir.getBoundingClientRect().top; if (t > 0) dir.style.setProperty("--ipr-tabs-h", Math.round(t) + "px"); }
+    var sel = D.querySelector('#ipe-tabs .ipe-tab[aria-selected="true"]');
+    D.documentElement.classList.toggle("ipr-tab-org", !!(sel && sel.getAttribute("data-tab") === "org"));
+    if (!p) return;
+    if (D.documentElement.classList.contains("ipr-tab-org") && p.classList.contains("fechado")) { var fx = p.querySelector('[data-ent="fechar"]'); if (fx) fx.click(); }
+    [].forEach.call(p.querySelectorAll(".sec"), function (sc) {
+      var tt = sc.querySelector(".t"); if (tt && /^(Ferramentas|Tools)$/i.test(tt.textContent.trim())) sc.classList.add("ipr-orgm-x");
+    });
   }
 
   var abriu = false;
   function correr() {
     if (!D.getElementById("ipr-orgatlas-css") && D.head) { var s = D.createElement("style"); s.id = "ipr-orgatlas-css"; s.textContent = CSS; D.head.appendChild(s); }
-    var props = camadas();
-    var gs = meuAtlas(props) || [];
-    try { janela(); } catch (e) {}
+    carregar(); semLicenciamento();
+    var gs = meuAtlas(props()) || [];
+    try { painelOrg(); } catch (e) {}
     if (!abriu && gs.length) {
       var ult = gs.slice().sort(function (a, b) { return +b.p.id - +a.p.id; })[0];
       if (ult && ult.g) {
@@ -200,6 +203,7 @@
     }
   }
   D.addEventListener("click", function (e) {
+    if (e.target.closest && e.target.closest("#ipe-tabs")) setTimeout(function () { try { painelOrg(); } catch (x) {} }, 30);
     var b = e.target.closest && e.target.closest("[data-orgt-ir]"); if (!b) return;
     var id = b.getAttribute("data-orgt-ir"); voar(geo(id), id);
   });
