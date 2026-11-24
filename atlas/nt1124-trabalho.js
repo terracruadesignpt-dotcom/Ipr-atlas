@@ -264,7 +264,7 @@
       for (k = 1; k < Lr; k++) { i = (best.i + k) % Lr; if (borda(ring[i])) break; out.push(ring[i]); }
       var tras = [];
       for (k = 1; k < Lr; k++) { i = (best.i - k + Lr) % Lr; if (borda(ring[i])) break; tras.push(ring[i]); if (out.length + tras.length >= Lr) break; }
-      var pts = tras.reverse().concat(out).map(function (pt) { return G.ll(pt[0], pt[1]); });
+      var pts = tras.reverse().concat(out).filter(function (pt, j, arr2) { var k2 = Math.max(1, Math.round(arr2.length / 600)); return j % k2 === 0 || j === arr2.length - 1; }).map(function (pt) { return G.ll(pt[0], pt[1]); });
       if (pts.length < 2) throw new Error("curva curta");
       var T = TIPOS.agua, nf = { type: "Feature", geometry: { type: "LineString", coordinates: pts }, properties: { tipo: "agua", tn: T.n, sub: estado.sub || "Vala em curva de nível", cor: T.cor, cota: Math.round(z0 * 10) / 10, t: Date.now() } };
       FC.features.push(nf); guardar();
