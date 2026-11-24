@@ -30,6 +30,7 @@
     ".ipr-sep-b button:hover,.ipr-sep-b a.bt:hover{border-color:#94BE39;background:rgba(148,190,57,.12)}" +
     ".ipr-sep-b button small,.ipr-sep-b a.bt small{font-weight:400;font-size:11px;color:#9a9e8a}" +
     ".ipr-sep-b .pri{border-color:#94BE39;background:rgba(148,190,57,.16)}" +
+    "[data-pane=enc] .tcd-fila{display:none!important}" +
     ".tcd-fila .f-i.ipr-sep-par{display:none}.tcd-fila.ipr-sep-mp .f-i.ipr-sep-par{display:block}" +
     ".tcd-fila .ipr-sep-mpb{background:none;border:0;color:#94BE39;text-decoration:underline;cursor:pointer;font:12px Inter,system-ui,sans-serif;padding:4px 0}";
 
@@ -71,9 +72,10 @@
       });
     }
     if (p.firstElementChild !== b) p.insertBefore(b, p.firstChild);
-    // simuladores logo a seguir
-    var sim = p.querySelector('.ipr-x-s, [data-k="ptsk"]');
-    if (sim && b.nextElementSibling !== sim) p.insertBefore(sim, b.nextSibling);
+    // simuladores logo a seguir (outro módulo põe-nos no topo; volta-se a pô-los depois)
+    [].forEach.call(p.querySelectorAll('.ipr-x-s, [data-k="ptsk"]'), function (sim) {
+      if (sim.parentNode === p && b.nextElementSibling !== sim) p.insertBefore(sim, b.nextSibling);
+    });
   }
 
   function blocoMeu() {
@@ -113,15 +115,7 @@
     if (p.firstElementChild !== b) p.insertBefore(b, p.firstChild);
   }
 
-  function fila(eq) {
-    var f = D.querySelector(".tcd-fila") || W.__iprSepFila; if (!f) return;
-    W.__iprSepFila = f; // se o painel for redesenhado por outro módulo, a fila volta a entrar
-    var destino = eq ? pane("rever") : pane("proj");
-    if (destino && f.parentNode !== destino) {
-      var ref = eq ? $("ipr-sep-ges") : $("ipr-sep-meu");
-      destino.insertBefore(f, ref ? ref.nextSibling : destino.firstChild);
-    }
-    // esconder as tiradas da fila («Parado»)
+  function paradas(f) {
     var par = 0;
     [].forEach.call(f.querySelectorAll(".f-i"), function (i) {
       var e = i.querySelector(".f-e"), p = !!(e && (e.classList.contains("parado") || /^\s*parad/i.test(e.textContent)));
@@ -130,11 +124,23 @@
     f.classList.toggle("ipr-sep-mp", mostrarParadas);
     var bt = f.querySelector(".ipr-sep-mpb");
     if (par) {
-      if (!bt) { bt = D.createElement("button"); bt.type = "button"; bt.className = "ipr-sep-mpb"; bt.addEventListener("click", function () { mostrarParadas = !mostrarParadas; fila(equipa()); }); f.appendChild(bt); }
+      if (!bt) { bt = D.createElement("button"); bt.type = "button"; bt.className = "ipr-sep-mpb"; bt.addEventListener("click", function () { mostrarParadas = !mostrarParadas; [].forEach.call(D.querySelectorAll(".tcd-fila"), paradas); }); f.appendChild(bt); }
       var tx = mostrarParadas ? t("Esconder as tiradas da fila", "Hide removed from queue") : t("Mostrar as tiradas da fila (", "Show removed from queue (") + par + ")";
       if (bt.textContent !== tx) bt.textContent = tx;
       if (bt !== f.lastElementChild) f.appendChild(bt);
     } else if (bt) bt.remove();
+  }
+  function fila(eq) {
+    // a fila nasce no Começar (onde fica escondida); a que se vê vai para Gestão (equipa) ou O meu Atlas
+    var destino = eq ? pane("rever") : pane("proj"); if (!destino) return;
+    var fora = destino.querySelector(".tcd-fila");
+    if (!fora) {
+      var f = D.querySelector('[data-pane="enc"] .tcd-fila') || W.__iprSepFila; if (!f) return;
+      var ref = eq ? $("ipr-sep-ges") : $("ipr-sep-meu");
+      destino.insertBefore(f, ref ? ref.nextSibling : destino.firstChild);
+      W.__iprSepFila = f;
+    }
+    [].forEach.call(D.querySelectorAll(".tcd-fila"), paradas);
   }
 
   function correr() {
