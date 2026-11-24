@@ -15,7 +15,7 @@
 
   var CSS =
     /* linha 1 */
-    ".ipe-top{gap:10px}.ipe-top>#ipe-beta,.ipe-top>.ipe-vsep{display:none!important}" +
+    ".ipe-top{gap:10px}.ipe-top>#ipe-beta,.ipe-top>.ipe-beta,.ipe-top>.ipe-vsep{display:none!important}" +
     ".ipe-top>#ipr-be-pq{flex:1 1 560px!important;max-width:760px!important;min-width:300px!important;width:auto!important}" +
     "#ipr-be-pq .ipe-sb,#ipr-be-pq .ipe-sbc,#ipr-be-pq #ipe-busca{width:100%!important;max-width:none!important}" +
     "#ipr-be-pq #ipe-busca{height:38px;border-radius:10px}#ipr-be-pq #ipe-q{flex:1 1 auto;min-width:0;font-size:14px}" +
