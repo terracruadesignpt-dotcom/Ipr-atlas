@@ -22,7 +22,8 @@
     "#ipe-tabs [data-tab=com],#ipe-tabs [data-tab=loc]{display:none!important}" +
     "#ipe-tabs.ipr-sep-eq [data-tab=rever]{display:inline-flex!important}" +
     "#ipe-tabs [data-tab=enc]{order:1!important}#ipe-tabs [data-tab=proj]{order:2!important}#ipe-tabs [data-tab=org]{order:3!important}#ipe-tabs [data-tab=rever]{order:4!important}" +
-    "#ipe-tabs .ipe-tab .ipr-sep-r{font:inherit}" +
+    "#ipe-tabs .ipe-tab[data-tab=proj]{font-size:12px!important}#ipe-tabs .ipe-tab[data-tab=proj]::after{content:none!important}" +
+    "#ipe-tabs .ipe-tab .ipr-sep-r{font-size:12px!important}" +
     ".ipr-sep-b{margin:0 0 12px;padding:10px 12px;border:1px solid rgba(148,190,57,.3);border-radius:10px;background:rgba(20,26,16,.5);font:13px/1.45 Inter,system-ui,sans-serif;color:#e9e6da}" +
     ".ipr-sep-b h5{margin:0 0 8px;font:600 11px 'IBM Plex Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:#cfe3a0}" +
     ".ipr-sep-b .g{display:grid;grid-template-columns:1fr 1fr;gap:6px}.ipr-sep-b .g1{grid-template-columns:1fr}" +
@@ -36,7 +37,11 @@
 
   function equipa() {
     // equipa = vê os botões de gestão da fila, ou o separador Rever já existe com conteúdo
-    return !!D.querySelector('.tcd-fila button[data-f="reprocessar"]') || W.IPR_EQUIPA === 1 || W.IPR_EQUIPA === true;
+    // sinal estável: o separador «Rever» existe para quem revê (m90346); ou botões de gestão na fila; ou o bloco de equipa
+    if (W.__iprSepEq) return true;
+    var e = !!D.querySelector('.tcd-fila button[data-f="reprocessar"]') || W.IPR_EQUIPA === 1 || W.IPR_EQUIPA === true;
+    if (e) W.__iprSepEq = 1;
+    return e;
   }
   function rotulo(k, txt) {
     var b = tab(k); if (!b) return;
@@ -133,6 +138,8 @@
   function fila(eq) {
     // a fila nasce no Começar (onde fica escondida); a que se vê vai para Gestão (equipa) ou O meu Atlas
     var destino = eq ? pane("rever") : pane("proj"); if (!destino) return;
+    if (eq) { var pf = D.querySelector('[data-pane="proj"] .tcd-fila'), rf = destino.querySelector(".tcd-fila");
+      if (pf && (!rf || !rf.querySelector(".f-i"))) { if (rf) rf.remove(); destino.insertBefore(pf, ($("ipr-sep-ges") || {}).nextSibling || destino.firstChild); } }
     var fora = destino.querySelector(".tcd-fila");
     if (!fora) {
       var f = D.querySelector('[data-pane="enc"] .tcd-fila') || W.__iprSepFila; if (!f) return;
