@@ -29,21 +29,19 @@
     ".ipe-mapa>.ipe-tools{display:none!important}" +
     "#ipr-eng summary .n{display:none!important}" +
     "#ipr-modos-acc .ipr-fe-x{border-style:dashed}" +
-    "#ipr-nav{position:absolute;right:14px;bottom:44px;z-index:5;display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none}" +
+    "#ipr-nav{position:absolute;left:14px;bottom:40px;z-index:5;display:flex;flex-direction:column;align-items:flex-start;gap:8px;pointer-events:none}" +
     "#ipr-nav>*{pointer-events:auto}" +
-    "#ipr-nav .rosa{width:68px;height:68px;border-radius:50%;border:1px solid rgba(148,190,57,.45);background:rgba(16,21,12,.78);backdrop-filter:blur(6px);cursor:pointer;padding:0;display:grid;place-items:center;box-shadow:0 6px 18px rgba(0,0,0,.35)}" +
-    "#ipr-nav .rosa svg{width:58px;height:58px;transition:transform .15s linear}" +
-    "#ipr-nav .g{display:flex;flex-direction:column;border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,.16);background:rgba(16,21,12,.78);backdrop-filter:blur(6px);box-shadow:0 6px 18px rgba(0,0,0,.35)}" +
-    "#ipr-nav .g button{width:40px;height:38px;border:0;background:none;color:#e9e6da;font:600 20px/1 Inter,system-ui,sans-serif;cursor:pointer;display:grid;place-items:center}" +
-    "#ipr-nav .g button+button{border-top:1px solid rgba(255,255,255,.1)}" +
-    "#ipr-nav .g button:hover{background:rgba(148,190,57,.18);color:#fff}" +
+    "#ipr-nav .b,#ipr-nav .g{border:1px solid rgba(255,255,255,.1);background:rgba(13,17,11,.72);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 10px 26px -8px rgba(0,0,0,.55)}" +
+    "#ipr-nav .b{width:44px;height:44px;border-radius:50%;padding:0;display:grid;place-items:center;color:#e6e4d9;cursor:pointer;font:600 12px Geist,Inter,system-ui,sans-serif;letter-spacing:.02em}" +
+    "#ipr-nav .b:hover,#ipr-nav .g button:hover{background:rgba(148,190,57,.18)}" +
+    "#ipr-nav .b.on{color:#11160d;background:#a6cc4f}" +
+    "#ipr-nav .rosa svg{width:36px;height:36px;transition:transform .15s linear}" +
+    "#ipr-nav .g{display:flex;flex-direction:column;border-radius:999px;overflow:hidden}" +
+    "#ipr-nav .g button{width:44px;height:42px;border:0;background:none;color:#e6e4d9;font:300 19px Geist,Inter,system-ui,sans-serif;cursor:pointer;display:grid;place-items:center}" +
+    "#ipr-nav .g button+button{border-top:1px solid rgba(255,255,255,.08)}" +
     "#ipr-nav .g svg{width:18px;height:18px}";
 
-  var ROSA = '<svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="46" fill="none" stroke="rgba(233,230,218,.25)" stroke-width="1.5"/>' +
-    '<g stroke="rgba(233,230,218,.35)" stroke-width="1.2"><line x1="50" y1="6" x2="50" y2="14"/><line x1="50" y1="86" x2="50" y2="94"/><line x1="6" y1="50" x2="14" y2="50"/><line x1="86" y1="50" x2="94" y2="50"/></g>' +
-    '<polygon points="50,12 58,50 50,46 42,50" fill="#94BE39"/><polygon points="50,88 58,50 50,54 42,50" fill="rgba(233,230,218,.55)"/>' +
-    '<polygon points="88,50 50,57 54,50 50,43" fill="rgba(233,230,218,.3)"/><polygon points="12,50 50,57 46,50 50,43" fill="rgba(233,230,218,.3)"/>' +
-    '<text x="50" y="27" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="11" font-weight="700" fill="#10150c">N</text></svg>';
+  var ROSA = '<svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="17" fill="none" stroke="rgba(236,234,224,.18)" stroke-width="1"/><polygon points="20,5 25,20 15,20" fill="#e5484d"/><polygon points="20,35 25,20 15,20" fill="#ecebe3"/><circle cx="20" cy="20" r="1.6" fill="#11160d"/></svg>';
   var I_POS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>';
   var I_FS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>';
 
@@ -51,10 +49,17 @@
     var M = mapa(), cont = D.querySelector(".ipe-mapa");
     if (!M || !cont || D.getElementById("ipr-nav")) return;
     var n = D.createElement("div"); n.id = "ipr-nav";
-    n.innerHTML = '<button type="button" class="rosa" title="' + t("Clique para voltar ao norte; arraste com o botão direito para rodar", "Click to reset north; right-drag to rotate") + '">' + ROSA + "</button>" +
-      '<div class="g"><button type="button" data-n="mais" title="' + t("Aproximar", "Zoom in") + '">+</button><button type="button" data-n="menos" title="' + t("Afastar", "Zoom out") + '">−</button></div>' +
-      '<div class="g"><button type="button" data-n="pos" title="' + t("A minha localização", "My location") + '">' + I_POS + '</button><button type="button" data-n="fs" title="' + t("Ecrã inteiro", "Full screen") + '">' + I_FS + "</button></div>";
+    n.innerHTML = '<button type="button" class="b" data-n="pos" title="' + t("A minha localização", "My location") + '">' + I_POS + "</button>" +
+      '<button type="button" class="b" data-n="3d" title="' + t("Alternar 2D e 3D", "Toggle 2D and 3D") + '">3D</button>' +
+      '<button type="button" class="b rosa" title="' + t("Bússola: clique para voltar ao norte", "Compass: click to reset north") + '">' + ROSA + "</button>" +
+      '<div class="g"><button type="button" data-n="mais" title="' + t("Aproximar", "Zoom in") + '">+</button><button type="button" data-n="menos" title="' + t("Afastar", "Zoom out") + '">−</button></div>';
     cont.appendChild(n);
+    function encostar() {
+      var e = D.getElementById("ipe-esq"), c = cont.getBoundingClientRect(), r = e && e.getBoundingClientRect();
+      var x = r && r.width > 40 && r.right > c.left ? r.right - c.left + 12 : 14;
+      n.style.left = Math.round(x) + "px";
+    }
+    encostar(); setInterval(encostar, 1500); W.addEventListener("resize", encostar);
     var sv = n.querySelector(".rosa svg");
     function rodar() { try { sv.style.transform = "rotate(" + (-M.getBearing()) + "deg)"; } catch (e) {} }
     M.on("rotate", rodar); rodar();
@@ -63,6 +68,7 @@
       if (b.classList.contains("rosa")) { M.easeTo({ bearing: 0, pitch: 0, duration: 400 }); return; }
       var k = b.getAttribute("data-n");
       if (k === "mais") M.zoomIn(); else if (k === "menos") M.zoomOut();
+      else if (k === "3d") { var p3 = D.getElementById("ipr-pb-3d") || orig(/relevo 3d|3d terrain/i); if (p3) p3.click(); else M.easeTo({ pitch: M.getPitch() > 5 ? 0 : 60, duration: 500 }); setTimeout(function () { b.classList.toggle("on", M.getPitch() > 5); }, 700); }
       else if (k === "pos") { var o = orig(/minha localiza|my location/i); if (o) o.click(); }
       else if (k === "fs") { var f = orig(/cr[aã] inteiro|full ?screen/i); if (f) f.click(); else { try { D.fullscreenElement ? D.exitFullscreen() : D.documentElement.requestFullscreen(); } catch (x) {} } }
     });
