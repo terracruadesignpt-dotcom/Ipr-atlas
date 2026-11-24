@@ -85,7 +85,7 @@
         (d.camadas || []).forEach(function (c) { if (eLic(c, d.grupos)) LIC[String(c.id)] = 1; });
         props().forEach(function (c) {
           if (!c.url) return;
-          fetch(c.url, { credentials: "same-origin" }).then(function (r) { return r.json(); }).then(function (gj) { GJ[c.id] = gj; desenhados = null; correr(); }).catch(function () {});
+          fetch(c.url, { credentials: "same-origin", headers: { "X-WP-Nonce": ENT.nonce } }).then(function (r) { return r.json(); }).then(function (gj) { GJ[c.id] = gj; desenhados = null; correr(); }).catch(function () {});
         });
         correr();
       }).catch(function () { setTimeout(function () { pedido = false; }, 8000); });
@@ -110,18 +110,17 @@
   }
 
   /* --- geometria --- */
+  function caixa(id) {
+    var c = props().filter(function (x) { return x.id === String(id); })[0];
+    return c && c.bbox && c.bbox.length === 4 ? { aneis: [], b: c.bbox, ha: +c.ha || 0 } : null;
+  }
   function geo(id) {
     var d = GJ[id];
     if (!d) {
       var M = mapa(), so = M && M.getSource("ent-org-" + id);
-      if (!so) {
-        var c = props().filter(function (x) { return x.id === String(id); })[0];
-        return c && c.bbox && c.bbox.length === 4 ? { aneis: [], b: c.bbox, ha: +c.ha || 0 } : null;
-      }
-      d = so._data || (so.serialize && so.serialize().data); if (!d) return null;
-      if (d.geojson) d = d.geojson;
+      if (so) { d = so._data || (so.serialize && so.serialize().data); if (d && d.geojson) d = d.geojson; }
     }
-    if (typeof d === "string") return null;
+    if (!d || typeof d !== "object") return caixa(id);
     var fs = d.type === "FeatureCollection" ? d.features : d.type === "Feature" ? [d] : [{ geometry: d }];
     var aneis = [];
     fs.forEach(function (f) {
@@ -129,7 +128,7 @@
       if (g.type === "Polygon") aneis.push(g.coordinates[0]);
       else if (g.type === "MultiPolygon") g.coordinates.forEach(function (p) { aneis.push(p[0]); });
     });
-    if (!aneis.length) return null;
+    if (!aneis.length) return caixa(id);
     var b = [180, 90, -180, -90], area = 0;
     aneis.forEach(function (r) {
       var lat0 = r[0][1] * Math.PI / 180, kx = 111320 * Math.cos(lat0), ky = 110540, a = 0;
