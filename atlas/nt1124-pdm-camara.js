@@ -16,7 +16,7 @@
   var R2 = "https://camadas.terracruadesign.pt/";
   var PMT = "https://cdn.jsdelivr.net/npm/pmtiles@3.2.1/dist/pmtiles.js";
   var SRC = "ipr-pdmc", LAY = "ipr-pdmc-l";
-  var S = { on: false, dico: "", nome: "", srv: "", camadas: [], escolhida: "", op: 0.75, estado: "", ultimoCentro: "" };
+  var S = { antiga: "", antigaOn: false, on: false, dico: "", nome: "", srv: "", camadas: [], escolhida: "", op: 0.75, estado: "", ultimoCentro: "" };
   try { var g = JSON.parse(W.localStorage.getItem("ipr_pdmc") || "{}"); S.op = typeof g.op === "number" ? g.op : 0.75; S.preferida = g.pref || ""; } catch (e) {}
   function guardar() { try { W.localStorage.setItem("ipr_pdmc", JSON.stringify({ op: S.op, pref: S.preferida || "" })); } catch (e) {} }
   function en() { return (D.documentElement.lang || "").slice(0, 2) === "en" || /[?&]lang=en/.test(location.search); }
@@ -75,6 +75,56 @@
     return c[0];
   }
 
+  function explorer() { return W.IPR_NIVEL === "explorer"; }
+  // Planta antiga (imagem do SNIT pelo proxy do site, catálogo pdm_<DICO>: ajustes.js PDM64 e m92572), usada enquanto a
+  // câmara não está copiada. Liga-se pelo próprio visualizador.
+  function antigaId(dico) {
+    var id = "pdm_" + dico, cat = W.IPRViz && W.IPRViz.catalogo;
+    return cat && cat.some && cat.some(function (x) { return x && x.id === id; }) ? id : "";
+  }
+  function antiga(v) {
+    if (!S.antiga) { S.antigaOn = false; return; }
+    var z = W.__ipe && W.__ipe.viz;
+    try { if (z && typeof z.ligar === "function") z.ligar(S.antiga, !!v); } catch (e) {}
+    S.antigaOn = !!v;
+  }
+
+  // ---------- entradas antigas escondidas (Nuno, 24/11 13h27: «Esconder já») ----------
+  // As subsecções soltas «PDM · planta de condicionantes (imagem)» e «PDM do concelho · planta de condicionantes» e as
+  // linhas de cada câmara saem da árvore; o PDM fica todo dentro desta entrada. Só se esconde (nada é apagado).
+  var SUBS = ["pdm · planta de condicionantes (imagem)", "pdm do concelho · planta de condicionantes"];
+  function norm(x) { return String(x || "").replace(/\s+/g, " ").trim().toLowerCase(); }
+  function linhaAntiga(x) { return /^planta de condicionantes · /.test(x) || /^pdm · .+ · planta de condicionantes$/.test(x); }
+  function esconder(el) { if (el && el.style.display !== "none") { el.style.display = "none"; el.setAttribute("data-pdmc-esc", "1"); } }
+  function esconderAntigos() {
+    var cam = D.getElementById("ipe-cam"); if (!cam) return;
+    var els = cam.querySelectorAll("li,summary,button,span,div,b,strong,label");
+    for (var i = 0; i < els.length; i++) {
+      var el = els[i];
+      if (el.closest("#ipr-pdmc") || el.closest("[data-pdmc-esc]")) continue;
+      var x = norm(el.textContent).replace(/\s*\(?\d+\)?$/, "");
+      if (x.length > 90) continue;
+      if (SUBS.indexOf(x) >= 0) {
+        var sm = el.closest("summary");
+        if (sm && sm.parentNode && sm.parentNode.tagName === "DETAILS" && cam.contains(sm.parentNode)) { esconder(sm.parentNode); continue; }
+        var li = el.closest("li");
+        if (li && cam.contains(li) && norm(li.textContent).length <= x.length + 12) {
+          esconder(li);
+          if (li.classList.contains("ipr-sub")) { var n = li.nextElementSibling; while (n && !n.classList.contains("ipr-sub")) { esconder(n); n = n.nextElementSibling; } }
+          continue;
+        }
+        var row = el.parentNode && norm(el.parentNode.textContent).length <= x.length + 12 ? el.parentNode : el;
+        esconder(row);
+        var nx = row.nextElementSibling; if (nx && /^(UL|OL|DIV)$/.test(nx.tagName) && linhaAntiga(norm(nx.textContent).slice(0, 80))) esconder(nx);
+        continue;
+      }
+      if (linhaAntiga(x) && el.querySelector && !el.querySelector("li")) {
+        var r = el.closest("li") || el.closest("label") || el;
+        if (cam.contains(r) && norm(r.textContent).length <= x.length + 12) esconder(r);
+      }
+    }
+  }
+
   // ---------- desenho ----------
   function tirar() {
     var I = mapa(); if (!I) return;
@@ -106,14 +156,12 @@
   function pintar() {
     var d = D.getElementById("ipr-pdmc"); if (!d) return;
     var c = d.querySelector(".c"); if (!c) return;
-    if (W.IPR_NIVEL === "explorer") {
-      c.innerHTML = "<small>" + t("As plantas do PDM de cada câmara fazem parte do IPR Atlas Intelligence (condicionantes). Membros da Ordem dos Engenheiros: regenerativo.pt/ordem-dos-engenheiros.",
-        "Municipal PDM plans are part of IPR Atlas Intelligence (constraints).") + "</small>";
-      return;
-    }
     var h = '<label><input type="checkbox" data-pdmc="on"' + (S.on ? " checked" : "") + "> <span>" + t("Mostrar a planta da câmara onde está o mapa", "Show the plan of the municipality in view") + "</span></label>";
     if (S.on) {
       if (S.estado) h += '<div class="es">' + esc(S.estado) + "</div>";
+      if (S.antiga) h += '<label><input type="checkbox" data-pdmc="antiga"' + (S.antigaOn ? " checked" : "") + "> <span>" + t("Planta de condicionantes (imagem publicada pela câmara)", "Constraints plan (image published by the municipality)") + "</span></label>";
+      if (explorer()) h += "<small>" + t("As plantas completas do PDM de cada câmara fazem parte do IPR Atlas Intelligence. Membros da Ordem dos Engenheiros: regenerativo.pt/ordem-dos-engenheiros.",
+        "Full municipal PDM plans are part of IPR Atlas Intelligence.") + "</small>";
       if (S.camadas.length) {
         ["ord", "cond"].forEach(function (gr) {
           var l = S.camadas.filter(function (x) { return grupo(x[1]) === gr; }); if (!l.length) return;
@@ -143,6 +191,7 @@
     d.addEventListener("change", function (e) {
       var x = e.target;
       if (x.getAttribute("data-pdmc") === "on") { ligar(x.checked); return; }
+      if (x.getAttribute("data-pdmc") === "antiga") { antiga(x.checked); pintar(); return; }
       if (x.getAttribute("data-pdmc-c")) { S.escolhida = x.getAttribute("data-pdmc-c"); S.preferida = rotulo(S.escolhida).slice(0, 12); guardar(); desenhar(); pintar(); }
     });
     d.addEventListener("input", function (e) {
@@ -161,15 +210,20 @@
     var c = I.getCenter(), k = c.lng.toFixed(2) + "," + c.lat.toFixed(2);
     if (k === S.ultimoCentro && S.dico) return; S.ultimoCentro = k;
     concelho(c.lng, c.lat, function (r) {
-      if (!r.dico) { S.estado = t("Fora do continente ou concelho por identificar.", "Outside mainland Portugal or municipality not found."); S.dico = ""; S.camadas = []; S.srv = ""; tirar(); pintar(); return; }
+      if (!r.dico) { antiga(false); S.antiga = ""; S.estado = t("Fora do continente ou concelho por identificar.", "Outside mainland Portugal or municipality not found."); S.dico = ""; S.camadas = []; S.srv = ""; tirar(); pintar(); return; }
       if (r.dico === S.dico) return;
+      antiga(false); S.antiga = "";
       S.dico = r.dico; S.nome = r.nome;
       servico(r.dico, function (j) {
         if (r.dico !== S.dico) return;
+        if (explorer()) j = null;
         if (!j) {
           S.srv = ""; S.camadas = []; S.escolhida = ""; tirar();
-          S.estado = (r.nome ? r.nome + ": " : "") + t("as plantas desta câmara ainda estão a ser copiadas do SNIT. Entretanto, use a camada «Ordenamento (PDM)».",
-            "this municipality's plans are still being copied. Meanwhile use the «Zoning (PDM)» layer.");
+          S.antiga = antigaId(r.dico);
+          if (S.antiga) antiga(true);
+          S.estado = (r.nome ? r.nome + ": " : "") + (explorer() ? (S.antiga ? t("imagem publicada da planta de condicionantes.", "published constraints plan image.") : t("sem planta disponível no Explorer.", "no plan available in Explorer."))
+            : t("as plantas desta câmara ainda estão a ser copiadas do SNIT.", "this municipality's plans are still being copied.") + " " + (S.antiga ? t("Entretanto, mostra-se a imagem publicada da planta de condicionantes.", "Meanwhile the published constraints image is shown.")
+            : t("Entretanto, use a camada «Ordenamento (PDM)».", "Meanwhile use the «Zoning (PDM)» layer.")));
         } else {
           S.srv = j.srv; S.camadas = j.camadas; S.escolhida = escolherInicial();
           S.estado = (r.nome || t("Concelho ", "Municipality ") + r.dico) + " · " + j.camadas.length + " " + t("plantas", "plans");
@@ -181,7 +235,7 @@
   }
   function ligar(v) {
     S.on = !!v;
-    if (!S.on) { tirar(); S.estado = ""; pintar(); return; }
+    if (!S.on) { tirar(); antiga(false); S.antiga = ""; S.estado = ""; pintar(); return; }
     S.dico = ""; S.ultimoCentro = ""; pintar(); actualizar();
   }
   var preso = false;
@@ -194,6 +248,8 @@
     return true;
   }
   (function vez(n) { var a = false, b = false; try { a = bloco(); b = prender(); } catch (e) {} if (a && b) return; if (n < 200) setTimeout(function () { vez(n + 1); }, 150); })(0);
-  setInterval(function () { try { bloco(); } catch (e) {} }, 3000);
+  setInterval(function () { try { bloco(); esconderAntigos(); } catch (e) {} }, 3000);
+  try { new MutationObserver(function () { clearTimeout(W.__iprPdmcMo); W.__iprPdmcMo = setTimeout(function () { try { esconderAntigos(); } catch (e) {} }, 120); })
+    .observe(D.body, { childList: true, subtree: true }); } catch (e) {}
   W.__iprPdmCamara = { ligar: ligar, estado: function () { return JSON.parse(JSON.stringify(S)); } };
 })();
