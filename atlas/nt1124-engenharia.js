@@ -54,7 +54,7 @@
     "#ipr-eng .eh b{font-weight:600;color:#cfe3a0}#ipr-eng .eh button,#ipr-eng .ev button{background:none;border:0;color:#94BE39;cursor:pointer;font:inherit;font-size:12px;padding:0;text-decoration:underline}" +
     "#ipr-eng .ef{display:flex;flex-wrap:wrap;gap:4px;margin:0 0 8px}#ipr-eng .ef button{border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.04);color:#e9e6da;border-radius:6px;padding:3px 8px;font:12px Inter,system-ui,sans-serif;cursor:pointer}" +
     "#ipr-eng .ef button[aria-pressed=true]{border-color:#94BE39;background:rgba(148,190,57,.18)}" +
-    "#ipr-eng details{border-top:1px solid rgba(255,255,255,.08);padding:5px 0}#ipr-eng summary{cursor:pointer;font-weight:600;list-style:none;display:flex;justify-content:space-between}" +
+    "#ipr-eng details{border-top:1px solid rgba(255,255,255,.08);padding:5px 0}#ipr-eng summary{cursor:pointer;font-weight:600;list-style:none;display:flex;align-items:center;gap:0;text-align:left}" +
     "#ipr-eng summary::-webkit-details-marker{display:none}#ipr-eng summary:before{content:'▸';margin-right:6px;color:#94BE39}#ipr-eng details[open]>summary:before{content:'▾'}" +
     "#ipr-eng summary span.n{margin-left:auto;color:#94BE39;font-weight:600;font-size:12px}" +
     "#ipr-eng label{display:flex;gap:8px;align-items:flex-start;margin:3px 0 3px 14px;cursor:pointer}#ipr-eng label.bl{opacity:.55;cursor:default}" +
@@ -86,7 +86,7 @@
       h += '<details data-g="' + g[0] + '"' + (ab ? " open" : "") + "><summary>" + esc(t(g[1], g[2])) + (lig ? '<span class="n">' + lig + "</span>" : "") + "</summary>";
       ids.forEach(function (i) {
         var x = C[i], bl = explorer() && x.lic === "r";
-        h += '<label' + (bl ? ' class="bl" title="' + esc(t("IPR Atlas Intelligence", "IPR Atlas Intelligence")) + '"' : "") + '><input type="checkbox" data-cam="' + esc(i) + '"' + (on[i] ? " checked" : "") + (bl ? " disabled" : "") + "> <span>" + esc(nome(x)) + "</span>" + (bl ? "<small>Intelligence</small>" : (x.minz ? "<small>z" + x.minz + "</small>" : "")) + "</label>";
+        h += '<label' + (bl ? ' class="bl" title="' + esc(t("IPR Atlas Intelligence", "IPR Atlas Intelligence")) + '"' : "") + '><input type="checkbox" data-cam="' + esc(i) + '"' + (on[i] ? " checked" : "") + (bl ? " disabled" : "") + "> <span>" + esc(nome(x)) + "</span>" + (bl ? "<small>Intelligence</small>" : "") + "</label>";
       });
       h += "</details>";
     });
