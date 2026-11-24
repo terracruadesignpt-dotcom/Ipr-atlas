@@ -437,10 +437,10 @@
   function sol(p) {
     aviso("A medir o horizonte à volta…");
     relevo(p, 4000, 12).then(function (G) {
-      var q = G.px(p), Wp = G.W, a = G.a, oi = Math.round(q[1]) * Wp + Math.round(q[0]), z0 = a[oi] + 1.5, hor = [];
+      var q = G.px(p), Wp = G.W, a = G.a, oi = Math.round(q[1]) * Wp + Math.round(q[0]), zt = a[oi]; for (var yy0 = -1; yy0 <= 1; yy0++) for (var xx0 = -1; xx0 <= 1; xx0++) zt = Math.max(zt, a[oi + yy0 * Wp + xx0]); var z0 = zt + 1.5, hor = [];
       for (var k = 0; k < 360; k++) {
         var az = k * Math.PI / 180, dx = Math.sin(az), dy = -Math.cos(az), m = 0;
-        for (var s = 2; s < 4000 / G.pxM; s += 1) { var x = Math.round(q[0] + dx * s), y = Math.round(q[1] + dy * s); if (x < 1 || y < 1 || x >= Wp - 1 || y >= G.H - 1) break; var an = Math.atan2(a[y * Wp + x] - z0, s * G.pxM) * 180 / Math.PI; if (an > m) m = an; }
+        for (var s = 3; s < 4000 / G.pxM; s += 1) { var x = Math.round(q[0] + dx * s), y = Math.round(q[1] + dy * s); if (x < 1 || y < 1 || x >= Wp - 1 || y >= G.H - 1) break; var an = Math.atan2(a[y * Wp + x] - z0, s * G.pxM) * 180 / Math.PI; if (an > m) m = an; }
         hor.push(m);
       }
       var ano = new Date().getFullYear();
