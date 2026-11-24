@@ -69,14 +69,14 @@
     if (!ON) {
       if (box) box.remove();
       if (!off) { off = D.createElement("div"); off.id = "ipr-eng-off"; var ref = D.getElementById("ipr-pdmc"); cam.insertBefore(off, ref ? ref.nextSibling : cam.firstChild); }
-      off.innerHTML = '<button type="button" data-eng="on">' + t("Voltar à lista curta para engenharia", "Back to the short engineering list") + "</button>";
+      off.innerHTML = '<button type="button" data-eng="on">' + t("Voltar à lista curta", "Back to the short list") + "</button>";
       return;
     }
     if (off) off.remove();
     var C = cat(), A = activas(), on = {}; A.forEach(function (i) { on[i] = 1; });
     var abertos = {}; if (box) [].forEach.call(box.querySelectorAll("details[data-g]"), function (d) { abertos[d.getAttribute("data-g")] = d.open; });
     var total = Object.keys(C).length, n = 0;
-    var h = '<div class="eh"><b>' + t("Camadas para engenharia", "Engineering layers") + '</b><button type="button" data-eng="off">' + t("Ver todas", "Show all") + (total ? " (" + total + ")" : "") + "</button></div>";
+    var h = '<div class="eh"><b>' + t("Camadas", "Layers") + '</b><button type="button" data-eng="off">' + t("Ver todas as camadas", "Show all layers") + (total ? " (" + total + ")" : "") + "</button></div>";
     h += '<div class="ef">' + FUNDOS.filter(function (f) { return C[f[0]]; }).map(function (f) {
       return '<button type="button" data-fundo="' + f[0] + '" aria-pressed="' + (on[f[0]] ? "true" : "false") + '">' + esc(t(f[1], f[2])) + "</button>"; }).join("") + "</div>";
     GRUPOS.forEach(function (g) {
