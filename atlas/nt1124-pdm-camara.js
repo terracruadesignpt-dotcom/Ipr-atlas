@@ -14,7 +14,10 @@
    - «Por concelho»: distrito → concelhos, cada um com o número de plantas copiadas (ou «em cópia»); carregar leva o mapa
      ao concelho e mostra as plantas dele. Nomes e limites dos concelhos: CAOP (ogcapi da DGT, colecção municipios);
    - Intelligence: descarregar cada planta (PMTiles, abre no QGIS 3.32+ e no GDAL 3.8+), a legenda e a lista de todas
-     as ligações do concelho (.txt). O Explorer não descarrega. */
+     as ligações do concelho (.txt). O Explorer não descarrega.
+   v4 (Nuno, 24/11 23h29: «olha bem para aquilo no Chrome e melhora-me o estilo gráfico»): o painel passa a ter o desenho das outras
+   secções das camadas (sem caixa, ▾ verde, Geist 13 px, linhas recuadas); o concelho no centro do mapa lê-se primeiro da CAOP da DGT
+   (ogcapi, colecção municipios), porque a rota do site /pedido-produto/caop estava a demorar mais de 20 s e o painel ficava vazio. */
 (function () {
   "use strict";
   var W = window, D = document;
@@ -54,12 +57,20 @@
   function concelho(lng, lat, cb) {
     var k = lng.toFixed(2) + "," + lat.toFixed(2);
     if (CACHE[k]) return cb(CACHE[k]);
-    var d = 0.002, bb = [lng - d, lat - d, lng + d, lat + d].map(function (x) { return x.toFixed(5); }).join(",");
-    fetch("/wp-json/tcd/v1/pedido-produto/caop?bbox=" + bb, { credentials: "same-origin" }).then(function (r) { return r.json(); }).then(function (j) {
-      var f = j && j.features && j.features[0], p = (f && f.properties) || {};
-      var r = { dico: dicoDe(p), nome: p.municipio || p.concelho || p.Concelho || p.Municipio || "" };
-      CACHE[k] = r; cb(r);
-    }).catch(function () { cb({ dico: "", nome: "" }); });
+    var d = 0.0005, bb = [lng - d, lat - d, lng + d, lat + d].map(function (x) { return x.toFixed(5); }).join(",");
+    function site() {
+      fetch("/wp-json/tcd/v1/pedido-produto/caop?bbox=" + bb, { credentials: "same-origin" }).then(function (r) { return r.json(); }).then(function (j) {
+        var f = j && j.features && j.features[0], p = (f && f.properties) || {};
+        var r = { dico: dicoDe(p), nome: p.municipio || p.concelho || p.Concelho || p.Municipio || "" };
+        if (r.dico) CACHE[k] = r; cb(r);
+      }).catch(function () { cb({ dico: "", nome: "" }); });
+    }
+    var ac = W.AbortController ? new AbortController() : null; if (ac) setTimeout(function () { ac.abort(); }, 12000);
+    fetch(OGC + "?f=json&limit=1&skipGeometry=true&bbox=" + bb, ac ? { signal: ac.signal } : {}).then(function (r) { return r.json(); }).then(function (j) {
+      var p = (j && j.features && j.features[0] && j.features[0].properties) || {};
+      if (!p.dtmn) return site();
+      var r = { dico: String(p.dtmn), nome: p.municipio || "" }; CACHE[k] = r; cb(r);
+    }).catch(site);
   }
 
   // ---------- plantas da câmara ----------
@@ -216,18 +227,29 @@
   }
 
   // ---------- painel ----------
-  var CSS = "#ipr-pdmc{margin:0 0 10px;border:1px solid rgba(148,190,57,.35);border-radius:8px;background:rgba(20,26,16,.55);color:#e9e6da;font:13px/1.45 Inter,system-ui,sans-serif}" +
-    "#ipr-pdmc>summary{list-style:none;cursor:pointer;padding:9px 12px;display:flex;align-items:center;gap:8px;font-weight:600}" +
-    "#ipr-pdmc>summary::-webkit-details-marker{display:none}#ipr-pdmc>summary:before{content:'';width:8px;height:8px;background:#94BE39;clip-path:polygon(100% 0,100% 100%,0 100%);transition:transform .2s}" +
-    "#ipr-pdmc[open]>summary:before{transform:rotate(45deg)}#ipr-pdmc .c{padding:0 12px 12px}#ipr-pdmc label{display:flex;gap:8px;align-items:flex-start;margin:4px 0;cursor:pointer}" +
-    "#ipr-pdmc details{margin:6px 0;border-top:1px solid rgba(255,255,255,.08);padding-top:6px}#ipr-pdmc details summary{cursor:pointer;font-weight:600;color:#cfe3a0}" +
-    "#ipr-pdmc .es{color:#b9bda8;font-size:12px;margin:6px 0}#ipr-pdmc img{max-width:100%;background:#fff;border-radius:4px;margin-top:6px}" +
-    "#ipr-pdmc input[type=range]{width:100%}#ipr-pdmc small{color:#9a9e8a;display:block;margin-top:8px}" +
-    "#ipr-pdmc .lc{display:flex;justify-content:space-between;gap:8px;padding:3px 4px;border-radius:4px;cursor:pointer}#ipr-pdmc .lc:hover{background:rgba(148,190,57,.15)}" +
-    "#ipr-pdmc .lc em{font-style:normal;color:#cfe3a0;font-size:12px;white-space:nowrap}#ipr-pdmc .lc em.nf{color:#8d917e}" +
-    "#ipr-pdmc a.dl{color:#cfe3a0;text-decoration:none;margin-left:auto;padding:0 4px;font-size:12px}#ipr-pdmc a.dl:hover{text-decoration:underline}" +
-    "#ipr-pdmc button.dlt{margin-top:8px;width:100%;padding:6px;border:1px solid rgba(148,190,57,.5);border-radius:6px;background:transparent;color:#e9e6da;cursor:pointer}" +
-    "#ipr-pdmc select{background:#1d2417;color:#e9e6da;border:1px solid rgba(255,255,255,.15);border-radius:4px;padding:4px}";
+  var V = "#94BE39";
+  var CSS = "#ipr-pdmc{margin:0 0 4px;padding:5px 0;color:#e9e6da;font:13px/1.45 Geist,Inter,system-ui,-apple-system,'Segoe UI',sans-serif;border-bottom:1px solid rgba(233,230,218,.08)}" +
+    "#ipr-pdmc summary{list-style:none;cursor:pointer;display:flex;align-items:center;font-weight:600;color:#e9e6da;user-select:none}" +
+    "#ipr-pdmc summary::-webkit-details-marker{display:none}" +
+    "#ipr-pdmc summary:before{content:'▾';color:" + V + ";margin:0 6px 0 0;display:inline-block;transform:rotate(-90deg);transition:transform .15s}" +
+    "#ipr-pdmc details[open]>summary:before,#ipr-pdmc[open]>summary:before{transform:none}" +
+    "#ipr-pdmc summary .n{margin-left:auto;font-weight:600;font-size:12px;color:" + V + "}" +
+    "#ipr-pdmc .c{padding:2px 0 0}" +
+    "#ipr-pdmc label{display:flex;gap:8px;align-items:flex-start;margin:3px 0 3px 14px;cursor:pointer;color:#e9e6da}" +
+    "#ipr-pdmc label span{flex:1;min-width:0}" +
+    "#ipr-pdmc input[type=checkbox],#ipr-pdmc input[type=radio]{accent-color:" + V + ";margin-top:3px}" +
+    "#ipr-pdmc details{margin:4px 0 2px 14px}#ipr-pdmc details>summary{font-weight:600;font-size:12.5px;color:#cfd6bd}" +
+    "#ipr-pdmc details label{margin-left:14px}" +
+    "#ipr-pdmc .es{color:#b9bda8;font-size:12px;margin:4px 0 4px 14px}" +
+    "#ipr-pdmc .op{display:flex;align-items:center;gap:8px;margin:6px 0 2px 14px;font-size:12px;color:#b9bda8}#ipr-pdmc .op input{flex:1;accent-color:" + V + "}" +
+    "#ipr-pdmc img{display:block;max-width:calc(100% - 14px);margin:8px 0 0 14px;background:#fff;border-radius:4px}" +
+    "#ipr-pdmc small{color:#9a9e8a;display:block;margin:6px 0 0 14px;font-size:11.5px;line-height:1.4}" +
+    "#ipr-pdmc .lc{display:flex;justify-content:space-between;gap:8px;margin:0 0 0 14px;padding:2px 6px;border-radius:4px;cursor:pointer}#ipr-pdmc .lc:hover{background:rgba(148,190,57,.12)}" +
+    "#ipr-pdmc .lc em{font-style:normal;color:" + V + ";font-size:12px;white-space:nowrap}#ipr-pdmc .lc em.nf{color:#7d8170}" +
+    "#ipr-pdmc a.dl{color:" + V + ";text-decoration:none;font-size:11.5px;white-space:nowrap;opacity:.85}#ipr-pdmc a.dl:hover{opacity:1;text-decoration:underline}" +
+    "#ipr-pdmc button.dlt{display:block;margin:8px 0 0 14px;width:calc(100% - 14px);padding:6px 10px;border:1px solid rgba(148,190,57,.45);border-radius:999px;background:transparent;color:#e9e6da;font:600 12px Geist,Inter,system-ui,sans-serif;cursor:pointer}" +
+    "#ipr-pdmc button.dlt:hover{background:rgba(148,190,57,.14)}" +
+    "#ipr-pdmc select{display:block;width:calc(100% - 14px);margin:4px 0 4px 14px;background:rgba(20,26,16,.6);color:#e9e6da;border:1px solid rgba(233,230,218,.15);border-radius:6px;padding:4px 6px;font:12.5px Geist,Inter,system-ui,sans-serif}";
   function pintar() {
     var d = D.getElementById("ipr-pdmc"); if (!d) return;
     var c = d.querySelector(".c"); if (!c) return;
@@ -241,14 +263,14 @@
         ["ord", "cond"].forEach(function (gr) {
           var l = S.camadas.filter(function (x) { return grupo(x[1]) === gr; }); if (!l.length) return;
           var aberto = l.some(function (x) { return x[0] === S.escolhida; });
-          h += "<details" + (aberto ? " open" : "") + "><summary>" + (gr === "ord" ? t("Planta de Ordenamento", "Zoning plan") : t("Planta de Condicionantes", "Constraints plan")) + " (" + l.length + ")</summary>";
+          h += "<details" + (aberto ? " open" : "") + "><summary>" + (gr === "ord" ? t("Planta de Ordenamento", "Zoning plan") : t("Planta de Condicionantes", "Constraints plan")) + '<span class="n">' + l.length + "</span></summary>";
           l.forEach(function (x) { h += '<label><input type="radio" name="ipr-pdmc-r" data-pdmc-c="' + esc(x[0]) + '"' + (x[0] === S.escolhida ? " checked" : "") + "> <span>" + esc(rotulo(x[1])) + "</span>" +
-            (explorer() ? "" : '<a class="dl" download href="' + esc(urlPlanta(S.srv, x[0])) + '" title="' + esc(t("Descarregar esta planta (PMTiles)", "Download this plan (PMTiles)")) + '">↓</a>') + "</label>"; });
+            (explorer() ? "" : '<a class="dl" download href="' + esc(urlPlanta(S.srv, x[0])) + '" title="' + esc(t("Descarregar esta planta (PMTiles, abre no QGIS)", "Download this plan (PMTiles)")) + '">↓ PMTiles</a>') + "</label>"; });
           h += "</details>";
         });
-        h += '<label style="display:block">' + t("Opacidade", "Opacity") + ' <input type="range" min="0.2" max="1" step="0.05" value="' + S.op + '" data-pdmc="op"></label>';
+        h += '<div class="op">' + t("Opacidade", "Opacity") + ' <input type="range" min="0.2" max="1" step="0.05" value="' + S.op + '" data-pdmc="op"></div>';
         if (!explorer()) h += '<button type="button" class="dlt" data-pdmc="txt">' + t("Descarregar todas as plantas deste concelho (lista de ligações)", "Download all plans of this municipality (link list)") + "</button>" +
-          "<small>" + t("Cada ↓ descarrega uma planta em PMTiles (abre no QGIS 3.32+). A lista traz as ligações de todas as plantas e legendas, para descarregar de uma vez.", "Each ↓ downloads one plan as PMTiles. The list has every link.") + "</small>";
+          "<small>" + t("PMTiles abre no QGIS 3.32 ou mais recente. A lista traz as ligações de todas as plantas e legendas.", "PMTiles opens in QGIS 3.32+. The list has every link.") + "</small>";
         if (S.escolhida) h += '<img alt="' + esc(t("Legenda da planta", "Plan legend")) + '" src="' + esc(R2 + "snit/" + S.srv + "/" + S.escolhida + "/leg.png") + '" onerror="this.remove()">';
         h += "<small>" + t("Fonte: Câmara Municipal, plantas do PDM publicadas no SNIT (DGT), copiadas pelo IPR. Informação indicativa: não substitui as plantas oficiais nem a consulta à câmara.",
           "Source: Municipality, PDM plans published on SNIT (DGT), copied by IPR. Indicative only.") + "</small>";
