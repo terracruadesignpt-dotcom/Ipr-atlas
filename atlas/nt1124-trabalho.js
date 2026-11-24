@@ -408,13 +408,13 @@
         var az = k / 1440 * 2 * Math.PI, dx = Math.cos(az), dy = Math.sin(az), mxA = -1e9;
         for (var s = 1; s < Rpx; s += 0.7) {
           var x = Math.round(ox + dx * s), y = Math.round(oy + dy * s), i = y * Wp + x, dM = s * G.pxM;
-          var ang = (a[i] - z0) / dM; if (ang >= mxA) { mask[i] = 1; mxA = ang; } else if (ang + 1.7 / dM > mxA) mask[i] = Math.max(mask[i], 0.6);
-          if (ang > mxA) mxA = ang;
+          var ang = (a[i] - z0) / dM;
+          if (ang >= mxA) { mask[i] = mask[i - 1] = mask[i + 1] = mask[i - Wp] = mask[i + Wp] = 1; mxA = ang; }
         }
       }
       var sm = new Float32Array(Wp * Hp);
       for (var y = 1; y < Hp - 1; y++) for (var x = 1; x < Wp - 1; x++) { var t = 0; for (var yy = -1; yy <= 1; yy++) for (var xx = -1; xx <= 1; xx++) t += mask[(y + yy) * Wp + x + xx]; sm[y * Wp + x] = t / 9; }
-      var cs = d3.contours().size([Wp, Hp]).thresholds([0.45])(sm)[0], nPol = 0, ha = 0;
+      var cs = d3.contours().size([Wp, Hp]).thresholds([0.5])(sm)[0], nPol = 0, ha = 0;
       AN.features = AN.features.filter(function (f) { return f.properties.k !== "vista"; });
       (cs.coordinates || []).forEach(function (poly) {
         var rings = poly.map(function (ring) { return ring.map(function (pt) { return G.ll(pt[0], pt[1]); }); });
