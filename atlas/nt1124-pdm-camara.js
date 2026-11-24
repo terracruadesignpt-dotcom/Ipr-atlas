@@ -249,7 +249,7 @@
   }
   (function vez(n) { var a = false, b = false; try { a = bloco(); b = prender(); } catch (e) {} if (a && b) return; if (n < 200) setTimeout(function () { vez(n + 1); }, 150); })(0);
   setInterval(function () { try { bloco(); esconderAntigos(); } catch (e) {} }, 3000);
-  try { new MutationObserver(function () { clearTimeout(W.__iprPdmcMo); W.__iprPdmcMo = setTimeout(function () { try { esconderAntigos(); } catch (e) {} }, 120); })
-    .observe(D.body, { childList: true, subtree: true }); } catch (e) {}
+  setTimeout(function () { try { new MutationObserver(function () { clearTimeout(W.__iprPdmcMo); W.__iprPdmcMo = setTimeout(function () { try { esconderAntigos(); } catch (e) {} }, 120); })
+    .observe(D.getElementById("ipe-cam") || D.body, { childList: true, subtree: true }); } catch (e) {} }, 4000);
   W.__iprPdmCamara = { ligar: ligar, estado: function () { return JSON.parse(JSON.stringify(S)); } };
 })();
