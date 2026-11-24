@@ -60,6 +60,7 @@ jobs:
       - name: Copiar do SNIT e publicar
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}   # 24/11/2026: o publicar corre em /mnt/d, fora do repositório; sem isto o gh falhava e nada era publicado
           SNIT_DEPOIS: ${{ github.workspace }}/ferramentas/snit_publicar.sh
           SNIT_FIOS: "3"
         run: python3 ferramentas/snit_pdm.py copiar lista.json "${{ matrix.g }}" /mnt/d 330 feitos.txt
