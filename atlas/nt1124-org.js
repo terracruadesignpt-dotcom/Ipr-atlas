@@ -8,7 +8,7 @@
    Só corre com ?entidade= (window.IPR_ENTIDADE). Não edita outros ficheiros; tem de carregar antes do entidade.js:
    1. Esconde o bloco «Camadas da organização» (#ipr-ent-esq). As camadas de licenciamento (o roxo do PDM, centenas de
       polígonos que prendiam o navegador) não chegam a ser carregadas; os limites das propriedades ficam ligados no mapa.
-   2. Em «O meu Atlas» saem os filtros, contadores e a lista de todos os projectos; entram cartões das propriedades da
+   2. Em «O meu Atlas» saem os filtros, contadores, «Lista · Projecto aberto · Na IPR Cloud» e a lista de todos os projectos; entram cartões das propriedades da
       organização (imagem de satélite com o limite, área, «Ver no mapa», «Ficha do terreno»).
    3. Separadores Gestão, Projecto e Cloud escondidos em modo organização.
    4. Ao entrar: abre «O meu Atlas» e aproxima à propriedade mais recente.
@@ -64,7 +64,7 @@
     "#ipr-orgt .bt{display:flex;flex-wrap:wrap;gap:6px;margin-top:2px}" +
     "#ipr-orgt .bt a,#ipr-orgt .bt button{font:500 12px Geist,Inter,system-ui,sans-serif;padding:6px 11px;border-radius:999px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:#e6e4d9;cursor:pointer;text-decoration:none}" +
     "#ipr-orgt .bt .p{background:#94BE39;color:#11160d;border-color:#94BE39}" +
-    "html.ipr-org-modo #ipr-ent-dir.dentro{top:var(--ipr-tabs-h,48px)!important;border-left:0!important;background:transparent!important}" +
+    "html.ipr-org-modo #ipr-ent-dir.dentro{top:var(--ipr-tabs-h,48px)!important;border-left:0!important;background:#12160f!important;z-index:6!important}" +
     "html.ipr-org-modo:not(.ipr-tab-org) #ipr-ent-dir{display:none!important}" +
     "html.ipr-org-modo #ipr-ent-dir.dentro>.h{display:none!important}" +
     "html.ipr-org-modo.ipr-tab-org #ipr-ent-dir.fechado{display:none!important}";
@@ -177,7 +177,7 @@
     var pane = sep.parentElement;
     [].forEach.call(pane.children, function (e) {
       if (e === sep || e.id === "ipr-orgt") return;
-      if (/^(ipr-rb|ipr-sint|ipr-demo|ipr-ac-|ipr-bt-f|ipr-pg-f|ipr-px-f|ipe-proj)/.test(e.id || "")) e.classList.add("ipr-orgm-x");
+      if (/^(ipr-rb|ipr-sint|ipr-demo|ipr-ac-|ipr-bt-f|ipr-pg-f|ipr-px-f|ipe-proj)/.test(e.id || "") || e.classList.contains("ipr-sep-v")) e.classList.add("ipr-orgm-x");
     });
     var box = D.getElementById("ipr-orgt");
     if (!box) { box = D.createElement("div"); box.id = "ipr-orgt"; sep.parentNode.insertBefore(box, sep.nextSibling); }
