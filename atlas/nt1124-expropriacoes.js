@@ -31,14 +31,14 @@
   function dataPt(d) { var m = /^(\d{4})-(\d{2})(?:-(\d{2}))?/.exec(d || ""); return m ? (m[3] ? m[3] + "/" : "") + m[2] + "/" + m[1] : (d || ""); }
   function ficha(a) {
     var tema = TEMA[a.tema] ? t(TEMA[a.tema][0], TEMA[a.tema][1]) : a.tema;
-    var h = '<div style="font:13px/1.45 Inter,system-ui,sans-serif;max-width:300px;color:#1d2316"><b>' + esc(a.obra) + "</b>";
-    h += '<div style="color:#5b6150;margin:2px 0 6px">' + esc(tema) + " · " + esc(a.acto) + (a.numero ? " n.º " + esc(a.numero) + (a.numero_confirmado ? "" : " " + t("(por confirmar)", "(to be confirmed)")) : "") + (a.data_dr ? " · " + esc(dataPt(a.data_dr)) : "") + "</div>";
+    var h = '<div style="font:13px/1.45 Inter,system-ui,sans-serif;max-width:300px;color:inherit"><b>' + esc(a.obra) + "</b>";
+    h += '<div style="opacity:.75;margin:2px 0 6px">' + esc(tema) + " · " + esc(a.acto) + (a.numero ? " n.º " + esc(a.numero) + (a.numero_confirmado ? "" : " " + t("(por confirmar)", "(to be confirmed)")) : "") + (a.data_dr ? " · " + esc(dataPt(a.data_dr)) : "") + "</div>";
     var L = [[t("Entidade", "Entity"), a.entidade], [t("Concelhos", "Municipalities"), (a.concelhos || []).join(", ")], [t("Parcelas", "Parcels"), a.parcelas], [t("Área", "Area"), a.area_ha ? String(a.area_ha).replace(".", ",") + " ha" : ""], [t("Estado", "Status"), a.estado]];
-    L.forEach(function (x) { if (x[1] !== null && x[1] !== undefined && x[1] !== "") h += "<div><span style=\"color:#5b6150\">" + esc(x[0]) + ":</span> " + esc(x[1]) + "</div>"; });
-    h += a.geojson ? '<div style="margin-top:4px;color:#5b6150">' + t("Geometria vectorizada pelo IPR (contorno a cerca de 0,7 m dos vértices oficiais).", "Geometry vectorised by IPR (within about 0.7 m of the official vertices).") + "</div>"
-      : '<div style="margin-top:4px;color:#5b6150">' + t("Geometria ainda não disponível: marcador no concelho.", "Geometry not yet available: marker in the municipality.") + "</div>";
+    L.forEach(function (x) { if (x[1] !== null && x[1] !== undefined && x[1] !== "") h += "<div><span style=\"opacity:.75\">" + esc(x[0]) + ":</span> " + esc(x[1]) + "</div>"; });
+    h += a.geojson ? '<div style="margin-top:4px;opacity:.75">' + t("Geometria vectorizada pelo IPR (contorno a cerca de 0,7 m dos vértices oficiais).", "Geometry vectorised by IPR (within about 0.7 m of the official vertices).") + "</div>"
+      : '<div style="margin-top:4px;opacity:.75">' + t("Geometria ainda não disponível: marcador no concelho.", "Geometry not yet available: marker in the municipality.") + "</div>";
     if (a.ligacao_dr) h += '<div style="margin-top:4px"><a href="' + esc(a.ligacao_dr) + '" target="_blank" rel="noopener">' + t("Ver no Diário da República", "See in the Diário da República") + "</a></div>";
-    h += '<div style="margin-top:6px;font-size:11px;color:#6b7060">' + esc(t(AVISO_PT, AVISO_EN)) + "</div></div>";
+    h += '<div style="margin-top:6px;font-size:11px;opacity:.65">' + esc(t(AVISO_PT, AVISO_EN)) + "</div></div>";
     return h;
   }
   function porId(id) { var a = (S.idx && S.idx.actos) || []; for (var i = 0; i < a.length; i++) if (a[i].id === id) return a[i]; return null; }
