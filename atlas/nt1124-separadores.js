@@ -77,6 +77,9 @@
         '<div class="ipr-sep-b"><h5>' + t("Simuladores", "Simulators") + '</h5><div class="g">' +
         '<button type="button" data-sep-s="0">' + t("Simular água", "Simulate water") + "<small>" + t("Escorrência e cheias", "Runoff and floods") + "</small></button>" +
         '<button type="button" data-sep-s="1">' + t("Simular fogo", "Simulate fire") + "<small>" + t("Propagação e risco", "Spread and risk") + "</small></button>" +
+        "</div></div>" +
+        '<div class="ipr-sep-b"><h5>' + t("O seu terreno", "Your land") + '</h5><div class="g g1">' +
+        '<button type="button" data-sep-a="terra">' + t("Encontrar a minha terra", "Find my land") + "<small>" + t("Pela morada, pelo artigo ou desenhando no mapa", "By address, parcel or drawing on the map") + "</small></button>" +
         "</div></div>";
       b.addEventListener("click", function (e) {
         var x = e.target.closest("button"); if (!x) return;
