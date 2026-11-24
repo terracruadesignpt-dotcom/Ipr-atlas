@@ -13,7 +13,8 @@
   var G = "rgba(13,17,11,.68)", B = "1px solid rgba(255,255,255,.08)", SH = "inset 0 1px 0 rgba(255,255,255,.05),0 18px 40px -12px rgba(0,0,0,.55)", BL = "blur(18px) saturate(140%)";
   var F = "Geist,Inter,system-ui,-apple-system,'Segoe UI',sans-serif";
   var CSS =
-    "html.ipr-vidro #ipe{background:#0b100a!important}" +
+    "html.ipr-vidro #ipe{background:#0b100a!important;grid-template-rows:76px minmax(0,1fr) 30px!important}" +
+    "html.ipr-vidro #ipe>.ipe-top{height:52px!important;box-sizing:border-box}" +
     /* mapa por baixo de tudo */
     "html.ipr-vidro #ipe-mapa{grid-row:1/-1!important;grid-column:1/-1!important;z-index:0}" +
     "html.ipr-vidro #ipe>.ipe-top,html.ipr-vidro #ipe-esq,html.ipr-vidro #ipe-dir{z-index:3;background:" + G + "!important;backdrop-filter:" + BL + ";-webkit-backdrop-filter:" + BL + ";border:" + B + "!important;box-shadow:" + SH + "!important}" +
