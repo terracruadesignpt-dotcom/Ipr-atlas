@@ -20,8 +20,8 @@
     "#ipr-be-pq .ipe-sb,#ipr-be-pq .ipe-sbc,#ipr-be-pq #ipe-busca{width:100%!important;max-width:none!important}" +
     "#ipr-be-pq #ipe-busca{height:38px;border-radius:10px}#ipr-be-pq #ipe-q{flex:1 1 auto;min-width:0;font-size:14px}" +
     ".ipe-top>#ipr-tp-meio:not(:has(>:not([hidden]):not([style*='none'])))" + "{display:none!important}" +
-    ".ipe-top>#ipr-pz-top{order:0;flex:0 0 auto;height:36px;padding:0 14px;border-radius:10px;border:1px solid #94BE39;background:rgba(148,190,57,.14);color:#e9f2cf;font:600 13px Inter,system-ui,sans-serif;white-space:nowrap;cursor:pointer}" +
-    ".ipe-top>#ipr-pz-top:hover{background:rgba(148,190,57,.28)}" +
+    "#tb-bar>#ipr-pz-top{display:none!important}.ipe-top>#ipr-terra-topo{flex:0 0 auto;height:36px;padding:0 14px;border-radius:10px;border:1px solid #94BE39;background:rgba(148,190,57,.14);color:#e9f2cf;font:600 13px Inter,system-ui,sans-serif;white-space:nowrap;cursor:pointer}" +
+    ".ipe-top>#ipr-terra-topo:hover{background:rgba(148,190,57,.28)}" +
     ".ipe-tr{gap:6px}.ipe-tr>#ipe-user,.ipe-tr>#ipr-sair-topo,.ipe-tr>#ipr-simh-top,.ipe-tr>#ipr-z67,.ipe-tr>#ipr-lg-topo{display:none!important}" +
     "#ipr-conta{position:relative}#ipr-conta>button{height:34px;padding:0 12px;border-radius:9px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.05);color:#e9e6da;font:600 13px Inter,system-ui,sans-serif;cursor:pointer;white-space:nowrap}" +
     "#ipr-conta>button:after{content:' ▾';color:#94BE39}" +
@@ -33,8 +33,7 @@
     "#ipr-conta-m #ipr-z67,#ipr-conta-m #ipr-lg-topo{display:inline-flex!important;padding:0;width:auto}" +
     /* linha 2 */
     "#tb-bar .ipr-bt-l{font:600 10px 'IBM Plex Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:#9a9e8a;margin:0 4px 0 10px;align-self:center;white-space:nowrap}" +
-    "#tb-bar #ipr-bt-vista{display:inline-flex;gap:4px;align-items:center;margin-left:10px}" +
-    "#tb-bar #ipr-bt-vista .ipr-pb-3d{position:static!important;height:26px}";
+    "";
 
   function contaMenu() {
     var tr = D.querySelector(".ipe-top .ipe-tr"), user = $("ipe-user");
@@ -79,12 +78,17 @@
   function nomeConta() { var u = $("ipe-user"); return u ? (u.getAttribute("data-nome") || "") : ""; }
 
   function procurarTerra() {
+    // botão próprio no topo (o original fica na linha técnica, escondido; outro módulo volta a pô-lo lá)
     var p = $("ipr-pz-top"), pq = $("ipr-be-pq"), top = D.querySelector(".ipe-top");
     if (!p || !pq || !top) return;
-    if (p.parentNode !== top || p.previousElementSibling !== pq) top.insertBefore(p, pq.nextSibling);
-    var r = t("Encontrar a minha terra", "Find my land");
-    if (p.textContent.trim() !== r) p.textContent = r;
-    p.title = t("Mostre no mapa o seu terreno e veja a ficha gratuita", "Show your plot on the map and see the free sheet");
+    var b = $("ipr-terra-topo");
+    if (!b) {
+      b = D.createElement("button"); b.type = "button"; b.id = "ipr-terra-topo";
+      b.addEventListener("click", function () { var o = $("ipr-pz-top"); if (o) o.click(); });
+    }
+    b.textContent = t("Encontrar a minha terra", "Find my land");
+    b.title = t("Mostre no mapa o seu terreno e veja a ficha gratuita", "Show your plot on the map and see the free sheet");
+    if (b.parentNode !== top || b.previousElementSibling !== pq) top.insertBefore(b, pq.nextSibling);
   }
 
   function linha2() {
@@ -100,13 +104,6 @@
       var w = D.createTreeWalker(m, NodeFilter.SHOW_TEXT, null), n;
       while ((n = w.nextNode())) { if (/^\s*os meus\s*$/i.test(n.nodeValue)) n.nodeValue = t("Vistas guardadas", "Saved views"); }
     }
-    // 3D e Vol saem da pesquisa para a direita da linha técnica
-    var v = $("ipr-bt-vista");
-    if (!v) { v = D.createElement("span"); v.id = "ipr-bt-vista"; }
-    if (v.parentNode !== tb || v !== tb.lastElementChild) tb.appendChild(v);
-    var b3 = $("ipr-pb-3d"), bv = D.querySelector("#ipe-busca .ipr-vol-int") || D.querySelector("#ipr-bt-vista .ipr-vol-int");
-    if (b3 && b3.parentNode !== v) v.appendChild(b3);
-    if (bv && bv.parentNode !== v) v.appendChild(bv);
   }
 
   function correr() {
