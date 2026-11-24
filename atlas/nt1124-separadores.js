@@ -14,6 +14,7 @@
   function en() { return /^en/i.test(D.documentElement.lang || "") || W.IPR_LINGUA === "en"; }
   function t(pt, e) { return en() ? e : pt; }
   function $(id) { return D.getElementById(id); }
+  function esc(x) { return String(x == null ? "" : x).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" }[c]; }); }
   function tab(k) { return D.querySelector('#ipe-tabs [data-tab="' + k + '"]'); }
   function pane(k) { return D.querySelector('#ipe-corpo>[data-pane="' + k + '"]'); }
   var mostrarParadas = false;
@@ -32,6 +33,9 @@
     ".ipr-sep-b button small,.ipr-sep-b a.bt small{font-weight:400;font-size:11px;color:#9a9e8a}" +
     ".ipr-sep-b .pri{border-color:#94BE39;background:rgba(148,190,57,.16)}" +
     "[data-pane=enc]:not(.ipr-sep-base)>.ipr-fd-leg,[data-pane=enc]:not(.ipr-sep-base)>#ipr-proc-sel,[data-pane=enc]:not(.ipr-sep-base)>#ipe-form,[data-pane=enc]:not(.ipr-sep-base)>#ipr-conv,[data-pane=enc]>.ipr-fd-leg{display:none!important}" +
+    "#tb-bar .tb-m{display:none!important}#ipr-sep-vistas{margin-top:10px}#ipr-sep-vistas .vb{display:flex;flex-wrap:wrap;gap:6px}" +
+    "#ipr-sep-vistas .vb button{display:inline-flex;align-items:center;justify-content:center;min-width:34px;height:28px;padding:0 10px;border-radius:7px;font:600 12px Inter,system-ui,sans-serif}" +
+    "#ipr-sep-vistas .vb button[aria-pressed=true]{border-color:#94BE39;background:rgba(148,190,57,.18)}" +
     /* O meu Atlas: lista das Bases compacta, uma linha baixa por Base */
     "[data-pane=proj] article.ipr-pc>.ipe-cc{min-height:0!important}" +
     "[data-pane=proj] article.ipr-pc .ipr-fn-h{padding:1px 30px 1px 4px!important;min-height:0!important;font-size:12px!important;line-height:1.3!important;gap:6px}" +
@@ -116,6 +120,27 @@
       });
     }
     if (p.firstElementChild !== b) p.insertBefore(b, p.firstChild);
+    // vistas guardadas: os botões originais ficam na linha técnica (escondidos, os eventos podem estar no #tb-bar);
+    // aqui há botões iguais que carregam neles, com o mesmo estado e o mesmo título
+    var vm = D.querySelector("#tb-bar .tb-m");
+    if (vm) {
+      var vw = $("ipr-sep-vistas");
+      if (!vw) {
+        vw = D.createElement("div"); vw.id = "ipr-sep-vistas"; b.appendChild(vw);
+        vw.addEventListener("click", function (e) {
+          var x = e.target.closest("button[data-ref]"); if (!x) return;
+          var o = D.querySelector("#tb-bar .tb-m " + x.getAttribute("data-ref")); if (o) clicar(o);
+          setTimeout(blocoMeu, 300);
+        });
+      }
+      var h = "<h5>" + t("Vistas guardadas", "Saved views") + '</h5><div class="vb">';
+      [].forEach.call(vm.querySelectorAll("button"), function (o) {
+        var ref = o.hasAttribute("data-px") ? '[data-px="' + o.getAttribute("data-px") + '"]' : "[data-pxg]";
+        h += '<button type="button" data-ref=\'' + ref + '\' aria-pressed="' + (o.getAttribute("aria-pressed") || "false") + '" title="' + esc(o.title || "") + '"' + (o.disabled ? " disabled" : "") + ">" + esc(o.textContent) + "</button>";
+      });
+      h += "</div>";
+      if (vw.getAttribute("data-h") !== h) { vw.setAttribute("data-h", h); vw.innerHTML = h; }
+    }
     var nl = b.querySelector('[data-sep-n="loc"]'), lt = tab("loc");
     if (nl && lt) { var n = (lt.textContent.match(/\d+/) || [""])[0]; var tx = n ? n + " " + t("guardados", "saved") : t("Pontos e áreas guardados", "Saved points and areas"); if (nl.textContent !== tx) nl.textContent = tx; }
   }
