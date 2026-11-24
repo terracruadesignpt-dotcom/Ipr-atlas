@@ -20,6 +20,7 @@
   function mapa() { return W.__ipe && W.__ipe.mapa; }
   function desenho() { var M = mapa(); return M && (M._controls || []).filter(function (x) { return x && typeof x.getAll === "function" && typeof x.changeMode === "function"; })[0]; }
 
+  function pc() { try { return W.matchMedia("(min-width: 1024px)").matches; } catch (e) { return W.innerWidth >= 1024; } }
   var modo = "mao";
   try { if (W.localStorage.getItem("ipr_ml_modo") === "lapis") modo = "lapis"; } catch (e) {}
 
@@ -39,7 +40,7 @@
     "#ipr-ml-av .bt{display:flex;gap:6px;margin-top:10px}" +
     "#ipr-ml-av .bt button{height:30px;padding:0 13px;border-radius:999px;border:1px solid rgba(255,255,255,.16);background:none;color:#e6e4d9;font:500 12.5px Geist,Inter,system-ui,sans-serif;cursor:pointer}" +
     "#ipr-ml-av .bt button.p{background:#e5484d;border:0;color:#fff}" +
-    "@media (max-width:1023px){#ipr-ml{margin-left:4px}#ipr-ml button{width:40px;height:36px}}";
+    "@media (max-width:1023px){#ipr-ml{display:none!important}}"; /* telemóvel: fica como estava (sem mão nem lápis) */
 
   function aviso(html, ms, botoes) {
     var a = D.getElementById("ipr-ml-av"); if (!a) { a = D.createElement("div"); a.id = "ipr-ml-av"; D.body.appendChild(a); }
@@ -57,7 +58,7 @@
     var g = D.getElementById("ipr-ml"); if (!g) return;
     g.querySelector('[data-m="mao"]').classList.toggle("on", modo === "mao");
     g.querySelector('[data-m="lapis"]').classList.toggle("on", modo === "lapis");
-    D.documentElement.classList.toggle("ipr-ml-mao", modo === "mao");
+    D.documentElement.classList.toggle("ipr-ml-mao", modo === "mao" && pc());
   }
   function mudar(m, avisar) {
     modo = m; try { W.localStorage.setItem("ipr_ml_modo", m); } catch (e) {}
@@ -67,24 +68,24 @@
   }
   var aSoltar = false;
   function soltar() {
-    var d = desenho(); if (!d || aSoltar) return;
+    var d = desenho(); if (!d || aSoltar || !pc()) return;
     try { var md = d.getMode(); if (md === "direct_select" || (md === "simple_select" && d.getSelectedIds().length)) { aSoltar = true; d.changeMode("simple_select", { featureIds: [] }); aSoltar = false; } } catch (e) { aSoltar = false; }
   }
 
   function ligarMapa() {
     var M = mapa(); if (!M || M.__iprML) return; M.__iprML = 1;
     M.on("draw.modechange", function (e) {
-      if (modo !== "mao" || aSoltar) return;
+      if (modo !== "mao" || aSoltar || !pc()) return;
       var md = e && e.mode || "";
       if (/^draw_/.test(md) || md === "draw_polygon") { mudar("lapis"); aviso(t("Para desenhar é preciso o <b>lápis</b>. Passei para o lápis.", "Drawing needs the <b>pencil</b>. Switched to pencil."), 3500); return; }
       if (md === "direct_select") setTimeout(soltar, 0);
     });
-    M.on("draw.selectionchange", function () { if (modo === "mao") setTimeout(soltar, 0); });
+    M.on("draw.selectionchange", function () { if (modo === "mao" && pc()) setTimeout(soltar, 0); });
   }
 
   // ferramentas de desenho do nt1124-trabalho (faixa «Desenhar»): com a mão, passam ao lápis com o aviso
   D.addEventListener("click", function (e) {
-    if (modo !== "mao") return;
+    if (modo !== "mao" || !pc()) return;
     var b = e.target.closest && e.target.closest("#ipr-trb button[data-s], #ipr-modos-acc button");
     if (!b) return;
     var s = (b.getAttribute("data-s") || b.textContent || "");

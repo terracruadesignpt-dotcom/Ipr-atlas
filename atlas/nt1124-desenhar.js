@@ -143,11 +143,11 @@
   function correr() {
     if (!D.head || !D.body) return;
     var ligar = pc() && emDesenhar() && !!acc() && !!trb();
-    if (ligar) { montar(); if (!aberto) { aberto = true; render(); } posicionar(); }
+    if (ligar) { montar(); if (!aberto) { aberto = true; render(); posicionar(); } } /* depois de aberto pode ser arrastado (pega da janela) */
     else if (aberto) { aberto = false; st.sel = ""; }
     R.classList.toggle("ipr-dp-on", ligar);
   }
   (function vez(n) { correr(); if (n < 120) setTimeout(function () { vez(n + 1); }, 400); })(0);
   setInterval(correr, 600);
-  W.addEventListener("resize", correr);
+  W.addEventListener("resize", function () { correr(); if (aberto) posicionar(); });
 })();
