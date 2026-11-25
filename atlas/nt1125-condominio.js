@@ -443,7 +443,7 @@
       .then(function (x) { var j = null; try { j = JSON.parse(x); } catch (e) {} ctx = j && j.success ? j.data : { fora: 1 }; return ctx; })
       .catch(function () { return { fora: 1, erro: 1 }; });
   }
-  function tipoDe(o) { if (o.modelo === "municipio" && /junta|freguesia/i.test(o.nome)) return "co-gestao"; if (o.modelo === "municipio") return "tutela"; return "parceria"; }
+  function tipoDe(o) { if (/junta|freguesia/i.test(o.nome)) return "co-gestao"; if (o.modelo === "municipio" || /munic[ií]pio|c[aâ]mara municipal/i.test(o.nome)) return "tutela"; return "parceria"; }
   function permDe(tp) { return tp === "parceria" ? "editar" : "administrar"; }
   function perto(c) { var p = String(c.ll || "").split(",").map(Number); return p.length === 2 && Math.abs(p[0] - ultimo.ll[0]) < 0.0012 && Math.abs(p[1] - ultimo.ll[1]) < 0.0009; }
   function linhaOrg(o) {
