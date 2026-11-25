@@ -466,5 +466,11 @@
   (function est(n) { var ok = false; try { ok = estiloCrus(); } catch (e) {} if (!ok && n < 200) setTimeout(function () { est(n + 1); }, 150); })(0);
   setTimeout(function () { try { new MutationObserver(function () { clearTimeout(W.__iprPdmcMo); W.__iprPdmcMo = setTimeout(function () { try { esconderAntigos(); } catch (e) {} }, 120); })
     .observe(D.getElementById("ipe-cam") || D.body, { childList: true, subtree: true }); } catch (e) {} }, 4000);
-  W.__iprPdmCamara = { ligar: ligar, estado: function () { return JSON.parse(JSON.stringify(S)); } };
+  // v5b (25/11): o painel «O essencial › Neste concelho» usa a mesma procura do concelho e sabe quantas plantas há copiadas.
+  function plantasDe(dico, cb) {
+    if (!dico) return cb(-1);
+    fetch(R2 + "snit/" + dico + "/servico.json", { cache: "no-cache" }).then(function (r) { if (!r.ok) throw 0; return r.json(); })
+      .then(function (j) { var l = (j && (j.todas || j.camadas)) || []; cb(l.length || 0); }).catch(function () { cb(0); });
+  }
+  W.__iprPdmCamara = { ligar: ligar, estado: function () { return JSON.parse(JSON.stringify(S)); }, concelhoEm: concelho, plantasDe: plantasDe };
 })();

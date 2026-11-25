@@ -46,24 +46,33 @@
   ];
   var ABERTOS = { aqui: 1, rel: 1, cond: 1 };
   // camadas «deste sítio»: o concelho no centro do mapa (mesma rota CAOP do bloco do PDM; uma consulta por ~5 km, só com a lista à vista)
-  var AQUI = ["ren", "ran", "crus"], LOC = { nome: "", k: "" }, LCACHE = {}, ltmp = null;
+  var AQUI = ["ren", "ran", "crus"], LOC = { nome: "", k: "", dico: "", np: -1 }, LCACHE = {}, ltmp = null;
   function pdm() { return W.__iprPdmCamara || null; }
   function fmt(n) { n = String(n || ""); if (n !== n.toUpperCase()) return n; return n.toLowerCase().replace(/(^|[\s-])(\S)/g, function (a, b, x) { return b + x.toUpperCase(); }).replace(/ (De|Da|Do|Das|Dos|E) /g, function (a) { return a.toLowerCase(); }); }
   function pdmOn() { try { return !!(pdm() && pdm().estado().on); } catch (e) { return false; } }
+  // 25/11 (Nuno, 12h30: «quando muda de concelho, o painel tem que actualizar e adaptar ao concelho e apresentar o que existe»):
+  // o concelho vem da CAOP da DGT pela mesma procura do bloco do PDM (rápida e certa junto às fronteiras); a rota do site só
+  // fica de recurso. Para cada concelho diz quantas plantas da câmara já estão copiadas.
   function local() {
     var I = W.__ipe && W.__ipe.mapa, box = D.getElementById("ipr-eng"); if (!I || !box || !box.offsetParent) return;
-    if (I.getZoom() < 10) { if (LOC.nome) { LOC.nome = ""; LOC.k = ""; pintar(); } return; }
-    try { var e = pdm() && pdm().estado(); if (e && e.on && e.nome && fmt(e.nome) !== LOC.nome) { LOC.nome = fmt(e.nome); pintar(); return; } } catch (er) {}
-    var c = I.getCenter(), k = (Math.round(c.lng * 20) / 20).toFixed(2) + "," + (Math.round(c.lat * 20) / 20).toFixed(2);
+    if (I.getZoom() < 9) { if (LOC.nome) { LOC.nome = ""; LOC.k = ""; LOC.dico = ""; LOC.np = -1; pintar(); } return; }
+    var c = I.getCenter(), k = (Math.round(c.lng * 50) / 50).toFixed(2) + "," + (Math.round(c.lat * 50) / 50).toFixed(2);
     if (k === LOC.k) return; LOC.k = k;
-    if (LCACHE[k] !== undefined) { if (LCACHE[k] !== LOC.nome) { LOC.nome = LCACHE[k]; pintar(); } return; }
+    function poe(n, dico) {
+      n = fmt(n || "");
+      if (n === LOC.nome && dico === LOC.dico) return;
+      LOC.nome = n; LOC.dico = dico || ""; LOC.np = -1; pintar();
+      var P = pdm(); if (P && P.plantasDe && LOC.dico) P.plantasDe(LOC.dico, function (np) { if (LOC.dico === dico) { LOC.np = np; pintar(); } });
+    }
+    if (LCACHE[k] !== undefined) { poe(LCACHE[k][0], LCACHE[k][1]); return; }
+    var P = pdm();
+    if (P && P.concelhoEm) { P.concelhoEm(c.lng, c.lat, function (r) { r = r || {}; if (r.nome) LCACHE[k] = [r.nome, r.dico || ""]; if (LOC.k === k) poe(r.nome, r.dico); }); return; }
     var d = 0.002, bb = [c.lng - d, c.lat - d, c.lng + d, c.lat + d].map(function (x) { return x.toFixed(5); }).join(",");
     fetch("/wp-json/tcd/v1/pedido-produto/caop?bbox=" + bb, { credentials: "same-origin" }).then(function (r) { return r.json(); }).then(function (j) {
       var f = j && j.features && j.features[0], q = (f && f.properties) || {};
       var n = String(q.municipio || q.concelho || q.Concelho || q.Municipio || "");
-      n = fmt(n);
-      LCACHE[k] = n; if (n !== LOC.nome) { LOC.nome = n; pintar(); }
-    }).catch(function () { LCACHE[k] = ""; });
+      LCACHE[k] = [n, ""]; if (LOC.k === k) poe(n, "");
+    }).catch(function () {});
   }
   var lpreso = false;
   function prenderLocal() { var I = W.__ipe && W.__ipe.mapa; if (!I || lpreso) return; lpreso = true; I.on("moveend", function () { clearTimeout(ltmp); ltmp = setTimeout(local, 800); }); setTimeout(local, 1200); }
@@ -107,12 +116,16 @@
     cam.classList.toggle("ipr-pdm-on", pOn);
     var abA = "aqui" in abertos ? abertos.aqui : true;
     h += '<details data-g="aqui"' + (abA ? " open" : "") + "><summary>" + esc(LOC.nome ? t("Neste concelho · ", "In this municipality · ") + LOC.nome : t("Neste concelho", "In this municipality")) + (lgA ? '<span class="n">' + lgA + "</span>" : "") + "</summary>";
-    if (pdm()) h += '<label><input type="checkbox" data-pdm="1"' + (pOn ? " checked" : "") + "> <span>" + esc(LOC.nome ? t("PDM de ", "PDM of ") + LOC.nome : t("PDM da câmara", "Municipal PDM")) + "</span></label>";
+    if (pdm()) {
+      var npT = !LOC.nome ? "" : LOC.np > 0 ? t(LOC.np + " plantas", LOC.np + " plans") : LOC.np === 0 ? t("em cópia", "being copied") : "";
+      h += '<label><input type="checkbox" data-pdm="1"' + (pOn ? " checked" : "") + (LOC.nome && LOC.np === 0 ? " disabled" : "") + "> <span>" + esc(LOC.nome ? t("Plantas originais do PDM de ", "Original PDM plans of ") + LOC.nome : t("Plantas originais do PDM da câmara", "Original municipal PDM plans")) + "</span>" + (npT ? "<small>" + esc(npT) + "</small>" : "") + "</label>";
+    }
     aq.forEach(function (i) {
       var x = C[i], bl = explorer() && x.lic === "r";
       h += '<label' + (bl ? ' class="bl"' : "") + '><input type="checkbox" data-cam="' + esc(i) + '"' + (on[i] ? " checked" : "") + (bl ? " disabled" : "") + "> <span>" + esc(nome(x) + (LOC.nome ? " · " + LOC.nome : "")) + "</span>" + (bl ? "<small>Intelligence</small>" : "") + "</label>";
     });
-    if (!LOC.nome) h += '<div class="es" style="margin:4px 0 0 14px">' + t("Aproxime o mapa a um terreno para ver as plantas da câmara.", "Zoom in to a plot to see the municipal plans.") + "</div>";
+    if (!LOC.nome) h += '<div class="es" style="margin:4px 0 0 14px">' + t("Aproxime o mapa a um concelho para ver o que há dele.", "Zoom in to a municipality to see what is available.") + "</div>";
+    else if (LOC.np === 0) h += '<div class="es" style="margin:4px 0 0 14px">' + t("As plantas originais desta câmara ainda estão a ser copiadas. O ordenamento IPR já cobre o concelho.", "This municipality's original plans are still being copied. The IPR zoning already covers it.") + "</div>";
     h += "</details>";
     GRUPOS.forEach(function (g) {
       var ids = g[3].filter(function (i) { return C[i]; }); if (!ids.length) return;
