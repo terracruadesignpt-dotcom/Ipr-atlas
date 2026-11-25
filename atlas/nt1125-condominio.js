@@ -196,7 +196,8 @@
       m.querySourceFeatures("iprv-omt", { sourceLayer: "transportation" }).forEach(function (f) {
         var h = OMT[f.properties.class]; if (!h) return; var g = f.geometry;
         if (g.type !== "LineString" && g.type !== "MultiLineString") return;
-        out.push({ tags: { highway: h, name: f.properties.name || "", ref: f.properties.ref || "" }, coords: g.type === "LineString" ? [g.coordinates] : g.coordinates });
+        var cs = g.type === "LineString" ? [g.coordinates] : g.coordinates, dentro = cs.some(function (c) { return c.some(function (p) { return p[0] >= b[0] && p[0] <= b[2] && p[1] >= b[1] && p[1] <= b[3]; }); });
+        if (dentro) out.push({ tags: { highway: h, name: f.properties.name || "", ref: f.properties.ref || "" }, coords: cs });
       });
     } catch (e) {}
     out.fonte = "mapa"; return out;
