@@ -282,7 +282,7 @@
       cel.forEach(function (x) { if (acc >= alvo * (grupos.length) && grupos.length < PARCELAS) grupos.push([]); grupos[grupos.length - 1].push(x); acc += x.properties.a; });
       var ps = [];
       grupos.forEach(function (gr) { if (!gr.length) return; var x; try { x = gr.length > 1 ? T.union(T.featureCollection(gr)) : gr[0]; } catch (e) { x = gr[0]; } if (!x) return; x.properties = { tipo: "parcela", ha: +ha(T.area(x)).toFixed(3) }; ps.push(x); });
-      ps.forEach(function (p, i) { p.properties.n = i + 1; p.properties.ordem = i + 1; p.properties.dias = DIAS; p.properties.estado = "proposta";
+      ps.forEach(function (p, i) { p.properties.n = i + 1; p.properties.ordem = i + 1; p.properties.dias = DIAS; p.properties.estado = "proposta"; p.properties.verificar = t("arbustos abaixo da altura do Anexo I do Despacho 675/2026; copas a 2 m", "shrubs below Annex I height (Order 675/2026); crowns 2 m apart");
         p.properties.abelhas = i % 2 ? t("descanso na Primavera (flor para as abelhas)", "rest in spring (flowers for bees)") : ""; });
       res.parcelas = ps;
     } catch (e) { res.parcelas = []; }
@@ -521,7 +521,7 @@
     if (!res.vias.length) return h + "<p><small>" + t("Sem estradas cartografadas na zona.", "No mapped roads nearby.") + "</small></p>";
     h += "<p><b>" + fmt(res.haVia, 1) + " ha</b>" + (res.viaKm ? " " + t("em", "along") + " " + fmt(res.viaKm, 1) + " km " + t("de vias", "of roads") : "") + " · " + fmt(res.haViaFora, 1) + " ha " + t("fora da faixa de 100 m", "outside the 100 m belt") + "</p><table>";
     Object.keys(res.viaEnt).sort(function (a, b) { return res.viaEnt[b] - res.viaEnt[a]; }).forEach(function (k) { h += "<tr><td>" + esc(k) + "</td><td class='n'>" + fmt(res.viaEnt[k], 2) + " ha</td></tr>"; });
-    return h + "</table><small>" + t("A lei põe a gestão destas faixas a cargo de quem gere a via. São contínuas e fáceis de percorrer: boas para começar o pastoreio e para estudar a vegetação. Vias do OpenStreetMap; quem gere cada via está por confirmar.", "The law puts these strips on whoever manages the road. Continuous and easy to walk: good to start grazing and to study vegetation. Roads from OpenStreetMap; road managers to be confirmed.") + "</small>";
+    return h + "</table><small>" + t("A gestão destas faixas cabe a quem gere a via (10 m de cada lado, regime transitório do DL 124/2006 mantido pelo DL 82/2021). São contínuas e fáceis de percorrer: boas para começar o pastoreio e para estudar a vegetação. Vias do OpenStreetMap; quem gere cada via está por confirmar.", "The law puts these strips on whoever manages the road. Continuous and easy to walk: good to start grazing and to study vegetation. Roads from OpenStreetMap; road managers to be confirmed.") + "</small>";
   }
   function blocoPast(res) {
     var h = "<h4>" + t("Pastoreio (cabras e ovelhas)", "Grazing (goats and sheep)") + "</h4>";
@@ -530,6 +530,9 @@
     h += "<p>" + t("Área pastável", "Grazeable area") + ": <b>" + fmt(res.haPast, 1) + " ha</b> (" + t("matos, pinhal, folhosas e bermas", "shrubland, pine, broadleaves and road strips") + ") · <b>" + n + "</b> " + t("parcelas de rotação", "rotation plots") + "</p>";
     h += "<p class='pp'><label>" + t("Parcelas", "Plots") + " <input class='e' type='number' min='2' max='40' data-past='parcelas' value='" + PARCELAS + "'></label> <label>" + t("dias por parcela", "days per plot") + " <input class='e' type='number' min='1' max='90' data-past='dias' value='" + DIAS + "'></label> <label>€/ha <input class='e' type='number' min='0' step='50' data-past='eur' value='" + EUR_PAST + "'></label></p>";
     h += "<p><small>" + t("Uma volta completa leva", "A full round takes") + " <b data-past-ciclo>" + n * DIAS + "</b> " + t("dias.", "days.") + " <span data-past-comp>" + compPast(res) + "</span></small></p>";
+    h += "<details><summary>" + t("Como se prova que a faixa está cumprida", "How compliance is shown") + "</summary><small>" +
+      t("O regulamento das normas técnicas (Despacho n.º 675/2026) incentiva a pastorícia na faixa em torno dos edifícios (art. 14.º, n.º 1, al. i)). A verificação faz-se pelo estado da vegetação: arbustos abaixo da altura do Anexo I, que desce com o coberto (cerca de 1,25 m até 20 %, 0,70 m entre 20 e 30 %, 0,45 m entre 40 e 50 %, 0,30 m acima de 60 %), e copas das árvores a pelo menos 2 m umas das outras, com desramação. Pastagem com pastoreio regular e erva abaixo de 0,3 m é ocupação compatível (Anexo II). O pastor regista no Caderno de terreno a entrada, a saída e fotografias de cada parcela.",
+        "The technical standards (Order 675/2026) encourage grazing in the belt around buildings (art. 14(1)(i)). Compliance is checked on the vegetation: shrubs below the Annex I height, which falls with cover (about 1.25 m up to 20 %, 0.70 m at 20-30 %, 0.45 m at 40-50 %, 0.30 m above 60 %), and tree crowns at least 2 m apart, with pruning. Regularly grazed pasture under 0.3 m is a compatible use (Annex II). The herder logs entry, exit and photos per plot in the Field notebook.") + "</small></details>";
     return h + "<small>" + t("Proposta de partida para acertar com o pastor: número de animais, cercas móveis, água e datas. As parcelas pares descansam na Primavera para dar flor às abelhas. O fogo controlado fica como último recurso.", "Starting proposal to settle with the herder: herd size, mobile fencing, water and dates. Even plots rest in spring to flower for bees. Prescribed fire is the last resort.") + "</small>";
   }
   function compPast(res) {
