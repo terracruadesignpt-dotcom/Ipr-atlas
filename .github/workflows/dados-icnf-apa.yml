@@ -5,6 +5,8 @@
 name: dados-icnf-apa
 on:
   workflow_dispatch:
+    inputs:
+      so: { description: "só serviços cujo URL contém (vírgulas; vazio = todos)", default: "" }
   schedule:
     - cron: "41 2 * * 0"
 permissions:
@@ -19,7 +21,7 @@ jobs:
       - id: l
         run: |
           python3 ferramentas/arcgis_copiar.py lista s.json
-          echo "m=$(python3 -c 'import json;print(json.dumps({"include":json.load(open("s.json"))}))')" >> $GITHUB_OUTPUT
+          echo "m=$(SO="${{ github.event.inputs.so }}" python3 -c 'import json,os;s=[x for x in os.environ.get("SO","").split(",") if x];l=json.load(open("s.json"));l=[x for x in l if not s or any(k in x["url"] for k in s)];print(json.dumps({"include":l}))')" >> $GITHUB_OUTPUT
   copiar:
     needs: lista
     runs-on: ubuntu-24.04
