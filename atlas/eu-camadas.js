@@ -1,4 +1,4 @@
-/* IPR Atlas · camadas oficiais de outros países europeus (21/10/2026). Generaliza o es-camadas.js (Espanha):
+/* IPR Atlas · camadas oficiais de outros países europeus (21/10/2026; relevo LiDAR da Bélgica, Luxemburgo, Alemanha e MDS dos Países Baixos a 25/11/2026, testados na origem terracruadesign.pt). Generaliza o es-camadas.js (Espanha):
    um grupo na barra de camadas que só aparece quando o centro do mapa está num dos países do catálogo, com as camadas
    desse país e duas camadas europeias comuns (Rede Natura 2000 e CORINE Land Cover). Cada URL foi testada a 21/10 a partir
    de um navegador na origem terracruadesign.pt (resposta 200, imagem com conteúdo, CORS aberto); as que falharam ficam
@@ -61,25 +61,30 @@
       [FUNDO, [R("nl-orto", t("Ortofoto (PDOK)", "Ortofoto (PDOK)", "Orthophoto (PDOK)"), PDOK + "hwh/luchtfotorgb/wmts/v1_0/Actueel_orthoHR/EPSG:3857/{z}/{x}/{y}.jpeg", 0, 19, 1, "Beeldmateriaal.nl, CC BY 4.0")]],
       [PROP, [R("nl-cad", t("Cadastro (Kadaster)", "Catastro (Kadaster)", "Cadastre (Kadaster)"), wms(PDOK + "kadaster/kadastralekaart/wms/v5_0", "Perceel"), 15, 22, 0.9, "© Kadaster, CC BY 4.0"),
               R("nl-limites", t("Municípios", "Municipios", "Municipalities"), wms(PDOK + "kadaster/bestuurlijkegebieden/wms/v1_0", "Gemeentegebied"), 7, 22, 0.7, "© Kadaster, CC BY 4.0")]],
-      [REL, [R("nl-ahn", t("Altimetria AHN (MDT 0,5 m)", "Altimetría AHN (MDT 0,5 m)", "AHN elevation (DTM 0.5 m)"), wms(PDOK + "rws/ahn/wms/v1_0", "dtm_05m"), 10, 22, 0.7, "AHN, CC0")]]
+      [REL, [R("nl-ahn", t("Altimetria AHN (MDT 0,5 m)", "Altimetría AHN (MDT 0,5 m)", "AHN elevation (DTM 0.5 m)"), wms(PDOK + "rws/ahn/wms/v1_0", "dtm_05m"), 10, 22, 0.7, "AHN, CC0"),
+             R("nl-ahn-mds", t("Altimetria AHN (MDS 0,5 m, com edifícios e árvores)", "Altimetría AHN (MDS 0,5 m, con edificios y árboles)", "AHN elevation (DSM 0.5 m)"), wms(PDOK + "rws/ahn/wms/v1_0", "dsm_05m"), 10, 22, 0.7, "AHN, CC0")]]
     ],
     BE: [
       [FUNDO, [R("vl-orto", t("Ortofoto da Flandres", "Ortofoto de Flandes", "Flanders orthophoto"), wms("https://geo.api.vlaanderen.be/OMWRGBMRVL/wms", "Ortho"), 0, 21, 1, "© Digitaal Vlaanderen"),
                R("wa-orto", t("Ortofoto da Valónia", "Ortofoto de Valonia", "Wallonia orthophoto"), wms("https://geoservices.wallonie.be/arcgis/services/IMAGERIE/ORTHO_LAST/MapServer/WMSServer", "0"), 0, 21, 1, "© SPW")]],
       [PROP, [R("be-cp", t("Cadastro (AGDP)", "Catastro (AGDP)", "Cadastre (AGDP)"), wms("https://ccff02.minfin.fgov.be/geoservices/arcgis/services/INSPIRE/CP/MapServer/WMSServer", "1"), 15, 22, 0.9, "© SPF Finances, AGDP"),
-              R("vl-adp", t("Parcelas da Flandres (Adp)", "Parcelas de Flandes (Adp)", "Flanders parcels (Adp)"), wms("https://geo.api.vlaanderen.be/Adpf/wms", "Adpf"), 15, 22, 0.5, "© Digitaal Vlaanderen")]]
+              R("vl-adp", t("Parcelas da Flandres (Adp)", "Parcelas de Flandes (Adp)", "Flanders parcels (Adp)"), wms("https://geo.api.vlaanderen.be/Adpf/wms", "Adpf"), 15, 22, 0.5, "© Digitaal Vlaanderen")]],
+      [REL, [R("vl-relevo", t("Relevo LiDAR da Flandres (DHMV II, 25 cm)", "Relieve LiDAR de Flandes (DHMV II, 25 cm)", "Flanders LiDAR hillshade (DHMV II, 25 cm)"), wms("https://geo.api.vlaanderen.be/DHMV/wms", "DHMV_II_HILL_25cm"), 9, 22, 0.6, "© Digitaal Vlaanderen, CC BY 4.0"),
+             R("wa-relevo", t("Relevo LiDAR da Valónia (2021-2022)", "Relieve LiDAR de Valonia (2021-2022)", "Wallonia LiDAR hillshade (2021-2022)"), wms("https://geoservices.wallonie.be/arcgis/services/RELIEF/WALLONIE_MNT_2021_2022_HILLSHADE/MapServer/WMSServer", "0"), 9, 22, 0.6, "© SPW")]]
     ],
     LU: [
       [FUNDO, [R("lu-orto", t("Ortofoto (geoportail.lu)", "Ortofoto (geoportail.lu)", "Orthophoto (geoportail.lu)"), "https://wmts1.geoportail.lu/opendata/wmts/ortho_latest/GLOBAL_WEBMERCATOR_4_V3/{z}/{x}/{y}.jpeg", 0, 20, 1, "© ACT Luxembourg, CC0")]],
       [PROP, [R("lu-cad", t("Cadastro (parcelas)", "Catastro (parcelas)", "Cadastre (parcels)"), "https://wmts1.geoportail.lu/opendata/wmts/parcels/GLOBAL_WEBMERCATOR_4_V3/{z}/{x}/{y}.png", 14, 20, 0.9, "© ACT Luxembourg, CC0"),
-              R("lu-limites", t("Comunas", "Comunas", "Communes"), "https://wmts1.geoportail.lu/opendata/wmts/communes/GLOBAL_WEBMERCATOR_4_V3/{z}/{x}/{y}.png", 8, 20, 0.8, "© ACT Luxembourg, CC0")]]
+              R("lu-limites", t("Comunas", "Comunas", "Communes"), "https://wmts1.geoportail.lu/opendata/wmts/communes/GLOBAL_WEBMERCATOR_4_V3/{z}/{x}/{y}.png", 8, 20, 0.8, "© ACT Luxembourg, CC0")]],
+      [REL, [R("lu-relevo", t("Relevo LiDAR (MDT 2019)", "Relieve LiDAR (MDT 2019)", "LiDAR elevation (DTM 2019)"), wms("https://wms.geoportail.lu/opendata/service", "lidar_2019_mnt_public"), 9, 22, 0.6, "© ACT Luxembourg, CC0")]]
     ],
     DE: [
       [FUNDO, [R("de-topplus", "TopPlusOpen (BKG)", "https://sgx.geodatenzentrum.de/wmts_topplus_open/tile/1.0.0/web/default/WEBMERCATOR/{z}/{y}/{x}.png", 0, 18, 1, "© BKG (2026), dl-de/by-2-0"),
                R("nw-dop", t("Ortofoto da Renânia do Norte-Vestefália", "Ortofoto de Renania del Norte-Westfalia", "North Rhine-Westphalia orthophoto"), wms("https://www.wms.nrw.de/geobasis/wms_nw_dop", "nw_dop_rgb"), 0, 21, 1, "© Geobasis NRW, dl-de/zero-2-0")]],
       [PROP, [R("nw-alkis", t("Cadastro da Renânia do Norte-Vestefália (ALKIS)", "Catastro de Renania del Norte-Westfalia (ALKIS)", "North Rhine-Westphalia cadastre (ALKIS)"), wms("https://www.wms.nrw.de/geobasis/wms_nw_alkis", "adv_alkis_flurstuecke"), 15, 22, 0.9, "© Geobasis NRW, dl-de/zero-2-0"),
               R("de-limites", t("Municípios (VG250)", "Municipios (VG250)", "Municipalities (VG250)"), wms("https://sgx.geodatenzentrum.de/wms_vg250", "vg250_gem"), 7, 22, 0.8, "© BKG (2026), dl-de/by-2-0")]],
-      [REL, [R("nw-relevo", t("Relevo da Renânia do Norte-Vestefália", "Relieve de Renania del Norte-Westfalia", "North Rhine-Westphalia hillshade"), wms("https://www.wms.nrw.de/geobasis/wms_nw_dgm-schummerung", "nw_dgm-schummerung_pan"), 10, 22, 0.6, "© Geobasis NRW, dl-de/zero-2-0")]]
+      [REL, [R("de-relevo", t("Relevo sombreado (basemap.de, todo o país)", "Relieve sombreado (basemap.de, todo el país)", "Hillshade (basemap.de, whole country)"), wms("https://sgx.geodatenzentrum.de/wms_basemapde_schummerung", "de_basemapde_web_raster_hillshade"), 6, 22, 0.55, "© GeoBasis-DE / BKG (2026), CC BY 4.0"),
+             R("nw-relevo", t("Relevo da Renânia do Norte-Vestefália", "Relieve de Renania del Norte-Westfalia", "North Rhine-Westphalia hillshade"), wms("https://www.wms.nrw.de/geobasis/wms_nw_dgm-schummerung", "nw_dgm-schummerung_pan"), 10, 22, 0.6, "© Geobasis NRW, dl-de/zero-2-0")]]
     ],
     GB: [
       [REL, [R("gb-dtm", t("Relevo LiDAR de Inglaterra (EA)", "Relieve LiDAR de Inglaterra (EA)", "England LiDAR hillshade (EA)"), wms("https://environment.data.gov.uk/spatialdata/lidar-composite-digital-terrain-model-dtm-1m/wms", "Lidar_Composite_Hillshade_DTM_1m"), 10, 22, 0.7, "© Environment Agency copyright and/or database right 2026. All rights reserved.")]]
