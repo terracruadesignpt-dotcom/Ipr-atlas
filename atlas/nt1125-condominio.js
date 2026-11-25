@@ -458,7 +458,7 @@
       cx = painel && painel.querySelector("[data-cda-org]"); if (!cx) return;
       if (c.fora) { cx.innerHTML = "<h4>" + t("Criar este condomínio", "Create this condominium") + "</h4><p><small>" + t("Para guardar este condomínio como organização no IPR Atlas, com as camadas, os prédios e quem o gere, ", "To save this condominium as an IPR Atlas organisation, with its layers, parcels and managers, ") + "<a href='/conta/?redirect_to=" + encodeURIComponent(location.pathname + "?condominio=" + ultimo.ll.join(",")) + "'>" + t("entre na sua conta", "sign in") + "</a>.</small></p>"; return; }
       var ja = (c.meus || []).filter(perto)[0];
-      if (ja) { var pode = /dono|gestor|editor/.test(ja.papel || ""); cx.innerHTML = "<h4>" + t("Condomínio já criado", "Condominium already created") + "</h4><p>" + esc(ja.nome) + (ja.papel ? " · " + esc(ja.papel) : "") + "</p><div class='bt'><a class='ac' href='/oficina/'>" + t("Abrir na Oficina", "Open in the Workshop") + "</a>" + (pode && ((ultimo.vias && ultimo.vias.length) || (ultimo.parcelas && ultimo.parcelas.length)) ? "<button type='button' data-cda-juntar='" + ja.id + "'>" + t("Juntar bermas e pastoreio", "Add road strips and grazing") + "</button>" : "") + "</div><div class='rs' data-cda-res></div>"; return; }
+      if (ja) { var pode = /dono|gestor|editor/.test(ja.papel || ""); cx.innerHTML = "<h4>" + t("Condomínio já criado", "Condominium already created") + "</h4><p>" + esc(ja.nome) + (ja.papel ? " · " + esc(ja.papel) : "") + "</p><div class='bt'><a class='ac' href='/oficina/'>" + t("Abrir na Oficina", "Open in the Workshop") + "</a>" + (pode && ((ultimo.vias && ultimo.vias.length) || (ultimo.parcelas && ultimo.parcelas.length)) ? "<button type='button' data-cda-juntar='" + ja.id + "'>" + t("Juntar bermas e pastoreio", "Add road strips and grazing") + "</button>" : "") + (/dono|gestor/.test(ja.papel || "") || c.pode ? "<button type='button' data-cda-pastor='" + ja.id + "'>" + t("Ligação do pastor", "Herder link") + "</button>" : "") + "</div><div class='rs' data-cda-res></div><div data-cda-past-out></div>"; return; }
       if (!c.pode) { cx.innerHTML = "<h4>" + t("Criar este condomínio", "Create this condominium") + "</h4><p><small>" + t("Só quem gere uma organização no IPR Atlas (município, junta, associação) cria condomínios. Escreva-nos para info@terracruadesign.pt.", "Only managers of an IPR Atlas organisation (municipality, parish, association) can create condominiums. Write to info@terracruadesign.pt.") + "</small></p>"; return; }
       var orgs = (c.orgs || []).slice().sort(function (a, b) { return (b.gere - a.gere) || ((b.modelo === "municipio") - (a.modelo === "municipio")) || a.nome.localeCompare(b.nome); });
       cx.innerHTML = "<h4>" + t("Criar este condomínio", "Create this condominium") + "</h4>" +
@@ -478,6 +478,30 @@
     var f = new FormData(); f.append("action", "tcd_cda_juntar"); f.append("n", ctx.n); f.append("org", org); extras(f, ultimo);
     if (!f.has("viaria") && !f.has("pastoreio")) return Promise.resolve(null);
     return fetch(AJAX, { method: "POST", body: f, credentials: "same-origin" }).then(function (r) { return r.json(); }).then(function (j) { return j && j.success ? j.data : null; }).catch(function () { return null; });
+  }
+  // ---------- ligação do pastor (m93994): uma página com ENTREI e SAÍ, sem conta ----------
+  function pastor(b, nova) {
+    var org = b.getAttribute("data-cda-pastor") || b.getAttribute("data-cda-pastor-nova"), cx = painel.querySelector("[data-cda-org]"), out = cx.querySelector("[data-cda-past-out]");
+    var f = new FormData(); f.append("action", "tcd_cda_pastor_ligacao"); f.append("n", ctx.n); f.append("org", org); if (nova) f.append("nova", "1");
+    out.textContent = "…";
+    fetch(AJAX, { method: "POST", body: f, credentials: "same-origin" }).then(function (r) { return r.json(); }).then(function (j) {
+      if (!j || !j.success) { out.textContent = (j && j.data) || t("Não foi possível.", "Could not."); return; }
+      var d = j.data, r = d.resumo || {}, msg = t("Registo do pastoreio no condomínio. Abra no telemóvel e carregue em ENTREI quando os animais entram numa parcela e SAÍ quando saem: ", "Grazing log for the condominium. Open on the phone and tap ENTREI when the animals enter a plot and SAÍ when they leave: ") + d.url;
+      var h = "<p><small>" + t("Mande esta ligação ao pastor (por WhatsApp ou SMS). Não precisa de conta: só ENTREI, SAÍ e fotografia. O telemóvel diz a parcela pelo GPS.", "Send this link to the herder (WhatsApp or SMS). No account: just ENTREI, SAÍ and photo. The phone finds the plot by GPS.") + "</small></p>" +
+        "<p><input type='text' readonly value='" + esc(d.url) + "' onclick='this.select()'></p><div class='bt'>" +
+        "<a class='ac' href='https://wa.me/?text=" + encodeURIComponent(msg) + "' target='_blank' rel='noopener'>WhatsApp</a>" +
+        "<a class='ac' href='sms:?&body=" + encodeURIComponent(msg) + "'>SMS</a>" +
+        "<a class='ac' href='" + esc(d.url) + "' target='_blank' rel='noopener'>" + t("Ver a página", "Open the page") + "</a>" +
+        "<button type='button' data-cda-pastor-geo='" + org + "'>" + t("Registos (GeoJSON)", "Log (GeoJSON)") + "</button>" +
+        "<button type='button' data-cda-pastor-nova='" + org + "'>" + t("Nova ligação (a antiga deixa de servir)", "New link (old one stops working)") + "</button></div>";
+      if (r.parcelas && r.parcelas.length) { h += "<table><tr><th>" + t("Parcela", "Plot") + "</th><th class='n'>ha</th><th>" + t("Última entrada", "Last entry") + "</th><th class='n'>" + t("dias", "days") + "</th></tr>"; r.parcelas.forEach(function (p) { h += "<tr><td>" + p.n + "</td><td class='n'>" + fmt(p.ha, 1) + "</td><td>" + esc(p.ultima || "–") + "</td><td class='n'>" + fmt(p.dias, 1) + "</td></tr>"; }); h += "</table>"; }
+      h += "<small>" + (r.agora ? t("Animais na parcela ", "Animals in plot ") + r.agora.parcela + t(" desde ", " since ") + esc(r.agora.desde) + ". " : "") + (r.n || 0) + " " + t("registos.", "records.") + (r.parcelas && r.parcelas.length ? "" : " " + t("Ainda sem parcelas de pastoreio neste condomínio: junte-as primeiro.", "No grazing plots yet: add them first.")) + "</small>";
+      out.innerHTML = h;
+    }).catch(function () { out.textContent = t("Sem ligação.", "No connection."); });
+  }
+  function pastorGeo(b) {
+    var f = new FormData(); f.append("action", "tcd_cda_pastor_registos"); f.append("n", ctx.n); f.append("org", b.getAttribute("data-cda-pastor-geo"));
+    fetch(AJAX, { method: "POST", body: f, credentials: "same-origin" }).then(function (r) { return r.json(); }).then(function (j) { if (j && j.success) baixar("pastoreio-registos.geojson", "application/geo+json", JSON.stringify(j.data.geojson)); });
   }
   function juntar(b) {
     var cx = painel.querySelector("[data-cda-org]"), out = cx.querySelector("[data-cda-res]"), f = new FormData();
@@ -510,7 +534,7 @@
     }).then(function (j) {
       if (j && j.success) {
         ctx = null; var d = j.data, n = Object.keys(d.camadas || {}).filter(function (k) { return typeof d.camadas[k] === "number"; }).length;
-        cx.innerHTML = "<h4>" + t("Condomínio criado", "Condominium created") + "</h4><p>" + esc(d.nome) + "<br><small>" + n + " " + t("camadas", "layers") + ", " + (d.rels || []).length + " " + ((d.rels || []).length === 1 ? t("entidade ligada", "linked body") : t("entidades ligadas", "linked bodies")) + (d.codigo ? ", " + t("código de convite", "invite code") + " " + esc(d.codigo) : "") + ".</small></p><div class='bt'><a class='ac' href='" + esc(d.oficina) + "'>" + t("Abrir na Oficina", "Open in the Workshop") + "</a></div>";
+        cx.innerHTML = "<h4>" + t("Condomínio criado", "Condominium created") + "</h4><p>" + esc(d.nome) + "<br><small>" + n + " " + t("camadas", "layers") + ", " + (d.rels || []).length + " " + ((d.rels || []).length === 1 ? t("entidade ligada", "linked body") : t("entidades ligadas", "linked bodies")) + (d.codigo ? ", " + t("código de convite", "invite code") + " " + esc(d.codigo) : "") + ".</small></p><div class='bt'><a class='ac' href='" + esc(d.oficina) + "'>" + t("Abrir na Oficina", "Open in the Workshop") + "</a><button type='button' data-cda-pastor='" + d.org + "'>" + t("Ligação do pastor", "Herder link") + "</button></div><div data-cda-past-out></div>";
       } else { b.disabled = false; var m = j && j.data; out.textContent = (m && m.m) || (typeof m === "string" ? m : t("Não foi possível criar.", "Could not create.")); }
     }).catch(function () { b.disabled = false; out.textContent = t("Sem ligação. Tente de novo.", "No connection. Try again."); });
   }
@@ -572,6 +596,9 @@
     if (!ultimo) return;
     if (b.hasAttribute("data-cda-criar")) return criar(b);
     if (b.hasAttribute("data-cda-juntar")) return juntar(b);
+    if (b.hasAttribute("data-cda-pastor")) return pastor(b, false);
+    if (b.hasAttribute("data-cda-pastor-nova")) return pastor(b, true);
+    if (b.hasAttribute("data-cda-pastor-geo")) return pastorGeo(b);
     if (b.hasAttribute("data-cda-geo")) {
       var fs = [Object.assign({}, ultimo.area, { properties: { tipo: "area_condominio", ha: +ha(W.turf.area(ultimo.area)).toFixed(3) } }),
                 Object.assign({}, ultimo.faixa, { properties: { tipo: "faixa_100m", ha: +ultimo.haFaixa.toFixed(3) } }),
