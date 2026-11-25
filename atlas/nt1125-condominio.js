@@ -198,7 +198,7 @@
 
   // ---------- painel ----------
   var CSS =
-    "#ipr-cda{position:fixed;z-index:60;top:70px;right:calc(var(--ipr-cda-dir,240px) + 12px);width:min(380px,calc(100vw - 24px));max-height:calc(100vh - 110px);overflow:auto;" +
+    "#ipr-cda{position:fixed;z-index:99995;top:70px;right:calc(var(--ipr-cda-dir,240px) + 12px);width:min(380px,calc(100vw - 24px));max-height:calc(100vh - 110px);overflow:auto;" +
     "background:var(--p2,#22261b);color:var(--tx,#e9eadf);border:1px solid var(--ln,#3a3f30);border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,.35);font:13px/1.45 Inter,system-ui,sans-serif;padding:12px 14px}" +
     "#ipr-cda h3{margin:0 0 2px;font:600 15px Outfit,Inter,sans-serif}#ipr-cda h4{margin:12px 0 4px;font:600 11px Inter,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--mu,#a7ab98)}" +
     "#ipr-cda .x{position:absolute;top:8px;right:10px;all:unset;cursor:pointer;font-size:18px;line-height:1;color:var(--mu,#a7ab98);padding:4px}" +
@@ -266,9 +266,9 @@
     h += "<small>" + t("Custos por hectare de partida, editáveis. Servem para comparar cenários, não são orçamento.", "Starting costs per hectare, editable. For comparing scenarios, not a quote.") + "</small>";
     // perigosidade
     if (res.perigo) {
-      var ord = ["Muito alta", "Alta", "Média", "Baixa", "Muito baixa"], ks = Object.keys(res.perigo).sort(function (a, b) { return (ord.indexOf(a) + 9) % 9 - (ord.indexOf(b) + 9) % 9; });
+      var ord = ["muito alta", "alta", "média", "baixa", "muito baixa"], pos = function (k) { var i = ord.indexOf(String(k).toLowerCase()); return i < 0 ? 9 : i; }, ks = Object.keys(res.perigo).sort(function (a, b) { return pos(a) - pos(b); });
       h += "<h4>" + t("Perigosidade de incêndio rural", "Rural wildfire hazard") + "</h4><table>";
-      ks.forEach(function (k) { h += "<tr><td>" + esc(k) + "</td><td class='n'>" + fmt(res.perigo[k], 2) + " ha</td><td class='n'>" + fmt(100 * res.perigo[k] / res.haFaixa) + " %</td></tr>"; });
+      ks.forEach(function (k) { h += "<tr><td>" + esc(k === "?" ? t("Sem classe", "Unclassified") : k.charAt(0).toUpperCase() + k.slice(1).toLowerCase()) + "</td><td class='n'>" + fmt(res.perigo[k], 2) + " ha</td><td class='n'>" + fmt(100 * res.perigo[k] / res.haFaixa) + " %</td></tr>"; });
       h += "</table>";
     }
     // cadastro
