@@ -10,6 +10,10 @@
      Marcador).
    Cada botão carrega no botão original (faixa do modo e nt1124-trabalho.js), por isso o comportamento é o mesmo; as faixas de
    origem ficam escondidas só enquanto este cartão está aberto. Telemóvel: fica como estava.
+   25/11/2026, 18h52. Nuno: «os botões deviam sair um bocado como o Waze, maiores, que se veja se é água, floresta, zonas,
+   estradas» e «os desenhos é para todos [...] para toda a gente que tem acesso à intelligence». Os tipos passam a botões
+   redondos grandes com ícone e cor; os elementos ficam maiores. O modo Desenhar já é de quem tem Intelligence (e equipa),
+   por isso chega a todos esses.
    Desligar: ?dpainel=0 ou localStorage ipr_dp=0. */
 (function () {
   "use strict";
@@ -21,11 +25,18 @@
 
   var TIPOS = [
     ["agua", "Água", "#3d8fd6", { p: ["Nascente", "Poço", "Furo", "Depósito"], l: ["Vala em curva de nível", "Keyline", "Tubagem", "Linha de água"], g: ["Charca", "Zona húmida", "Bacia de retenção"] }],
-    ["acessos", "Acessos", "#b98a52", { p: ["Portão", "Cancela", "Passagem"], l: ["Caminho", "Estrada", "Trilho"], g: ["Eira e parque", "Zona de manobra"] }],
-    ["veg", "Vegetação", "#6fa83a", { p: ["Árvore", "Árvore notável"], l: ["Sebe", "Linha de plantação", "Corta-vento"], g: ["Pomar", "Horta", "Mata", "Pastagem"] }],
+    ["acessos", "Estradas e acessos", "#b98a52", { p: ["Portão", "Cancela", "Passagem"], l: ["Caminho", "Estrada", "Trilho"], g: ["Eira e parque", "Zona de manobra"] }],
+    ["veg", "Floresta e vegetação", "#6fa83a", { p: ["Árvore", "Árvore notável"], l: ["Sebe", "Linha de plantação", "Corta-vento"], g: ["Pomar", "Horta", "Mata", "Pastagem"] }],
     ["edif", "Edificado", "#bdb8a8", { p: ["Poste", "Colmeia", "Painel solar"], l: ["Muro", "Vedação", "Rede eléctrica"], g: ["Casa", "Armazém", "Estufa"] }],
     ["lim", "Limites e zonas", "#e5484d", { p: ["Marco"], l: ["Estrema", "Faixa de servidão"], g: ["Terreno", "Zona 0 a 5", "Faixa de combustível"] }]
   ];
+  var ICO = {
+    agua: '<path d="M12 3c3.5 4.6 6 8 6 11a6 6 0 0 1-12 0c0-3 2.5-6.4 6-11z"/>',
+    acessos: '<path d="M9 3h2l-1 18H7zM13 3h2l2 18h-3zM11.5 6h1v2h-1zM11.5 11h1v2h-1zM11.5 16h1v2h-1z"/>',
+    veg: '<path d="M12 3l5 7h-3l4 6h-5v5h-2v-5H6l4-6H7z"/>',
+    edif: '<path d="M3 11l9-7 9 7v10h-6v-6H9v6H3z"/>',
+    lim: '<path d="M4 4h7v7H4zM13 4h7v4h-7zM13 10h7v10h-7zM4 13h7v7H4z"/>'
+  };
   var FORMAS = [["p", "Pontos"], ["l", "Linhas"], ["g", "Áreas"]];
   var TERRENO = [["Escolher parcelas", /escolher parcelas|pick parcels/i], ["Desenhar o terreno", /desenhar o terreno|draw the plot/i], ["Carregar ficheiro", /carregar ficheiro|upload/i], ["Apagar terreno", /apagar terreno|erase/i]];
   var MAIS = [["Desenho livre", /desenho livre|freehand/i], ["Desenhar na Base", /desenhar na base|draw on the base/i], ["Marcador", /^marcador|^marker/i]];
@@ -46,17 +57,20 @@
     "#ipr-dp .bt{height:32px;padding:0 13px;border-radius:999px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.03);color:#dcdacf;font:500 12.5px Geist,Inter,system-ui,sans-serif;cursor:pointer;white-space:nowrap}" +
     "#ipr-dp .bt:hover{background:rgba(255,255,255,.08);color:#fff}" +
     "#ipr-dp .bt.p{background:#94BE39;border-color:#94BE39;color:#11160d}" +
-    "#ipr-dp .tabs{display:flex;flex-wrap:wrap;gap:4px;padding:3px;border-radius:999px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07)}" +
-    "#ipr-dp .tab{flex:1 1 auto;height:30px;padding:0 12px;border:0;border-radius:999px;background:none;color:#bdbcb0;font:500 12.5px Geist,Inter,system-ui,sans-serif;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:7px;white-space:nowrap}" +
-    "#ipr-dp .tab i{width:8px;height:8px;border-radius:2px;display:inline-block}" +
-    "#ipr-dp .tab.on{background:rgba(236,234,224,.94);color:#11160d;font-weight:600}" +
+    "#ipr-dp .tabs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}" +
+    "#ipr-dp .tab{display:flex;flex-direction:column;align-items:center;gap:6px;padding:4px 2px;border:0;background:none;color:#dcdacf;font:600 12px/1.2 Geist,Inter,system-ui,sans-serif;cursor:pointer;text-align:center}" +
+    "#ipr-dp .tab i{display:flex;align-items:center;justify-content:center;width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,.06);border:2px solid var(--c);transition:transform .12s,background .12s}" +
+    "#ipr-dp .tab svg{width:28px;height:28px;fill:var(--c)}" +
+    "#ipr-dp .tab:hover i{transform:scale(1.06);background:rgba(255,255,255,.1)}" +
+    "#ipr-dp .tab.on i{background:var(--c);box-shadow:0 0 0 4px rgba(255,255,255,.1)}#ipr-dp .tab.on svg{fill:#11160d}#ipr-dp .tab.on{color:#fff}" +
+    "#ipr-dp .tab:focus-visible i{outline:2px solid #94BE39;outline-offset:2px}" +
     "#ipr-dp .grp{display:grid;grid-template-columns:62px 1fr;gap:8px;align-items:start;margin-top:10px}" +
     "#ipr-dp .grp>span{font:500 10px 'Geist Mono',ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:#8d907f;padding-top:12px}" +
-    "#ipr-dp .els{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:6px}" +
-    "#ipr-dp .el{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;min-height:58px;padding:8px 6px;border-radius:12px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.025);color:#e6e4d9;font:500 12px/1.2 Geist,Inter,system-ui,sans-serif;text-align:center;cursor:pointer}" +
+    "#ipr-dp .els{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:8px}" +
+    "#ipr-dp .el{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;min-height:76px;padding:10px 6px;border-radius:14px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.025);color:#e6e4d9;font:500 12.5px/1.2 Geist,Inter,system-ui,sans-serif;text-align:center;cursor:pointer}" +
     "#ipr-dp .el:hover{border-color:rgba(255,255,255,.22);background:rgba(255,255,255,.06)}" +
-    "#ipr-dp .el.on{border-color:#94BE39;background:rgba(148,190,57,.14);color:#f2f0e6}" +
-    "#ipr-dp .el svg{width:34px;height:16px;display:block}" +
+    "#ipr-dp .el.on{border-width:2px;border-color:#94BE39;background:rgba(148,190,57,.14);color:#f2f0e6}" +
+    "#ipr-dp .el svg{width:44px;height:22px;display:block}" +
     "#ipr-dp .rod{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,.07)}" +
     "#ipr-dp .rod .esp{flex:1 1 auto}" +
     "#ipr-dp .mais{position:relative}" +
@@ -77,7 +91,7 @@
     var p = D.getElementById("ipr-dp"); if (!p) return;
     var T = tipo(), h = '<div class="cab"><b>Desenhar</b><button type="button" class="x" data-a="fechar" title="Fechar" aria-label="Fechar">×</button></div>';
     h += "<h6>O terreno</h6><div class=\"lin\">" + TERRENO.map(function (x, i) { return noAcc(x[1]) ? '<button type="button" class="bt' + (i === 0 ? " p" : "") + '" data-ter="' + i + '">' + esc(x[0]) + "</button>" : ""; }).join("") + "</div>";
-    h += "<h6>Elementos</h6><div class=\"tabs\">" + TIPOS.map(function (x) { return '<button type="button" class="tab' + (x[0] === T[0] ? " on" : "") + '" data-t="' + x[0] + '"><i style="background:' + x[2] + '"></i>' + esc(x[1]) + "</button>"; }).join("") + "</div>";
+    h += "<h6>Elementos</h6><div class=\"tabs\">" + TIPOS.map(function (x) { return '<button type="button" class="tab' + (x[0] === T[0] ? " on" : "") + '" data-t="' + x[0] + '" aria-pressed="' + (x[0] === T[0]) + '" style="--c:' + x[2] + '"><i><svg viewBox="0 0 24 24" aria-hidden="true">' + (ICO[x[0]] || "") + "</svg></i><span>" + esc(x[1]) + "</span></button>"; }).join("") + "</div>";
     FORMAS.forEach(function (f) {
       var L = T[3][f[0]] || []; if (!L.length) return;
       h += '<div class="grp"><span>' + f[1] + '</span><div class="els">' + L.map(function (n) {
