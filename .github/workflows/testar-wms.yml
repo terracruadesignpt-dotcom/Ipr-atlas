@@ -1,0 +1,8 @@
+name: testar-wms
+on: {workflow_dispatch: {}}
+jobs:
+  t:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 -I ferramentas/testar_wms.py
