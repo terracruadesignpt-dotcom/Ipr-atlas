@@ -166,6 +166,8 @@
         pr.sort(function (a, b2) { return b2.ha - a.ha; });
         res.predios = pr; res.haCad = soma;
       }
+      return estradas(T, res).then(function () { pastoreio(T, res); return res; });
+    }).then(function (res) {
       res.nome = nomeAldeia(res.ll);
       if (res.nome) return res;
       return fetch("https://nominatim.openstreetmap.org/reverse?format=json&zoom=14&accept-language=pt&lat=" + res.ll[1] + "&lon=" + res.ll[0])
@@ -173,6 +175,65 @@
           var a = (j && j.address) || {}; res.nome = a.hamlet || a.village || a.neighbourhood || a.locality || a.town || ""; return res;
         }).catch(function () { return res; });
     });
+  }
+
+  // ---------- faixas laterais da rede viária (DL 82/2021: 10 m de cada lado, a cargo de quem gere a via) ----------
+  var VIA_M = 10, MARGEM_VIA = 300;
+  var MEIA = { motorway: 12, trunk: 7, primary: 5, secondary: 4.5, tertiary: 3.5, unclassified: 3, residential: 3, living_street: 3, service: 2.5, track: 2 };
+  function entidadeVia(tags) {
+    var r = String(tags.ref || "").toUpperCase(), h = tags.highway;
+    if (/^(A|IP|IC)\s?\d/.test(r) || h === "motorway" || h === "trunk") return t("IP ou concessionária (a confirmar)", "IP or concessionaire (to confirm)");
+    if (/^(N|EN|ER)\s?\d/.test(r) || h === "primary" || h === "secondary") return t("Infraestruturas de Portugal (a confirmar)", "Infraestruturas de Portugal (to confirm)");
+    if (/^(M|EM|CM)\s?\d/.test(r) || h === "tertiary" || h === "unclassified" || h === "residential" || h === "living_street") return t("Câmara Municipal (a confirmar)", "Municipality (to confirm)");
+    return t("Proprietários ou junta (a confirmar)", "Owners or parish (to confirm)");
+  }
+  function estradas(T, res) {
+    var b = T.bbox(T.buffer(res.area, MARGEM_VIA, { units: "meters" })), q = "[out:json][timeout:25];way[highway~\"^(" + Object.keys(MEIA).join("|") + ")$\"](" + [b[1], b[0], b[3], b[2]].map(function (x) { return x.toFixed(5); }).join(",") + ");out tags geom;";
+    var ac = W.AbortController ? new AbortController() : null; if (ac) setTimeout(function () { ac.abort(); }, 30000);
+    return fetch("https://overpass-api.de/api/interpreter", { method: "POST", body: "data=" + encodeURIComponent(q), headers: { "Content-Type": "application/x-www-form-urlencoded" }, signal: ac ? ac.signal : undefined })
+      .then(function (r) { if (!r.ok) throw new Error("overpass " + r.status); return r.json(); })
+      .then(function (j) {
+        var caixa = T.bboxPolygon(b), tiras = [], porEnt = {}, km = 0;
+        (j.elements || []).forEach(function (w) {
+          if (!w.geometry || w.geometry.length < 2) return;
+          var meia = MEIA[w.tags.highway] || 3, l = T.lineString(w.geometry.map(function (p) { return [p.lon, p.lat]; }));
+          try {
+            var fora = T.buffer(l, meia + VIA_M, { units: "meters" }), dentro = T.buffer(l, meia, { units: "meters" });
+            var tira = T.difference(T.featureCollection([fora, dentro])); if (!tira) return;
+            tira = T.intersect(T.featureCollection([tira, caixa])); if (!tira) return;
+            if (res.aglo) tira = T.difference(T.featureCollection([tira, res.aglo])) || null; if (!tira) return;
+            var ent = entidadeVia(w.tags), a = ha(T.area(tira)); if (a < 0.005) return;
+            tira.properties = { tipo: "via", via: w.tags.name || w.tags.ref || w.tags.highway, classe: w.tags.highway, ref: w.tags.ref || "", entidade: ent, largura_m: VIA_M, ha: +a.toFixed(4) };
+            tiras.push(tira); porEnt[ent] = (porEnt[ent] || 0) + a; km += T.length(T.bboxClip(l, b), { units: "kilometers" });
+          } catch (e) {}
+        });
+        res.vias = tiras; res.viaEnt = porEnt; res.viaKm = km;
+        try { var u = tiras.length > 1 ? T.union(T.featureCollection(tiras)) : tiras[0]; res.viaU = u || null; res.haVia = u ? ha(T.area(u)) : 0;
+          var fora100 = u ? T.difference(T.featureCollection([u, res.area])) : null; res.haViaFora = fora100 ? ha(T.area(fora100)) : 0; } catch (e) { res.haVia = 0; res.haViaFora = 0; }
+      }).catch(function (e) { res.vias = null; res.viaErro = String(e && e.message || e); });
+  }
+
+  // ---------- pastoreio: parcelas de rotação na faixa e nas bermas ----------
+  var PAST = { matos: 1, pinhal: 1, folhosas: 1, outro: 1 }, PARCELAS = 8, DIAS = 10, EUR_PAST = 0;
+  function pastoreio(T, res) {
+    res.parcelas = []; res.haPast = 0;
+    try {
+      var pecas = res.manchas.filter(function (m) { return PAST[m.properties.accao]; });
+      if (res.viaU) pecas.push(res.viaU);
+      if (!pecas.length) return;
+      var u = pecas.length > 1 ? T.union(T.featureCollection(pecas)) : pecas[0]; if (!u) return;
+      var tot = T.area(u); res.haPast = ha(tot);
+      var lado = Math.max(40, Math.sqrt(tot / PARCELAS)) / 1000, grelha = T.squareGrid(T.bbox(u), lado, { units: "kilometers" }), c = T.centroid(res.aglo), ps = [];
+      grelha.features.forEach(function (g) {
+        var x = null; try { x = T.intersect(T.featureCollection([g, u])); } catch (e) {} if (!x) return;
+        var a = ha(T.area(x)); if (a < 0.05) return;
+        x.properties = { tipo: "parcela", ha: +a.toFixed(3), rumo: T.bearing(c, T.centroid(x)) }; ps.push(x);
+      });
+      ps.sort(function (a, b) { return a.properties.rumo - b.properties.rumo; });
+      ps.forEach(function (p, i) { p.properties.n = i + 1; p.properties.ordem = i + 1; p.properties.dias = DIAS; p.properties.estado = "proposta";
+        p.properties.abelhas = i % 2 ? t("descanso na Primavera (flor para as abelhas)", "rest in spring (flowers for bees)") : ""; });
+      res.parcelas = ps;
+    } catch (e) { res.parcelas = []; }
   }
 
   function nomeAldeia(ll) {
@@ -189,13 +250,15 @@
   }
 
   // ---------- mapa ----------
-  var SRC = "ipr-cda", CAMADAS = ["ipr-cda-acc", "ipr-cda-aglo", "ipr-cda-cad", "ipr-cda-faixa"];
+  var SRC = "ipr-cda", CAMADAS = ["ipr-cda-parc-n", "ipr-cda-parc", "ipr-cda-via", "ipr-cda-acc", "ipr-cda-aglo", "ipr-cda-cad", "ipr-cda-faixa"];
   function desenhar(res) {
     var m = mapa(); if (!m) return;
     var fs = res.manchas.slice();
     fs.push(Object.assign({}, res.aglo, { properties: { tipo: "aglo" } }));
     fs.push(Object.assign({}, res.area, { properties: { tipo: "faixa" } }));
     (res.predios || []).forEach(function (p) { fs.push({ type: "Feature", geometry: p.geo, properties: { tipo: "predio", ref: p.ref } }); });
+    (res.vias || []).forEach(function (v) { fs.push(v); });
+    (res.parcelas || []).forEach(function (p) { fs.push(p); });
     var fc = { type: "FeatureCollection", features: fs };
     if (m.getSource(SRC)) { m.getSource(SRC).setData(fc); }
     else {
@@ -204,6 +267,9 @@
       m.addLayer({ id: "ipr-cda-aglo", type: "fill", source: SRC, filter: ["==", ["get", "tipo"], "aglo"], paint: { "fill-color": "#5b5b5b", "fill-opacity": 0.35 } });
       m.addLayer({ id: "ipr-cda-cad", type: "line", source: SRC, filter: ["==", ["get", "tipo"], "predio"], paint: { "line-color": "#ffffff", "line-width": 0.8, "line-opacity": 0.8 } });
       m.addLayer({ id: "ipr-cda-faixa", type: "line", source: SRC, filter: ["==", ["get", "tipo"], "faixa"], paint: { "line-color": "#94BE39", "line-width": 2.5 } });
+      m.addLayer({ id: "ipr-cda-via", type: "fill", source: SRC, filter: ["==", ["get", "tipo"], "via"], paint: { "fill-color": "#c06a2b", "fill-opacity": 0.55 } });
+      m.addLayer({ id: "ipr-cda-parc", type: "line", source: SRC, filter: ["==", ["get", "tipo"], "parcela"], paint: { "line-color": "#f5e663", "line-width": 1.6, "line-dasharray": [2, 1.5] } });
+      try { m.addLayer({ id: "ipr-cda-parc-n", type: "symbol", source: SRC, filter: ["==", ["get", "tipo"], "parcela"], layout: { "text-field": ["to-string", ["get", "n"]], "text-size": 13, "text-allow-overlap": false }, paint: { "text-color": "#f5e663", "text-halo-color": "#1a1d14", "text-halo-width": 1.5 } }); } catch (e) {}
     }
     var b = res.bbox; try { m.fitBounds([[b[0], b[1]], [b[2], b[3]]], { padding: 80, duration: 600, maxZoom: 17 }); } catch (e) {}
   }
@@ -227,7 +293,7 @@
     "#ipr-cda .bt{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}#ipr-cda .bt button{all:unset;cursor:pointer;padding:6px 10px;border-radius:7px;border:1px solid var(--ln,#3a3f30);font-weight:600;font-size:12.5px}" +
     "#ipr-cda .org{margin-top:12px;padding-top:10px;border-top:1px solid var(--ln,#3a3f30)}#ipr-cda .org h4{margin:0 0 6px;font-size:14px}#ipr-cda .org input[type=text],#ipr-cda .org input[type=search]{width:100%;box-sizing:border-box;padding:6px 8px;border-radius:6px;border:1px solid var(--ln,#3a3f30);background:transparent;color:inherit;font:inherit}" +
     "#ipr-cda .rl{max-height:170px;overflow:auto;margin:4px 0}#ipr-cda .ro{display:grid;grid-template-columns:auto 1fr auto auto;gap:4px;align-items:center;font-size:12px;padding:2px 0}#ipr-cda .ro select{font-size:11.5px;background:transparent;color:inherit;border:1px solid var(--ln,#3a3f30);border-radius:5px}#ipr-cda .ro select option{color:#222}" +
-    "#ipr-cda .bt a.ac{padding:6px 10px;border-radius:7px;font-weight:600;font-size:12.5px;background:var(--ac,#9BC53D);color:#14200F;text-decoration:none}#ipr-cda .rs{margin-top:6px;font-size:12.5px}" +
+    "#ipr-cda .bt a.ac{padding:6px 10px;border-radius:7px;font-weight:600;font-size:12.5px;background:var(--ac,#9BC53D);color:#14200F;text-decoration:none}#ipr-cda .rs{margin-top:6px;font-size:12.5px}#ipr-cda .pp label{margin-right:8px;font-size:12px;white-space:nowrap}" +
     "#ipr-cda .bt button.ac{background:var(--ac,#9BC53D);color:#14200F;border-color:transparent}#ipr-cda details{margin-top:6px}#ipr-cda summary{cursor:pointer;color:var(--mu,#a7ab98)}" +
     "#ipr-cda .tot td{font-weight:600}#ipr-cda .av{background:rgba(232,145,58,.12);border-left:3px solid #e8913a;padding:6px 8px;border-radius:4px;margin:6px 0}" +
     "@media (max-width:900px){#ipr-cda{top:auto;bottom:0;right:0;left:0;width:auto;max-height:60vh;border-radius:12px 12px 0 0}}";
@@ -284,6 +350,7 @@
     });
     h += "<tr class='tot'><td>" + t("Total indicativo", "Indicative total") + "</td><td class='n'>" + fmt(res.haFaixa, 2) + "</td><td></td><td class='n' data-tot>" + fmt(custoTotal(res)) + " €</td></tr></table>";
     h += "<small>" + t("Custos por hectare de partida, editáveis. Servem para comparar cenários, não são orçamento.", "Starting costs per hectare, editable. For comparing scenarios, not a quote.") + "</small>";
+    h += blocoVias(res) + "<div data-past-bloco>" + blocoPast(res) + "</div>";
     // perigosidade
     if (res.perigo) {
       var ord = ["muito alta", "alta", "média", "baixa", "muito baixa"], pos = function (k) { var i = ord.indexOf(String(k).toLowerCase()); return i < 0 ? 9 : i; }, ks = Object.keys(res.perigo).sort(function (a, b) { return pos(a) - pos(b); });
@@ -339,7 +406,7 @@
       cx = painel && painel.querySelector("[data-cda-org]"); if (!cx) return;
       if (c.fora) { cx.innerHTML = "<h4>" + t("Criar este condomínio", "Create this condominium") + "</h4><p><small>" + t("Para guardar este condomínio como organização no IPR Atlas, com as camadas, os prédios e quem o gere, ", "To save this condominium as an IPR Atlas organisation, with its layers, parcels and managers, ") + "<a href='/conta/?redirect_to=" + encodeURIComponent(location.pathname + "?condominio=" + ultimo.ll.join(",")) + "'>" + t("entre na sua conta", "sign in") + "</a>.</small></p>"; return; }
       var ja = (c.meus || []).filter(perto)[0];
-      if (ja) { cx.innerHTML = "<h4>" + t("Condomínio já criado", "Condominium already created") + "</h4><p>" + esc(ja.nome) + (ja.papel ? " · " + esc(ja.papel) : "") + "</p><div class='bt'><a class='ac' href='/oficina/'>" + t("Abrir na Oficina", "Open in the Workshop") + "</a></div>"; return; }
+      if (ja) { var pode = /dono|gestor|editor/.test(ja.papel || ""); cx.innerHTML = "<h4>" + t("Condomínio já criado", "Condominium already created") + "</h4><p>" + esc(ja.nome) + (ja.papel ? " · " + esc(ja.papel) : "") + "</p><div class='bt'><a class='ac' href='/oficina/'>" + t("Abrir na Oficina", "Open in the Workshop") + "</a>" + (pode && ((ultimo.vias && ultimo.vias.length) || (ultimo.parcelas && ultimo.parcelas.length)) ? "<button type='button' data-cda-juntar='" + ja.id + "'>" + t("Juntar bermas e pastoreio", "Add road strips and grazing") + "</button>" : "") + "</div><div class='rs' data-cda-res></div>"; return; }
       if (!c.pode) { cx.innerHTML = "<h4>" + t("Criar este condomínio", "Create this condominium") + "</h4><p><small>" + t("Só quem gere uma organização no IPR Atlas (município, junta, associação) cria condomínios. Escreva-nos para info@terracruadesign.pt.", "Only managers of an IPR Atlas organisation (municipality, parish, association) can create condominiums. Write to info@terracruadesign.pt.") + "</small></p>"; return; }
       var orgs = (c.orgs || []).slice().sort(function (a, b) { return (b.gere - a.gere) || ((b.modelo === "municipio") - (a.modelo === "municipio")) || a.nome.localeCompare(b.nome); });
       cx.innerHTML = "<h4>" + t("Criar este condomínio", "Create this condominium") + "</h4>" +
@@ -351,6 +418,19 @@
     });
   }
   function fc(f) { return { type: "FeatureCollection", features: [f] }; }
+  function extras(f, u) {
+    if (u.vias && u.vias.length) f.append("viaria", JSON.stringify({ type: "FeatureCollection", features: u.vias }));
+    if (u.parcelas && u.parcelas.length) f.append("pastoreio", JSON.stringify({ type: "FeatureCollection", features: u.parcelas.map(function (p) { var q = Object.assign({}, p.properties); delete q.tipo; delete q.rumo; q.eur_ha = EUR_PAST; return { type: "Feature", geometry: p.geometry, properties: q }; }) }));
+  }
+  function juntar(b) {
+    var cx = painel.querySelector("[data-cda-org]"), out = cx.querySelector("[data-cda-res]"), f = new FormData();
+    f.append("action", "tcd_cda_juntar"); f.append("n", ctx.n); f.append("org", b.getAttribute("data-cda-juntar")); extras(f, ultimo);
+    b.disabled = true; out.textContent = t("A juntar…", "Adding…");
+    fetch(AJAX, { method: "POST", body: f, credentials: "same-origin" }).then(function (r) { return r.json(); }).then(function (j) {
+      if (j && j.success) { out.textContent = t("Juntei ao condomínio: ", "Added to the condominium: ") + Object.keys(j.data.camadas).map(function (k) { return (k === "viaria" ? t("bermas da estrada", "road strips") : t("parcelas de pastoreio", "grazing plots")) + (typeof j.data.camadas[k] === "number" ? "" : " (" + j.data.camadas[k] + ")"); }).join(", ") + "."; }
+      else { b.disabled = false; out.textContent = (j && j.data) || t("Não foi possível juntar.", "Could not add."); }
+    }).catch(function () { b.disabled = false; out.textContent = t("Sem ligação. Tente de novo.", "No connection. Try again."); });
+  }
   function criar(b) {
     var cx = painel.querySelector("[data-cda-org]"), out = cx.querySelector("[data-cda-res]"), nome = (cx.querySelector("[data-cda-nome]").value || "").trim();
     if (!nome) { out.textContent = t("Falta o nome da aldeia.", "Village name missing."); return; }
@@ -366,6 +446,7 @@
     if (u.predios && u.predios.length) f.append("predios", JSON.stringify({ type: "FeatureCollection", features: u.predios.map(function (p) { return { type: "Feature", geometry: p.geo, properties: { ref: p.ref, ha_na_faixa: +p.ha.toFixed(4), ha_total: +(p.haTotal || 0).toFixed(4) } }; }) }));
     f.append("resumo", JSON.stringify({ faixa_ha: +u.haFaixa.toFixed(2), aglo_ha: +u.haAglo.toFixed(2), custo_eur: Math.round(custoTotal(u)), cadastro_pct: u.haCad ? Math.round(100 * u.haCad / u.haFaixa) : 0, predios: (u.predios || []).length, perigo_alta_pct: u.haFaixa ? Math.round(100 * alta / u.haFaixa) : 0 }));
     f.append("rels", JSON.stringify(rels));
+    extras(f, u);
     b.disabled = true; out.textContent = t("A criar…", "Creating…");
     fetch(AJAX, { method: "POST", body: f, credentials: "same-origin" }).then(function (r) { return r.json(); }).then(function (j) {
       if (j && j.success) {
@@ -375,8 +456,40 @@
     }).catch(function () { b.disabled = false; out.textContent = t("Sem ligação. Tente de novo.", "No connection. Try again."); });
   }
 
+  function blocoVias(res) {
+    var h = "<h4>" + t("Bermas da estrada (10 m de cada lado)", "Roadside strips (10 m each side)") + "</h4>";
+    if (!res.vias) return h + "<p><small>" + t("Não consegui ler as estradas do OpenStreetMap agora.", "Could not read OpenStreetMap roads right now.") + "</small></p>";
+    if (!res.vias.length) return h + "<p><small>" + t("Sem estradas cartografadas na zona.", "No mapped roads nearby.") + "</small></p>";
+    h += "<p><b>" + fmt(res.haVia, 1) + " ha</b> " + t("em", "along") + " " + fmt(res.viaKm, 1) + " km " + t("de vias", "of roads") + " · " + fmt(res.haViaFora, 1) + " ha " + t("fora da faixa de 100 m", "outside the 100 m belt") + "</p><table>";
+    Object.keys(res.viaEnt).sort(function (a, b) { return res.viaEnt[b] - res.viaEnt[a]; }).forEach(function (k) { h += "<tr><td>" + esc(k) + "</td><td class='n'>" + fmt(res.viaEnt[k], 2) + " ha</td></tr>"; });
+    return h + "</table><small>" + t("A lei põe a gestão destas faixas a cargo de quem gere a via. São contínuas e fáceis de percorrer: boas para começar o pastoreio e para estudar a vegetação. Vias do OpenStreetMap; quem gere cada via está por confirmar.", "The law puts these strips on whoever manages the road. Continuous and easy to walk: good to start grazing and to study vegetation. Roads from OpenStreetMap; road managers to be confirmed.") + "</small>";
+  }
+  function blocoPast(res) {
+    var h = "<h4>" + t("Pastoreio (cabras e ovelhas)", "Grazing (goats and sheep)") + "</h4>";
+    if (!res.parcelas || !res.parcelas.length) return h + "<p><small>" + t("Sem área pastável identificada.", "No grazeable area found.") + "</small></p>";
+    var n = res.parcelas.length;
+    h += "<p>" + t("Área pastável", "Grazeable area") + ": <b>" + fmt(res.haPast, 1) + " ha</b> (" + t("matos, pinhal, folhosas e bermas", "shrubland, pine, broadleaves and road strips") + ") · <b>" + n + "</b> " + t("parcelas de rotação", "rotation plots") + "</p>";
+    h += "<p class='pp'><label>" + t("Parcelas", "Plots") + " <input class='e' type='number' min='2' max='40' data-past='parcelas' value='" + PARCELAS + "'></label> <label>" + t("dias por parcela", "days per plot") + " <input class='e' type='number' min='1' max='90' data-past='dias' value='" + DIAS + "'></label> <label>€/ha <input class='e' type='number' min='0' step='50' data-past='eur' value='" + EUR_PAST + "'></label></p>";
+    h += "<p><small>" + t("Uma volta completa leva", "A full round takes") + " <b data-past-ciclo>" + n * DIAS + "</b> " + t("dias.", "days.") + " <span data-past-comp>" + compPast(res) + "</span></small></p>";
+    return h + "<small>" + t("Proposta de partida para acertar com o pastor: número de animais, cercas móveis, água e datas. As parcelas pares descansam na Primavera para dar flor às abelhas. O fogo controlado fica como último recurso.", "Starting proposal to settle with the herder: herd size, mobile fencing, water and dates. Even plots rest in spring to flower for bees. Prescribed fire is the last resort.") + "</small>";
+  }
+  function compPast(res) {
+    if (!EUR_PAST) return t("Ponha o €/ha combinado com o pastor para comparar com meios mecânicos.", "Enter the €/ha agreed with the herder to compare with machinery.");
+    var mec = 0; res.manchas.forEach(function (m) { if (PAST[m.properties.accao]) mec += m.properties.ha * (EUR[m.properties.accao] || 0); });
+    var p = res.haPast * EUR_PAST; return t("Com pastoreio", "With grazing") + ": " + fmt(p) + " € · " + t("mecânico na mesma área da faixa", "machinery on the same belt area") + ": " + fmt(mec) + " €.";
+  }
+
   function mudouEur(e) {
     var i = e.target;
+    if (i && i.hasAttribute && i.hasAttribute("data-past") && ultimo) {
+      var k = i.getAttribute("data-past"), v = +i.value || 0;
+      if (k === "eur") { EUR_PAST = Math.max(0, v); }
+      if (k === "dias") { DIAS = Math.min(90, Math.max(1, v)); (ultimo.parcelas || []).forEach(function (p) { p.properties.dias = DIAS; }); }
+      if (k === "parcelas" && v >= 2 && v <= 40 && v !== PARCELAS) { PARCELAS = v; clearTimeout(i.__t); i.__t = setTimeout(function () { pastoreio(W.turf, ultimo); desenhar(ultimo); var bl = painel.querySelector("[data-past-bloco]"); if (bl) bl.innerHTML = blocoPast(ultimo); }, 600); return; }
+      var cy = painel.querySelector("[data-past-ciclo]"); if (cy) cy.textContent = (ultimo.parcelas || []).length * DIAS;
+      var cp = painel.querySelector("[data-past-comp]"); if (cp) cp.textContent = compPast(ultimo);
+      return;
+    }
     if (i && i.hasAttribute && i.hasAttribute("data-cda-filtro")) { var q = i.value.toLowerCase(); painel.querySelectorAll(".ro").forEach(function (l) { l.style.display = !q || l.getAttribute("data-nome").indexOf(q) >= 0 ? "" : "none"; }); return; } if (!i || !i.hasAttribute || !i.hasAttribute("data-eur") || !ultimo) return;
     var k = i.getAttribute("data-eur"); EUR[k] = Math.max(0, +i.value || 0);
     var sub = painel.querySelector("[data-sub='" + k + "']"); if (sub) sub.textContent = fmt((ultimo.porAccao[k] || 0) * EUR[k]);
@@ -396,12 +509,14 @@
     if (b.hasAttribute("data-cda-de-novo")) { tirar(); return iniciar(); }
     if (!ultimo) return;
     if (b.hasAttribute("data-cda-criar")) return criar(b);
+    if (b.hasAttribute("data-cda-juntar")) return juntar(b);
     if (b.hasAttribute("data-cda-geo")) {
       var fs = [Object.assign({}, ultimo.area, { properties: { tipo: "area_condominio", ha: +ha(W.turf.area(ultimo.area)).toFixed(3) } }),
                 Object.assign({}, ultimo.faixa, { properties: { tipo: "faixa_100m", ha: +ultimo.haFaixa.toFixed(3) } }),
                 Object.assign({}, ultimo.aglo, { properties: { tipo: "aglomerado", ha: +ultimo.haAglo.toFixed(3) } })]
         .concat(ultimo.manchas.map(function (f) { var p = Object.assign({}, f.properties); p.eur_ha = EUR[p.accao] || 0; p.eur = Math.round(p.ha * p.eur_ha); return Object.assign({}, f, { properties: p }); }))
-        .concat((ultimo.predios || []).map(function (p) { return { type: "Feature", geometry: p.geo, properties: { tipo: "predio", ref: p.ref, ha_na_faixa: +p.ha.toFixed(4), ha_total: p.haTotal } }; }));
+        .concat((ultimo.predios || []).map(function (p) { return { type: "Feature", geometry: p.geo, properties: { tipo: "predio", ref: p.ref, ha_na_faixa: +p.ha.toFixed(4), ha_total: p.haTotal } }; }))
+        .concat(ultimo.vias || []).concat(ultimo.parcelas || []);
       baixar(slug() + ".geojson", "application/geo+json", JSON.stringify({ type: "FeatureCollection", name: slug(), features: fs }));
     }
     if (b.hasAttribute("data-cda-csv")) {
