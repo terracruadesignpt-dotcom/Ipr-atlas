@@ -1,0 +1,26 @@
+name: sondar-lidar
+# Confirma os serviços WMS/WMTS de relevo LiDAR por país (IPR Atlas, Terracrua Design).
+on: {workflow_dispatch: {}}
+jobs:
+  sondar:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          sondar(){ echo "=== $1"; curl -s -m 60 -A "IPR-Atlas/1.0" "$2" -o c.xml -w "HTTP %{http_code} %{size_download}\n"; grep -oE "<(Name|ows:Identifier)>[^<]{2,90}</(Name|ows:Identifier)>" c.xml | sed -E 's/<[^>]+>//g' | grep -iE "$3" | sort -u | head -15; }
+          sondar ES-MDT "https://servicios.idee.es/wms-inspire/mdt?service=WMS&request=GetCapabilities" "."
+          sondar ES-sombreado "https://www.ign.es/wmts/mdt?service=WMTS&request=GetCapabilities" "."
+          sondar FR-WMS "https://data.geopf.fr/wms-r/wms?SERVICE=WMS&REQUEST=GetCapabilities" "lidar|ELEVATION|MNT|MNS|HIGHRES"
+          sondar FR-WMTS "https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetCapabilities" "lidar|ELEVATION|MNT|ombr|HIGHRES"
+          sondar NL-AHN "https://service.pdok.nl/rws/ahn/wms/v1_0?request=GetCapabilities&service=WMS" "."
+          sondar NL-AHN-WMTS "https://service.pdok.nl/rws/ahn/wmts/v1_0?request=GetCapabilities&service=WMTS" "."
+          sondar BE-VL "https://geo.api.vlaanderen.be/DHMV/wms?service=WMS&request=GetCapabilities" "."
+          sondar BE-WAL "https://geoservices.wallonie.be/arcgis/services/RELIEF/WALLONIE_MNT_2021_2022_HILLSHADE/MapServer/WMSServer?request=GetCapabilities&service=WMS" "."
+          sondar BE-WAL2 "https://geoservices.wallonie.be/arcgis/services/RELIEF/WALLONIE_MNT_2013_2014_HILLSHADE/MapServer/WMSServer?request=GetCapabilities&service=WMS" "."
+          sondar LU "https://wms.geoportail.lu/opendata/service?request=GetCapabilities&service=WMS" "lidar|mnt|dtm|relief|hillshade|ombr|elev"
+          sondar CZ-DMR5G "https://ags.cuzk.gov.cz/arcgis2/services/dmr5g/ImageServer/WMSServer?service=WMS&request=GetCapabilities" "."
+          sondar CZ-DMR5G-b "https://ags.cuzk.cz/arcgis2/services/dmr5g/ImageServer/WMSServer?service=WMS&request=GetCapabilities" "."
+          sondar DE-BKG "https://sgx.geodatenzentrum.de/wms_dgm200?request=GetCapabilities&service=WMS" "."
+          sondar AT "https://data.bev.gv.at/geoserver/BEVdataALS/wms?service=WMS&request=GetCapabilities" "."
+          sondar DK "https://api.dataforsyningen.dk/dhm_DAF?service=WMS&request=GetCapabilities" "."
+          sondar IT "http://wms.pcn.minambiente.it/ogc?map=/ms_ogc/WMS_v1.3/raster/DTM_20M.map&service=WMS&request=GetCapabilities" "."
+          sondar PT "https://cartografia.dgterritorio.gov.pt/wms/MDT50cm?service=WMS&request=GetCapabilities" "."
