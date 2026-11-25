@@ -176,6 +176,7 @@
       arrancar();
       // sincroniza as caixas com o que está ligado (só quando a lista está à vista)
       var box = D.getElementById("ipr-eng"); if (!box || !box.offsetParent) return;
+      local();
       var k = activas().join(",") + (pdmOn() ? "|p" : ""); if (k !== ult) { ult = k; pintar(); }
     } catch (e) {}
   }, 1500);
