@@ -2182,6 +2182,9 @@ if (window.IPR_A2_DEMO) (function(){
   }
   function cabecalhos(e) {
     e.querySelectorAll('.ipr-sub small').forEach(function (s) {
+      // 25/11: nas subpastas do ajustes.js (li.ipr-sp) o <small> é dele e está escondido; reescrevê-lo aqui fazia um
+      // ping-pong sem fim com o ajustes.js (20 alterações por segundo com o Atlas parado).
+      if (s.parentNode && s.parentNode.classList && s.parentNode.classList.contains('ipr-sp')) return;
       if (/ligadas$/.test(s.textContent)) return;
       var b = s.querySelector('b'); if (!b) return;
       var tot = parseInt(s.textContent, 10); if (isNaN(tot)) return;
