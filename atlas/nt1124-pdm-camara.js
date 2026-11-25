@@ -66,20 +66,50 @@
       }).catch(function () { cb({ dico: "", nome: "" }); });
     }
     var ac = W.AbortController ? new AbortController() : null; if (ac) setTimeout(function () { ac.abort(); }, 12000);
-    fetch(OGC + "?f=json&limit=1&skipGeometry=true&bbox=" + bb, ac ? { signal: ac.signal } : {}).then(function (r) { return r.json(); }).then(function (j) {
-      var p = (j && j.features && j.features[0] && j.features[0].properties) || {};
-      if (!p.dtmn) return site();
-      var r = { dico: String(p.dtmn), nome: p.municipio || "" }; CACHE[k] = r; cb(r);
+    // 25/11: o filtro bbox do ogcapi compara envelopes; perto da fronteira vinham dois concelhos e o limit=1 escolhia o vizinho
+    // (Santa Comba Dão dava Tábua, Crato dava Alter do Chão). Com mais de um, decide o polígono (descarregado uma vez e guardado).
+    function ok(p) { var r = { dico: String(p.dtmn), nome: p.municipio || "" }; CACHE[k] = r; cb(r); }
+    fetch(OGC + "?f=json&limit=10&skipGeometry=true&bbox=" + bb, ac ? { signal: ac.signal } : {}).then(function (r) { return r.json(); }).then(function (j) {
+      var fs = ((j && j.features) || []).filter(function (f) { return f && f.properties && f.properties.dtmn; });
+      if (!fs.length) return site();
+      if (fs.length === 1) return ok(fs[0].properties);
+      Promise.all(fs.map(function (f) { return geo(f.id); })).then(function (gs) {
+        for (var i = 0; i < fs.length; i++) if (gs[i] && dentro(lng, lat, gs[i])) return ok(fs[i].properties);
+        ok(fs[0].properties);
+      }).catch(function () { ok(fs[0].properties); });
     }).catch(site);
+  }
+  var GEO = {};
+  function geo(id) {
+    if (GEO[id]) return GEO[id];
+    return (GEO[id] = fetch(OGC + "/" + encodeURIComponent(id) + "?f=json").then(function (r) { return r.json(); }).then(function (f) { return f && f.geometry; }).catch(function () { delete GEO[id]; return null; }));
+  }
+  function anel(x, y, a) {
+    var d = false;
+    for (var i = 0, j = a.length - 1; i < a.length; j = i++) {
+      var xi = a[i][0], yi = a[i][1], xj = a[j][0], yj = a[j][1];
+      if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) d = !d;
+    }
+    return d;
+  }
+  function dentro(x, y, g) {
+    var ps = g.type === "Polygon" ? [g.coordinates] : g.type === "MultiPolygon" ? g.coordinates : [];
+    for (var i = 0; i < ps.length; i++) {
+      var d = false; for (var k2 = 0; k2 < ps[i].length; k2++) if (anel(x, y, ps[i][k2])) d = !d;
+      if (d) return true;
+    }
+    return false;
   }
 
   // ---------- plantas da câmara ----------
-  var SERV = {};
+  var SERV = {}, VAZIO = {};
   function servico(dico, cb) {
     if (SERV[dico] !== undefined) return cb(SERV[dico]);
     fetch(R2 + "snit/" + dico + "/servico.json", { cache: "no-cache" }).then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (j) {
       if (j && j.todas && j.todas.length) j.camadas = j.todas;   // v3: todas as plantas
-      SERV[dico] = j && j.srv && j.camadas && j.camadas.length ? j : null; cb(SERV[dico]);
+      SERV[dico] = j && j.srv && j.camadas && j.camadas.length ? j : null;
+      if (!SERV[dico] && j && j.fim) VAZIO[dico] = 1;   // 25/11: cópia acabada sem plantas (Beja, Proença-a-Nova): não dizer «a ser copiadas»
+      cb(SERV[dico]);
     }).catch(function () { SERV[dico] = null; cb(null); });
   }
   // ---------- concelhos (CAOP) ----------
@@ -332,7 +362,7 @@
           S.antiga = antigaId(r.dico);
           if (S.antiga) antiga(true);
           S.estado = (r.nome ? r.nome + ": " : "") + (explorer() ? (S.antiga ? t("imagem publicada da planta de condicionantes.", "published constraints plan image.") : t("sem planta disponível no Explorer.", "no plan available in Explorer."))
-            : t("as plantas desta câmara ainda estão a ser copiadas do SNIT.", "this municipality's plans are still being copied.") + " " + (S.antiga ? t("Entretanto, mostra-se a imagem publicada da planta de condicionantes.", "Meanwhile the published constraints image is shown.")
+            : (VAZIO[r.dico] ? t("ainda não há plantas desta câmara na cópia do SNIT.", "no plans for this municipality in the SNIT copy yet.") : t("as plantas desta câmara ainda estão a ser copiadas do SNIT.", "this municipality's plans are still being copied.")) + " " + (S.antiga ? t("Entretanto, mostra-se a imagem publicada da planta de condicionantes.", "Meanwhile the published constraints image is shown.")
             : t("Entretanto, use a camada «Ordenamento (PDM)».", "Meanwhile use the «Zoning (PDM)» layer.")));
         } else {
           S.srv = j.srv; S.camadas = j.camadas; S.escolhida = escolherInicial();
