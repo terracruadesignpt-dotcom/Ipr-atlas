@@ -37,13 +37,26 @@
     { k: "folhosas", n: t("Manter e gerir folhosas", "Keep and manage broadleaves"), cor: "#4f9a4a", eur: 600,
       r: /sobreir|azinheir|carvalh|castanheir|folhosa|rip[ií]col|medronh/i },
     { k: "agricola", n: t("Manter ou recuperar mosaico agrícola", "Keep or restore farm mosaic"), cor: "#b9cf6a", eur: 1500,
-      r: /agr[ií]col|cultura|olival|vinha|pomar|pastage|hort[ií]col|mosaico|sistemas agroflorestais|arroz/i },
+      r: /agr[ií]col|cultura|oliva|vinha|pomar|pastage|hort[ií]col|mosaico|sistemas agroflorestais|arroz/i },
     { k: "agua", n: t("Água", "Water"), cor: "#4fb3d9", eur: 0, r: /[aá]gua|curso|lago|albufeira|zonas h[uú]midas/i },
     { k: "artif", n: t("Edificado e vias (fora da intervenção)", "Built-up and roads (excluded)"), cor: "#9e9e9e", eur: 0,
       r: /artificial|tecido|edif|estrada|equipament|ind[uú]stria|com[eé]rcio|parque|infraestrutura|via/i },
     { k: "outro", n: t("Ver no terreno", "Check on site"), cor: "#8d8d8d", eur: 0, r: /./ }
   ];
-  function accaoDe(rot) { for (var i = 0; i < ACCOES.length; i++) if (ACCOES[i].r.test(rot || "")) return ACCOES[i]; return ACCOES[ACCOES.length - 1]; }
+  function porK(k) { for (var i = 0; i < ACCOES.length; i++) if (ACCOES[i].k === k) return ACCOES[i]; return ACCOES[ACCOES.length - 1]; }
+  function accaoDe(rot, cod) {
+    for (var i = 0; i < ACCOES.length - 1; i++) if (ACCOES[i].r.test(rot || "")) return ACCOES[i];
+    // pelo código da COS quando o nome não diz: 1 artificial, 2 e 3 agrícola e pastagens, 4 agroflorestal, 5.1.2 resinosas,
+    // 5.1.1 folhosas, 6 matos, 7 sem vegetação, 8 e 9 zonas húmidas e água
+    var c = String(cod || "");
+    if (/^1/.test(c)) return porK("artif");
+    if (/^[234]/.test(c)) return porK("agricola");
+    if (/^5\.1\.2/.test(c)) return porK("pinhal");
+    if (/^5/.test(c)) return porK("folhosas");
+    if (/^[67]/.test(c)) return porK("matos");
+    if (/^[89]/.test(c)) return porK("agua");
+    return porK("outro");
+  }
   var EUR = {}; ACCOES.forEach(function (a) { EUR[a.k] = a.eur; });
 
   // ---------- turf (só quando é preciso) ----------
@@ -127,7 +140,7 @@
       cos.forEach(function (f) {
         var x = cortar(f); if (!x) return;
         var a = ha(T.area(x)); if (a < 0.001) return;
-        var rot = f.properties.cos23_n4_l || f.properties.cos23_n4_c || "?", ac = accaoDe(rot);
+        var rot = f.properties.cos23_n4_l || f.properties.cos23_n4_c || "?", ac = accaoDe(rot, f.properties.cos23_n4_c);
         porClasse[rot] = (porClasse[rot] || 0) + a;
         porAccao[ac.k] = (porAccao[ac.k] || 0) + a;
         x.properties = { tipo: "accao", accao: ac.k, accao_nome: ac.n, cos23: rot, cos23_c: f.properties.cos23_n4_c || "", ha: +a.toFixed(4), cor: ac.cor };
@@ -154,7 +167,11 @@
         res.predios = pr; res.haCad = soma;
       }
       res.nome = nomeAldeia(res.ll);
-      return res;
+      if (res.nome) return res;
+      return fetch("https://nominatim.openstreetmap.org/reverse?format=json&zoom=14&accept-language=pt&lat=" + res.ll[1] + "&lon=" + res.ll[0])
+        .then(function (r2) { return r2.json(); }).then(function (j) {
+          var a = (j && j.address) || {}; res.nome = a.hamlet || a.village || a.neighbourhood || a.locality || a.town || ""; return res;
+        }).catch(function () { return res; });
     });
   }
 
