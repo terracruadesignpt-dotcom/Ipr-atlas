@@ -540,7 +540,7 @@
       aviso(p, "A ler " + esc(f.name) + "…");
       lerSIG(f, de).then(function (fc) {
         if (!fc.features.length) throw new Error("O ficheiro não tem elementos com geometria.");
-        return gastar(e, sai, f.name).then(function () { return escreverSIG(fc, sai, para, f.name); }).then(function (n) { aviso(p, "Feito: " + esc(n) + " (" + fc.features.length + " elementos).", "ok"); });
+        return gastar(e, sai, f.name).then(function () { return escreverSIG(fc, sai, para, f.name); }).then(function (n) { aviso(p, "Feito: " + esc(n) + " (" + fc.features.length + (fc.features.length === 1 ? " elemento)." : " elementos)."), "ok"); });
       }).catch(function (er) { aviso(p, esc(er.message), "er"); });
     });
   })();
