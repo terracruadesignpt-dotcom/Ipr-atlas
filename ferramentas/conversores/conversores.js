@@ -75,6 +75,7 @@
   css.textContent =
     ".ipr-cv{--f:#0f150c;--p:#151d11;--p2:#1b2516;--l:#2b3826;--t:#e8e6db;--t2:#a7ab98;--v:#94BE39;--a:#e8b04a;--e:#e06a5a;max-width:1180px;margin:0 auto;padding:28px max(16px,env(safe-area-inset-left,0px)) 60px;color:var(--t);font:15px/1.55 Geist,Inter,system-ui,sans-serif}" +
     "body:has(.ipr-cv){background:#0f150c}" +
+    "#ipr-cv,#ipr-cv *{letter-spacing:normal!important}#ipr-cv .eyb{letter-spacing:.14em!important}#ipr-cv h1,#ipr-cv h2,#ipr-cv h3{text-align:left!important;text-transform:none!important}#ipr-cv .pn>h2{margin-top:0!important;padding-top:0!important}#ipr-cv p{line-height:1.55!important}" +
     ".ipr-cv *{box-sizing:border-box}.ipr-cv h1{font:600 30px/1.15 Geist,Inter,system-ui,sans-serif;margin:0 0 6px;color:var(--t)!important;text-align:left!important;letter-spacing:-.01em}" +
     ".ipr-cv .sub{color:var(--t2);margin:0 0 22px;max-width:760px}" +
     ".ipr-cv .eyb{font:500 11px/1 'IBM Plex Mono',ui-monospace,monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--v);margin:0 0 10px}" +
@@ -128,8 +129,8 @@
   function conta() {
     var c = $("[data-conta]");
     if (!EST.sessao) {
-      c.innerHTML = '<span><b>Conta gr\u00e1tis</b> <span class="k">para converter: ' + (EST.gratis || 3) + ' convers\u00f5es inclu\u00eddas.</span></span><span class="sp"></span>' +
-        '<a class="bt pr" href="' + esc(C.registar) + '">Criar conta gr\u00e1tis</a><a class="bt" href="' + esc(C.entrar) + '">Entrar</a>';
+      c.innerHTML = '<span><b>Conta gr\u00e1tis</b> <span class="k">para converter: ' + (EST.gratis || 3) + ' convers\u00f5es inclu\u00eddas.</span></span><span style="display:flex;gap:10px;flex-wrap:wrap;margin-left:auto">' +
+        '<a class="bt pr" href="' + esc(C.registar) + '">Criar conta gr\u00e1tis</a><a class="bt" href="' + esc(C.entrar) + '">Entrar</a></span>';
       return;
     }
     if (EST.ilimitado) { c.innerHTML = '<span><b>Sem limite</b> <span class="k">(Intelligence ou equipa). Convers\u00f5es feitas: ' + (EST.total || 0) + '.</span></span>'; return; }
@@ -214,7 +215,7 @@
         api("carregar/meus").then(function (j) {
           var f = (j.ficheiros || []).filter(function (x) { return x.id === fid; })[0];
           if (!f) return;
-          var links = ["gpkg", "geojson", "kml", "kmz", "shp", "dxf", "gpx"].filter(function (k) { return f[k]; }).map(function (k) { return '<a href="' + esc(f[k]) + '">' + (k === "shp" ? "Shapefile" : k === "gpkg" ? "GeoPackage" : k.toUpperCase()) + "</a>"; }).join(" \u00b7 ");
+          var links = ["gpkg", "geojson", "kml", "kmz", "shp", "dxf", "gpx"].filter(function (k) { return f[k]; }).map(function (k) { return '<a href="' + esc(f[k]) + '">' + (k === "shp" ? "Shapefile" : k === "gpkg" ? "GeoPackage" : k === "geojson" ? "GeoJSON" : k.toUpperCase()) + "</a>"; }).join(" \u00b7 ");
           $("[data-e]", it).innerHTML = esc(f.msg || f.estado) + (links ? "<br>" + links : "");
           if (/^(pronto|erro|georref)$/.test(f.estado)) return;
           if (++n < 240) setTimeout(volta, n < 12 ? 5000 : 15000);
@@ -225,7 +226,7 @@
     if (EST.sessao) api("carregar/meus").then(function (j) {
       (j.ficheiros || []).filter(function (f) { return !f.enc; }).slice(0, 8).forEach(function (f) {
         var it = el("div", "it", '<span class="nm">' + esc(f.nome) + '</span><span data-e></span>'); lst.appendChild(it);
-        var links = ["gpkg", "geojson", "kml", "kmz", "shp", "dxf", "gpx"].filter(function (k) { return f[k]; }).map(function (k) { return '<a href="' + esc(f[k]) + '">' + (k === "shp" ? "Shapefile" : k === "gpkg" ? "GeoPackage" : k.toUpperCase()) + "</a>"; }).join(" \u00b7 ");
+        var links = ["gpkg", "geojson", "kml", "kmz", "shp", "dxf", "gpx"].filter(function (k) { return f[k]; }).map(function (k) { return '<a href="' + esc(f[k]) + '">' + (k === "shp" ? "Shapefile" : k === "gpkg" ? "GeoPackage" : k === "geojson" ? "GeoJSON" : k.toUpperCase()) + "</a>"; }).join(" \u00b7 ");
         $("[data-e]", it).innerHTML = esc(f.msg || f.estado) + (links ? "<br>" + links : "");
       });
     }).catch(function () {});
