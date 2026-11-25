@@ -50,7 +50,10 @@ jobs:
           for g in *.geojsons; do
             [ -s "$g" ] || continue; b=${g%.geojsons}
             tippecanoe -o $b.pmtiles -l $b -A "${{ matrix.org }} · cópia IPR Atlas" -Z4 -z14 --drop-densest-as-needed --extend-zooms-if-still-dropping --hilbert -P -t /mnt/d --force $g || continue
-            gh release upload $T $b.pmtiles --repo "$GITHUB_REPOSITORY" --clobber
+            if [ $(stat -c%s $b.pmtiles) -gt 1900000000 ]; then  # 25/11: as versões do GitHub não aceitam ficheiros de 2 GB ou mais
+              tippecanoe -o $b.pmtiles -l $b -A "${{ matrix.org }} · cópia IPR Atlas" -Z4 -z12 --drop-densest-as-needed --hilbert -P -t /mnt/d --force $g || continue
+            fi
+            gh release upload $T $b.pmtiles --repo "$GITHUB_REPOSITORY" --clobber || { echo "falhou o envio de $b"; continue; }
             sleep 5; curl -sS --max-time 900 "https://ipr-copia-ficheiro.terracrua-ipr.workers.dev/?ext=$T/$b.pmtiles&ir=1" || true; echo
           done
           for m in *__manifesto.json; do gh release upload $T $m --repo "$GITHUB_REPOSITORY" --clobber || true; done
