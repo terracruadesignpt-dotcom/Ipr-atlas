@@ -105,7 +105,10 @@
     var cv = D.createElement("canvas"); cv.width = G.W; cv.height = G.H; var x = cv.getContext("2d", { willReadFrequently: true }); x.imageSmoothingEnabled = false;
     var ts = []; for (var i = tx0; i <= tx1; i++) for (var j = ty0; j <= ty1; j++) ts.push([i, j]);
     return Promise.all(ts.map(function (t) {
-      return fetch(DEM.replace("{z}", z).replace("{x}", t[0]).replace("{y}", t[1])).then(function (r) { if (!r.ok) throw 0; return r.blob(); }).then(createImageBitmap)
+      var u = DEM.replace("{z}", z).replace("{x}", t[0]).replace("{y}", t[1]);
+      function um() { return fetch(u).then(function (r) { if (!r.ok) throw 0; return r.blob(); }).then(createImageBitmap); }
+      // 25/11, 20h00: um mosaico que falhe ficava a cota 0 e a água corria a direito para lá (linhas rectas na Base de Espinho, Bernardo)
+      return um().catch(function () { return new Promise(function (ok) { setTimeout(ok, 600); }).then(um); })
         .then(function (im) { x.drawImage(im, (t[0] - tx0) * 512, (t[1] - ty0) * 512, 512, 512); }).catch(function () {});
     })).then(function () {
       var d = x.getImageData(0, 0, G.W, G.H).data, a = new Float32Array(G.W * G.H), ok = new Uint8Array(G.W * G.H);
@@ -564,9 +567,9 @@
       for (var passo = 0; passo < 6000; passo++) {
         vis[i] = 1; var x = i % Wp, y = (i / Wp) | 0; if (x < 2 || y < 2 || x > Wp - 3 || y > G.H - 3) break;
         var bi = -1, bz = a[i];
-        for (var k = 0; k < 8; k++) { var j = i + VIZ[k][1] * Wp + VIZ[k][0]; if (!vis[j] && a[j] < bz) { bz = a[j]; bi = j; } }
+        for (var k = 0; k < 8; k++) { var j = i + VIZ[k][1] * Wp + VIZ[k][0]; if (!vis[j] && G.ok[j] && a[j] < bz) { bz = a[j]; bi = j; } }
         if (bi < 0) { // poça ou plano: procura a saída mais baixa até 6 píxeis
-          var mz = 1e9; for (var dy = -6; dy <= 6; dy++) for (var dx = -6; dx <= 6; dx++) { var jj = i + dy * Wp + dx; if (jj < 0 || jj >= a.length || vis[jj]) continue; if (a[jj] < a[i] + 0.05 && a[jj] < mz && (dx || dy)) { mz = a[jj]; bi = jj; } }
+          var mz = 1e9; for (var dy = -6; dy <= 6; dy++) for (var dx = -6; dx <= 6; dx++) { var jj = i + dy * Wp + dx; if (jj < 0 || jj >= a.length || vis[jj] || !G.ok[jj]) continue; if (a[jj] < a[i] + 0.05 && a[jj] < mz && (dx || dy)) { mz = a[jj]; bi = jj; } }
           if (bi < 0) break;
         }
         i = bi; pts.push(G.ll(i % Wp + 0.5, ((i / Wp) | 0) + 0.5));
@@ -668,8 +671,8 @@
       for (var passo = 0; passo < 4000; passo++) {
         vis[i] = 1; var x = i % Wp, y = (i / Wp) | 0; if (x < 3 || y < 3 || x > Wp - 4 || y > G.H - 4) break;
         var bi = -1, bz = a[i];
-        for (var k = 0; k < 8; k++) { var j = i + VIZ[k][1] * Wp + VIZ[k][0]; if (!vis[j] && a[j] < bz) { bz = a[j]; bi = j; } }
-        if (bi < 0) { var mz = 1e9; for (var dy = -5; dy <= 5; dy++) for (var dx = -5; dx <= 5; dx++) { var jj = i + dy * Wp + dx; if (jj < 0 || jj >= a.length || vis[jj] || (!dx && !dy)) continue; if (a[jj] < a[i] + 0.05 && a[jj] < mz) { mz = a[jj]; bi = jj; } } if (bi < 0) break; }
+        for (var k = 0; k < 8; k++) { var j = i + VIZ[k][1] * Wp + VIZ[k][0]; if (!vis[j] && G.ok[j] && a[j] < bz) { bz = a[j]; bi = j; } }
+        if (bi < 0) { var mz = 1e9; for (var dy = -5; dy <= 5; dy++) for (var dx = -5; dx <= 5; dx++) { var jj = i + dy * Wp + dx; if (jj < 0 || jj >= a.length || vis[jj] || !G.ok[jj] || (!dx && !dy)) continue; if (a[jj] < a[i] + 0.05 && a[jj] < mz) { mz = a[jj]; bi = jj; } } if (bi < 0) break; }
         i = bi; pts.push(G.ll(i % Wp + 0.5, ((i / Wp) | 0) + 0.5)); if (comp(pts) > 700) break;
       }
       // perfil a cada 5 m, suavizado
