@@ -202,8 +202,15 @@
     } catch (e) {}
     out.fonte = "mapa"; return out;
   }
+  function esperarMapa(b) { // o mapa pode ainda estar a carregar a zona (ligação directa, voo): esperar até 10 s
+    return new Promise(function (ok) {
+      var n = 0, volta = function () { var vm = viasMapa(b); if (vm.length > 3 || ++n > 25) return ok(vm); setTimeout(volta, 400); }; volta();
+    });
+  }
   function viasOSM(b) {
-    var vm = viasMapa(b); if (vm.length > 3) return Promise.resolve(vm);
+    return esperarMapa(b).then(function (vm) { if (vm.length > 3) return vm; return viasRede(b, vm); });
+  }
+  function viasRede(b, vm) {
     var q = "[out:json][timeout:25];way[highway~\"^(" + Object.keys(MEIA).join("|") + ")$\"](" + [b[1], b[0], b[3], b[2]].map(function (x) { return x.toFixed(5); }).join(",") + ");out tags geom;";
     var pedidos = OVERPASS.map(function (u) {
       var ac = W.AbortController ? new AbortController() : null; if (ac) setTimeout(function () { ac.abort(); }, 25000);
