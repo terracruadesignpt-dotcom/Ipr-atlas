@@ -216,7 +216,7 @@
           if (!f) return;
           var links = ["gpkg", "geojson", "kml", "kmz", "shp", "dxf", "gpx"].filter(function (k) { return f[k]; }).map(function (k) { return '<a href="' + esc(f[k]) + '">' + (k === "shp" ? "Shapefile" : k === "gpkg" ? "GeoPackage" : k.toUpperCase()) + "</a>"; }).join(" \u00b7 ");
           $("[data-e]", it).innerHTML = esc(f.msg || f.estado) + (links ? "<br>" + links : "");
-          if (/pronto|feito|ok|erro|falhou/i.test(f.estado) && (links || /erro|falhou/i.test(f.estado))) return;
+          if (/^(pronto|erro|georref)$/.test(f.estado)) return;
           if (++n < 240) setTimeout(volta, n < 12 ? 5000 : 15000);
         }).catch(function () { if (++n < 240) setTimeout(volta, 15000); });
       })();
