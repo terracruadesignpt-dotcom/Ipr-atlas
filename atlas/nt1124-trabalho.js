@@ -35,9 +35,11 @@
   var TIPOS = {
     agua: { n: "Água", cor: "#3d8fd6", p: ["Nascente", "Poço", "Furo", "Depósito"], l: ["Vala em curva de nível", "Keyline", "Tubagem", "Linha de água"], g: ["Charca", "Zona húmida", "Bacia de retenção"] },
     acessos: { n: "Acessos", cor: "#b98a52", p: ["Portão", "Cancela", "Passagem"], l: ["Caminho", "Estrada", "Trilho"], g: ["Eira e parque", "Zona de manobra"] },
-    veg: { n: "Vegetação", cor: "#6fa83a", p: ["Árvore", "Árvore notável"], l: ["Sebe", "Linha de plantação", "Corta-vento"], g: ["Pomar", "Horta", "Mata", "Pastagem"] },
+    veg: { n: "Floresta e vegetação", cor: "#6fa83a", p: ["Árvore", "Árvore notável", "Arbusto"], l: ["Sebe", "Linha de plantação", "Corta-vento"], g: ["Mata", "Gestão florestal", "Montado", "Galeria ripícola", "Matos", "Zona selvagem", "Pastagem"] },
+    agric: { n: "Produção agrícola", cor: "#c9a227", p: ["Árvore de fruto", "Oliveira"], l: ["Linha de rega", "Bardo de vinha", "Socalco"], g: ["Pomar irrigado", "Pomar de sequeiro", "Citrinos", "Olival tradicional", "Olival intensivo", "Amendoal", "Vinha", "Souto", "Frutos vermelhos", "Cereal de sequeiro", "Culturas de regadio", "Pivô de rega", "Arrozal", "Horta", "Prado e forragem", "Pastagem melhorada", "Pousio", "Agrofloresta"] },
     edif: { n: "Edificado", cor: "#d9d6c8", p: ["Poste", "Colmeia", "Painel solar"], l: ["Muro", "Vedação", "Rede eléctrica"], g: ["Casa", "Armazém", "Estufa"] },
-    lim: { n: "Limites e zonas", cor: "#e5484d", p: ["Marco"], l: ["Estrema", "Faixa de servidão"], g: ["Terreno", "Zona 0 a 5", "Faixa de combustível"] }
+    lim: { n: "Limites e zonas", cor: "#e5484d", p: ["Marco"], l: ["Estrema", "Faixa de servidão"], g: ["Terreno", "Faixa de combustível"] },
+    zonas: { n: "Zonas", cor: "#e888b0", p: [], l: [], g: ["Zona 0 · casa", "Zona 1", "Zona 2", "Zona 3", "Zona 4", "Zona 5 · selvagem"] }
   };
   var RECOLHA = { solo: { n: "Amostra de solo", cor: "#a0785a" }, aguaP: { n: "Ponto de água", cor: "#3d8fd6" }, arvore: { n: "Árvore", cor: "#6fa83a" }, prob: { n: "Problema no terreno", cor: "#e5484d" } };
 

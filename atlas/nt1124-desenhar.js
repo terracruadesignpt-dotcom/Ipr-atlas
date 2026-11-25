@@ -14,6 +14,9 @@
    estradas» e «os desenhos é para todos [...] para toda a gente que tem acesso à intelligence». Os tipos passam a botões
    redondos grandes com ícone e cor; os elementos ficam maiores. O modo Desenhar já é de quem tem Intelligence (e equipa),
    por isso chega a todos esses.
+   19h20: «tem que haver mancha de pomar irrigado, olival, pomar de sequeiro, gestão florestal, zona 5, selvagem», «as zonas»,
+   «e os diferentes tipos de produção agrícola de Portugal». Novos tipos «Produção agrícola» e «Zonas» (0 a 5); cada mancha tem
+   padrão próprio (nt1124-simbolos.js).
    Desligar: ?dpainel=0 ou localStorage ipr_dp=0. */
 (function () {
   "use strict";
@@ -26,16 +29,20 @@
   var TIPOS = [
     ["agua", "Água", "#3d8fd6", { p: ["Nascente", "Poço", "Furo", "Depósito"], l: ["Vala em curva de nível", "Keyline", "Tubagem", "Linha de água"], g: ["Charca", "Zona húmida", "Bacia de retenção"] }],
     ["acessos", "Estradas e acessos", "#b98a52", { p: ["Portão", "Cancela", "Passagem"], l: ["Caminho", "Estrada", "Trilho"], g: ["Eira e parque", "Zona de manobra"] }],
-    ["veg", "Floresta e vegetação", "#6fa83a", { p: ["Árvore", "Árvore notável"], l: ["Sebe", "Linha de plantação", "Corta-vento"], g: ["Pomar", "Horta", "Mata", "Pastagem"] }],
+    ["veg", "Floresta e vegetação", "#6fa83a", { p: ["Árvore", "Árvore notável", "Arbusto"], l: ["Sebe", "Linha de plantação", "Corta-vento"], g: ["Mata", "Gestão florestal", "Montado", "Galeria ripícola", "Matos", "Zona selvagem", "Pastagem"] }],
+    ["agric", "Produção agrícola", "#c9a227", { p: ["Árvore de fruto", "Oliveira"], l: ["Linha de rega", "Bardo de vinha", "Socalco"], g: ["Pomar irrigado", "Pomar de sequeiro", "Citrinos", "Olival tradicional", "Olival intensivo", "Amendoal", "Vinha", "Souto", "Frutos vermelhos", "Cereal de sequeiro", "Culturas de regadio", "Pivô de rega", "Arrozal", "Horta", "Prado e forragem", "Pastagem melhorada", "Pousio", "Agrofloresta"] }],
     ["edif", "Edificado", "#bdb8a8", { p: ["Poste", "Colmeia", "Painel solar"], l: ["Muro", "Vedação", "Rede eléctrica"], g: ["Casa", "Armazém", "Estufa"] }],
-    ["lim", "Limites e zonas", "#e5484d", { p: ["Marco"], l: ["Estrema", "Faixa de servidão"], g: ["Terreno", "Zona 0 a 5", "Faixa de combustível"] }]
+    ["lim", "Limites e zonas", "#e5484d", { p: ["Marco"], l: ["Estrema", "Faixa de servidão"], g: ["Terreno", "Faixa de combustível"] }],
+    ["zonas", "Zonas", "#e888b0", { p: [], l: [], g: ["Zona 0 · casa", "Zona 1", "Zona 2", "Zona 3", "Zona 4", "Zona 5 · selvagem"] }]
   ];
   var ICO = {
     agua: '<path d="M12 3c3.5 4.6 6 8 6 11a6 6 0 0 1-12 0c0-3 2.5-6.4 6-11z"/>',
     acessos: '<path d="M9 3h2l-1 18H7zM13 3h2l2 18h-3zM11.5 6h1v2h-1zM11.5 11h1v2h-1zM11.5 16h1v2h-1z"/>',
     veg: '<path d="M12 3l5 7h-3l4 6h-5v5h-2v-5H6l4-6H7z"/>',
     edif: '<path d="M3 11l9-7 9 7v10h-6v-6H9v6H3z"/>',
-    lim: '<path d="M4 4h7v7H4zM13 4h7v4h-7zM13 10h7v10h-7zM4 13h7v7H4z"/>'
+    lim: '<path d="M3 3h18v18H3zM5.5 5.5v13h13v-13z" fill-rule="evenodd"/><path d="M8 8h3v3H8z"/>',
+    agric: '<path d="M11 21v-8.5C11 8.4 14.2 5 19 5c0 4.6-3.2 7.8-7 8v8zM9.6 15.4C9.6 12 7.2 9.5 4 9.5c0 3.2 2.3 5.9 5.6 5.9z"/><path d="M5 20.5h14V22H5z"/>',
+    zonas: '<circle cx="12" cy="12" r="2.6"/><path d="M12 5.5a6.5 6.5 0 1 1 0 13 6.5 6.5 0 0 1 0-13zm0 1.8a4.7 4.7 0 1 0 0 9.4 4.7 4.7 0 0 0 0-9.4z" fill-rule="evenodd" opacity=".8"/><path d="M12 1.5a10.5 10.5 0 1 1 0 21 10.5 10.5 0 0 1 0-21zm0 1.6a8.9 8.9 0 1 0 0 17.8 8.9 8.9 0 0 0 0-17.8z" fill-rule="evenodd" opacity=".55"/>'
   };
   var FORMAS = [["p", "Pontos"], ["l", "Linhas"], ["g", "Áreas"]];
   var TERRENO = [["Escolher parcelas", /escolher parcelas|pick parcels/i], ["Desenhar o terreno", /desenhar o terreno|draw the plot/i], ["Carregar ficheiro", /carregar ficheiro|upload/i], ["Apagar terreno", /apagar terreno|erase/i]];
@@ -57,7 +64,7 @@
     "#ipr-dp .bt{height:32px;padding:0 13px;border-radius:999px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.03);color:#dcdacf;font:500 12.5px Geist,Inter,system-ui,sans-serif;cursor:pointer;white-space:nowrap}" +
     "#ipr-dp .bt:hover{background:rgba(255,255,255,.08);color:#fff}" +
     "#ipr-dp .bt.p{background:#94BE39;border-color:#94BE39;color:#11160d}" +
-    "#ipr-dp .tabs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}" +
+    "#ipr-dp .tabs{display:grid;grid-template-columns:repeat(auto-fill,minmax(70px,1fr));gap:8px 4px}" +
     "#ipr-dp .tab{display:flex;flex-direction:column;align-items:center;gap:6px;padding:4px 2px;border:0;background:none;color:#dcdacf;font:600 12px/1.2 Geist,Inter,system-ui,sans-serif;cursor:pointer;text-align:center}" +
     "#ipr-dp .tab i{display:flex;align-items:center;justify-content:center;width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,.06);border:2px solid var(--c);transition:transform .12s,background .12s}" +
     "#ipr-dp .tab svg{width:28px;height:28px;fill:var(--c)}" +
@@ -70,7 +77,7 @@
     "#ipr-dp .el{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;min-height:76px;padding:10px 6px;border-radius:14px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.025);color:#e6e4d9;font:500 12.5px/1.2 Geist,Inter,system-ui,sans-serif;text-align:center;cursor:pointer}" +
     "#ipr-dp .el:hover{border-color:rgba(255,255,255,.22);background:rgba(255,255,255,.06)}" +
     "#ipr-dp .el.on{border-width:2px;border-color:#94BE39;background:rgba(148,190,57,.14);color:#f2f0e6}" +
-    "#ipr-dp .el svg{width:44px;height:22px;display:block}" +
+    "#ipr-dp .el svg{width:44px;height:22px;display:block}#ipr-dp .el svg.ar{width:60px;height:30px}" +
     "#ipr-dp .rod{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,.07)}" +
     "#ipr-dp .rod .esp{flex:1 1 auto}" +
     "#ipr-dp .mais{position:relative}" +
