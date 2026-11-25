@@ -198,12 +198,12 @@
 
   // ---------- painel ----------
   var CSS =
-    "#ipr-cda{position:fixed;z-index:99995;top:70px;right:calc(var(--ipr-cda-dir,240px) + 12px);width:min(380px,calc(100vw - 24px));max-height:calc(100vh - 110px);overflow:auto;" +
+    "#ipr-cda{position:fixed;z-index:99995;top:70px;right:calc(var(--ipr-cda-dir,240px) + 12px);width:min(430px,calc(100vw - 24px));max-height:calc(100vh - 110px);overflow:auto;" +
     "background:var(--p2,#22261b);color:var(--tx,#e9eadf);border:1px solid var(--ln,#3a3f30);border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,.35);font:13px/1.45 Inter,system-ui,sans-serif;padding:12px 14px}" +
     "#ipr-cda h3{margin:0 0 2px;font:600 15px Outfit,Inter,sans-serif}#ipr-cda h4{margin:12px 0 4px;font:600 11px Inter,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--mu,#a7ab98)}" +
     "#ipr-cda .x{position:absolute;top:8px;right:10px;all:unset;cursor:pointer;font-size:18px;line-height:1;color:var(--mu,#a7ab98);padding:4px}" +
     "#ipr-cda #ipr-cda-x{position:absolute;top:8px;right:10px}" +
-    "#ipr-cda p{margin:4px 0}#ipr-cda small{color:var(--mu,#a7ab98)}#ipr-cda table{width:100%;border-collapse:collapse;font-size:12.5px}" +
+    "#ipr-cda p{margin:4px 0}#ipr-cda small{color:var(--mu,#a7ab98)}#ipr-cda table{width:100%;border-collapse:collapse;font-size:12.5px;table-layout:auto}#ipr-cda table.ac td:first-child{width:56%}" +
     "#ipr-cda td,#ipr-cda th{padding:3px 4px;border-bottom:1px solid var(--ln,#3a3f30);text-align:left;vertical-align:top}#ipr-cda td.n,#ipr-cda th.n{text-align:right;white-space:nowrap}" +
     "#ipr-cda i.c{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:-1px}" +
     "#ipr-cda input.e{width:64px;background:var(--p3,#1d2117);color:inherit;border:1px solid var(--ln,#3a3f30);border-radius:5px;padding:2px 4px;text-align:right;font:inherit}" +
@@ -255,7 +255,7 @@
     h += "<p><b>" + fmt(res.haFaixa, 1) + " ha</b> " + t("na faixa de 100 m", "in the 100 m belt") + " · " + fmt(res.haAglo, 1) + " ha " + t("de aglomerado", "built-up") + "</p>";
     if (res.agloFonte === "circulo") h += "<div class='av'>" + t("Não encontrei edificado na COS 2023 junto ao toque: usei um círculo de 60 m como aglomerado. Toque mais perto das casas para um resultado melhor.", "No built-up area found in COS 2023 near the tap: a 60 m circle was used. Tap closer to the houses for a better result.") + "</div>";
     // acções
-    h += "<h4>" + t("O que fazer na faixa", "What to do in the belt") + "</h4><table><tr><th>" + t("Acção", "Action") + "</th><th class='n'>ha</th><th class='n'>€/ha</th><th class='n'>€</th></tr>";
+    h += "<h4>" + t("O que fazer na faixa", "What to do in the belt") + "</h4><table class='ac'><tr><th>" + t("Acção", "Action") + "</th><th class='n'>ha</th><th class='n'>€/ha</th><th class='n'>€</th></tr>";
     ACCOES.forEach(function (a) {
       var v = res.porAccao[a.k]; if (!v) return;
       h += "<tr><td><i class='c' style='background:" + a.cor + "'></i>" + esc(a.n) + "</td><td class='n'>" + fmt(v, 2) + "</td><td class='n'>" +
