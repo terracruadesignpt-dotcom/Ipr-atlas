@@ -231,7 +231,7 @@
       var junta = function (a) { try { return a.length > 1 ? T.union(T.featureCollection(a)) : a[0]; } catch (e) { return a[0]; } };
       res.viaEnt = {}; res.vias = [];
       Object.keys(porEnt).forEach(function (k) { var u = junta(porEnt[k]); if (!u) return; var a = ha(T.area(u)); res.viaEnt[k] = a; u.properties = { tipo: "via", entidade: k, largura_m: VIA_M, ha: +a.toFixed(4), vias: porEnt[k].map(function (x) { return x.properties.via; }).filter(function (v, i, arr) { return v && arr.indexOf(v) === i; }).slice(0, 12).join("; ") }; res.vias.push(u); });
-      res.viaKm = km / (vs.fonte === "mapa" ? 1.15 : 1); res.viaFonte = vs.fonte || "osm";
+      res.viaKm = vs.fonte === "mapa" ? 0 : km; res.viaFonte = vs.fonte || "osm";
       var u = junta(res.vias.slice()); res.viaU = u || null; res.haVia = u ? ha(T.area(u)) : 0;
       try { var f100 = u ? T.difference(T.featureCollection([u, res.area])) : null; res.haViaFora = f100 ? ha(T.area(f100)) : 0; } catch (e) { res.haViaFora = 0; }
     }).catch(function (e) { res.vias = null; res.viaErro = String(e && e.message || e); });
@@ -487,7 +487,7 @@
     var h = "<h4>" + t("Bermas da estrada (10 m de cada lado)", "Roadside strips (10 m each side)") + "</h4>";
     if (!res.vias) return h + "<p><small>" + t("Não consegui ler as estradas do OpenStreetMap agora.", "Could not read OpenStreetMap roads right now.") + "</small></p>";
     if (!res.vias.length) return h + "<p><small>" + t("Sem estradas cartografadas na zona.", "No mapped roads nearby.") + "</small></p>";
-    h += "<p><b>" + fmt(res.haVia, 1) + " ha</b> " + t("em", "along") + " " + fmt(res.viaKm, 1) + " km " + t("de vias", "of roads") + " · " + fmt(res.haViaFora, 1) + " ha " + t("fora da faixa de 100 m", "outside the 100 m belt") + "</p><table>";
+    h += "<p><b>" + fmt(res.haVia, 1) + " ha</b>" + (res.viaKm ? " " + t("em", "along") + " " + fmt(res.viaKm, 1) + " km " + t("de vias", "of roads") : "") + " · " + fmt(res.haViaFora, 1) + " ha " + t("fora da faixa de 100 m", "outside the 100 m belt") + "</p><table>";
     Object.keys(res.viaEnt).sort(function (a, b) { return res.viaEnt[b] - res.viaEnt[a]; }).forEach(function (k) { h += "<tr><td>" + esc(k) + "</td><td class='n'>" + fmt(res.viaEnt[k], 2) + " ha</td></tr>"; });
     return h + "</table><small>" + t("A lei põe a gestão destas faixas a cargo de quem gere a via. São contínuas e fáceis de percorrer: boas para começar o pastoreio e para estudar a vegetação. Vias do OpenStreetMap; quem gere cada via está por confirmar.", "The law puts these strips on whoever manages the road. Continuous and easy to walk: good to start grazing and to study vegetation. Roads from OpenStreetMap; road managers to be confirmed.") + "</small>";
   }
