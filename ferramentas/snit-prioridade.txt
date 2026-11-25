@@ -7,3 +7,5 @@
 1814  # Santa Comba Dão (Fonte do Soito, Junta de São Joaninho)
 1702  # Boticas (Covas do Barroso, UDCB)
 0107  # Espinho (já copiada a 23/11; fica para as actualizações)
+1401  # Abrantes (Fórum Condomínios de Aldeia, Sardoal, 9/12/2026)
+1417  # Sardoal (Fórum Condomínios de Aldeia, 9/12/2026)
