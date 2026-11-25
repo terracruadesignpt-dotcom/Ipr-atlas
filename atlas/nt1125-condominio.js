@@ -189,7 +189,20 @@
   }
   var OVERPASS = ["https://overpass.private.coffee/api/interpreter", "https://overpass.kumi.systems/api/interpreter", "https://overpass-api.de/api/interpreter"];
   var OMT = { motorway: "motorway", trunk: "trunk", primary: "primary", secondary: "secondary", tertiary: "tertiary", minor: "unclassified", service: "service", track: "track" };
+  // vias: primeiro as que o mapa já tem carregadas (OpenMapTiles, rápido e sem depender de terceiros); sem elas, o Overpass
+  function viasMapa(b) {
+    var m = mapa(), out = []; if (!m) return out;
+    try {
+      m.querySourceFeatures("iprv-omt", { sourceLayer: "transportation" }).forEach(function (f) {
+        var h = OMT[f.properties.class]; if (!h) return; var g = f.geometry;
+        if (g.type !== "LineString" && g.type !== "MultiLineString") return;
+        out.push({ tags: { highway: h, name: f.properties.name || "", ref: f.properties.ref || "" }, coords: g.type === "LineString" ? [g.coordinates] : g.coordinates });
+      });
+    } catch (e) {}
+    out.fonte = "mapa"; return out;
+  }
   function viasOSM(b) {
+    var vm = viasMapa(b); if (vm.length > 3) return Promise.resolve(vm);
     var q = "[out:json][timeout:25];way[highway~\"^(" + Object.keys(MEIA).join("|") + ")$\"](" + [b[1], b[0], b[3], b[2]].map(function (x) { return x.toFixed(5); }).join(",") + ");out tags geom;";
     var pedidos = OVERPASS.map(function (u) {
       var ac = W.AbortController ? new AbortController() : null; if (ac) setTimeout(function () { ac.abort(); }, 25000);
@@ -197,15 +210,7 @@
         .then(function (r) { if (!r.ok) throw new Error("overpass " + r.status); return r.json(); })
         .then(function (j) { return (j.elements || []).filter(function (w) { return w.geometry && w.geometry.length > 1; }).map(function (w) { return { tags: w.tags || {}, coords: [w.geometry.map(function (p) { return [p.lon, p.lat]; })] }; }); });
     });
-    var qualquer = Promise.any ? Promise.any(pedidos) : pedidos[0];
-    return qualquer.catch(function () { // sem Overpass: as vias que o mapa já tem carregadas (OpenMapTiles)
-      var m = mapa(), out = []; if (!m) throw new Error("sem vias");
-      m.querySourceFeatures("iprv-omt", { sourceLayer: "transportation" }).forEach(function (f) {
-        var h = OMT[f.properties.class]; if (!h) return; var g = f.geometry;
-        out.push({ tags: { highway: h, name: f.properties.name || "", ref: f.properties.ref || "" }, coords: g.type === "LineString" ? [g.coordinates] : g.coordinates });
-      });
-      if (!out.length) throw new Error("sem vias"); out.fonte = "mapa"; return out;
-    });
+    return (Promise.any ? Promise.any(pedidos) : pedidos[0]).catch(function () { if (vm.length) return vm; throw new Error("sem vias"); });
   }
   function pausa(x) { return new Promise(function (ok) { setTimeout(function () { ok(x); }, 0); }); }
   function estradas(T, res) {
