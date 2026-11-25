@@ -187,30 +187,54 @@
     if (/^(M|EM|CM)\s?\d/.test(r) || h === "tertiary" || h === "unclassified" || h === "residential" || h === "living_street") return t("Câmara Municipal (a confirmar)", "Municipality (to confirm)");
     return t("Proprietários ou junta (a confirmar)", "Owners or parish (to confirm)");
   }
+  var OVERPASS = ["https://overpass.private.coffee/api/interpreter", "https://overpass.kumi.systems/api/interpreter", "https://overpass-api.de/api/interpreter"];
+  var OMT = { motorway: "motorway", trunk: "trunk", primary: "primary", secondary: "secondary", tertiary: "tertiary", minor: "unclassified", service: "service", track: "track" };
+  function viasOSM(b) {
+    var q = "[out:json][timeout:25];way[highway~\"^(" + Object.keys(MEIA).join("|") + ")$\"](" + [b[1], b[0], b[3], b[2]].map(function (x) { return x.toFixed(5); }).join(",") + ");out tags geom;";
+    var pedidos = OVERPASS.map(function (u) {
+      var ac = W.AbortController ? new AbortController() : null; if (ac) setTimeout(function () { ac.abort(); }, 25000);
+      return fetch(u, { method: "POST", body: "data=" + encodeURIComponent(q), headers: { "Content-Type": "application/x-www-form-urlencoded" }, signal: ac ? ac.signal : undefined })
+        .then(function (r) { if (!r.ok) throw new Error("overpass " + r.status); return r.json(); })
+        .then(function (j) { return (j.elements || []).filter(function (w) { return w.geometry && w.geometry.length > 1; }).map(function (w) { return { tags: w.tags || {}, coords: [w.geometry.map(function (p) { return [p.lon, p.lat]; })] }; }); });
+    });
+    var qualquer = Promise.any ? Promise.any(pedidos) : pedidos[0];
+    return qualquer.catch(function () { // sem Overpass: as vias que o mapa já tem carregadas (OpenMapTiles)
+      var m = mapa(), out = []; if (!m) throw new Error("sem vias");
+      m.querySourceFeatures("iprv-omt", { sourceLayer: "transportation" }).forEach(function (f) {
+        var h = OMT[f.properties.class]; if (!h) return; var g = f.geometry;
+        out.push({ tags: { highway: h, name: f.properties.name || "", ref: f.properties.ref || "" }, coords: g.type === "LineString" ? [g.coordinates] : g.coordinates });
+      });
+      if (!out.length) throw new Error("sem vias"); out.fonte = "mapa"; return out;
+    });
+  }
   function estradas(T, res) {
-    var b = T.bbox(T.buffer(res.area, MARGEM_VIA, { units: "meters" })), q = "[out:json][timeout:25];way[highway~\"^(" + Object.keys(MEIA).join("|") + ")$\"](" + [b[1], b[0], b[3], b[2]].map(function (x) { return x.toFixed(5); }).join(",") + ");out tags geom;";
-    var ac = W.AbortController ? new AbortController() : null; if (ac) setTimeout(function () { ac.abort(); }, 30000);
-    return fetch("https://overpass-api.de/api/interpreter", { method: "POST", body: "data=" + encodeURIComponent(q), headers: { "Content-Type": "application/x-www-form-urlencoded" }, signal: ac ? ac.signal : undefined })
-      .then(function (r) { if (!r.ok) throw new Error("overpass " + r.status); return r.json(); })
-      .then(function (j) {
-        var caixa = T.bboxPolygon(b), tiras = [], porEnt = {}, km = 0;
-        (j.elements || []).forEach(function (w) {
-          if (!w.geometry || w.geometry.length < 2) return;
-          var meia = MEIA[w.tags.highway] || 3, l = T.lineString(w.geometry.map(function (p) { return [p.lon, p.lat]; }));
+    var b = T.bbox(T.buffer(res.area, MARGEM_VIA, { units: "meters" }));
+    return viasOSM(b).then(function (vs) {
+      var caixa = T.bboxPolygon(b), tiras = [], porEnt = {}, km = 0;
+      vs.forEach(function (w) {
+        var meia = MEIA[w.tags.highway] || 3, ent = entidadeVia(w.tags);
+        w.coords.forEach(function (cs) {
+          if (!cs || cs.length < 2) return;
           try {
-            var fora = T.buffer(l, meia + VIA_M, { units: "meters" }), dentro = T.buffer(l, meia, { units: "meters" });
+            var l = T.lineString(cs), fora = T.buffer(l, meia + VIA_M, { units: "meters" }), dentro = T.buffer(l, meia, { units: "meters" });
             var tira = T.difference(T.featureCollection([fora, dentro])); if (!tira) return;
             tira = T.intersect(T.featureCollection([tira, caixa])); if (!tira) return;
-            if (res.aglo) tira = T.difference(T.featureCollection([tira, res.aglo])) || null; if (!tira) return;
-            var ent = entidadeVia(w.tags), a = ha(T.area(tira)); if (a < 0.005) return;
-            tira.properties = { tipo: "via", via: w.tags.name || w.tags.ref || w.tags.highway, classe: w.tags.highway, ref: w.tags.ref || "", entidade: ent, largura_m: VIA_M, ha: +a.toFixed(4) };
-            tiras.push(tira); porEnt[ent] = (porEnt[ent] || 0) + a; km += T.length(T.bboxClip(l, b), { units: "kilometers" });
+            if (res.aglo) tira = T.difference(T.featureCollection([tira, res.aglo])); if (!tira) return;
+            if (ha(T.area(tira)) < 0.005) return;
+            tira.properties = { tipo: "via", via: w.tags.name || w.tags.ref || w.tags.highway, classe: w.tags.highway, ref: w.tags.ref || "", entidade: ent, largura_m: VIA_M };
+            tiras.push(tira); (porEnt[ent] = porEnt[ent] || []).push(tira);
+            var c = T.bboxClip(l, b); if (c && c.geometry.coordinates.length > 1) km += T.length(c, { units: "kilometers" });
           } catch (e) {}
         });
-        res.vias = tiras; res.viaEnt = porEnt; res.viaKm = km;
-        try { var u = tiras.length > 1 ? T.union(T.featureCollection(tiras)) : tiras[0]; res.viaU = u || null; res.haVia = u ? ha(T.area(u)) : 0;
-          var fora100 = u ? T.difference(T.featureCollection([u, res.area])) : null; res.haViaFora = fora100 ? ha(T.area(fora100)) : 0; } catch (e) { res.haVia = 0; res.haViaFora = 0; }
-      }).catch(function (e) { res.vias = null; res.viaErro = String(e && e.message || e); });
+      });
+      // uma peça por entidade (as vias tocam-se e, vindas do mapa, chegam cortadas por mosaico)
+      var junta = function (a) { try { return a.length > 1 ? T.union(T.featureCollection(a)) : a[0]; } catch (e) { return a[0]; } };
+      res.viaEnt = {}; res.vias = [];
+      Object.keys(porEnt).forEach(function (k) { var u = junta(porEnt[k]); if (!u) return; var a = ha(T.area(u)); res.viaEnt[k] = a; u.properties = { tipo: "via", entidade: k, largura_m: VIA_M, ha: +a.toFixed(4), vias: porEnt[k].map(function (x) { return x.properties.via; }).filter(function (v, i, arr) { return v && arr.indexOf(v) === i; }).slice(0, 12).join("; ") }; res.vias.push(u); });
+      res.viaKm = km / (vs.fonte === "mapa" ? 1.15 : 1); res.viaFonte = vs.fonte || "osm";
+      var u = junta(res.vias.slice()); res.viaU = u || null; res.haVia = u ? ha(T.area(u)) : 0;
+      try { var f100 = u ? T.difference(T.featureCollection([u, res.area])) : null; res.haViaFora = f100 ? ha(T.area(f100)) : 0; } catch (e) { res.haViaFora = 0; }
+    }).catch(function (e) { res.vias = null; res.viaErro = String(e && e.message || e); });
   }
 
   // ---------- pastoreio: parcelas de rotação na faixa e nas bermas ----------
@@ -223,13 +247,16 @@
       if (!pecas.length) return;
       var u = pecas.length > 1 ? T.union(T.featureCollection(pecas)) : pecas[0]; if (!u) return;
       var tot = T.area(u); res.haPast = ha(tot);
-      var lado = Math.max(40, Math.sqrt(tot / PARCELAS)) / 1000, grelha = T.squareGrid(T.bbox(u), lado, { units: "kilometers" }), c = T.centroid(res.aglo), ps = [];
+      var lado = Math.max(30, Math.sqrt(tot / (PARCELAS * 6))) / 1000, grelha = T.squareGrid(T.bbox(u), lado, { units: "kilometers" }), c = T.centroid(res.aglo), cel = [];
       grelha.features.forEach(function (g) {
         var x = null; try { x = T.intersect(T.featureCollection([g, u])); } catch (e) {} if (!x) return;
-        var a = ha(T.area(x)); if (a < 0.05) return;
-        x.properties = { tipo: "parcela", ha: +a.toFixed(3), rumo: T.bearing(c, T.centroid(x)) }; ps.push(x);
+        var a = T.area(x); if (a < 20) return; x.properties = { a: a, rumo: T.bearing(c, T.centroid(x)) }; cel.push(x);
       });
-      ps.sort(function (a, b) { return a.properties.rumo - b.properties.rumo; });
+      cel.sort(function (a, b) { return a.properties.rumo - b.properties.rumo; });
+      var alvo = tot / PARCELAS, grupos = [[]], acc = 0;
+      cel.forEach(function (x) { if (acc >= alvo * (grupos.length) && grupos.length < PARCELAS) grupos.push([]); grupos[grupos.length - 1].push(x); acc += x.properties.a; });
+      var ps = [];
+      grupos.forEach(function (gr) { if (!gr.length) return; var x; try { x = gr.length > 1 ? T.union(T.featureCollection(gr)) : gr[0]; } catch (e) { x = gr[0]; } if (!x) return; x.properties = { tipo: "parcela", ha: +ha(T.area(x)).toFixed(3) }; ps.push(x); });
       ps.forEach(function (p, i) { p.properties.n = i + 1; p.properties.ordem = i + 1; p.properties.dias = DIAS; p.properties.estado = "proposta";
         p.properties.abelhas = i % 2 ? t("descanso na Primavera (flor para as abelhas)", "rest in spring (flowers for bees)") : ""; });
       res.parcelas = ps;
