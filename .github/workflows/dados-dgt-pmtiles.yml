@@ -16,16 +16,16 @@ jobs:
     timeout-minutes: 340
     strategy:
       fail-fast: false
-      max-parallel: 3
+      max-parallel: 6
       matrix:
         include:
+          # 25/11/2026 (Nuno: «tudo o que está completo é para ser usado pelo Atlas»): colecções completas ainda sem PMTiles.
           - { col: sgifr_areas, z: 13, tipo: area }
-          - { col: sgifr_linhas, z: 14, tipo: linha }
-          - { col: srup_rede_viaria, z: 14, tipo: linha }
-          - { col: srup_rede_ferroviaria, z: 14, tipo: linha }
-          - { col: srup_marcos_geod, z: 14, tipo: ponto }
-          - { col: srup_arvores_point, z: 14, tipo: ponto }
-          - { col: srup_defesa_militar, z: 14, tipo: area }
+          - { col: sgifr_pontos, z: 14, tipo: ponto }
+          - { col: toponimia, z: 14, tipo: ponto }
+          - { col: distritos, z: 12, tipo: area }
+          - { col: municipios, z: 13, tipo: area }
+          - { col: freguesias, z: 14, tipo: area }
     steps:
       - uses: actions/checkout@v4
       - name: Ferramentas
