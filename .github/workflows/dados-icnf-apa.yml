@@ -1,0 +1,54 @@
+# IPR Atlas · cópia de todas as camadas vectoriais do ICNF e da APA para PMTiles próprias (Nuno, 25/11/2026 13h07: «Copia tudo
+# do ICNF, da APA, tudo. Não queremos estar dependentes»). Lista os serviços ArcGIS das pastas públicas, copia cada camada de
+# elementos (query por páginas, EPSG:4326), faz o PMTiles (tippecanoe), publica nas versões icnf-pmtiles / apa-pmtiles e pede
+# ao Worker ipr-copia-ficheiro (?ext=) que o copie para o R2 em pmtiles/<org>/. Corre de 7 em 7 dias para apanhar actualizações.
+name: dados-icnf-apa
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "41 2 * * 0"
+permissions:
+  contents: write
+jobs:
+  lista:
+    runs-on: ubuntu-24.04
+    outputs:
+      m: ${{ steps.l.outputs.m }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: l
+        run: |
+          python3 ferramentas/arcgis_copiar.py lista s.json
+          echo "m=$(python3 -c 'import json;print(json.dumps({"include":json.load(open("s.json"))}))')" >> $GITHUB_OUTPUT
+  copiar:
+    needs: lista
+    runs-on: ubuntu-24.04
+    timeout-minutes: 350
+    strategy:
+      fail-fast: false
+      max-parallel: 12
+      matrix: ${{ fromJson(needs.lista.outputs.m) }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Ferramentas
+        run: |
+          sudo apt-get update -qq
+          if ! sudo apt-get install -y -qq tippecanoe; then
+            sudo apt-get install -y -qq build-essential libsqlite3-dev zlib1g-dev
+            git clone --depth 1 https://github.com/felt/tippecanoe.git /tmp/tc && make -C /tmp/tc -j4 && sudo make -C /tmp/tc install
+          fi
+          sudo mkdir -p /mnt/d && sudo chown $USER /mnt/d
+      - name: Copiar o serviço
+        run: python3 ferramentas/arcgis_copiar.py copiar "${{ matrix.url }}" ${{ matrix.org }} /mnt/d/c
+      - name: PMTiles, publicar e copiar para o R2
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          cd /mnt/d/c; T=${{ matrix.org }}-pmtiles
+          gh release view $T --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1 || gh release create $T --repo "$GITHUB_REPOSITORY" --title "${{ matrix.org }} em PMTiles (cópia IPR Atlas)" --notes "Camadas vectoriais públicas copiadas para o IPR Atlas." || true
+          for g in *.geojsons; do
+            [ -s "$g" ] || continue; b=${g%.geojsons}
+            tippecanoe -o $b.pmtiles -l $b -A "${{ matrix.org }} · cópia IPR Atlas" -Z4 -z14 --drop-densest-as-needed --extend-zooms-if-still-dropping --hilbert -P -t /mnt/d --force $g || continue
+            gh release upload $T $b.pmtiles --repo "$GITHUB_REPOSITORY" --clobber
+            sleep 5; curl -sS --max-time 900 "https://ipr-copia-ficheiro.terracrua-ipr.workers.dev/?ext=$T/$b.pmtiles&ir=1" || true; echo
+          done
+          for m in *__manifesto.json; do gh release upload $T $m --repo "$GITHUB_REPOSITORY" --clobber || true; done
