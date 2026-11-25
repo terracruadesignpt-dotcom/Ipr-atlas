@@ -225,6 +225,9 @@
     "#ipr-cda i.c{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:-1px}" +
     "#ipr-cda input.e{width:64px;background:var(--p3,#1d2117);color:inherit;border:1px solid var(--ln,#3a3f30);border-radius:5px;padding:2px 4px;text-align:right;font:inherit}" +
     "#ipr-cda .bt{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}#ipr-cda .bt button{all:unset;cursor:pointer;padding:6px 10px;border-radius:7px;border:1px solid var(--ln,#3a3f30);font-weight:600;font-size:12.5px}" +
+    "#ipr-cda .org{margin-top:12px;padding-top:10px;border-top:1px solid var(--ln,#3a3f30)}#ipr-cda .org h4{margin:0 0 6px;font-size:14px}#ipr-cda .org input[type=text],#ipr-cda .org input[type=search]{width:100%;box-sizing:border-box;padding:6px 8px;border-radius:6px;border:1px solid var(--ln,#3a3f30);background:transparent;color:inherit;font:inherit}" +
+    "#ipr-cda .rl{max-height:170px;overflow:auto;margin:4px 0}#ipr-cda .ro{display:grid;grid-template-columns:auto 1fr auto auto;gap:4px;align-items:center;font-size:12px;padding:2px 0}#ipr-cda .ro select{font-size:11.5px;background:transparent;color:inherit;border:1px solid var(--ln,#3a3f30);border-radius:5px}#ipr-cda .ro select option{color:#222}" +
+    "#ipr-cda .bt a.ac{padding:6px 10px;border-radius:7px;font-weight:600;font-size:12.5px;background:var(--ac,#9BC53D);color:#14200F;text-decoration:none}#ipr-cda .rs{margin-top:6px;font-size:12.5px}" +
     "#ipr-cda .bt button.ac{background:var(--ac,#9BC53D);color:#14200F;border-color:transparent}#ipr-cda details{margin-top:6px}#ipr-cda summary{cursor:pointer;color:var(--mu,#a7ab98)}" +
     "#ipr-cda .tot td{font-weight:600}#ipr-cda .av{background:rgba(232,145,58,.12);border-left:3px solid #e8913a;padding:6px 8px;border-radius:4px;margin:6px 0}" +
     "@media (max-width:900px){#ipr-cda{top:auto;bottom:0;right:0;left:0;width:auto;max-height:60vh;border-radius:12px 12px 0 0}}";
@@ -308,11 +311,73 @@
       (res.predios && res.predios.length ? "<button type='button' data-cda-csv>" + t("Prédios (CSV)", "Parcels (CSV)") + "</button>" : "") +
       "<button type='button' data-cda-de-novo>" + t("Outra aldeia", "Another village") + "</button></div>";
     h += "<p><small>" + t("Faixa de 100 m em torno do aglomerado (Decreto-Lei 82/2021). Dados: DGT (COS 2023, SRUP perigosidade, cadastro predial). Cálculo IPR Atlas.", "100 m belt around the settlement (Decree-Law 82/2021). Data: DGT (COS 2023, hazard, land registry). IPR Atlas computation.") + "</small></p>";
+    h += "<div class='org' data-cda-org><small>" + t("A ver se pode criar este condomínio como organização…", "Checking whether you can create this condominium as an organisation…") + "</small></div>";
     abrirPainel(h);
+    blocoOrg();
+  }
+
+  // ---------- criar o condomínio como organização (m93992) ----------
+  var AJAX = "/wp-admin/admin-ajax.php", ctx = null;
+  function contexto() {
+    if (ctx) return Promise.resolve(ctx);
+    return fetch(AJAX + "?action=tcd_cda_contexto", { credentials: "same-origin" }).then(function (r) { return r.text(); })
+      .then(function (x) { var j = null; try { j = JSON.parse(x); } catch (e) {} ctx = j && j.success ? j.data : { fora: 1 }; return ctx; })
+      .catch(function () { return { fora: 1, erro: 1 }; });
+  }
+  function tipoDe(o) { if (o.modelo === "municipio" && /junta|freguesia/i.test(o.nome)) return "co-gestao"; if (o.modelo === "municipio") return "tutela"; return "parceria"; }
+  function permDe(tp) { return tp === "parceria" ? "editar" : "administrar"; }
+  function perto(c) { var p = String(c.ll || "").split(",").map(Number); return p.length === 2 && Math.abs(p[0] - ultimo.ll[0]) < 0.0012 && Math.abs(p[1] - ultimo.ll[1]) < 0.0009; }
+  function linhaOrg(o) {
+    var tp = tipoDe(o), pm = permDe(tp), op = function (v, l, sel) { return "<option value='" + v + "'" + (v === sel ? " selected" : "") + ">" + esc(l) + "</option>"; };
+    return "<label class='ro' data-nome='" + esc(o.nome.toLowerCase()) + "'><input type='checkbox' data-rel='" + o.id + "'> <span>" + esc(o.nome) + "</span>" +
+      "<select data-rel-tipo='" + o.id + "'>" + op("tutela", t("tutela", "oversight"), tp) + op("co-gestao", t("co-gestão", "co-management"), tp) + op("parceria", t("parceria", "partner"), tp) + op("financiamento", t("financiamento", "funder"), tp) + op("rede", t("rede", "network"), tp) + "</select>" +
+      "<select data-rel-perm='" + o.id + "'>" + op("administrar", t("administra", "manages"), pm) + op("editar", t("edita", "edits"), pm) + op("ver", t("vê", "views"), pm) + op("agregados", t("só números", "totals only"), pm) + "</select></label>";
+  }
+  function blocoOrg() {
+    var cx = painel && painel.querySelector("[data-cda-org]"); if (!cx || !ultimo) return;
+    contexto().then(function (c) {
+      cx = painel && painel.querySelector("[data-cda-org]"); if (!cx) return;
+      if (c.fora) { cx.innerHTML = "<h4>" + t("Criar este condomínio", "Create this condominium") + "</h4><p><small>" + t("Para guardar este condomínio como organização no IPR Atlas, com as camadas, os prédios e quem o gere, ", "To save this condominium as an IPR Atlas organisation, with its layers, parcels and managers, ") + "<a href='/conta/?redirect_to=" + encodeURIComponent(location.pathname + "?condominio=" + ultimo.ll.join(",")) + "'>" + t("entre na sua conta", "sign in") + "</a>.</small></p>"; return; }
+      var ja = (c.meus || []).filter(perto)[0];
+      if (ja) { cx.innerHTML = "<h4>" + t("Condomínio já criado", "Condominium already created") + "</h4><p>" + esc(ja.nome) + (ja.papel ? " · " + esc(ja.papel) : "") + "</p><div class='bt'><a class='ac' href='/oficina/'>" + t("Abrir na Oficina", "Open in the Workshop") + "</a></div>"; return; }
+      if (!c.pode) { cx.innerHTML = "<h4>" + t("Criar este condomínio", "Create this condominium") + "</h4><p><small>" + t("Só quem gere uma organização no IPR Atlas (município, junta, associação) cria condomínios. Escreva-nos para info@terracruadesign.pt.", "Only managers of an IPR Atlas organisation (municipality, parish, association) can create condominiums. Write to info@terracruadesign.pt.") + "</small></p>"; return; }
+      var orgs = (c.orgs || []).slice().sort(function (a, b) { return (b.gere - a.gere) || ((b.modelo === "municipio") - (a.modelo === "municipio")) || a.nome.localeCompare(b.nome); });
+      cx.innerHTML = "<h4>" + t("Criar este condomínio", "Create this condominium") + "</h4>" +
+        "<p><small>" + t("Fica uma organização própria no IPR Atlas, com a área, a faixa, o plano de acções e os prédios por contactar. Escolha as entidades que o acompanham: quem as gere entra no condomínio com o papel indicado.", "It becomes its own IPR Atlas organisation, with the area, the belt, the action plan and the parcels to contact. Pick the bodies involved: their managers join with the chosen role.") + "</small></p>" +
+        "<p><input type='text' data-cda-nome value='" + esc(ultimo.nome || "") + "' placeholder='" + t("nome da aldeia", "village name") + "'></p>" +
+        (orgs.length > 6 ? "<p><input type='search' data-cda-filtro placeholder='" + t("procurar entidade", "search body") + "'></p>" : "") +
+        "<div class='rl'>" + orgs.map(linhaOrg).join("") + "</div>" +
+        "<div class='bt'><button type='button' class='ac' data-cda-criar>" + t("Criar este condomínio", "Create this condominium") + "</button></div><div class='rs' data-cda-res></div>";
+    });
+  }
+  function fc(f) { return { type: "FeatureCollection", features: [f] }; }
+  function criar(b) {
+    var cx = painel.querySelector("[data-cda-org]"), out = cx.querySelector("[data-cda-res]"), nome = (cx.querySelector("[data-cda-nome]").value || "").trim();
+    if (!nome) { out.textContent = t("Falta o nome da aldeia.", "Village name missing."); return; }
+    var rels = [];
+    cx.querySelectorAll("[data-rel]").forEach(function (i) { if (!i.checked) return; var id = i.getAttribute("data-rel"); rels.push({ org: +id, tipo: cx.querySelector("[data-rel-tipo='" + id + "']").value, perm: cx.querySelector("[data-rel-perm='" + id + "']").value }); });
+    var T = W.turf, u = ultimo, per = u.perigo || {}, alta = 0; Object.keys(per).forEach(function (k) { if (/alta/i.test(k)) alta += per[k]; });
+    var f = new FormData();
+    f.append("action", "tcd_cda_criar"); f.append("n", ctx.n); f.append("nome", nome); f.append("ll", u.ll.map(function (x) { return x.toFixed(6); }).join(","));
+    f.append("area", JSON.stringify(fc(Object.assign({}, u.area, { properties: { tipo: "area_condominio", ha: +ha(T.area(u.area)).toFixed(3) } }))));
+    f.append("faixa", JSON.stringify(fc(Object.assign({}, u.faixa, { properties: { tipo: "faixa_100m", ha: +u.haFaixa.toFixed(3) } }))));
+    f.append("aglo", JSON.stringify(fc(Object.assign({}, u.aglo, { properties: { tipo: "aglomerado", ha: +u.haAglo.toFixed(3) } }))));
+    if (u.manchas.length) f.append("accoes", JSON.stringify({ type: "FeatureCollection", features: u.manchas.map(function (m) { var p = Object.assign({}, m.properties); p.eur_ha = EUR[p.accao] || 0; p.eur = Math.round(p.ha * p.eur_ha); p.estado = "proposta"; return { type: "Feature", geometry: m.geometry, properties: p }; }) }));
+    if (u.predios && u.predios.length) f.append("predios", JSON.stringify({ type: "FeatureCollection", features: u.predios.map(function (p) { return { type: "Feature", geometry: p.geo, properties: { ref: p.ref, ha_na_faixa: +p.ha.toFixed(4), ha_total: +(p.haTotal || 0).toFixed(4) } }; }) }));
+    f.append("resumo", JSON.stringify({ faixa_ha: +u.haFaixa.toFixed(2), aglo_ha: +u.haAglo.toFixed(2), custo_eur: Math.round(custoTotal(u)), cadastro_pct: u.haCad ? Math.round(100 * u.haCad / u.haFaixa) : 0, predios: (u.predios || []).length, perigo_alta_pct: u.haFaixa ? Math.round(100 * alta / u.haFaixa) : 0 }));
+    f.append("rels", JSON.stringify(rels));
+    b.disabled = true; out.textContent = t("A criar…", "Creating…");
+    fetch(AJAX, { method: "POST", body: f, credentials: "same-origin" }).then(function (r) { return r.json(); }).then(function (j) {
+      if (j && j.success) {
+        ctx = null; var d = j.data, n = Object.keys(d.camadas || {}).filter(function (k) { return typeof d.camadas[k] === "number"; }).length;
+        cx.innerHTML = "<h4>" + t("Condomínio criado", "Condominium created") + "</h4><p>" + esc(d.nome) + "<br><small>" + n + " " + t("camadas", "layers") + ", " + (d.rels || []).length + " " + t("entidades ligadas", "linked bodies") + (d.codigo ? ", " + t("código de convite", "invite code") + " " + esc(d.codigo) : "") + ".</small></p><div class='bt'><a class='ac' href='" + esc(d.oficina) + "'>" + t("Abrir na Oficina", "Open in the Workshop") + "</a></div>";
+      } else { b.disabled = false; var m = j && j.data; out.textContent = (m && m.m) || (typeof m === "string" ? m : t("Não foi possível criar.", "Could not create.")); }
+    }).catch(function () { b.disabled = false; out.textContent = t("Sem ligação. Tente de novo.", "No connection. Try again."); });
   }
 
   function mudouEur(e) {
-    var i = e.target; if (!i || !i.hasAttribute || !i.hasAttribute("data-eur") || !ultimo) return;
+    var i = e.target;
+    if (i && i.hasAttribute && i.hasAttribute("data-cda-filtro")) { var q = i.value.toLowerCase(); painel.querySelectorAll(".ro").forEach(function (l) { l.style.display = !q || l.getAttribute("data-nome").indexOf(q) >= 0 ? "" : "none"; }); return; } if (!i || !i.hasAttribute || !i.hasAttribute("data-eur") || !ultimo) return;
     var k = i.getAttribute("data-eur"); EUR[k] = Math.max(0, +i.value || 0);
     var sub = painel.querySelector("[data-sub='" + k + "']"); if (sub) sub.textContent = fmt((ultimo.porAccao[k] || 0) * EUR[k]);
     var tot = painel.querySelector("[data-tot]"); if (tot) tot.textContent = fmt(custoTotal(ultimo)) + " €";
@@ -330,6 +395,7 @@
     if (b.id === "ipr-cda-x") return fechar();
     if (b.hasAttribute("data-cda-de-novo")) { tirar(); return iniciar(); }
     if (!ultimo) return;
+    if (b.hasAttribute("data-cda-criar")) return criar(b);
     if (b.hasAttribute("data-cda-geo")) {
       var fs = [Object.assign({}, ultimo.area, { properties: { tipo: "area_condominio", ha: +ha(W.turf.area(ultimo.area)).toFixed(3) } }),
                 Object.assign({}, ultimo.faixa, { properties: { tipo: "faixa_100m", ha: +ultimo.haFaixa.toFixed(3) } }),
