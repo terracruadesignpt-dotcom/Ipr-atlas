@@ -1,0 +1,64 @@
+# IPR Atlas · plantas do PDM das câmaras que já usam o Atlas, à frente da cópia nacional (Nuno, 25/11/2026, 08h39:
+# «prioridade aos PDMs das câmaras que já começaram a usar o Atlas. Por exemplo, Ovar, Almodôvar»).
+# Lista em ferramentas/snit-prioridade.txt (um DICO por linha; # para notas). Corre ao mudar essa lista e à mão.
+# Uma câmara por máquina, todas ao mesmo tempo, num grupo de concorrência à parte: não espera pela cópia nacional.
+# Publica pelo mesmo snit_publicar.sh (--clobber), por isso uma câmara feita aqui e na cópia nacional não estraga nada.
+name: dados-snit-pdm-prioridade
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: [ferramentas/snit-prioridade.txt]
+permissions:
+  contents: write
+concurrency: { group: dados-snit-pdm-prioridade, cancel-in-progress: false }
+jobs:
+  lista:
+    runs-on: ubuntu-24.04
+    outputs:
+      camaras: ${{ steps.g.outputs.camaras }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install -q pillow pmtiles
+      - name: Câmaras com PDM no SNIT
+        run: python3 ferramentas/snit_pdm.py lista lista.json
+      - name: Prioritárias ainda por fazer
+        id: g
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release list -L 100 --json tagName -q '.[].tagName' | grep '^snit-' | while read t; do gh release view "$t" --json assets -q '.assets[].name'; done > anexos.txt || true
+          grep '\.tar$' anexos.txt | sed 's/\.tar$//' > feitos.txt || true
+          grep '\.pmtiles$' anexos.txt > plantas.txt || true
+          python3 - <<'PY' >> $GITHUB_OUTPUT
+          import json, sys
+          l = json.load(open('lista.json')); f = set(open('feitos.txt').read().split())
+          p = [x.split('#')[0].strip() for x in open('ferramentas/snit-prioridade.txt')]
+          p = [x for x in p if x]
+          falta = [d for d in p if d in l and d not in f]
+          print('prioritárias por fazer:', falta, '· fora do SNIT:', [d for d in p if d not in l], file=sys.stderr)
+          print('camaras=' + json.dumps(falta))
+          PY
+      - uses: actions/upload-artifact@v4
+        with: { name: lista-prioridade, path: "lista.json\nfeitos.txt\nplantas.txt" }
+  copiar:
+    needs: lista
+    if: needs.lista.outputs.camaras != '[]'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 350
+    strategy:
+      fail-fast: false
+      matrix:
+        c: ${{ fromJson(needs.lista.outputs.camaras) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with: { name: lista-prioridade }
+      - run: pip install -q pillow pmtiles && sudo mkdir -p /mnt/d && sudo chown $USER /mnt/d
+      - name: Copiar do SNIT e publicar
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          SNIT_DEPOIS: ${{ github.workspace }}/ferramentas/snit_publicar.sh
+          SNIT_FIOS: "2"
+        run: python3 ferramentas/snit_pdm.py copiar lista.json "${{ matrix.c }}" /mnt/d 330 feitos.txt plantas.txt

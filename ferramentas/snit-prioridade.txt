@@ -1,0 +1,9 @@
+# Câmaras que já usam o IPR Atlas: plantas do PDM primeiro (Nuno, 25/11/2026). Um DICO por linha.
+# Acrescentar aqui cada câmara nova; o fluxo dados-snit-pdm-prioridade corre sozinho quando este ficheiro muda.
+0115  # Ovar (organização Município de Ovar)
+0202  # Almodôvar (organização Município de Almodôvar)
+1206  # Crato (Junta de Freguesia de Aldeia da Mata)
+1802  # Carregal do Sal (organização Município de Carregal do Sal)
+1814  # Santa Comba Dão (Fonte do Soito, Junta de São Joaninho)
+1702  # Boticas (Covas do Barroso, UDCB)
+0107  # Espinho (já copiada a 23/11; fica para as actualizações)
