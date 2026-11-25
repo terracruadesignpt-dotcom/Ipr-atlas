@@ -10,7 +10,13 @@
    - Recolher: Amostra de solo, Ponto de água, Árvore, Problema no terreno, Gravar percurso (fichas com fotografia).
    O relevo vem dos mosaicos de elevação já usados na ficha gratuita (mapterhorn, até z15); o PDM, o cadastro, a COS e as
    freguesias da OGC API da DGT. O desenho fica guardado neste navegador (localStorage ipr_desenho_v1) e exporta-se.
-   Azul só para linhas de água; caminhos castanhos. Desligar: ?trabalho=0 ou localStorage ipr_trabalho=0. */
+   Azul só para linhas de água; caminhos castanhos. Desligar: ?trabalho=0 ou localStorage ipr_trabalho=0.
+   25/11/2026, 19h15. Nuno: «vais trabalhar nas ferramentas de analisar, desenhar e recolher» / «vamos criá-las e melhorar
+   os botões». As faixas de Analisar e Recolher passam a botões redondos grandes com ícone e cor (como o Waze). Novas no
+   Analisar: Keypoint e keyline (keypoint na quebra de declive do vale, keyline com drift de 0,1 a 0,5 %, regra do motor
+   keyline), Caminho com declive máximo (dois cliques; o caminho mais curto que não passa do declive escolhido) e Antes e
+   agora (ortofoto antiga à esquerda, mapa actual à direita, com cortina). Recolher: aviso de que, sem rede, as fichas ficam
+   guardadas no aparelho. O cartão Desenhar (nt1124-desenhar.js) não é mexido aqui. */
 (function () {
   "use strict";
   var W = window, D = document;
@@ -35,6 +41,28 @@
   };
   var RECOLHA = { solo: { n: "Amostra de solo", cor: "#a0785a" }, aguaP: { n: "Ponto de água", cor: "#3d8fd6" }, arvore: { n: "Árvore", cor: "#6fa83a" }, prob: { n: "Problema no terreno", cor: "#e5484d" } };
 
+  var ANALISAR = [["aqui", "O que há aqui", "#94BE39"], ["caminho", "Caminho da água", "#3d8fd6"], ["bacia", "Bacia", "#2f7fc1"], ["keyline", "Keypoint e keyline", "#2fa59a"],
+    ["perfil", "Perfil do terreno", "#c9a36b"], ["declive", "Caminho com declive máximo", "#b98a52"], ["vista", "O que se vê daqui", "#8fb3c9"], ["sol", "Horas de sol", "#F2C230"], ["antes", "Antes e agora", "#d6d1bf"]];
+  var ICO = {
+    aqui: '<path d="M12 2a7 7 0 0 0-7 7c0 5.2 7 13 7 13s7-7.8 7-13a7 7 0 0 0-7-7zm0 9.6a2.6 2.6 0 1 1 0-5.2 2.6 2.6 0 0 1 0 5.2z"/>',
+    caminho: '<path d="M12 2.5c3.2 4.2 5.6 7.3 5.6 10.1a5.6 5.6 0 0 1-11.2 0c0-2.8 2.4-5.9 5.6-10.1z"/><path d="M4 21.5c2-1.4 3.6-1.4 5.3 0s3.4 1.4 5.4 0 3.5-1.4 5.3 0" fill="none" stroke="currentColor"/>',
+    bacia: '<path d="M2 19c2.4-6.7 5.6-11 10-11s7.6 4.3 10 11z" opacity=".45"/><path d="M12 9.5c2 2.6 3.4 4.4 3.4 6a3.4 3.4 0 0 1-6.8 0c0-1.6 1.4-3.4 3.4-6z"/>',
+    keyline: '<path d="M2 7.5c3.6-2.8 7-2.8 10 0s6.4 2.8 10 0v2.6c-3.6 2.8-7 2.8-10 0s-6.4-2.8-10 0zM2 14.5c3.6-2.8 7-2.8 10 0s6.4 2.8 10 0v2.6c-3.6 2.8-7 2.8-10 0s-6.4-2.8-10 0z" opacity=".55"/><circle cx="12" cy="8.8" r="3"/>',
+    perfil: '<path d="M2 20l5-8.5 4 4.5 5-10 6 14z"/>',
+    declive: '<path d="M3 20.5L21 6v4.2L7.8 20.5z"/><path d="M15.5 4h5.5v5.5z"/>',
+    vista: '<path d="M12 5C6.2 5 2 12 2 12s4.2 7 10 7 10-7 10-7-4.2-7-10-7zm0 11.2a4.2 4.2 0 1 1 0-8.4 4.2 4.2 0 0 1 0 8.4z"/>',
+    sol: '<circle cx="12" cy="12" r="4.6"/><path d="M11 1.5h2v4h-2zM11 18.5h2v4h-2zM1.5 11h4v2h-4zM18.5 11h4v2h-4zM4.2 5.6l1.4-1.4 2.8 2.8-1.4 1.4zM15.6 17l1.4-1.4 2.8 2.8-1.4 1.4zM4.2 18.4l2.8-2.8 1.4 1.4-2.8 2.8zM15.6 7l2.8-2.8 1.4 1.4L17 8.4z"/>',
+    antes: '<path d="M3 4h8v16H3z" opacity=".5"/><path d="M13 4h8v16h-8zM11.2 2h1.6v20h-1.6z"/>',
+    "limpar-an": '<path d="M6.4 5L5 6.4 10.6 12 5 17.6 6.4 19l5.6-5.6 5.6 5.6 1.4-1.4-5.6-5.6L19 6.4 17.6 5 12 10.6z"/>',
+    solo: '<path d="M3 5h18v3.2H3z" opacity=".45"/><path d="M3 10.4h18v3.2H3z" opacity=".7"/><path d="M3 15.8h18V19H3z"/>',
+    aguaP: '<path d="M12 2.5c3.5 4.6 6 8 6 11a6 6 0 0 1-12 0c0-3 2.5-6.4 6-11z"/>',
+    arvore: '<path d="M12 2l5.5 7.5h-3.2l4.2 6.2H13v6.3h-2v-6.3H5.5l4.2-6.2H6.5z"/>',
+    prob: '<path d="M12 2.5L1.5 21h21zM11 9h2v6.2h-2zm0 8h2v2h-2z"/>',
+    percurso: '<circle cx="6" cy="6" r="3"/><circle cx="18" cy="18" r="3"/><path d="M6.8 10.5h2v3.2c0 2 1.6 3.3 3.6 3.3h2.8v2h-2.8c-3.2 0-5.6-2.2-5.6-5.3z"/>',
+    exportar: '<path d="M11 3h2v10.2l3.6-3.6 1.4 1.4-6 6-6-6 1.4-1.4 3.6 3.6zM4 19h16v2H4z"/>'
+  };
+  function grande(x, on, at) { return '<button type="button" class="w' + (on ? " ac" : "") + '" ' + at + '="' + x[0] + '" aria-pressed="' + !!on + '" style="--c:' + x[2] + ';color:' + (on ? "#fff" : "") + '"><i><svg viewBox="0 0 24 24" aria-hidden="true" style="color:' + x[2] + '">' + (ICO[x[0]] || "") + "</svg></i><span>" + esc(x[1]) + "</span></button>"; }
+  function semRede() { try { return navigator.onLine === false; } catch (e) { return false; } }
   function $(id) { return D.getElementById(id); }
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
   function mapa() { return W.__ipe && W.__ipe.mapa; }
@@ -124,7 +152,7 @@
 
   // ---------- interface ----------
   var CSS =
-    "#ipr-trb{position:fixed;z-index:2147480050;display:none;flex-direction:column;align-items:center;gap:6px;transform:translateX(-50%);max-width:min(1100px,calc(100vw - 1300px));min-width:520px}" +
+    "#ipr-trb{position:fixed;z-index:2147480050;display:none;flex-direction:column;align-items:center;gap:6px;transform:translateX(-50%);max-width:min(1100px,calc(100vw - 1300px));min-width:520px}#ipr-trb:has(.fx.big){max-width:min(980px,calc(100vw - 720px))}" +
     "#ipr-trb.on{display:flex}" +
     "#ipr-trb .fx{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:2px;padding:4px;border-radius:999px;background:rgba(13,17,11,.78);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.08);box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 14px 32px -12px rgba(0,0,0,.6)}" +
     "#ipr-trb button{height:30px;padding:0 13px;border-radius:999px;border:0;background:none;color:#bdbcb0;font:450 12.5px Geist,Inter,system-ui,sans-serif;cursor:pointer;display:inline-flex;align-items:center;gap:7px;white-space:nowrap}" +
@@ -133,6 +161,21 @@
     "#ipr-trb button.ac{background:rgba(148,190,57,.18);color:#d3e79b}" +
     "#ipr-trb .sq{width:8px;height:8px;border-radius:2px;display:inline-block}" +
     "#ipr-trb .sep{width:1px;height:16px;background:rgba(255,255,255,.1);margin:0 4px}" +
+    "#ipr-trb .fx.big{border-radius:22px;padding:8px 10px;gap:2px;align-items:flex-start}" +
+    "#ipr-trb .fx.big button.w{height:auto;width:72px;flex-direction:column;gap:5px;padding:4px 2px;border-radius:14px;white-space:normal;text-align:center;font:600 11px/1.15 Geist,Inter,system-ui,sans-serif;color:#dcdacf}" +
+    "#ipr-trb .fx.big button.w:hover{background:none;color:#fff}#ipr-trb .fx.big button.w.ac{background:none;color:#fff}" +
+    "#ipr-trb .fx.big button.w i{display:flex;align-items:center;justify-content:center;width:46px;height:46px;border-radius:50%;background:rgba(255,255,255,.06);border:2px solid var(--c);transition:transform .12s,background .12s}" +
+    "#ipr-trb .fx.big button.w svg{width:23px;height:23px;fill:var(--c)}" +
+    "#ipr-trb .fx.big button.w:hover i{transform:scale(1.07);background:rgba(255,255,255,.1)}" +
+    "#ipr-trb .fx.big button.w.ac i{background:var(--c);box-shadow:0 0 0 4px rgba(255,255,255,.1)}#ipr-trb .fx.big button.w.ac svg{fill:#11160d}" +
+    "#ipr-trb .fx.big button.w:focus-visible i{outline:2px solid #94BE39;outline-offset:2px}" +
+    "#ipr-trb .fx.big .sep{height:46px;margin:4px 2px 0}" +
+    "#ipr-trb .rede{font:500 11px Geist,Inter,system-ui,sans-serif;color:#d9b26a;padding:4px 10px}" +
+    "#ipr-cmp{position:absolute;inset:0;z-index:1;pointer-events:none}" +
+    "#ipr-cmp-h{position:absolute;top:0;bottom:0;width:3px;margin-left:-1.5px;background:#f2f0e6;z-index:3;cursor:ew-resize;box-shadow:0 0 0 1px rgba(0,0,0,.35)}" +
+    "#ipr-cmp-h b{position:absolute;top:50%;left:50%;width:38px;height:38px;margin:-19px 0 0 -19px;border-radius:50%;background:#f2f0e6;color:#11160d;display:flex;align-items:center;justify-content:center;font:700 14px Geist,Inter,system-ui,sans-serif;box-shadow:0 4px 14px rgba(0,0,0,.4)}" +
+    "#ipr-cmp-l,#ipr-cmp-r{position:absolute;top:70px;z-index:3;padding:5px 10px;border-radius:999px;background:rgba(13,17,11,.82);color:#f2f0e6;font:600 12px Geist,Inter,system-ui,sans-serif;display:flex;gap:6px;align-items:center}" +
+    "#ipr-cmp-l select{background:none;border:0;color:#f2f0e6;font:inherit}#ipr-cmp-l button{background:none;border:0;color:#f2f0e6;cursor:pointer;font:600 14px Geist,Inter,system-ui,sans-serif}" +
     "#ipr-trb .lb{font:500 10px 'Geist Mono',ui-monospace,monospace;letter-spacing:.1em;text-transform:uppercase;color:#8d907f;padding:0 8px 0 10px}" +
     "#ipr-trb-med{position:fixed;z-index:2147480050;padding:6px 12px;border-radius:999px;background:rgba(13,17,11,.85);color:#e6e4d9;font:500 12px 'Geist Mono',ui-monospace,monospace;pointer-events:none;display:none;border:1px solid rgba(255,255,255,.1)}" +
     "#ipr-trb-c{position:fixed;z-index:2147480060;width:340px;max-height:70vh;overflow:auto;padding:16px;border-radius:16px;background:rgba(13,17,11,.9);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.1);box-shadow:0 18px 40px -10px rgba(0,0,0,.6);color:#e6e4d9;font:13px/1.5 Geist,Inter,system-ui,sans-serif;display:none}" +
@@ -173,13 +216,12 @@
         (armado && armado.k === "draw" && estado.forma !== "p" ? '<span class="sep"></span><button type="button" data-a="acabar" class="ac">Acabar</button>' : "") +
         '<span class="sep"></span><button type="button" data-a="desfazer">Desfazer</button><button type="button" data-a="exportar">Exportar</button><button type="button" data-a="limpar">Limpar</button><span class="lb" id="ipr-tr-n"></span></div>';
     } else if (estado.modo === "Analisar") {
-      h += '<div class="fx"><span class="lb">Novo</span>' +
-        [["aqui", "O que há aqui"], ["caminho", "Caminho da água"], ["bacia", "Bacia a partir de um ponto"], ["perfil", "Perfil do terreno"], ["vista", "O que se vê daqui"], ["sol", "Horas de sol"]].map(function (x) { return '<button type="button" data-n="' + x[0] + '" class="' + (armado && armado.k === x[0] ? "ac" : "") + '">' + x[1] + "</button>"; }).join("") +
-        '<span class="sep"></span><button type="button" data-a="limpar-an">Limpar análise</button></div>';
+      h += '<div class="fx big">' + ANALISAR.map(function (x) { return grande(x, x[0] === "antes" ? !!CMP : !!(armado && armado.k === x[0]), "data-n"); }).join("") +
+        '<span class="sep"></span>' + grande(["limpar-an", "Limpar análise", "#9AA0A6"], false, "data-a") + "</div>";
     } else if (estado.modo === "Recolher") {
-      h += '<div class="fx"><span class="lb">Fichas de campo</span>' +
-        Object.keys(RECOLHA).map(function (k) { return '<button type="button" data-r="' + k + '"><span class="sq" style="background:' + RECOLHA[k].cor + '"></span>' + RECOLHA[k].n + "</button>"; }).join("") +
-        '<span class="sep"></span><button type="button" data-a="percurso" class="' + (gravar ? "ac" : "") + '">' + (gravar ? "Parar o percurso" : "Gravar percurso") + '</button><button type="button" data-a="exportar">Exportar</button></div>';
+      h += '<div class="fx big">' + Object.keys(RECOLHA).map(function (k) { return grande([k, RECOLHA[k].n, RECOLHA[k].cor], false, "data-r"); }).join("") +
+        '<span class="sep"></span>' + grande(["percurso", gravar ? "Parar o percurso" : "Gravar percurso", "#c9a36b"], !!gravar, "data-a") + grande(["exportar", "Exportar", "#9AA0A6"], false, "data-a") + "</div>" +
+        (semRede() ? '<div class="fx"><span class="rede">Sem rede: as fichas ficam guardadas neste aparelho e exportam-se depois.</span></div>' : "");
     }
     b.innerHTML = h; contagem();
   }
@@ -191,6 +233,7 @@
     if (f) { estado.forma = f; estado.sub = ""; desarmar(); render(); return; }
     if (t) { estado.tipo = t; estado.sub = ""; desarmar(); render(); return; }
     if (s) { estado.sub = s; armarDesenho(); render(); return; }
+    if (nn === "antes") { antes(); render(); return; }
     if (nn) { armarClique(nn); render(); return; }
     if (r) { recolher(r); return; }
     if (a === "acabar") { acabar(); return; }
@@ -364,19 +407,23 @@
   function armarClique(k) {
     desarmar(); var M = mapa(); if (!M) return;
     armado = { k: k }; M.getCanvas().style.cursor = "crosshair";
-    if (k === "perfil") armado.v = [];
+    if (k === "perfil" || k === "declive") armado.v = [];
     var MSG = { aqui: "Clique no ponto que quer conhecer.", caminho: "Clique onde cai a água.", bacia: "Clique no vale ou na charca: o Atlas desenha a área que drena para lá.",
-      perfil: "Clique no início e depois no fim do perfil.", vista: "Clique no sítio onde está de pé: o Atlas mostra o que se vê até 3 km.", sol: "Clique no sítio: o Atlas conta as horas de sol com as sombras dos montes." };
+      perfil: "Clique no início e depois no fim do perfil.", declive: "Clique no início e depois no fim do caminho.",
+      keyline: "Clique no fundo do vale, acima da zona onde ele abre: o Atlas procura o keypoint a descer.", vista: "Clique no sítio onde está de pé: o Atlas mostra o que se vê até 3 km.", sol: "Clique no sítio: o Atlas conta as horas de sol com as sombras dos montes." };
     if (MSG[k]) aviso(MSG[k]);
   }
   function cliqueMapa(e) {
     if (armado && armado.k === "draw") { verticeDesenho([e.lngLat.lng, e.lngLat.lat]); return; }
     if (!armado) return;
+    if (armado.k === "declive" && armado.v.length < 1) { armado.v.push([e.lngLat.lng, e.lngLat.lat]); AN.features.push({ type: "Feature", geometry: { type: "Point", coordinates: armado.v[0] }, properties: { k: "tmp", cor: "#b98a52" } }); pintar(); aviso("Agora clique no fim do caminho."); return; }
     if (armado.k === "perfil" && armado.v.length < 1) { armado.v.push([e.lngLat.lng, e.lngLat.lat]); AN.features.push({ type: "Feature", geometry: { type: "Point", coordinates: armado.v[0] }, properties: { k: "tmp", cor: "#e6e4d9" } }); pintar(); aviso("Agora clique no fim do perfil."); return; }
     var k = armado.k, p = [e.lngLat.lng, e.lngLat.lat], v0 = armado.v;
     armado = null; var M = mapa(); M.getCanvas().style.cursor = ""; render();
     if (k === "aqui") aqui(p); else if (k === "caminho") caminhoAgua(p); else if (k === "bacia") bacia(p); else if (k === "curva") curva(p);
     else if (k === "perfil") { AN.features = AN.features.filter(function (x) { return x.properties.k !== "tmp"; }); perfil([v0[0], p]); }
+    else if (k === "declive") { AN.features = AN.features.filter(function (x) { return x.properties.k !== "tmp"; }); caminhoMax(v0[0], p, 10); }
+    else if (k === "keyline") keyline(p, 0.3);
     else if (k === "vista") vista(p); else if (k === "sol") sol(p);
     else if (RECOLHA[k]) fichaCampo(k, p);
   }
@@ -605,6 +652,152 @@
     render(); aviso("A gravar o percurso. Carregue outra vez para parar.");
   }
 
+
+  // ---------- Keypoint e keyline (25/11, 19h15) ----------
+  // Keypoint: desce pela linha de água a partir do clique e procura a maior quebra de declive (troço de cima mais inclinado
+  // do que o de baixo, janelas de 40 m). Keyline: a partir do keypoint, para os dois lados, segue o terreno à cota do keypoint
+  // menos o drift (desce do vale para a cumeada). Drift entre 0,1 e 0,5 % (regra do motor keyline, 3/11/2026).
+  function keyline(p, drift, usarClique) {
+    drift = Math.max(0.1, Math.min(0.5, drift || 0.3));
+    cartao("Keypoint e keyline", "<p class='nt'>A ler o vale e a procurar o keypoint…</p>");
+    relevo(p, 900, 15).then(function (G) {
+      var Wp = G.W, a = G.a, q = G.px(p), i = Math.round(q[1]) * Wp + Math.round(q[0]), vis = {}, pts = [p];
+      for (var passo = 0; passo < 4000; passo++) {
+        vis[i] = 1; var x = i % Wp, y = (i / Wp) | 0; if (x < 3 || y < 3 || x > Wp - 4 || y > G.H - 4) break;
+        var bi = -1, bz = a[i];
+        for (var k = 0; k < 8; k++) { var j = i + VIZ[k][1] * Wp + VIZ[k][0]; if (!vis[j] && a[j] < bz) { bz = a[j]; bi = j; } }
+        if (bi < 0) { var mz = 1e9; for (var dy = -5; dy <= 5; dy++) for (var dx = -5; dx <= 5; dx++) { var jj = i + dy * Wp + dx; if (jj < 0 || jj >= a.length || vis[jj] || (!dx && !dy)) continue; if (a[jj] < a[i] + 0.05 && a[jj] < mz) { mz = a[jj]; bi = jj; } } if (bi < 0) break; }
+        i = bi; pts.push(G.ll(i % Wp + 0.5, ((i / Wp) | 0) + 0.5)); if (comp(pts) > 700) break;
+      }
+      // perfil a cada 5 m, suavizado
+      var P = [], acc = 0; P.push({ d: 0, c: pts[0] });
+      for (var s = 1; s < pts.length; s++) { acc += dist(pts[s - 1], pts[s]); if (acc - P[P.length - 1].d >= 5) P.push({ d: acc, c: pts[s] }); }
+      P.forEach(function (o) { o.z = G.z_(o.c); });
+      var zs = P.map(function (o, k2) { var m = 0, c = 0; for (var t = Math.max(0, k2 - 2); t <= Math.min(P.length - 1, k2 + 2); t++) { m += P[t].z; c++; } return m / c; });
+      var J = 8, best = -1, bv = 0, sA = 0, sB = 0;
+      if (!usarClique) for (var k3 = J; k3 < P.length - J; k3++) {
+        var up = 100 * (zs[k3 - J] - zs[k3]) / (P[k3].d - P[k3 - J].d), dn = 100 * (zs[k3] - zs[k3 + J]) / (P[k3 + J].d - P[k3].d), v = up - dn;
+        if (up > 3 && v > bv) { bv = v; best = k3; sA = up; sB = dn; }
+      }
+      var K = best >= 0 ? P[best].c : p, zK = G.z_(K), auto = best >= 0;
+      // direcção da linha de água no keypoint, para começar a keyline na perpendicular
+      var k0 = best >= 0 ? best : 0, kA = P[Math.max(0, k0 - 3)].c, kB = P[Math.min(P.length - 1, k0 + 3)].c;
+      var cl = Math.cos(K[1] * Math.PI / 180), hv = Math.atan2(kB[1] - kA[1], (kB[0] - kA[0]) * cl);
+      var passoM = Math.max(2, G.pxM * 1.2), dLat = passoM / 110540, dLng = passoM / (111320 * cl);
+      function seguir(h0) {
+        var c = K, h = h0, s2 = 0, out = [];
+        for (var n2 = 0; n2 < 600; n2++) {
+          var alvo = zK - drift / 100 * (s2 + passoM), bestE = 1e9, bc = null, bh = h;
+          for (var tt = -24; tt <= 24; tt++) { var an = h + tt * Math.PI / 60, cc = [c[0] + Math.cos(an) * dLng, c[1] + Math.sin(an) * dLat], qq = G.px(cc);
+            if (qq[0] < 3 || qq[1] < 3 || qq[0] > G.W - 4 || qq[1] > G.H - 4) continue;
+            var e = Math.abs(G.z_(cc) - alvo) + 0.004 * Math.abs(tt); if (e < bestE) { bestE = e; bc = cc; bh = an; } }
+          if (!bc || bestE > 0.8) break;
+          c = bc; h = bh; s2 += passoM; out.push(c); if (s2 > 700) break;
+        }
+        return out;
+      }
+      var esq = seguir(hv + Math.PI / 2), dir = seguir(hv - Math.PI / 2), linha = esq.reverse().concat([K]).concat(dir);
+      AN.features = AN.features.filter(function (f) { return f.properties.k !== "kl"; });
+      AN.features.push({ type: "Feature", geometry: { type: "LineString", coordinates: pts }, properties: { k: "kl", cor: "#3d8fd6", w: 1.5 } });
+      if (linha.length > 1) AN.features.push({ type: "Feature", geometry: { type: "LineString", coordinates: linha }, properties: { k: "kl", cor: "#2fa59a", w: 4 } });
+      AN.features.push({ type: "Feature", geometry: { type: "Point", coordinates: K }, properties: { k: "kl", cor: "#f2f0e6" } });
+      pintar();
+      var L = comp(linha);
+      var h = "<dl><dt>Keypoint</dt><dd>" + (auto ? "proposto pelo Atlas" : "no ponto clicado") + "</dd><dt>Cota</dt><dd>" + n(zK, 1) + " m</dd>" +
+        (auto ? "<dt>Declive acima</dt><dd>" + n(sA, 1) + " %</dd><dt>Declive abaixo</dt><dd>" + n(sB, 1) + " %</dd>" : "") +
+        "<dt>Keyline</dt><dd>" + n(L, 0) + " m</dd><dt>Drift</dt><dd>" + n(drift, 2) + " % (desce do vale para a cumeada)</dd></dl>" +
+        "<label>Drift (0,1 a 0,5 %)<input id='ipr-tr-dr' type='number' step='0.05' min='0.1' max='0.5' value='" + drift + "'></label>" +
+        "<p class='nt'>" + (auto ? "O keypoint é a maior quebra de declive na linha de água abaixo do clique (troços de 40 m). " : "Não encontrei quebra de declive clara: usei o ponto clicado. ") +
+        "A keyline acaba onde deixa de haver terreno à cota certa (cumeada, outro vale) ou aos 700 m. Relevo a " + n(G.pxM, 1) + " m por píxel; confirme no terreno.</p>";
+      cartao("Keypoint e keyline", h, [
+        ["Guardar no desenho", function () { if (linha.length < 2) return; var nf = { type: "Feature", geometry: { type: "LineString", coordinates: linha }, properties: { tipo: "agua", tn: TIPOS.agua.n, sub: "Keyline", cor: TIPOS.agua.cor, t: Date.now(), cota: Math.round(zK * 10) / 10, drift: drift } }; FC.features.push(nf);
+          FC.features.push({ type: "Feature", geometry: { type: "Point", coordinates: K }, properties: { tipo: "agua", tn: TIPOS.agua.n, sub: "Keypoint", cor: TIPOS.agua.cor, t: Date.now() + 1, cota: Math.round(zK * 10) / 10 } }); guardar(); aviso("Keyline guardada no desenho."); }, 1],
+        ["Recalcular", function () { var v = parseFloat($("ipr-tr-dr").value); keyline(p, isFinite(v) ? v : drift, usarClique); }],
+        ["Usar o ponto clicado", function () { keyline(p, parseFloat($("ipr-tr-dr").value) || drift, true); }],
+        ["Linhas paralelas", function () { if (linha.length > 1) plantacao({ type: "Feature", geometry: { type: "LineString", coordinates: linha }, properties: {} }, 10, 7, 5); }]
+      ]);
+    }).catch(function () { cartao("Keypoint e keyline", "<p class='nt'>Não consegui ler o relevo aqui.</p>"); });
+  }
+
+  // ---------- Caminho com declive máximo (25/11, 19h15) ----------
+  // Dois cliques. O caminho mais curto sobre o relevo (Dijkstra, 8 vizinhos) em que cada passo acima do declive escolhido
+  // fica muito caro; se não houver outra forma, mostra os troços que passam do limite a vermelho.
+  function caminhoMax(A, B, max) {
+    max = max || 10;
+    var L = dist(A, B), c = [(A[0] + B[0]) / 2, (A[1] + B[1]) / 2];
+    if (L > 3000) { aviso("Escolha pontos a menos de 3 km."); return; }
+    cartao("Caminho com declive máximo", "<p class='nt'>A procurar o caminho…</p>");
+    relevo(c, Math.max(250, L * 0.75 + 120), 15).then(function (G) {
+      var Wp = G.W, a = G.a, ok = G.ok, pa = G.px(A), pb = G.px(B), mg = Math.max(30, L / G.pxM * 0.45);
+      var X0 = Math.max(1, Math.floor(Math.min(pa[0], pb[0]) - mg)), X1 = Math.min(Wp - 2, Math.ceil(Math.max(pa[0], pb[0]) + mg)), Y0 = Math.max(1, Math.floor(Math.min(pa[1], pb[1]) - mg)), Y1 = Math.min(G.H - 2, Math.ceil(Math.max(pa[1], pb[1]) + mg));
+      var w = X1 - X0 + 1, hh = Y1 - Y0 + 1, N = w * hh, custo = new Float64Array(N).fill(Infinity), de = new Int32Array(N).fill(-1), feito = new Uint8Array(N), hp = [], hz = [];
+      function idx(x, y) { return (y - Y0) * w + (x - X0); }
+      function push(i, z) { var k = hp.length; hp.push(i); hz.push(z); while (k > 0) { var p2 = (k - 1) >> 1; if (hz[p2] <= hz[k]) break; var ti = hp[p2], tz = hz[p2]; hp[p2] = hp[k]; hz[p2] = hz[k]; hp[k] = ti; hz[k] = tz; k = p2; } }
+      function pop() { var r = hp[0], li = hp.pop(), lz = hz.pop(); if (hp.length) { hp[0] = li; hz[0] = lz; var k = 0, n2 = hp.length; for (;;) { var l = 2 * k + 1, rr = l + 1, m = k; if (l < n2 && hz[l] < hz[m]) m = l; if (rr < n2 && hz[rr] < hz[m]) m = rr; if (m === k) break; var ti = hp[m], tz = hz[m]; hp[m] = hp[k]; hz[m] = hz[k]; hp[k] = ti; hz[k] = tz; k = m; } } return r; }
+      var ax = Math.round(pa[0]), ay = Math.round(pa[1]), bx = Math.round(pb[0]), by = Math.round(pb[1]), s0 = idx(ax, ay), alvo = idx(bx, by), lim = max / 100;
+      custo[s0] = 0; push(s0, 0);
+      while (hp.length) {
+        var u = pop(); if (feito[u]) continue; feito[u] = 1; if (u === alvo) break;
+        var ux = u % w + X0, uy = ((u / w) | 0) + Y0, gi = uy * Wp + ux;
+        for (var k = 0; k < 8; k++) { var nx = ux + VIZ[k][0], ny = uy + VIZ[k][1]; if (nx < X0 || ny < Y0 || nx > X1 || ny > Y1) continue;
+          var gj = ny * Wp + nx; if (!ok[gj]) continue; var v = idx(nx, ny); if (feito[v]) continue;
+          var dm = G.pxM * (k % 2 ? Math.SQRT2 : 1), sl = Math.abs(a[gj] - a[gi]) / dm, cc = dm * (1 + 2 * sl / lim) * (sl > lim ? 40 * (1 + (sl - lim) / lim) : 1);
+          var nv = custo[u] + cc; if (nv < custo[v]) { custo[v] = nv; de[v] = u; push(v, nv); } }
+      }
+      if (!feito[alvo]) { cartao("Caminho com declive máximo", "<p class='nt'>Não encontrei caminho entre os dois pontos.</p>"); return; }
+      var cam = [], it = alvo; while (it >= 0) { cam.push(it); it = de[it]; } cam.reverse();
+      var cs = cam.map(function (i2) { return G.ll(i2 % w + X0 + 0.5, ((i2 / w) | 0) + Y0 + 0.5); });
+      var k2 = Math.max(1, Math.round(cs.length / 400)); cs = cs.filter(function (q2, j2) { return j2 % k2 === 0 || j2 === cs.length - 1; });
+      // declive por troços de ~20 m
+      var segs = [], fora = [], acc2 = 0, ult = 0, smax = 0, mfora = 0;
+      for (var j3 = 1; j3 < cs.length; j3++) { acc2 += dist(cs[j3 - 1], cs[j3]); if (acc2 >= 20 || j3 === cs.length - 1) { var sl2 = 100 * Math.abs(G.z_(cs[j3]) - G.z_(cs[ult])) / Math.max(1, acc2); smax = Math.max(smax, sl2); var tr = cs.slice(ult, j3 + 1); if (sl2 > max + 0.5) { fora.push(tr); mfora += acc2; } segs.push(sl2); ult = j3; acc2 = 0; } }
+      AN.features = AN.features.filter(function (f) { return f.properties.k !== "dm"; });
+      AN.features.push({ type: "Feature", geometry: { type: "LineString", coordinates: cs }, properties: { k: "dm", cor: "#b98a52", w: 4 } });
+      fora.forEach(function (tr) { AN.features.push({ type: "Feature", geometry: { type: "LineString", coordinates: tr }, properties: { k: "dm", cor: "#e5484d", w: 6 } }); });
+      pintar();
+      var Lc = comp(cs), dz = G.z_(B) - G.z_(A);
+      var h = "<dl><dt>Comprimento</dt><dd>" + n(Lc, 0) + " m <small style='color:#a9ab9c'>(em linha recta " + n(L, 0) + " m)</small></dd><dt>Desnível</dt><dd>" + (dz >= 0 ? "sobe " : "desce ") + n(Math.abs(dz), 1) + " m</dd>" +
+        "<dt>Declive máximo</dt><dd>" + n(smax, 1) + " % <small style='color:#a9ab9c'>em troços de 20 m</small></dd><dt>Acima do limite</dt><dd>" + (mfora ? "<b style='color:#ff8a80'>" + n(mfora, 0) + " m</b>" : "nenhum troço") + "</dd></dl>" +
+        "<label>Declive máximo (%)<input id='ipr-tr-dmx' type='number' step='1' min='2' max='40' value='" + max + "'></label>" +
+        "<p class='nt'>Caminho mais curto sobre o relevo (" + n(G.pxM, 1) + " m por píxel) que evita passar de " + n(max, 0) + " %. A vermelho, os troços onde não há alternativa. Valores habituais: 8 a 10 % para caminhos de terra, 12 % no máximo para tractores.</p>";
+      cartao("Caminho com declive máximo", h, [
+        ["Guardar no desenho", function () { FC.features.push({ type: "Feature", geometry: { type: "LineString", coordinates: cs }, properties: { tipo: "acessos", tn: TIPOS.acessos.n, sub: "Caminho", cor: TIPOS.acessos.cor, t: Date.now(), declive_max: Math.round(smax * 10) / 10 } }); guardar(); aviso("Caminho guardado no desenho."); }, 1],
+        ["Recalcular", function () { var v = parseFloat($("ipr-tr-dmx").value); if (isFinite(v) && v > 0) caminhoMax(A, B, v); }]
+      ]);
+    }).catch(function () { cartao("Caminho com declive máximo", "<p class='nt'>Não consegui ler o relevo aqui.</p>"); });
+  }
+
+  // ---------- Antes e agora (25/11, 19h15) ----------
+  // Uma segunda vista do mapa, só com a ortofoto antiga da DGT, por cima do mapa actual e cortada por uma cortina que se arrasta.
+  var CMP = null, ANOS = ["2018", "2015", "2012", "2010", "2007", "2021"];
+  function wmsAno(y) { var base = "https://cartografia.dgterritorio.gov.pt/wms/ortos" + y; return base + "?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&LAYERS=Ortos" + y + "-RGB&STYLES=&CRS=EPSG:3857&WIDTH=256&HEIGHT=256&FORMAT=image/jpeg&BBOX={bbox-epsg-3857}"; }
+  function antes() {
+    if (CMP) { fecharAntes(); return; }
+    var M = mapa(); if (!M || !W.maplibregl) { aviso("O mapa ainda não está pronto."); return; }
+    desarmar();
+    var ct = M.getContainer(), box = D.createElement("div"), hd = D.createElement("div"), lb = D.createElement("div"), rb = D.createElement("div");
+    box.id = "ipr-cmp"; hd.id = "ipr-cmp-h"; hd.innerHTML = "<b>‹ ›</b>"; lb.id = "ipr-cmp-l"; rb.id = "ipr-cmp-r"; rb.textContent = "Agora";
+    lb.innerHTML = "<select aria-label='Ano da ortofoto'>" + ANOS.map(function (y) { return "<option>" + y + "</option>"; }).join("") + "</select><button type='button' aria-label='Fechar' title='Fechar'>×</button>";
+    [box, hd, lb, rb].forEach(function (e) { ct.appendChild(e); });
+    var m2 = new W.maplibregl.Map({ container: box, style: { version: 8, sources: { o: { type: "raster", tiles: [wmsAno("2018")], tileSize: 256, attribution: "DGT" } }, layers: [{ id: "o", type: "raster", source: "o" }] },
+      center: M.getCenter(), zoom: M.getZoom(), bearing: M.getBearing(), pitch: M.getPitch(), interactive: false, attributionControl: false, fadeDuration: 0 });
+    var pct = 50;
+    function por() { box.style.clipPath = "inset(0 " + (100 - pct) + "% 0 0)"; hd.style.left = pct + "%"; lb.style.left = "max(12px, calc(" + pct + "% - " + (lb.offsetWidth + 14) + "px))"; rb.style.left = "calc(" + pct + "% + 14px)"; }
+    function sync() { try { m2.jumpTo({ center: M.getCenter(), zoom: M.getZoom(), bearing: M.getBearing(), pitch: M.getPitch() }); } catch (e) {} }
+    function rs() { try { m2.resize(); } catch (e) {} por(); }
+    M.on("move", sync); M.on("resize", rs);
+    var arr = false;
+    hd.addEventListener("pointerdown", function (e) { arr = true; e.preventDefault(); try { hd.setPointerCapture(e.pointerId); } catch (x) {} });
+    hd.addEventListener("pointermove", function (e) { if (!arr) return; var r = ct.getBoundingClientRect(); pct = Math.max(2, Math.min(98, 100 * (e.clientX - r.left) / r.width)); por(); });
+    hd.addEventListener("pointerup", function () { arr = false; });
+    lb.querySelector("select").onchange = function () { var y = this.value; try { m2.getSource("o").setTiles([wmsAno(y)]); } catch (e) { m2.setStyle({ version: 8, sources: { o: { type: "raster", tiles: [wmsAno(y)], tileSize: 256 } }, layers: [{ id: "o", type: "raster", source: "o" }] }); } };
+    lb.querySelector("button").onclick = function () { fecharAntes(); render(); };
+    CMP = { m2: m2, els: [box, hd, lb, rb], off: function () { M.off("move", sync); M.off("resize", rs); } };
+    setTimeout(por, 0);
+    aviso("Arraste a cortina. À esquerda a ortofoto antiga, à direita o mapa de agora.");
+  }
+  function fecharAntes() { if (!CMP) return; try { CMP.off(); CMP.m2.remove(); } catch (e) {} CMP.els.forEach(function (e) { e.remove(); }); CMP = null; }
+
   // ---------- cartão, ficha de um desenho, exportar ----------
   function cartao(t, h, bts) {
     var c = $("ipr-trb-c"); if (!c) return;
@@ -665,11 +858,12 @@
     }
     camadas();
     var m = modoAtual(), b = $("ipr-trb");
-    if (m !== estado.modo) { estado.modo = m; if (!m) desarmar(); render(); }
+    if (m !== estado.modo) { estado.modo = m; if (!m) desarmar(); if (m !== "Analisar" && CMP) fecharAntes(); render(); }
+    if (m === "Recolher" && semRede() !== correr.sr) { correr.sr = semRede(); render(); }
     b.classList.toggle("on", !!m && /Desenhar|Analisar|Recolher/.test(m));
     if (m) posicionar();
   }
   (function vez(k) { try { correr(); } catch (e) {} if (k < 80) setTimeout(function () { vez(k + 1); }, 300); })(0);
   setInterval(function () { try { correr(); } catch (e) {} }, 700);
-  W.__iprTrabalho = { aqui: aqui, bacia: bacia, caminho: caminhoAgua, curva: curva, perfil: perfil, vista: vista, sol: sol, FC: function () { return FC; } };
+  W.__iprTrabalho = { aqui: aqui, bacia: bacia, caminho: caminhoAgua, curva: curva, perfil: perfil, vista: vista, sol: sol, keyline: keyline, caminhoMax: caminhoMax, antes: antes, FC: function () { return FC; } };
 })();
