@@ -17,7 +17,11 @@
      as ligações do concelho (.txt). O Explorer não descarrega.
    v4 (Nuno, 24/11 23h29: «olha bem para aquilo no Chrome e melhora-me o estilo gráfico»): o painel passa a ter o desenho das outras
    secções das camadas (sem caixa, ▾ verde, Geist 13 px, linhas recuadas); o concelho no centro do mapa lê-se primeiro da CAOP da DGT
-   (ogcapi, colecção municipios), porque a rota do site /pedido-produto/caop estava a demorar mais de 20 s e o painel ficava vazio. */
+   (ogcapi, colecção municipios), porque a rota do site /pedido-produto/caop estava a demorar mais de 20 s e o painel ficava vazio.
+   v5 (Nuno, 25/11 12h04: «temos que criar unidade para ser tudo igual, no estilo do Atlas»; caixa: «CRUS com cores IPR»): o
+   ordenamento de todo o país passa a desenhar-se em vectorial (CRUS da DGT, classe e categoria nacionais do DR 15/2015) com uma
+   só paleta e legenda do IPR, contorno fino claro; entra no topo deste painel como «Ordenamento IPR». As imagens copiadas do SNIT
+   ficam como «Plantas originais da câmara», com as cores e a legenda de cada câmara. Desligar só o estilo: ?pdmestilo=0. */
 (function () {
   "use strict";
   var W = window, D = document;
@@ -34,6 +38,67 @@
   function t(pt, e) { return en() ? e : pt; }
   function esc(x) { return String(x == null ? "" : x).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" }[c]; }); }
   function mapa() { return W.__ipe && W.__ipe.mapa ? W.__ipe.mapa : null; }
+
+
+  // ---------- v5: ordenamento IPR (CRUS) com uma só paleta ----------
+  var CAT = [
+    ["Espaço Central", "#A8322D", "Espaço central", "Central area"],
+    ["Espaço Habitacional", "#D9534F", "Habitacional", "Residential"],
+    ["Espaço Urbano de Baixa Densidade", "#EE9A8C", "Urbano de baixa densidade", "Low-density urban"],
+    ["Espaço de Atividades Económicas", "#7E5CA8", "Actividades económicas", "Economic activities"],
+    ["Espaço de Uso Especial Equipamentos e Infraestruturas", "#E07B39", "Equipamentos e infra-estruturas", "Facilities and infrastructure"],
+    ["Espaço de Uso Especial - Turístico", "#3E8E91", "Turismo", "Tourism"],
+    ["Espaço Verde", "#9CCB5A", "Espaço verde urbano", "Urban green space"],
+    ["Espaço Agrícola", "#E6D26E", "Agrícola", "Agricultural"],
+    ["Espaço Florestal", "#5E9A4E", "Florestal", "Forest"],
+    ["Espaço Agrícola ou Florestal (transitório)", "#B9B862", null, null],
+    ["Espaço Natural e Paisagístico", "#2F6B3A", "Natural e paisagístico", "Natural and landscape"],
+    ["Aglomerado Rural", "#C98F6A", "Aglomerado rural e edificação dispersa", "Rural settlement and scattered building"],
+    ["Área de Edificação Dispersa", "#C98F6A", null, null],
+    ["Espaço de Ocupação Turística", "#3E8E91", null, null],
+    ["Espaço de Equipamentos e Infraestruturas", "#E07B39", null, null],
+    ["Espaço de Atividades Industriais", "#7E5CA8", null, null],
+    ["Espaço de Exploração de Recursos Energéticos e Geológicos", "#8C6D4F", "Recursos geológicos e energéticos", "Geological and energy resources"],
+    ["Espaço Cultural", "#B0577A", "Espaço cultural", "Cultural area"]
+  ];
+  var C_URBZ = "#F4C3B4", C_URB_NA = "#CFA6A2", C_OUTRO = "#D6D0B4";
+  function corCrus() {
+    var cat = ["to-string", ["coalesce", ["get", "categoria_2021"], ["get", "categoria"], ""]];
+    var cls = ["downcase", ["to-string", ["coalesce", ["get", "classe_2021"], ["get", "classe"], ""]]];
+    var m = ["match", cat];
+    CAT.forEach(function (c) { m.push(c[0], c[1]); });
+    m.push(["case", ["in", "urbaniz", cls], C_URBZ, ["in", "urbano", cls], C_URB_NA, C_OUTRO]);
+    return ["case", ["all", ["in", "urbaniz", cls], ["==", cat, "Não Atribuída"]], C_URBZ, m];
+  }
+  function legCrus() {
+    var l = CAT.filter(function (c) { return c[2]; }).map(function (c) { return [c[1], t(c[2], c[3])]; });
+    l.push([C_URBZ, t("Urbanizável (transitório)", "Urbanisable (transitional)")]);
+    l.push([C_OUTRO, t("Sem categoria atribuída", "No category assigned")]);
+    return l;
+  }
+  var ESTILO = !/[?&]pdmestilo=0(&|$)/.test(location.search);
+  function estiloCrus() {
+    if (!ESTILO) return false;
+    var cat = W.IPRViz && W.IPRViz.catalogo; if (!cat) return false;
+    var e = cat.filter(function (x) { return x.id === "crus"; })[0]; if (!e) return false;
+    if (!e.__ipr5) {
+      e.__ipr5 = 1;
+      e.n = t("PDM · ordenamento IPR (todo o país)", "PDM · IPR zoning (whole country)");
+      e.e = e.e || {}; e.e.tipo = "fill"; e.e.cor = corCrus(); e.e.linha = "#F4F1E6"; e.e.larg = ["interpolate", ["linear"], ["zoom"], 11, 0.2, 16, 0.8];
+      e.op = 0.5; e.leg = legCrus(); e.cor = "#E6D26E";
+      e.fonte = "DGT · CRUS (Carta do Regime de Uso do Solo), CC BY 4.0 · cores IPR";
+      e.nota = t("Classe e categoria do solo de todos os PDM em vigor, com as categorias nacionais e as mesmas cores em todos os concelhos. Ao tocar num polígono vê-se o nome que o plano lhe dá. Indicativo: fazem fé as plantas publicadas em Diário da República.",
+        "Land class and category of every PDM in force, with national categories and the same colours in every municipality. Indicative only.");
+    }
+    var I = mapa(); if (!I) return true;
+    try {
+      if (I.getLayer("iprv-crus-f")) { I.setPaintProperty("iprv-crus-f", "fill-color", e.e.cor); }
+      if (I.getLayer("iprv-crus-l")) { I.setPaintProperty("iprv-crus-l", "line-color", e.e.linha); I.setPaintProperty("iprv-crus-l", "line-width", e.e.larg); }
+    } catch (er) {}
+    return true;
+  }
+  function crusLigada() { try { var v = W.__ipe && W.__ipe.viz; return !!(v && v.activas && v.activas().indexOf("crus") >= 0); } catch (e) { return false; } }
+  function ligarCrus(b) { try { var v = W.__ipe && W.__ipe.viz; if (v && v.ligar) v.ligar("crus", b); } catch (e) {} setTimeout(estiloCrus, 400); setTimeout(estiloCrus, 1500); }
 
   // ---------- protocolo pmtiles (o Atlas pode já o ter registado) ----------
   var pmPronto = null;
@@ -279,11 +344,19 @@
     "#ipr-pdmc a.dl{color:" + V + ";text-decoration:none;font-size:11.5px;white-space:nowrap;opacity:.85}#ipr-pdmc a.dl:hover{opacity:1;text-decoration:underline}" +
     "#ipr-pdmc button.dlt{display:block;margin:8px 0 0 14px;width:calc(100% - 14px);padding:6px 10px;border:1px solid rgba(148,190,57,.45);border-radius:999px;background:transparent;color:#e9e6da;font:600 12px Geist,Inter,system-ui,sans-serif;cursor:pointer}" +
     "#ipr-pdmc button.dlt:hover{background:rgba(148,190,57,.14)}" +
+    "#ipr-pdmc .lg{display:grid;grid-template-columns:1fr 1fr;gap:3px 10px;margin:6px 0 2px 14px;font-size:11.5px;color:#cfd6bd}#ipr-pdmc .lg span{display:flex;align-items:center;gap:6px;line-height:1.25}#ipr-pdmc .lg i{flex:0 0 12px;height:12px;border-radius:2px;border:1px solid rgba(244,241,230,.5)}" +
     "#ipr-pdmc select{display:block;width:calc(100% - 14px);margin:4px 0 4px 14px;background:rgba(20,26,16,.6);color:#e9e6da;border:1px solid rgba(233,230,218,.15);border-radius:6px;padding:4px 6px;font:12.5px Geist,Inter,system-ui,sans-serif}";
   function pintar() {
     var d = D.getElementById("ipr-pdmc"); if (!d) return;
     var c = d.querySelector(".c"); if (!c) return;
-    var h = '<label><input type="checkbox" data-pdmc="on"' + (S.on ? " checked" : "") + "> <span>" + t("Mostrar a planta da câmara onde está o mapa", "Show the plan of the municipality in view") + "</span></label>";
+    var h = "";
+    if (ESTILO) {
+      var co = crusLigada();
+      h += '<label><input type="checkbox" data-pdmc="crus"' + (co ? " checked" : "") + "> <span>" + t("Ordenamento IPR · todo o país, mesmas cores", "IPR zoning · whole country, same colours") + "</span></label>";
+      if (co) h += '<div class="lg">' + legCrus().map(function (x) { return '<span><i style="background:' + x[0] + '"></i>' + esc(x[1]) + "</span>"; }).join("") + "</div>" +
+        "<small>" + t("Fonte: CRUS da DGT (classes e categorias nacionais). Indicativo: fazem fé as plantas publicadas em Diário da República.", "Source: DGT CRUS. Indicative only.") + "</small>";
+    }
+    h += '<label><input type="checkbox" data-pdmc="on"' + (S.on ? " checked" : "") + "> <span>" + t("Plantas originais da câmara onde está o mapa (cores da câmara)", "Original municipal plans in view (municipality colours)") + "</span></label>";
     if (S.on) {
       if (S.estado) h += '<div class="es">' + esc(S.estado) + "</div>";
       if (S.antiga) h += '<label><input type="checkbox" data-pdmc="antiga"' + (S.antigaOn ? " checked" : "") + "> <span>" + t("Planta de condicionantes (imagem publicada pela câmara)", "Constraints plan (image published by the municipality)") + "</span></label>";
@@ -325,6 +398,7 @@
     d.addEventListener("change", function (e) {
       var x = e.target;
       if (x.getAttribute("data-pdmc") === "on") { ligar(x.checked); return; }
+      if (x.getAttribute("data-pdmc") === "crus") { ligarCrus(x.checked); setTimeout(pintar, 300); return; }
       if (x.getAttribute("data-pdmc") === "antiga") { antiga(x.checked); pintar(); return; }
       if (x.getAttribute("data-pdmc") === "dist") { DIST = x.value; var cl = x.closest("[data-pdmc-cl]"); if (cl) lista().then(function (l) { var b = cl.querySelector("[data-pdmc-lc]"); if (b && DIST) pintarDistrito(b, l); else if (b) b.innerHTML = ""; }); return; }
       if (x.getAttribute("data-pdmc-c")) { S.escolhida = x.getAttribute("data-pdmc-c"); S.preferida = rotulo(S.escolhida).slice(0, 12); guardar(); desenhar(); pintar(); }
@@ -388,7 +462,8 @@
     return true;
   }
   (function vez(n) { var a = false, b = false; try { a = bloco(); b = prender(); } catch (e) {} if (a && b) return; if (n < 200) setTimeout(function () { vez(n + 1); }, 150); })(0);
-  setInterval(function () { try { bloco(); esconderAntigos(); } catch (e) {} }, 3000);
+  setInterval(function () { try { bloco(); esconderAntigos(); estiloCrus(); } catch (e) {} }, 3000);
+  (function est(n) { var ok = false; try { ok = estiloCrus(); } catch (e) {} if (!ok && n < 200) setTimeout(function () { est(n + 1); }, 150); })(0);
   setTimeout(function () { try { new MutationObserver(function () { clearTimeout(W.__iprPdmcMo); W.__iprPdmcMo = setTimeout(function () { try { esconderAntigos(); } catch (e) {} }, 120); })
     .observe(D.getElementById("ipe-cam") || D.body, { childList: true, subtree: true }); } catch (e) {} }, 4000);
   W.__iprPdmCamara = { ligar: ligar, estado: function () { return JSON.parse(JSON.stringify(S)); } };
