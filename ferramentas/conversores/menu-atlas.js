@@ -17,5 +17,16 @@
     x.addEventListener("click", function () { var w = W.open("/conversores/", "_blank", "noopener"); if (!w) location.href = "/conversores/"; });
     b.appendChild(x);
   }
+  // Barra de cima (Ferramentas: Analisar, Desenhar, Recolher): um quarto botão, sem data-modo, que só abre a página.
+  function porTopo() {
+    var g = D.getElementById("ipr-modos"); if (!g || g.querySelector("[data-ipr-cv]")) return;
+    var m = g.querySelector("button[data-modo]"); if (!m) return;
+    var x = D.createElement("button"); x.type = "button"; x.className = m.className; x.setAttribute("data-ipr-cv", "1");
+    x.setAttribute("aria-pressed", "false"); x.textContent = en() ? "Convert" : "Converter";
+    x.title = en() ? "Converters: AutoCAD, GIS, survey and 3D files (opens in a new tab)" : "Conversores: AutoCAD, SIG, topografia e 3D (abre noutro separador)";
+    x.addEventListener("click", function (ev) { ev.stopPropagation(); var w = W.open("/conversores/", "_blank", "noopener"); if (!w) location.href = "/conversores/"; }, true);
+    g.appendChild(x);
+  }
+  var por0 = por; por = function () { por0(); porTopo(); };
   por(); var n = 0, t = setInterval(function () { por(); if (++n > 40) { clearInterval(t); setInterval(por, 10000); } }, 1500);
 })();
