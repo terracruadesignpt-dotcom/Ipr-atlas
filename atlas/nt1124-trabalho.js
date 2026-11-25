@@ -178,6 +178,7 @@
     "#ipr-cmp-h b{position:absolute;top:50%;left:50%;width:38px;height:38px;margin:-19px 0 0 -19px;border-radius:50%;background:#f2f0e6;color:#11160d;display:flex;align-items:center;justify-content:center;font:700 14px Geist,Inter,system-ui,sans-serif;box-shadow:0 4px 14px rgba(0,0,0,.4)}" +
     "#ipr-cmp-l,#ipr-cmp-r{position:absolute;top:70px;z-index:3;padding:5px 10px;border-radius:999px;background:rgba(13,17,11,.82);color:#f2f0e6;font:600 12px Geist,Inter,system-ui,sans-serif;display:flex;gap:6px;align-items:center}" +
     "#ipr-cmp-l select{background:none;border:0;color:#f2f0e6;font:inherit}#ipr-cmp-l button{background:none;border:0;color:#f2f0e6;cursor:pointer;font:600 14px Geist,Inter,system-ui,sans-serif}" +
+    "html.ipr-a-desenhar .iprv-pop{display:none!important}" +
     "#ipr-trb .lb{font:500 10px 'Geist Mono',ui-monospace,monospace;letter-spacing:.1em;text-transform:uppercase;color:#8d907f;padding:0 8px 0 10px}" +
     "#ipr-trb-med{position:fixed;z-index:2147480050;padding:6px 12px;border-radius:999px;background:rgba(13,17,11,.85);color:#e6e4d9;font:500 12px 'Geist Mono',ui-monospace,monospace;pointer-events:none;display:none;border:1px solid rgba(255,255,255,.1)}" +
     "#ipr-trb-c{position:fixed;z-index:2147480060;width:340px;max-height:70vh;overflow:auto;padding:16px;border-radius:16px;background:rgba(13,17,11,.9);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.1);box-shadow:0 18px 40px -10px rgba(0,0,0,.6);color:#e6e4d9;font:13px/1.5 Geist,Inter,system-ui,sans-serif;display:none}" +
@@ -864,6 +865,11 @@
     if (m === "Recolher" && semRede() !== correr.sr) { correr.sr = semRede(); render(); }
     b.classList.toggle("on", !!m && /Desenhar|Analisar|Recolher/.test(m));
     if (m) posicionar();
+    // 25/11, 19h50 (Bernardo, vídeo das 19h40: «atrapalha um bocado aparecer caixa de info sempre que se desenha um ponto»):
+    // enquanto se desenha ou se escolhe um ponto para analisar, a caixa de informação das camadas (.iprv-pop) não aparece.
+    var dp = $("ipr-dp"), dr = desenho(), md = ""; try { md = dr && dr.getMode ? dr.getMode() : ""; } catch (e) {}
+    var aDes = !!armado || /^draw_/.test(md) || !!(dp && dp.getClientRects().length && getComputedStyle(dp).display !== "none");
+    D.documentElement.classList.toggle("ipr-a-desenhar", aDes);
   }
   (function vez(k) { try { correr(); } catch (e) {} if (k < 80) setTimeout(function () { vez(k + 1); }, 300); })(0);
   setInterval(function () { try { correr(); } catch (e) {} }, 700);

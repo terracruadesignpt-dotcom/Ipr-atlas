@@ -18,7 +18,10 @@
 
   function movel() { return W.innerWidth <= 900; }
   var FECHAR = /^(×|✕|✖|x|fechar|close|cerrar|agora não|agora nao|not now|ahora no|dispensar|ok, fechar)$/i;
-  var FERRAMENTAS = "#ipe-dir,#ipr-dp,#ipr-trb,#ipr-modos-acc,#ipr-modos,.ipe-tools,.maplibregl-ctrl,#tb-bar,[data-ipr-fica]";
+  // 25/11, 19h50 (Nuno, 19h40, iPhone: «Não abre a ficha»): a folha da ficha (#ipr-ft-sh) e o aviso da conta (#ipr-ft-av)
+  // abrem com cliques feitos pelo próprio código (separadores, botões); este módulo via-os como «toque fora» e fechava a
+  // folha logo a seguir. Ficam de fora, e só contam toques reais (isTrusted).
+  var FERRAMENTAS = "#ipe-dir,#ipr-dp,#ipr-trb,#ipr-trb-c,#ipr-modos-acc,#ipr-modos,.ipe-tools,.maplibregl-ctrl,#tb-bar,[data-ipr-fica],#ipr-ft-sh,#ipr-ft-av";
   var INTERACTIVO = "button,a,input,select,textarea,label,summary,[role=button],[contenteditable=true],.maplibregl-canvas";
 
   function visivel(e) { if (!e || !e.isConnected) return false; var r = e.getBoundingClientRect(); if (r.width < 2 || r.height < 2) return false; var s = getComputedStyle(e); return s.display !== "none" && s.visibility !== "hidden" && +s.opacity > 0.05; }
@@ -51,7 +54,7 @@
 
   // 1. toque fora
   D.addEventListener("click", function (ev) {
-    if (!movel()) return;
+    if (!movel() || ev.isTrusted === false) return;
     var t = ev.target, antes = caixas(), painel = esq();
     setTimeout(function () {
       if (painel && esq() === painel && !painel.contains(t) && !(t.closest && t.closest('[data-tool="lado"],.ipe-tools'))) fecharEsq();
