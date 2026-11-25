@@ -510,7 +510,7 @@
     }).then(function (j) {
       if (j && j.success) {
         ctx = null; var d = j.data, n = Object.keys(d.camadas || {}).filter(function (k) { return typeof d.camadas[k] === "number"; }).length;
-        cx.innerHTML = "<h4>" + t("Condomínio criado", "Condominium created") + "</h4><p>" + esc(d.nome) + "<br><small>" + n + " " + t("camadas", "layers") + ", " + (d.rels || []).length + " " + t("entidades ligadas", "linked bodies") + (d.codigo ? ", " + t("código de convite", "invite code") + " " + esc(d.codigo) : "") + ".</small></p><div class='bt'><a class='ac' href='" + esc(d.oficina) + "'>" + t("Abrir na Oficina", "Open in the Workshop") + "</a></div>";
+        cx.innerHTML = "<h4>" + t("Condomínio criado", "Condominium created") + "</h4><p>" + esc(d.nome) + "<br><small>" + n + " " + t("camadas", "layers") + ", " + (d.rels || []).length + " " + ((d.rels || []).length === 1 ? t("entidade ligada", "linked body") : t("entidades ligadas", "linked bodies")) + (d.codigo ? ", " + t("código de convite", "invite code") + " " + esc(d.codigo) : "") + ".</small></p><div class='bt'><a class='ac' href='" + esc(d.oficina) + "'>" + t("Abrir na Oficina", "Open in the Workshop") + "</a></div>";
       } else { b.disabled = false; var m = j && j.data; out.textContent = (m && m.m) || (typeof m === "string" ? m : t("Não foi possível criar.", "Could not create.")); }
     }).catch(function () { b.disabled = false; out.textContent = t("Sem ligação. Tente de novo.", "No connection. Try again."); });
   }
