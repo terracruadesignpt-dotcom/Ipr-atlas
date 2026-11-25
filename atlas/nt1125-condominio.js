@@ -207,33 +207,41 @@
       if (!out.length) throw new Error("sem vias"); out.fonte = "mapa"; return out;
     });
   }
+  function pausa(x) { return new Promise(function (ok) { setTimeout(function () { ok(x); }, 0); }); }
   function estradas(T, res) {
     var b = T.bbox(T.buffer(res.area, MARGEM_VIA, { units: "meters" }));
     return viasOSM(b).then(function (vs) {
-      var caixa = T.bboxPolygon(b), tiras = [], porEnt = {}, km = 0;
+      // juntar as linhas por entidade e largura: um só buffer por grupo (rápido, e já sem sobreposições)
+      var grupos = {}, km = 0, nomes = {};
       vs.forEach(function (w) {
-        var meia = MEIA[w.tags.highway] || 3, ent = entidadeVia(w.tags);
-        w.coords.forEach(function (cs) {
-          if (!cs || cs.length < 2) return;
-          try {
-            var l = T.lineString(cs), fora = T.buffer(l, meia + VIA_M, { units: "meters" }), dentro = T.buffer(l, meia, { units: "meters" });
-            var tira = T.difference(T.featureCollection([fora, dentro])); if (!tira) return;
-            tira = T.intersect(T.featureCollection([tira, caixa])); if (!tira) return;
-            if (res.aglo) tira = T.difference(T.featureCollection([tira, res.aglo])); if (!tira) return;
-            if (ha(T.area(tira)) < 0.005) return;
-            tira.properties = { tipo: "via", via: w.tags.name || w.tags.ref || w.tags.highway, classe: w.tags.highway, ref: w.tags.ref || "", entidade: ent, largura_m: VIA_M };
-            tiras.push(tira); (porEnt[ent] = porEnt[ent] || []).push(tira);
-            var c = T.bboxClip(l, b); if (c && c.geometry.coordinates.length > 1) km += T.length(c, { units: "kilometers" });
-          } catch (e) {}
+        var meia = MEIA[w.tags.highway] || 3, ent = entidadeVia(w.tags), k = ent + "|" + meia;
+        (grupos[k] = grupos[k] || { ent: ent, meia: meia, ls: [] }).ls = grupos[k].ls.concat(w.coords.filter(function (c) { return c && c.length > 1; }));
+        var nm = w.tags.name || w.tags.ref; if (nm) (nomes[ent] = nomes[ent] || {})[nm] = 1;
+        if (!vs.fonte) w.coords.forEach(function (c) { try { var x = T.bboxClip(T.lineString(c), b); if (x.geometry.coordinates.length > 1) km += T.length(x, { units: "kilometers" }); } catch (e) {} });
+      });
+      var caixa = T.bboxPolygon(b), porEnt = {}, ks = Object.keys(grupos);
+      var passo = function (n) {
+        if (n >= ks.length) return Promise.resolve();
+        var g = grupos[ks[n]];
+        try {
+          var ml = T.multiLineString(g.ls), fora = T.buffer(ml, g.meia + VIA_M, { units: "meters", steps: 4 }), dentro = T.buffer(ml, g.meia, { units: "meters", steps: 4 });
+          var tira = fora && dentro ? T.difference(T.featureCollection([fora, dentro])) : null;
+          if (tira) tira = T.intersect(T.featureCollection([tira, caixa]));
+          if (tira && res.aglo) tira = T.difference(T.featureCollection([tira, res.aglo]));
+          if (tira) (porEnt[g.ent] = porEnt[g.ent] || []).push(tira);
+        } catch (e) {}
+        return pausa(n + 1).then(passo);
+      };
+      return passo(0).then(function () {
+        var junta = function (a) { try { return a.length > 1 ? T.union(T.featureCollection(a)) : a[0]; } catch (e) { return a[0]; } };
+        res.viaEnt = {}; res.vias = [];
+        Object.keys(porEnt).forEach(function (k) { var u = junta(porEnt[k]); if (!u) return; var a = ha(T.area(u)); if (a < 0.01) return; res.viaEnt[k] = a; u.properties = { tipo: "via", entidade: k, largura_m: VIA_M, ha: +a.toFixed(4), vias: Object.keys(nomes[k] || {}).slice(0, 12).join("; ") }; res.vias.push(u); });
+        res.viaKm = vs.fonte ? 0 : km; res.viaFonte = vs.fonte || "osm";
+        return pausa().then(function () {
+          var u = junta(res.vias.slice()); res.viaU = u || null; res.haVia = u ? ha(T.area(u)) : 0;
+          try { var f100 = u ? T.difference(T.featureCollection([u, res.area])) : null; res.haViaFora = f100 ? ha(T.area(f100)) : 0; } catch (e) { res.haViaFora = 0; }
         });
       });
-      // uma peça por entidade (as vias tocam-se e, vindas do mapa, chegam cortadas por mosaico)
-      var junta = function (a) { try { return a.length > 1 ? T.union(T.featureCollection(a)) : a[0]; } catch (e) { return a[0]; } };
-      res.viaEnt = {}; res.vias = [];
-      Object.keys(porEnt).forEach(function (k) { var u = junta(porEnt[k]); if (!u) return; var a = ha(T.area(u)); res.viaEnt[k] = a; u.properties = { tipo: "via", entidade: k, largura_m: VIA_M, ha: +a.toFixed(4), vias: porEnt[k].map(function (x) { return x.properties.via; }).filter(function (v, i, arr) { return v && arr.indexOf(v) === i; }).slice(0, 12).join("; ") }; res.vias.push(u); });
-      res.viaKm = vs.fonte === "mapa" ? 0 : km; res.viaFonte = vs.fonte || "osm";
-      var u = junta(res.vias.slice()); res.viaU = u || null; res.haVia = u ? ha(T.area(u)) : 0;
-      try { var f100 = u ? T.difference(T.featureCollection([u, res.area])) : null; res.haViaFora = f100 ? ha(T.area(f100)) : 0; } catch (e) { res.haViaFora = 0; }
     }).catch(function (e) { res.vias = null; res.viaErro = String(e && e.message || e); });
   }
 
@@ -247,7 +255,7 @@
       if (!pecas.length) return;
       var u = pecas.length > 1 ? T.union(T.featureCollection(pecas)) : pecas[0]; if (!u) return;
       var tot = T.area(u); res.haPast = ha(tot);
-      var lado = Math.max(30, Math.sqrt(tot / (PARCELAS * 6))) / 1000, grelha = T.squareGrid(T.bbox(u), lado, { units: "kilometers" }), c = T.centroid(res.aglo), cel = [];
+      var lado = Math.max(30, Math.sqrt(tot / (PARCELAS * 3))) / 1000, grelha = T.squareGrid(T.bbox(u), lado, { units: "kilometers" }), c = T.centroid(res.aglo), cel = [];
       grelha.features.forEach(function (g) {
         var x = null; try { x = T.intersect(T.featureCollection([g, u])); } catch (e) {} if (!x) return;
         var a = T.area(x); if (a < 20) return; x.properties = { a: a, rumo: T.bearing(c, T.centroid(x)) }; cel.push(x);
