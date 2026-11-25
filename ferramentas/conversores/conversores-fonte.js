@@ -15,6 +15,8 @@
   var raiz = D.getElementById("ipr-cv");
   if (!raiz || W.__iprCv) return; W.__iprCv = 1;
   var EST = C.estado || { sessao: false, gratis: 3, preco_c: 100 };
+  // /conta/ volta ao sítio certo por redirect_to (m91537, m90207); o «voltar» do m93963 não é lido lá.
+  C.entrar = C.registar = "/conta/?redirect_to=" + encodeURIComponent(location.origin + "/conversores/");
   var NPM = "https://cdn.jsdelivr.net/npm/";
 
   // ---------------------------------------------------------------- sistemas de coordenadas
