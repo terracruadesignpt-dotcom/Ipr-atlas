@@ -42,19 +42,24 @@ def copiar(url, org, pasta):
         f = os.path.join(pasta, "%s__%d.geojsons" % (nome, lid)); n = 0
         with open(f, "w") as o:
             if pag:
-                off = 0
+                off, pg = 0, mx  # 25/11: se o servidor der erro (500) numa página, reduz-se a página; uma página de 1 que falhe salta-se
                 while True:
-                    q = urllib.parse.urlencode({"where": "1=1", "outFields": "*", "outSR": 4326, "f": "geojson", "resultOffset": off, "resultRecordCount": mx, "returnGeometry": "true"})
-                    j = pedir("%s/%d/query?%s" % (url, lid, q)); fs = j.get("features", [])
+                    q = urllib.parse.urlencode({"where": "1=1", "outFields": "*", "outSR": 4326, "f": "geojson", "resultOffset": off, "resultRecordCount": pg, "returnGeometry": "true"})
+                    try: j = pedir("%s/%d/query?%s" % (url, lid, q), 4)
+                    except Exception as e:
+                        if pg > 1: pg = max(1, pg // 4); print("página menor", lid, off, pg, e, flush=True); continue
+                        print("salta", lid, off, e, flush=True); off += 1; pg = mx; continue
+                    fs = j.get("features", [])
                     for x in fs: o.write(json.dumps(x, ensure_ascii=False, separators=(",", ":")) + "\n")
                     n += len(fs); off += len(fs)
-                    if not fs or (len(fs) < mx and not j.get("exceededTransferLimit")): break
+                    if not fs or (len(fs) < pg and not j.get("exceededTransferLimit")): break
             else:
                 ids = pedir("%s/%d/query?%s" % (url, lid, urllib.parse.urlencode({"where": "1=1", "returnIdsOnly": "true", "f": "json"}))).get("objectIds") or []
                 ids.sort()
                 for i in range(0, len(ids), min(mx, 500)):
                     q = urllib.parse.urlencode({"objectIds": ",".join(map(str, ids[i:i + min(mx, 500)])), "outFields": "*", "outSR": 4326, "f": "geojson"})
-                    j = pedir("%s/%d/query" % (url, lid), ) if False else pedir("%s/%d/query?%s" % (url, lid, q))
+                    try: j = pedir("%s/%d/query?%s" % (url, lid, q), 4)
+                    except Exception as e: print("bloco falhou", lid, i, e, flush=True); continue
                     for x in j.get("features", []): o.write(json.dumps(x, ensure_ascii=False, separators=(",", ":")) + "\n"); n += 1
         print(nome, lid, ly.get("name"), n, "elementos", flush=True)
         if n == 0: os.remove(f); continue
