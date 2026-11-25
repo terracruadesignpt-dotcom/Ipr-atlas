@@ -4,7 +4,6 @@ on:
   workflow_dispatch:
     inputs:
       paises: {description: "países (json)", default: '["fr","cz","nl","lu"]'}
-  schedule: [{cron: "17 3 1 * *"}]
 permissions: {contents: write}
 jobs:
   partes:
