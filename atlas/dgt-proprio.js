@@ -23,6 +23,13 @@
     cos2023v1: 1,
     // 17/11/2026: PMTiles feitas no GitHub a partir da nossa cópia integral (fluxo dados-dgt-pmtiles).
     sgifr_linhas: 1, srup_rede_viaria: 1, srup_rede_ferroviaria: 1, srup_marcos_geod: 1, srup_arvores_point: 1, srup_defesa_militar: 1 };
+  // 25/11/2026 (Nuno: «quando tiver tudo copiado para nós, começa logo a servir»): colecções cujas PMTiles estão a ser feitas.
+  // Ao arrancar, pergunta ao depósito se a PMTiles já existe; se sim, passa a servir dela. Até lá ficam pelos mosaicos guardados.
+  var LOGO = ["sgifr_areas", "sgifr_pontos", "distritos", "municipios", "freguesias", "toponimia", "cos2025v1", "cos2018v4", "srup_perigosidade_inc_rural", "cadastro", "altimetria_curvas_nivel", "altimetria_pontos"];
+  LOGO.forEach(function (c) {
+    if (PROPRIAS[c]) return;
+    try { fetch(BASE + c + ".pmtiles", { method: "HEAD", credentials: "omit" }).then(function (r) { if (r.ok && +(r.headers.get("content-length") || 0) > 1000) PROPRIAS[c] = 1; }).catch(function () {}); } catch (e) {}
+  });
   var PMT = "https://cdn.jsdelivr.net/npm/pmtiles@3.2.1/dist/pmtiles.js", pronto = null, fontes = {}, LIG = 0;
   var DEP = "https://camadas.terracruadesign.pt/mvt/", WK = "https://terracruadesign.pt/ipr-mvt/",
     OGC = "https://ogcapi.dgterritorio.gov.pt/collections/", MVT = { deposito: 0, copiador: 0, dgt: 0, falhas: 0 }, mvtPronto = false;
