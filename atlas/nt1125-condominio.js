@@ -474,6 +474,11 @@
     if (u.vias && u.vias.length) f.append("viaria", JSON.stringify({ type: "FeatureCollection", features: u.vias }));
     if (u.parcelas && u.parcelas.length) f.append("pastoreio", JSON.stringify({ type: "FeatureCollection", features: u.parcelas.map(function (p) { var q = Object.assign({}, p.properties); delete q.tipo; delete q.rumo; q.eur_ha = EUR_PAST; return { type: "Feature", geometry: p.geometry, properties: q }; }) }));
   }
+  function extrasPara(org) { // bermas e pastoreio (m93993)
+    var f = new FormData(); f.append("action", "tcd_cda_juntar"); f.append("n", ctx.n); f.append("org", org); extras(f, ultimo);
+    if (!f.has("viaria") && !f.has("pastoreio")) return Promise.resolve(null);
+    return fetch(AJAX, { method: "POST", body: f, credentials: "same-origin" }).then(function (r) { return r.json(); }).then(function (j) { return j && j.success ? j.data : null; }).catch(function () { return null; });
+  }
   function juntar(b) {
     var cx = painel.querySelector("[data-cda-org]"), out = cx.querySelector("[data-cda-res]"), f = new FormData();
     f.append("action", "tcd_cda_juntar"); f.append("n", ctx.n); f.append("org", b.getAttribute("data-cda-juntar")); extras(f, ultimo);
@@ -498,9 +503,11 @@
     if (u.predios && u.predios.length) f.append("predios", JSON.stringify({ type: "FeatureCollection", features: u.predios.map(function (p) { return { type: "Feature", geometry: p.geo, properties: { ref: p.ref, ha_na_faixa: +p.ha.toFixed(4), ha_total: +(p.haTotal || 0).toFixed(4) } }; }) }));
     f.append("resumo", JSON.stringify({ faixa_ha: +u.haFaixa.toFixed(2), aglo_ha: +u.haAglo.toFixed(2), custo_eur: Math.round(custoTotal(u)), cadastro_pct: u.haCad ? Math.round(100 * u.haCad / u.haFaixa) : 0, predios: (u.predios || []).length, perigo_alta_pct: u.haFaixa ? Math.round(100 * alta / u.haFaixa) : 0 }));
     f.append("rels", JSON.stringify(rels));
-    extras(f, u);
     b.disabled = true; out.textContent = t("A criar…", "Creating…");
     fetch(AJAX, { method: "POST", body: f, credentials: "same-origin" }).then(function (r) { return r.json(); }).then(function (j) {
+      if (j && j.success) return extrasPara(j.data.org).then(function (x) { if (x && x.camadas) Object.keys(x.camadas).forEach(function (k) { j.data.camadas[k] = x.camadas[k]; }); return j; });
+      return j;
+    }).then(function (j) {
       if (j && j.success) {
         ctx = null; var d = j.data, n = Object.keys(d.camadas || {}).filter(function (k) { return typeof d.camadas[k] === "number"; }).length;
         cx.innerHTML = "<h4>" + t("Condomínio criado", "Condominium created") + "</h4><p>" + esc(d.nome) + "<br><small>" + n + " " + t("camadas", "layers") + ", " + (d.rels || []).length + " " + t("entidades ligadas", "linked bodies") + (d.codigo ? ", " + t("código de convite", "invite code") + " " + esc(d.codigo) : "") + ".</small></p><div class='bt'><a class='ac' href='" + esc(d.oficina) + "'>" + t("Abrir na Oficina", "Open in the Workshop") + "</a></div>";
