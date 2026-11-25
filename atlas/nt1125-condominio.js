@@ -215,7 +215,11 @@
       var grupos = {}, km = 0, nomes = {};
       vs.forEach(function (w) {
         var meia = MEIA[w.tags.highway] || 3, ent = entidadeVia(w.tags), k = ent + "|" + meia;
-        (grupos[k] = grupos[k] || { ent: ent, meia: meia, ls: [] }).ls = grupos[k].ls.concat(w.coords.filter(function (c) { return c && c.length > 1; }));
+        var g0 = grupos[k] = grupos[k] || { ent: ent, meia: meia, ls: [] };
+        w.coords.forEach(function (c) { // só o troço dentro da caixa: o Overpass devolve a via inteira, às vezes com quilómetros
+          if (!c || c.length < 2) return;
+          try { var x = T.bboxClip(T.lineString(c), b).geometry; (x.type === "LineString" ? [x.coordinates] : x.coordinates).forEach(function (cc) { if (cc.length > 1) g0.ls.push(cc); }); } catch (e) {}
+        });
         var nm = w.tags.name || w.tags.ref; if (nm) (nomes[ent] = nomes[ent] || {})[nm] = 1;
         if (!vs.fonte) w.coords.forEach(function (c) { try { var x = T.bboxClip(T.lineString(c), b); if (x.geometry.coordinates.length > 1) km += T.length(x, { units: "kilometers" }); } catch (e) {} });
       });
