@@ -64,13 +64,17 @@ def lista(saida):
                 mm = re.search(r'servicos\.dgterritorio\.pt/((?:SDISNITWMSPDM1|sdisnitwmspdm1)_(\d{4})_\d+_\d+)/', u.replace('&amp;', '&'), re.I)
                 if mm:
                     dico = mm.group(2)
-                    if dico not in melhor or d >= melhor[dico][1]:
-                        melhor[dico] = (mm.group(1), d)
+                    melhor.setdefault(dico, {})
+                    if d >= melhor[dico].get(mm.group(1), ''):
+                        melhor[dico][mm.group(1)] = d
         print('CSW', pos, '/', total, 'câmaras:', len(melhor), flush=True)
         if not recs:
             break
         pos += 100
-    out = {k: v[0] for k, v in sorted(melhor.items())}
+    # 26/11/2026: guardam-se todos os serviços de cada câmara, do mais recente para o mais antigo («srv1|srv2|...»). O SNIT
+    # respondia sempre HTTP 500 ao serviço escolhido para o Porto (1312_3027_3), Gaia, Setúbal e Leiria; a câmara passa a
+    # tentar os outros serviços publicados antes de desistir.
+    out = {k: '|'.join(sorted(v, key=lambda s_: (v[s_], s_), reverse=True)) for k, v in sorted(melhor.items())}
     json.dump(out, open(saida, 'w'), indent=0)
     print('câmaras com PDM no SNIT:', len(out))
 
@@ -251,7 +255,14 @@ def camara(dico, srv, pasta, fim_t, ja=frozenset()):
     já estão nas versões snit-*). Antes, uma planta com blocos falhados deitava fora todas as outras da câmara, que eram
     copiadas outra vez na volta seguinte: em 7 dias só 27 das 270 câmaras ficaram feitas."""
     print('== %s %s' % (dico, srv), flush=True)
-    fim, cap = capacidades(srv)
+    fim, cap = None, None
+    for alt in srv.split('|'):
+        fim, cap = capacidades(alt)
+        if cap:
+            if alt != srv.split('|')[0]:
+                print('  serviço alternativo em uso:', alt, flush=True)
+            srv = alt
+            break
     if not cap:
         print('  sem GetCapabilities; fica para a próxima volta', flush=True)
         return None
