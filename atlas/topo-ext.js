@@ -142,7 +142,7 @@
     if ($('ipr-tx-css')) return;
     var s = D.createElement('style'); s.id = 'ipr-tx-css';
     s.textContent =
-      'html.ipr-topo .ipe-top,html.ipr-topo #ipe-esq,html.ipr-topo #ipe-dir,html.ipr-topo .ipe-tools,html.ipr-topo #ipe-st,html.ipr-topo #ipr-tri,html.ipr-topo #ipr-as-b,html.ipr-topo .ipe-tour,html.ipr-topo #ipr-lingueta,html.ipr-topo #ipr-pb-barra,html.ipr-topo .ipr-be-p,html.ipr-topo #ipr-cq,html.ipr-topo #ipr-cp-ct,html.ipr-topo .maplibregl-ctrl-top-left.ipr-nav,' +
+      'html.ipr-topo .ipe-top,html.ipr-topo #ipe-esq,html.ipr-topo #ipe-dir,html.ipr-topo .ipe-tools,html.ipr-topo #ipe-st,html.ipr-topo #ipr-tri,html.ipr-topo #ipr-as-b,html.ipr-topo .ipe-tour,html.ipr-topo #ipr-lingueta,html.ipr-topo #ipr-pb-barra,html.ipr-topo .ipr-be-p,html.ipr-topo #ipr-cq,html.ipr-topo #ipr-cp-ct,html.ipr-topo .maplibregl-ctrl-top-left.ipr-nav,html.ipr-topo #tb-bar,html.ipr-topo #ipr-lgd,html.ipr-topo #ipr-ger-b,' +
       'html.ipr-topo [id^="ipr-exd-"],html.ipr-topo [id^="ipr-exm-"],html.ipr-topo .ipr-exd-ui,html.ipr-topo .ipr-exm-ui{display:none!important}' +
       'html.ipr-topo .ipe-mapa{position:fixed!important;top:' + TOPO_H + 'px!important;left:' + LARG + 'px!important;right:0!important;bottom:0!important;width:auto!important;height:auto!important;margin:0!important}' +
       'html.ipr-topo.ipr-topo-form #ipe-dir{display:flex!important;position:fixed!important;top:' + TOPO_H + 'px!important;right:0!important;bottom:0!important;left:auto!important;width:380px!important;max-width:100vw!important;height:auto!important;z-index:30}' +
@@ -236,8 +236,10 @@
   function encomendar() {
     if (!poligonos().length) { toast(T('precisa')); return; }
     gtag('topo_encomendar', { pais: CC, estado: estado(CC) });
-    ferramenta('desenhar'); // o painel da Base vive com a ferramenta de desenho
-    mostrarForm(true);
+    mostrarForm(true); // o formulário da Base vive no painel da direita do Atlas (#ipe-dir)
+    // o assistente de compra calcula o preço do terreno desenhado e leva ao formulário
+    try { if (typeof W.iprAssistenteComprar === 'function' && W.iprAssistenteComprar('base') !== false) return; } catch (e) {}
+    try { if (typeof W.__iprAssistenteAbrir === 'function') W.__iprAssistenteAbrir('base'); } catch (e) {}
   }
   function trocar() {
     var m = mapa(), cs = (m && m._controls) || [];
