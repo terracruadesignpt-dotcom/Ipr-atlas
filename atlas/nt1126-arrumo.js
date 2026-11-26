@@ -2,8 +2,8 @@
  * Revisão do grafismo pedida pelo Nuno («coisas mal encostadas, janelas à frente»). Só posições, nada muda de função:
  *  1. Legenda (#ipr-lgd): ficava por cima do fundo do painel da esquerda e da barra das coordenadas. Passa a ficar
  *     à direita do painel da esquerda e da coluna dos botões do mapa, acima da barra de baixo.
- *  2. Botões do canto inferior direito («Ferramentas» #tcd_dock e a Formiga #tcdfmb): ficavam um sobre o outro e por
- *     cima do painel da direita. Passam a ficar em coluna, à esquerda do painel da direita, acima da barra de baixo.
+ *  2. Botão «Ferramentas» (#tcd_dock): ficava por baixo da Formiga e por cima do painel da direita. Passa para a
+ *     esquerda do painel da direita, acima da barra de baixo. A Formiga fica no canto.
  *  3. «Gerência» (#ipr-ger-b): tapava o topo dos separadores do painel da direita. Passa para a esquerda do painel.
  * Com os painéis fechados (ou no telemóvel, abaixo de 700 px) fica tudo como estava.
  * Desligar: ?arrumo=0
@@ -32,10 +32,11 @@
   function correr() {
     var esq = D.getElementById("ipe-esq"), dir = D.getElementById("ipe-dir");
     var st = D.getElementById("ipe-st"), nav = D.getElementById("ipr-nav");
-    var lgd = D.getElementById("ipr-lgd"), dock = D.getElementById("tcd_dock"), fm = D.getElementById("tcdfmb");
+    var lgd = D.getElementById("ipr-lgd"), dock = D.getElementById("tcd_dock");
     var ger = D.getElementById("ipr-ger-b");
     var largo = W.innerWidth >= 700;
-    var baixo = (st && visivel(st)) ? Math.max(0, W.innerHeight - st.getBoundingClientRect().top) + GAP : GAP;
+    var stOk = st && !st.hidden && getComputedStyle(st).display !== "none" && st.getBoundingClientRect().height > 8;
+    var baixo = stOk ? Math.max(0, W.innerHeight - st.getBoundingClientRect().top) + GAP : GAP;
 
     /* 1. legenda */
     if (lgd) {
@@ -50,15 +51,10 @@
     /* 2. Ferramentas e Formiga, em coluna à esquerda do painel da direita */
     var temDir = largo && visivel(dir);
     var dirW = temDir ? Math.round(W.innerWidth - dir.getBoundingClientRect().left) + GAP : 0;
-    if (fm) {
-      if (temDir) { px(fm, "right", dirW + "px"); px(fm, "bottom", Math.round(baixo) + "px"); }
-      else limpa(fm, ["right", "bottom"]);
-    }
+    /* a Formiga é reposta no canto por outro módulo (inset !important); fica lá, por cima de tudo */
     if (dock) {
-      if (temDir) {
-        var fh = (fm && visivel(fm)) ? fm.getBoundingClientRect().height + 8 : 0;
-        px(dock, "right", dirW + "px"); px(dock, "bottom", Math.round(baixo + fh) + "px");
-      } else limpa(dock, ["right", "bottom"]);
+      if (temDir) { px(dock, "right", dirW + "px"); px(dock, "bottom", Math.round(baixo) + "px"); }
+      else limpa(dock, ["right", "bottom"]);
     }
 
     /* 3. Gerência: ao lado do painel da direita, à altura do topo dele */
