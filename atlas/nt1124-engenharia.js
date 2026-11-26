@@ -148,8 +148,11 @@
       return '<button type="button" data-fundo="' + f[0] + '" aria-pressed="' + (on[f[0]] ? "true" : "false") + '">' + esc(t(f[1], f[2])) + "</button>"; }).join("") + "</div>";
     // Camadas da Base aberta (grupo «lidar» do catálogo): primeiro grupo, aberto. Nuno, 26/11/2026.
     var BX = Object.keys(C).filter(function (i) { return C[i].g === "lidar" && /^l_/.test(i); }), bxo = {}; BX.forEach(function (i) { bxo[i] = 1; });
+    var ba0 = (W.__ipe && W.__ipe.estado && W.__ipe.estado.actual) || null;
+    var temBase = !!(ba0 && (ba0.downloads || []).some(function (d) { return /\.(pmtiles|geojson)$/i.test((d && d.nome) || ""); }));
+    if (!temBase) { BX = []; bxo = {}; }
     if (BX.length) {
-      var ba = (W.__ipe && W.__ipe.estado && W.__ipe.estado.actual) || {}, bn = String(ba.local || "").split(" · ")[0];
+      var ba = ba0 || {}, bn = String(ba.local || "").split(" · ")[0];
       var lgB = BX.filter(function (i) { return on[i]; }).length, abB = "base" in abertos ? abertos.base : true;
       h += '<details data-g="base"' + (abB ? " open" : "") + "><summary>" + esc(t("Esta Base", "This Base") + (bn ? " · " + bn : "")) + (lgB ? '<span class="n">' + lgB + "</span>" : "") + "</summary>";
       BX.forEach(function (i) { h += '<label><input type="checkbox" data-cam="' + esc(i) + '"' + (on[i] ? " checked" : "") + "> <span>" + esc(nome(C[i])) + "</span>" + bi(i) + "</label>"; });
