@@ -1,62 +1,80 @@
-/* IPR Atlas · Grandes obras e expropriações (24/11/2026). Terracrua Design.
-   Documento «Camada de expropriações do IPR Atlas · achados, estratégia e passagem» (24/11/2026); Nuno, 13h58: «Publica já».
-   Um bloco no painel das camadas com os actos (DUP e servidões) do índice: o corredor do Subtroço 3 da LAV (DUP 13198/2026)
-   desenhado a partir das plantas parcelares vectorizadas pelo IPR; os outros actos, ainda sem geometria, aparecem como
-   marcador no concelho (nunca um corredor desenhado à mão). Ficha ao clicar. Aviso fixo em PT e EN.
-   Dados públicos sem dados pessoais (sem nomes, moradas, matrizes nem descrições prediais), servidos por commit fixo.
-   Cores: #a77ee0 obras e expropriações; #9aa3ad minas e pedreiras (as mesmas da zona de imprensa, m92538).
+/* IPR Atlas · Expropriações (26/11/2026). Terracrua Design.
+   Pedido do Nuno (26/11/2026): uma só camada «Expropriações» com todas as expropriações planeadas, em curso ou a decorrer, por tema.
+   Lê o índice e as geometrias da R2 pública (camadas.terracruadesign.pt/expropriacoes/): indice.json com os actos (DUP e servidões)
+   e, para os actos vectorizados pelo IPR a partir das plantas parcelares, o contorno da área a expropriar (campo «geojson» do acto).
+   Actos sem geometria aparecem como marcador no concelho (nunca um corredor desenhado à mão). Bloco organizado por tema, com filtro
+   por estado. Ficha ao clicar. Aviso fixo em PT e EN. Dados públicos sem dados pessoais (sem nomes, moradas, matrizes nem descrições prediais).
    Desligar: ?expro=0. API: window.__iprExpro = { ligar(bool) }. */
 (function () {
   "use strict";
   var W = window, D = document;
   if (/[?&]expro=0(&|$)/.test(location.search) || W.__iprExpro) return;
-  var DADOS = "https://cdn.jsdelivr.net/gh/terracruadesignpt-dotcom/Ipr-atlas@9610be85b35537c39a92ca914021abcd7f6aa122/dados/expropriacoes/";
-  var COR = { ferrovia: "#a77ee0", rodovia: "#a77ee0", agua: "#a77ee0", energia: "#a77ee0", urbano: "#a77ee0", minas: "#9aa3ad" };
-  var TEMA = { ferrovia: ["Ferrovia", "Railway"], rodovia: ["Rodovia", "Road"], minas: ["Minas e pedreiras", "Mines and quarries"], urbano: ["Urbano", "Urban"], agua: ["Água", "Water"], energia: ["Energia", "Energy"] };
-  var S = { on: false, idx: null, area: null, erro: "" };
+  var DADOS = "https://camadas.terracruadesign.pt/expropriacoes/";
+  var VER = new Date().toISOString().slice(0, 10);
+  var TEMAS = ["alta velocidade", "ferrovia", "estradas", "minas", "energia", "água", "turismo", "urbano", "outros"];
+  var TEMA = { "alta velocidade": ["Alta velocidade", "High-speed rail"], ferrovia: ["Ferrovia", "Railway"], estradas: ["Autoestradas e estradas", "Motorways and roads"], minas: ["Minas e pedreiras", "Mines and quarries"], energia: ["Energia", "Energy"], "água": ["Água", "Water"], turismo: ["Turismo", "Tourism"], urbano: ["Urbano", "Urban"], outros: ["Outros", "Other"] };
+  var COR = { "alta velocidade": "#a77ee0", ferrovia: "#c08be8", estradas: "#e0a84a", minas: "#9aa3ad", energia: "#e8d25a", "água": "#5aa9e0", turismo: "#e07e9b", urbano: "#d2694b", outros: "#b9b39b" };
+  var ESTADOS = ["planeada", "DUP publicada", "obra em curso", "concluída", "contestada", "caducada ou revertida"];
+  var EST_EN = { "planeada": "planned", "DUP publicada": "DUP published", "obra em curso": "works under way", "concluída": "completed", "contestada": "contested", "caducada ou revertida": "lapsed or reversed" };
+  var S = { on: false, idx: null, area: null, erro: "", estado: "" };
   function en() { return /^en/i.test(D.documentElement.lang || "") || W.IPR_LINGUA === "en"; }
   function t(pt, e) { return en() ? e : pt; }
   function esc(x) { return String(x == null ? "" : x).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" }[c]; }); }
   function mapa() { return W.__ipe && W.__ipe.mapa; }
+  function temaDe(a) { var k = a && a.tema; if (k === "rodovia") k = "estradas"; if (k === "agua") k = "água"; return TEMAS.indexOf(k) >= 0 ? k : "outros"; }
+  function cor(a) { return COR[temaDe(a)]; }
+  function estadoTxt(e) { return en() ? (EST_EN[e] || e) : e; }
   var AVISO_PT = "Delimitação aproximada, vectorizada pelo IPR a partir das plantas parcelares publicadas no Diário da República. Não substitui as plantas oficiais nem tem valor jurídico. As entidades citadas não estão associadas ao IPR Atlas.";
   var AVISO_EN = "Approximate boundary, vectorised by IPR from the parcel plans published in the Diário da República. It does not replace the official plans and has no legal value. The entities mentioned are not associated with IPR Atlas.";
 
+  function json(u) { return fetch(u + "?v=" + VER).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }); }
   function carregar() {
     if (S.idx) return Promise.resolve();
-    return Promise.all([
-      fetch(DADOS + "indice.json").then(function (r) { return r.json(); }),
-      fetch(DADOS + "lav-st3-area.geojson").then(function (r) { return r.json(); })
-    ]).then(function (v) { S.idx = v[0]; S.area = v[1]; }).catch(function () { S.erro = t("Não foi possível carregar a camada.", "Could not load the layer."); });
+    return json(DADOS + "indice.json").then(function (idx) {
+      S.idx = idx;
+      var com = (idx.actos || []).filter(function (a) { return a.geojson; });
+      return Promise.all(com.map(function (a) {
+        return json(DADOS + a.geojson).then(function (fc) {
+          return (fc.features || []).map(function (f) { f.properties = { id: a.id, cor: cor(a), estado: a.estado || "" }; return f; });
+        }).catch(function () { a._semGeo = true; return []; });
+      })).then(function (L) { S.area = { type: "FeatureCollection", features: [].concat.apply([], L) }; });
+    }).catch(function () { S.erro = t("Não foi possível carregar a camada.", "Could not load the layer."); });
   }
   function dataPt(d) { var m = /^(\d{4})-(\d{2})(?:-(\d{2}))?/.exec(d || ""); return m ? (m[3] ? m[3] + "/" : "") + m[2] + "/" + m[1] : (d || ""); }
+  function num(x) { return typeof x === "number" ? String(x).replace(".", ",") : x; }
+  function temGeo(a) { return !!(a.geojson && !a._semGeo); }
   function ficha(a) {
-    var tema = TEMA[a.tema] ? t(TEMA[a.tema][0], TEMA[a.tema][1]) : a.tema;
+    var k = temaDe(a), tema = t(TEMA[k][0], TEMA[k][1]);
     var h = '<div style="font:13px/1.45 Inter,system-ui,sans-serif;max-width:300px;color:inherit"><b>' + esc(a.obra) + "</b>";
     h += '<div style="opacity:.75;margin:2px 0 6px">' + esc(tema) + " · " + esc(a.acto) + (a.numero ? " n.º " + esc(a.numero) + (a.numero_confirmado ? "" : " " + t("(por confirmar)", "(to be confirmed)")) : "") + (a.data_dr ? " · " + esc(dataPt(a.data_dr)) : "") + "</div>";
-    var L = [[t("Entidade", "Entity"), a.entidade], [t("Concelhos", "Municipalities"), (a.concelhos || []).join(", ")], [t("Parcelas", "Parcels"), a.parcelas], [t("Área", "Area"), a.area_ha ? String(a.area_ha).replace(".", ",") + " ha" : ""], [t("Estado", "Status"), a.estado]];
+    var L = [[t("Entidade", "Entity"), a.entidade], [t("Concelhos", "Municipalities"), (a.concelhos || []).join(", ")], [t("Parcelas", "Parcels"), num(a.parcelas)], [t("Área", "Area"), a.area_ha ? num(a.area_ha) + " ha" : ""], [t("Estado", "Status"), estadoTxt(a.estado)]];
     L.forEach(function (x) { if (x[1] !== null && x[1] !== undefined && x[1] !== "") h += "<div><span style=\"opacity:.75\">" + esc(x[0]) + ":</span> " + esc(x[1]) + "</div>"; });
-    h += a.geojson ? '<div style="margin-top:4px;opacity:.75">' + t("Geometria vectorizada pelo IPR (contorno a cerca de 0,7 m dos vértices oficiais).", "Geometry vectorised by IPR (within about 0.7 m of the official vertices).") + "</div>"
+    h += temGeo(a) ? '<div style="margin-top:4px;opacity:.75">' + t("Contorno vectorizado pelo IPR a partir das plantas parcelares", "Boundary vectorised by IPR from the parcel plans") + (a.area_vectorizada_ha ? " (" + num(a.area_vectorizada_ha) + " ha)" : "") + ".</div>"
       : '<div style="margin-top:4px;opacity:.75">' + t("Geometria ainda não disponível: marcador no concelho.", "Geometry not yet available: marker in the municipality.") + "</div>";
     if (a.ligacao_dr) h += '<div style="margin-top:4px"><a href="' + esc(a.ligacao_dr) + '" target="_blank" rel="noopener">' + t("Ver no Diário da República", "See in the Diário da República") + "</a></div>";
     h += '<div style="margin-top:6px;font-size:11px;opacity:.65">' + esc(t(AVISO_PT, AVISO_EN)) + "</div></div>";
     return h;
   }
-  function porId(id) { var a = (S.idx && S.idx.actos) || []; for (var i = 0; i < a.length; i++) if (a[i].id === id) return a[i]; return null; }
+  function actos() { return (S.idx && S.idx.actos) || []; }
+  function visivel(a) { return !S.estado || a.estado === S.estado; }
+  function porId(id) { var a = actos(); for (var i = 0; i < a.length; i++) if (a[i].id === id) return a[i]; return null; }
   function pontos() {
-    return { type: "FeatureCollection", features: ((S.idx && S.idx.actos) || []).filter(function (a) { return !a.geojson && a.centro; }).map(function (a) {
-      return { type: "Feature", geometry: { type: "Point", coordinates: a.centro }, properties: { id: a.id, cor: COR[a.tema] || "#a77ee0" } }; }) };
+    return { type: "FeatureCollection", features: actos().filter(function (a) { return !temGeo(a) && a.centro; }).map(function (a) {
+      return { type: "Feature", geometry: { type: "Point", coordinates: a.centro }, properties: { id: a.id, cor: cor(a), estado: a.estado || "" } }; }) };
   }
+  function filtro() { return S.estado ? ["==", ["get", "estado"], S.estado] : null; }
   var IDS = ["ipr-expro-f", "ipr-expro-l", "ipr-expro-p"];
   function tirar() { var I = mapa(); if (!I) return; IDS.forEach(function (l) { try { if (I.getLayer(l)) I.removeLayer(l); } catch (e) {} }); ["ipr-expro-a", "ipr-expro-pt"].forEach(function (s) { try { if (I.getSource(s)) I.removeSource(s); } catch (e) {} }); }
   function desenhar() {
     var I = mapa(); if (!I || !S.on || !S.idx) return;
     tirar();
     try {
-      I.addSource("ipr-expro-a", { type: "geojson", data: S.area });
-      I.addLayer({ id: "ipr-expro-f", type: "fill", source: "ipr-expro-a", minzoom: 9, paint: { "fill-color": "#a77ee0", "fill-opacity": 0.35 } });
-      I.addLayer({ id: "ipr-expro-l", type: "line", source: "ipr-expro-a", minzoom: 7, paint: { "line-color": "#7d4fc4", "line-width": ["interpolate", ["linear"], ["zoom"], 7, 2, 14, 1.2] } });
+      I.addSource("ipr-expro-a", { type: "geojson", data: S.area || { type: "FeatureCollection", features: [] } });
+      I.addLayer({ id: "ipr-expro-f", type: "fill", source: "ipr-expro-a", minzoom: 8, paint: { "fill-color": ["get", "cor"], "fill-opacity": 0.35 } });
+      I.addLayer({ id: "ipr-expro-l", type: "line", source: "ipr-expro-a", minzoom: 6, paint: { "line-color": ["get", "cor"], "line-width": ["interpolate", ["linear"], ["zoom"], 6, 2.5, 14, 1.2] } });
       I.addSource("ipr-expro-pt", { type: "geojson", data: pontos() });
       I.addLayer({ id: "ipr-expro-p", type: "circle", source: "ipr-expro-pt", paint: { "circle-radius": 7, "circle-color": ["get", "cor"], "circle-stroke-color": "#fff", "circle-stroke-width": 1.5, "circle-opacity": 0.9 } });
+      var f = filtro(); IDS.forEach(function (l) { try { I.setFilter(l, f); } catch (e) {} });
     } catch (e) {}
   }
   var popup = null;
@@ -67,17 +85,27 @@
   var preso = false;
   function prender() {
     var I = mapa(); if (!I || preso) return !!preso; preso = true;
-    I.on("click", "ipr-expro-p", function (e) { var f = e.features && e.features[0]; if (f) abrir(porId(f.properties.id), e.lngLat); });
-    I.on("click", "ipr-expro-f", function (e) { abrir(porId("lav-st3"), e.lngLat); });
-    ["ipr-expro-p", "ipr-expro-f"].forEach(function (l) { I.on("mouseenter", l, function () { I.getCanvas().style.cursor = "pointer"; }); I.on("mouseleave", l, function () { I.getCanvas().style.cursor = ""; }); });
+    ["ipr-expro-p", "ipr-expro-f"].forEach(function (l) {
+      I.on("click", l, function (e) { var f = e.features && e.features[0]; if (f) abrir(porId(f.properties.id), e.lngLat); });
+      I.on("mouseenter", l, function () { I.getCanvas().style.cursor = "pointer"; }); I.on("mouseleave", l, function () { I.getCanvas().style.cursor = ""; });
+    });
     I.on("styledata", function () { if (S.on && S.idx && !I.getLayer("ipr-expro-p")) setTimeout(desenhar, 60); });
     return true;
   }
+  function caixa(id) {
+    var b = [180, 90, -180, -90], n = 0;
+    ((S.area && S.area.features) || []).forEach(function (f) {
+      if (f.properties.id !== id) return;
+      (function per(c) { if (typeof c[0] === "number") { n++; if (c[0] < b[0]) b[0] = c[0]; if (c[1] < b[1]) b[1] = c[1]; if (c[0] > b[2]) b[2] = c[0]; if (c[1] > b[3]) b[3] = c[1]; } else c.forEach(per); })(f.geometry.coordinates);
+    });
+    return n ? [[b[0], b[1]], [b[2], b[3]]] : null;
+  }
   function voar(a) {
     var I = mapa(); if (!I || !a) return;
-    if (a.id === "lav-st3" && S.area) { try { I.fitBounds([[-8.612, 40.828], [-8.555, 40.971]], { padding: 40 }); } catch (e) {} }
+    var bx = temGeo(a) ? caixa(a.id) : null, ll = a.centro;
+    if (bx) { try { I.fitBounds(bx, { padding: 40, maxZoom: 15 }); } catch (e) {} ll = [(bx[0][0] + bx[1][0]) / 2, (bx[0][1] + bx[1][1]) / 2]; }
     else if (a.centro) { try { I.flyTo({ center: a.centro, zoom: 10 }); } catch (e) {} }
-    setTimeout(function () { abrir(a, a.id === "lav-st3" ? [-8.58, 40.90] : a.centro); }, 900);
+    if (ll) setTimeout(function () { abrir(a, ll); }, 900);
   }
 
   // ---------- painel ----------
@@ -85,15 +113,25 @@
     "#ipr-expro>summary{list-style:none;cursor:pointer;padding:9px 12px;display:flex;align-items:center;gap:8px;font-weight:600}#ipr-expro>summary::-webkit-details-marker{display:none}" +
     "#ipr-expro>summary:before{content:'';width:8px;height:8px;background:#a77ee0;clip-path:polygon(100% 0,100% 100%,0 100%);transition:transform .2s}#ipr-expro[open]>summary:before{transform:rotate(45deg)}" +
     "#ipr-expro .c{padding:0 12px 12px}#ipr-expro label{display:flex;gap:8px;align-items:flex-start;margin:4px 0;cursor:pointer}" +
-    "#ipr-expro ul{list-style:none;margin:6px 0;padding:0}#ipr-expro li{margin:3px 0}#ipr-expro li button{background:none;border:0;color:#e9e6da;text-align:left;cursor:pointer;font:inherit;padding:2px 0;display:flex;gap:6px;align-items:baseline}" +
+    "#ipr-expro select{width:100%;margin:6px 0 2px;background:rgba(0,0,0,.25);color:#e9e6da;border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:4px 6px;font:inherit}" +
+    "#ipr-expro h4{margin:10px 0 2px;font-size:12px;font-weight:600;letter-spacing:.02em;color:#cfc9b4;display:flex;gap:6px;align-items:center}" +
+    "#ipr-expro ul{list-style:none;margin:2px 0 4px;padding:0}#ipr-expro li{margin:3px 0}#ipr-expro li button{background:none;border:0;color:#e9e6da;text-align:left;cursor:pointer;font:inherit;padding:2px 0;display:flex;gap:6px;align-items:baseline}" +
     "#ipr-expro li button:hover{color:#cfb6f2}#ipr-expro i{display:inline-block;width:9px;height:9px;border-radius:50%;flex:none}#ipr-expro small{color:#9a9e8a;display:block;margin-top:8px}#ipr-expro .s{color:#9a9e8a;font-size:12px}";
   function pintar() {
     var d = D.getElementById("ipr-expro"); if (!d) return; var c = d.querySelector(".c"); if (!c) return;
     var h = '<label><input type="checkbox" data-expro="on"' + (S.on ? " checked" : "") + "> <span>" + t("Mostrar no mapa", "Show on the map") + "</span></label>";
+    h += '<select data-expro="estado" aria-label="' + t("Filtrar por estado", "Filter by status") + '"><option value="">' + t("Todos os estados", "All statuses") + "</option>" +
+      ESTADOS.map(function (e) { return '<option value="' + esc(e) + '"' + (S.estado === e ? " selected" : "") + ">" + esc(estadoTxt(e)) + "</option>"; }).join("") + "</select>";
     if (S.erro) h += '<div class="s">' + esc(S.erro) + "</div>";
     if (S.idx) {
-      h += "<ul>" + S.idx.actos.map(function (a) {
-        return '<li><button type="button" data-expro-id="' + esc(a.id) + '"><i style="background:' + (COR[a.tema] || "#a77ee0") + '"></i><span>' + esc(a.obra) + ' <span class="s">· ' + esc(dataPt(a.data_dr)) + (a.geojson ? "" : " · " + t("marcador", "marker")) + "</span></span></button></li>"; }).join("") + "</ul>";
+      var n = 0;
+      TEMAS.forEach(function (k) {
+        var L = actos().filter(function (a) { return temaDe(a) === k && visivel(a); });
+        if (!L.length) return; n += L.length;
+        h += '<h4><i style="background:' + COR[k] + '"></i>' + esc(t(TEMA[k][0], TEMA[k][1])) + ' <span class="s">(' + L.length + ")</span></h4><ul>" + L.map(function (a) {
+          return '<li><button type="button" data-expro-id="' + esc(a.id) + '"><span>' + esc(a.obra) + ' <span class="s">· ' + esc(dataPt(a.data_dr)) + " · " + esc(estadoTxt(a.estado)) + (temGeo(a) ? "" : " · " + t("marcador", "marker")) + "</span></span></button></li>"; }).join("") + "</ul>";
+      });
+      if (!n) h += '<div class="s">' + t("Nenhum acto neste estado.", "No acts with this status.") + "</div>";
     }
     h += "<small>" + esc(t(AVISO_PT, AVISO_EN)) + "</small>";
     c.innerHTML = h;
@@ -108,14 +146,18 @@
     if (D.getElementById("ipr-expro")) return true;
     if (!D.getElementById("ipr-expro-css")) { var st = D.createElement("style"); st.id = "ipr-expro-css"; st.textContent = CSS; D.head.appendChild(st); }
     var d = D.createElement("details"); d.id = "ipr-expro";
-    d.innerHTML = "<summary>" + t("Grandes obras e expropriações", "Major works and expropriations") + '</summary><div class="c"></div>';
+    d.innerHTML = "<summary>" + t("Expropriações", "Expropriations") + '</summary><div class="c"></div>';
     var ref = D.getElementById("ipr-pdmc"); cam.insertBefore(d, ref ? ref.nextSibling : cam.firstChild);
     d.addEventListener("toggle", function () { if (d.open && !S.idx) carregar().then(pintar); });
-    d.addEventListener("change", function (e) { if (e.target.getAttribute("data-expro") === "on") ligar(e.target.checked); });
+    d.addEventListener("change", function (e) {
+      var k = e.target.getAttribute("data-expro");
+      if (k === "on") ligar(e.target.checked);
+      else if (k === "estado") { S.estado = e.target.value; pintar(); if (S.on) desenhar(); }
+    });
     d.addEventListener("click", function (e) {
       var b = e.target.closest && e.target.closest("[data-expro-id]"); if (!b) return;
       var a = porId(b.getAttribute("data-expro-id")); if (!S.on) { var cb = d.querySelector('[data-expro="on"]'); if (cb) cb.checked = true; ligar(true); }
-      voar(a);
+      carregar().then(function () { voar(a); });
     });
     pintar();
     return true;
