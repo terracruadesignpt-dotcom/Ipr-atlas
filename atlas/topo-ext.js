@@ -237,6 +237,8 @@
     if (!poligonos().length) { toast(T('precisa')); return; }
     gtag('topo_encomendar', { pais: CC, estado: estado(CC) });
     mostrarForm(true); // o formulário da Base vive no painel da direita do Atlas (#ipe-dir)
+    // fora de França ainda não se vende: o formulário regista o interesse (m90301); o assistente falaria de pagamento
+    if (estado(CC) !== 'aberto') { toast(estado(CC) === 'a_pedido' ? T('pedidoT') : T('interT')); return; }
     // o assistente de compra calcula o preço do terreno desenhado e leva ao formulário
     try { if (typeof W.iprAssistenteComprar === 'function' && W.iprAssistenteComprar('base') !== false) return; } catch (e) {}
     try { if (typeof W.__iprAssistenteAbrir === 'function') W.__iprAssistenteAbrir('base'); } catch (e) {}
