@@ -10,6 +10,11 @@ import json, sys, time, urllib.request, urllib.error, concurrent.futures as cf, 
 OGC = "https://ogcapi.dgterritorio.gov.pt/collections/"
 col, modo, fatia, nf, saida = sys.argv[1], sys.argv[2], int(sys.argv[3]), int(sys.argv[4]), sys.argv[5]
 FIOS = 3
+# 26/11/2026: o GitHub mata a fatia aos 350 min e perde-se tudo o que copiou. A fatia pára sozinha antes (DGT_TEMPO, segundos),
+# grava o que tem e lista as partes por fazer, para a próxima volta.
+import os
+T0, LIMITE = time.time(), float(os.environ.get("DGT_TEMPO", "18900"))
+por_fazer = []
 def pedir(u, tent=0):
     try:
         with urllib.request.urlopen(urllib.request.Request(u, headers={"User-Agent": "IPR-Atlas/1.0 (terracruadesign.pt)"}), timeout=90) as r:
@@ -43,6 +48,9 @@ def parte(p):
     """26/11/2026: nas curvas de nível a DGT respondia sempre 503 a algumas quadrículas de 0,1° (muitos elementos) e a fatia
     inteira morria, deitando fora tudo o que já tinha copiado. Agora uma quadrícula que falha parte-se em 4 (até 0,0125°);
     se mesmo assim falhar, fica registada e a fatia continua."""
+    if time.time() - T0 > LIMITE:
+        with trinco: por_fazer.append(p)
+        return p, False
     try:
         return parte1(p)
     except Exception as e:  # noqa: BLE001
@@ -62,6 +70,9 @@ def parte1(p):
     off, grandes = 0, False
     while True:
         if off >= 9900: grandes = True; break
+        if time.time() - T0 > LIMITE:
+            with trinco: por_fazer.append(p)
+            break
         j = pedir(OGC + col + "/items?f=json&limit=100&offset=%d&%s" % (off, q))
         fs = j.get("features", [])
         with trinco:
@@ -82,4 +93,5 @@ with cf.ThreadPoolExecutor(FIOS) as ex:
 out.close()
 print("FIM", col, "fatia", fatia, ":", n_el[0], "elementos,", n_ped[0], "pedidos, partes com mais de 9900:", grandes, flush=True)
 print("partes que a DGT não deu (ficam para a próxima volta):", len(falhadas), falhadas[:50], flush=True)
+print("partes por fazer (tempo esgotado):", len(por_fazer), por_fazer[:50], flush=True)
 if n_el[0] == 0 and falhadas: sys.exit(1)
