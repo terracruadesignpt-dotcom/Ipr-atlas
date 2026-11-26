@@ -1,5 +1,5 @@
 /* IPR Atlas · Topografia fora de Portugal (Nuno, 26/11/2026, 20h42).
-   Para quem vem de França, Bélgica, Países Baixos e Luxemburgo: uma versão simplificada do Atlas, dedicada a vender
+   Para quem vem de França, Bélgica, Países Baixos e Luxemburgo (e, desde 26/11 23h15, Dinamarca, Suíça, Eslovénia, Eslováquia, Polónia, Estónia e Inglaterra): uma versão simplificada do Atlas, dedicada a vender
    a Base Cartográfica (levantamento topográfico LiDAR). Mostra só o mapa, as camadas oficiais desse país e três passos:
    encontrar o terreno, desenhar o limite, encomendar. O formulário de encomenda é o do próprio Atlas (#ipe-dir), que já
    sabe tratar cada país (França: compra; os outros: pedido ou interesse, conforme o registo /tcd/v1/eu/paises).
@@ -23,8 +23,8 @@
   function gtag(n, p) { try { if (W.gtag) W.gtag('event', n, p || {}); } catch (e) {} }
 
   // ---------- país ----------
-  var PAISES = ['FR', 'BE', 'NL', 'LU'];
-  var pedido = (q.match(/[?&]pais=(fr|be|nl|lu)(&|$)/i) || [])[1];
+  var PAISES = ['FR', 'BE', 'NL', 'LU', 'DK', 'CH', 'SI', 'SK', 'PL', 'EE', 'GB'];  // 26/11, 23h15: mais sete países (Nuno)
+  var pedido = (q.match(/[?&]pais=(fr|be|nl|lu|dk|ch|si|sk|pl|ee|gb)(&|$)/i) || [])[1];
   pedido = pedido ? pedido.toUpperCase() : '';
   function paisEm(x, y) {
     try { if (W.__tcdFrCamadas && W.__tcdFrCamadas.dentro(x, y)) return 'FR'; } catch (e) {}
@@ -41,10 +41,10 @@
   })();
   var lg = LG || 'fr';
   try { var g0 = localStorage.getItem('ipr_topo_lg'); if (g0 && !/[?&]lang=/.test(q)) lg = g0; } catch (e) {}
-  function lgPorPais(cc) { if (LG) return; if (cc === 'NL') lg = 'nl'; else if (cc === 'FR' || cc === 'LU') lg = 'fr'; }
+  function lgPorPais(cc) { if (LG) return; if (cc === 'NL') lg = 'nl'; else if (cc === 'FR' || cc === 'LU') lg = 'fr'; else if (cc && cc !== 'BE') lg = 'en'; }
   var TX = {
     marca: ['Topographie', 'Topografie', 'Topography', 'Topografia'],
-    pais: { FR: ['France', 'Frankrijk', 'France', 'França'], BE: ['Belgique', 'België', 'Belgium', 'Bélgica'], NL: ['Pays-Bas', 'Nederland', 'Netherlands', 'Países Baixos'], LU: ['Luxembourg', 'Luxemburg', 'Luxembourg', 'Luxemburgo'] },
+    pais: { FR: ['France', 'Frankrijk', 'France', 'França'], BE: ['Belgique', 'België', 'Belgium', 'Bélgica'], NL: ['Pays-Bas', 'Nederland', 'Netherlands', 'Países Baixos'], LU: ['Luxembourg', 'Luxemburg', 'Luxembourg', 'Luxemburgo'], DK: ['Danemark', 'Denemarken', 'Denmark', 'Dinamarca'], CH: ['Suisse', 'Zwitserland', 'Switzerland', 'Suíça'], SI: ['Slovénie', 'Slovenië', 'Slovenia', 'Eslovénia'], SK: ['Slovaquie', 'Slowakije', 'Slovakia', 'Eslováquia'], PL: ['Pologne', 'Polen', 'Poland', 'Polónia'], EE: ['Estonie', 'Estland', 'Estonia', 'Estónia'], GB: ['Angleterre', 'Engeland', 'England', 'Inglaterra'] },
     h1: ['Le relief de votre terrain, en LiDAR.', 'Het reliëf van uw terrein, in LiDAR.', 'The relief of your land, in LiDAR.', 'O relevo do seu terreno, em LiDAR.'],
     sub: ['Une Base Cartographique faite à partir des données LiDAR officielles : courbes de niveau, pentes, écoulement de l’eau et modèle 3D, en cartes PDF et en fichiers SIG.',
       'Een kaartbasis op basis van de officiële LiDAR-gegevens: hoogtelijnen, hellingen, afstroming van water en 3D-model, als PDF-kaarten en GIS-bestanden.',
@@ -311,7 +311,7 @@
     'País de facturação': ['Pays de facturation', 'Factuurland', 'Billing country'],
     'Espanha': ['Espagne', 'Spanje', 'Spain'], 'França': ['France', 'Frankrijk', 'France'], 'Países Baixos': ['Pays-Bas', 'Nederland', 'Netherlands'],
     'Alemanha': ['Allemagne', 'Duitsland', 'Germany'], 'Reino Unido': ['Royaume-Uni', 'Verenigd Koninkrijk', 'United Kingdom'], 'Brasil': ['Brésil', 'Brazilië', 'Brazil'],
-    'Estados Unidos': ['États-Unis', 'Verenigde Staten', 'United States'], 'Outro': ['Autre', 'Ander', 'Other'], 'Bélgica': ['Belgique', 'België', 'Belgium'], 'Luxemburgo': ['Luxembourg', 'Luxemburg', 'Luxembourg'],
+    'Estados Unidos': ['États-Unis', 'Verenigde Staten', 'United States'], 'Outro': ['Autre', 'Ander', 'Other'], 'Bélgica': ['Belgique', 'België', 'Belgium'], 'Luxemburgo': ['Luxembourg', 'Luxemburg', 'Luxembourg'], 'Dinamarca': ['Danemark', 'Denemarken', 'Denmark'], 'Suíça': ['Suisse', 'Zwitserland', 'Switzerland'], 'Eslovénia': ['Slovénie', 'Slovenië', 'Slovenia'], 'Eslováquia': ['Slovaquie', 'Slowakije', 'Slovakia'], 'Polónia': ['Pologne', 'Polen', 'Poland'], 'Estónia': ['Estonie', 'Estland', 'Estonia'], 'Reino Unido': ['Royaume-Uni', 'Verenigd Koninkrijk', 'United Kingdom'],
     'Notas': ['Notes', 'Opmerkingen', 'Notes'], 'Vale de oferta (opcional)': ['Bon cadeau (facultatif)', 'Cadeaubon (optioneel)', 'Gift voucher (optional)'],
     'O código OFERTA-… que recebeu. Sem o código, reconhecemos o vale pelo seu nome.': ['Le code OFERTA-… que vous avez reçu. Sans code, nous reconnaissons le bon à votre nom.', 'De code OFERTA-… die u ontving. Zonder code herkennen we de bon aan uw naam.', 'The OFERTA-… code you received. Without it, we recognise the voucher by your name.'],
     'Li a': ['J’ai lu la', 'Ik heb het', 'I have read the'], 'Política de Privacidade': ['politique de confidentialité', 'privacybeleid', 'Privacy Policy'],
@@ -501,7 +501,7 @@
   function arrancar(n) {
     var m = mapa();
     if (!D.body || !m || !$('ipe') || !(W.__tcdFrCamadas || W.__tcdEuCamadas)) { if (n < 120) setTimeout(function () { arrancar(n + 1); }, 400); return; }
-    var CENTRO = { BE: [[4.6, 50.6], 7.3], NL: [[5.4, 52.2], 7], LU: [[6.1, 49.75], 9] }, mexeu = false;
+    var CENTRO = { BE: [[4.6, 50.6], 7.3], NL: [[5.4, 52.2], 7], LU: [[6.1, 49.75], 9], DK: [[10.0, 56.0], 6.3], CH: [[8.2, 46.8], 7], SI: [[14.9, 46.1], 7.5], SK: [[19.5, 48.7], 6.8], PL: [[19.4, 52.0], 5.6], EE: [[25.5, 58.7], 6.5], GB: [[-1.6, 52.6], 6] }, mexeu = false;
     try { m.on('dragstart', function (e) { if (e && e.originalEvent) mexeu = true; }); m.on('wheel', function () { mexeu = true; }); } catch (e) {}
     if (pedido && CENTRO[pedido]) [0, 1500, 3500, 6000].forEach(function (t) { setTimeout(function () { if (!mexeu && paisActual() !== pedido) try { m.jumpTo({ center: CENTRO[pedido][0], zoom: CENTRO[pedido][1] }); } catch (e) {} }, t); });
     verificar();
