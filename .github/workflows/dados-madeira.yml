@@ -1,0 +1,36 @@
+name: dados-madeira
+# Camadas vectoriais da DROTe (Madeira e Porto Santo) em PMTiles próprios: versão madeira-pmtiles e R2 pmtiles/madeira/.
+# Nuno, 26/11/2026. Corre de 30 em 30 dias para apanhar actualizações.
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 3 1 * *"
+permissions: {contents: write}
+jobs:
+  copiar:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 300
+    env: {GH_TOKEN: "${{ github.token }}"}
+    steps:
+      - uses: actions/checkout@v4
+      - name: ferramentas
+        run: |
+          sudo apt-get -qq update && sudo apt-get -qq install -y gdal-bin >/dev/null
+          if ! sudo apt-get -qq install -y tippecanoe >/dev/null; then
+            sudo apt-get -qq install -y build-essential libsqlite3-dev zlib1g-dev >/dev/null
+            git clone -q --depth 1 https://github.com/felt/tippecanoe.git /tmp/tc && make -C /tmp/tc -j4 >/dev/null && sudo make -C /tmp/tc install >/dev/null
+          fi
+      - name: copiar da DROTe
+        run: python3 -I ferramentas/madeira_wfs.py /tmp/md
+      - name: PMTiles, publicar e R2
+        run: |
+          cd /tmp/md; T=madeira-pmtiles
+          gh release view $T -R "$GITHUB_REPOSITORY" >/dev/null 2>&1 || gh release create $T -R "$GITHUB_REPOSITORY" -t "Madeira em PMTiles (cópia IPR Atlas)" -n "Camadas da DROTe / Governo Regional da Madeira. Licença e condições da fonte em madeira__manifesto.json."
+          for g in *.geojsons; do
+            b=${g%.geojsons}
+            tippecanoe -o $b.pmtiles -l $b -A "© DROTe / Governo Regional da Madeira · cópia IPR Atlas" -Z6 -z15 --drop-densest-as-needed --extend-zooms-if-still-dropping --detect-shared-borders -P --force $g || continue
+            gh release upload $T $b.pmtiles -R "$GITHUB_REPOSITORY" --clobber || continue
+            sleep 3; curl -sS --max-time 900 "https://ipr-copia-ficheiro.terracrua-ipr.workers.dev/?ext=$T/$b.pmtiles&ir=1" || true; echo
+          done
+          gh release upload $T madeira__manifesto.json -R "$GITHUB_REPOSITORY" --clobber
+          cat madeira__manifesto.json
