@@ -6,9 +6,11 @@ on:
   workflow_dispatch:
     inputs:
       paises: {description: "países (json)", default: '["es","fr","cz","nl","lu"]'}
+      so_r2: {description: "só copiar para o R2 o que já está nas versões (sim/não)", default: "não"}
 permissions: {contents: write}
 jobs:
   partes:
+    if: ${{ github.event.inputs.so_r2 != 'sim' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 350
     strategy:
@@ -33,3 +35,15 @@ jobs:
           if [ "${{ matrix.pais }}" = "nl" ] || [ "${{ matrix.pais }}" = "lu" ]; then [ "${{ matrix.fatia }}" = "0" ] || { echo "só fatia 0"; exit 0; }; fi
           sudo mkdir -p /mnt/eu && sudo chown $USER /mnt/eu
           RUNNER_TEMP=/mnt/eu python3 -I ferramentas/eu_cadastro.py ${{ matrix.pais }} ${{ matrix.fatia }} 8 /mnt/eu/out
+  r2:
+    needs: partes
+    if: always()
+    runs-on: ubuntu-24.04
+    timeout-minutes: 350
+    env: {GH_TOKEN: "${{ github.token }}"}
+    steps:
+      - uses: actions/checkout@v4
+      - name: copiar para o R2 tudo o que está nas versões
+        run: |
+          export EU_PAISES=$(echo '${{ github.event.inputs.paises || '["es","fr","cz","nl","lu"]' }}' | python3 -c 'import json,sys;print(",".join(json.load(sys.stdin)))')
+          python3 -I ferramentas/eu_cadastro.py r2 0 1 /tmp/x

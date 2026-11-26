@@ -32,11 +32,26 @@ def entregar(g):
     if subprocess.run(["gh", "release", "view", rel, "-R", rp], capture_output=True).returncode:
         subprocess.run(["gh", "release", "create", rel, "-R", rp, "-t", "Cadastro %s (dados abertos)" % pais, "-n", "Cópia IPR Atlas. Licença da fonte de origem."], check=False)
     subprocess.run(["gh", "release", "upload", rel, pm, "-R", rp, "--clobber"], check=False)
-    try:
-        with urllib.request.urlopen("https://ipr-copia-ficheiro.terracrua-ipr.workers.dev/?ext=%s/%s&ir=1" % (rel, os.path.basename(pm)), timeout=900) as r: print("R2", b, r.read()[:200], flush=True)
-    except Exception as e: print("R2 falhou", b, e, flush=True)
+    r2(rel, os.path.basename(pm))
     print("entregue", b, round(os.path.getsize(pm) / 1e6), "MB", flush=True)
     os.remove(pm); os.remove(g)
+def r2(rel, nome):
+    """26/11: o Worker recusa (403) o User-Agent do urllib; com curl passa, como nos outros fluxos."""
+    for t in range(3):
+        p = subprocess.run(["curl", "-sS", "--max-time", "900", "https://ipr-copia-ficheiro.terracrua-ipr.workers.dev/?ext=%s/%s&ir=1" % (rel, nome)], capture_output=True, text=True)
+        print("R2", nome, (p.stdout or p.stderr)[:200], flush=True)
+        if '"copiado":true' in p.stdout: return True
+        time.sleep(30)
+    return False
+if pais == "r2":  # só copia para o R2 o que já está nas versões eu-<país>-pmtiles
+    rp = os.environ.get("GITHUB_REPOSITORY", "")
+    for pp in os.environ.get("EU_PAISES", "es,fr,cz,nl,lu").split(","):
+        rel = "eu-%s-pmtiles" % pp
+        nomes = subprocess.run(["gh", "release", "view", rel, "-R", rp, "--json", "assets", "-q", ".assets[].name"], capture_output=True, text=True).stdout.split()
+        print(rel, len(nomes), "ficheiros", flush=True)
+        for n in nomes:
+            if n.endswith(".pmtiles"): r2(rel, n)
+    sys.exit(0)
 def texto(u): 
     with urllib.request.urlopen(urllib.request.Request(u, headers=UA), timeout=120) as r: return r.read().decode("utf-8", "replace")
 def ogr(src, dst, extra=()):
