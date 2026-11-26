@@ -28,6 +28,7 @@ def lista(saida):
                     base = r.rsplit("/rest/services/", 1)[0] + "/rest/services/"
                     out.append({"org": org, "url": base + s["name"] + "/" + s["type"], "nome": re.sub(r"[^A-Za-z0-9]+", "_", s["name"].split("/")[-1])})
     json.dump(out, open(saida, "w")); print(len(out), "serviços")
+LIMITE = int(os.environ.get("ARCGIS_LIMITE", "400000"))
 def copiar(url, org, pasta):
     os.makedirs(pasta, exist_ok=True)
     nome = re.sub(r"[^A-Za-z0-9]+", "_", url.split("/rest/services/")[1].rsplit("/", 1)[0].split("/")[-1])
@@ -38,7 +39,15 @@ def copiar(url, org, pasta):
         try: info = pedir("%s/%d?f=json" % (url, lid))
         except Exception as e: print("camada", lid, e); continue
         if info.get("type") != "Feature Layer" or "Query" not in (info.get("capabilities") or "Query"): continue
-        mx = int(info.get("maxRecordCount") or 1000); pag = (info.get("advancedQueryCapabilities") or {}).get("supportsPagination", False)
+        mx = min(2000, int(info.get("maxRecordCount") or 1000)); pag = (info.get("advancedQueryCapabilities") or {}).get("supportsPagination", False)
+        # 26/11/2026: a APA Diretiva200760CE_2c (riscos de inundação) tem camadas com milhões de polígonos (5,2 milhões na
+        # «Profundidade») e o servidor declara páginas de 750 000; o trabalho foi cortado às 6 h. Páginas no máximo de 2000 e
+        # camadas com mais de LIMITE elementos não se copiam: ficam a ver-se em directo do serviço da entidade.
+        try: total = int(pedir("%s/%d/query?%s" % (url, lid, urllib.parse.urlencode({"where": "1=1", "returnCountOnly": "true", "f": "json"}))).get("count") or 0)
+        except Exception: total = -1
+        if total > LIMITE:
+            print(nome, lid, ly.get("name"), total, "elementos: grande demais, fica em directo", flush=True)
+            man.setdefault("directo", []).append({"id": lid, "nome": ly.get("name"), "n": total}); continue
         f = os.path.join(pasta, "%s__%d.geojsons" % (nome, lid)); n = 0
         with open(f, "w") as o:
             if pag:
