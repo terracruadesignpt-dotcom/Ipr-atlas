@@ -339,13 +339,18 @@
   // o que só serve em Portugal sai do ecrã (artigo matricial, NIC, ficha gratuita, Planta e Leitura)
   var ESCONDER = ['Artigo matricial ou caderneta', 'Conversor NIC ⇄ artigo e secção', 'Ver a ficha gratuita da propriedade', 'Tenho a caderneta ou o artigo matricial', 'Planta de Localização', 'Leitura Territorial', 'Tenho o número do prédio', 'Ficha gratuita da propriedade'];
   var ORIG = typeof WeakMap === 'function' ? new WeakMap() : null;
-  function trad(pt) {
-    var k = IX[lg]; if (lg === 'pt' || k == null) return pt;
+  function trad(pt, l) {
+    var k = IX[l || lg]; if ((l || lg) === 'pt' || k == null) return pt;
     var v = DIC[pt]; if (v) return v[k];
     var s = pt, mud = false;
     for (var i = 0; i < DIC_RE.length; i++) if (DIC_RE[i][0].test(s)) { s = s.replace(DIC_RE[i][0], DIC_RE[i][1][k]); mud = true; break; }
     for (var j = 0; j < DIC_PRECO.length; j++) if (DIC_PRECO[j][0].test(s)) { s = s.replace(DIC_PRECO[j][0], DIC_PRECO[j][1][k]); mud = true; }
     return mud ? s : pt;
+  }
+  function eVersao(t, pt) { // t é o português original ou uma das suas traduções (para poder mudar de língua)
+    if (t === pt) return true;
+    for (var l in IX) if (l !== 'pt' && trad(pt, l).trim() === t) return true;
+    return false;
   }
   function esconder(n, pt) {
     if (ESCONDER.indexOf(pt) < 0 || lg === 'pt') return;
@@ -358,7 +363,7 @@
     while ((n = w.nextNode())) {
       var cur = n.nodeValue, t = cur.trim(); if (!t || !/[A-Za-zÀ-ú]/.test(t)) continue;
       var pt = ORIG.get(n);
-      if (pt == null || (cur.trim() !== trad(pt).trim() && cur.trim() !== pt)) { pt = t; ORIG.set(n, pt); } // texto novo escrito pelo Atlas
+      if (pt == null || !eVersao(t, pt)) { pt = t; ORIG.set(n, pt); } // texto novo escrito pelo Atlas
       var alvo = trad(pt);
       if (cur.trim() !== alvo) n.nodeValue = cur.replace(cur.trim(), alvo);
       esconder(n, pt);
@@ -367,7 +372,7 @@
       ['placeholder', 'title', 'aria-label'].forEach(function (a) {
         var v = e.getAttribute(a); if (!v) return;
         var ka = 'data-tx-' + a, pt = e.getAttribute(ka);
-        if (pt == null || (v !== trad(pt) && v !== pt)) { pt = v; e.setAttribute(ka, pt); }
+        if (pt == null || !eVersao(v, pt)) { pt = v; e.setAttribute(ka, pt); }
         var al = trad(pt); if (v !== al) e.setAttribute(a, al);
       });
     });
@@ -378,12 +383,17 @@
     var ag = Date.now(); if (ag - txUlt < 250) { if (!txPend) txPend = setTimeout(function () { txPend = 0; traduzir(); }, 260); return; }
     txUlt = ag;
     if (!montado) return;
-    ['ipr-as-pn', 'ipr-as-b', 'ipe-dir'].forEach(function (id) { traduzirEm($(id)); });
+    RAIZES.forEach(function (id) { traduzirEm($(id)); });
   }
+  var RAIZES = ['ipr-as-pn', 'ipr-as-b', 'ipe-form'];
+  function naRaiz(n) { var e = n && (n.nodeType === 1 ? n : n.parentElement); return !!(e && e.closest && e.closest('#ipr-as-pn,#ipr-as-b,#ipe-form')); }
   var obsTx = null;
   function vigiarTx() {
     if (obsTx || typeof MutationObserver !== 'function') return;
-    obsTx = new MutationObserver(function () { if (montado && (lg !== 'pt' || D.querySelector('[data-tx-esc]'))) traduzir(); });
+    obsTx = new MutationObserver(function (rs) {
+      if (!montado || lg === 'pt') return;
+      for (var i = 0; i < rs.length; i++) if (naRaiz(rs[i].target) || (rs[i].addedNodes[0] && (naRaiz(rs[i].addedNodes[0]) || (rs[i].addedNodes[0].id || '').indexOf('ipr-as') === 0))) { traduzir(); return; }
+    });
     obsTx.observe(D.body, { subtree: true, childList: true, characterData: true });
   }
   function cookieLingua() { try { D.cookie = 'tcd_lingua=' + lg + ';path=/;max-age=31536000;SameSite=Lax'; } catch (e) {} }
@@ -474,7 +484,7 @@
   }
   function desmontar() {
     if (!montado) return; montado = false; CC = ''; W.__iprTopo = '';
-    var l0 = lg; lg = 'pt'; try { ['ipr-as-pn', 'ipr-as-b', 'ipe-dir'].forEach(function (id) { traduzirEm($(id)); }); } catch (e) {} lg = l0;
+    var l0 = lg; lg = 'pt'; try { RAIZES.forEach(function (id) { traduzirEm($(id)); }); } catch (e) {} lg = l0;
     H.classList.remove('ipr-topo', 'ipr-topo-form');
     ['ipr-tx-top', 'ipr-tx-esq', 'ipr-tx-toast'].forEach(function (id) { var x = $(id); if (x) x.remove(); });
     D.removeEventListener('click', cliques, true); D.removeEventListener('change', mudancas, true);
