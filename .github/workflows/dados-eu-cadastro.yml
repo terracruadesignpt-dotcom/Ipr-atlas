@@ -1,55 +1,35 @@
 name: dados-eu-cadastro
-# Cadastro europeu em dados abertos (fase 1). Terracrua Design, IPR Atlas. 25/11/2026.
+# Cadastro europeu em dados abertos: França, Chéquia, Países Baixos, Luxemburgo e Espanha. Terracrua Design, IPR Atlas.
+# 26/11/2026: cada fatia faz os seus PMTiles (um por departamento, província ou fatia), publica-os em eu-<país>-pmtiles e
+# pede a cópia para o R2. Já não se junta o país inteiro num ficheiro (passaria dos 2 GB que as versões aceitam).
 on:
   workflow_dispatch:
     inputs:
-      paises: {description: "países (json)", default: '["fr","cz","nl","lu"]'}
+      paises: {description: "países (json)", default: '["es","fr","cz","nl","lu"]'}
 permissions: {contents: write}
 jobs:
   partes:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 350
     strategy:
       fail-fast: false
       max-parallel: 20
       matrix:
-        pais: ${{ fromJSON(github.event.inputs.paises || '["fr","cz","nl","lu"]') }}
+        pais: ${{ fromJSON(github.event.inputs.paises || '["es","fr","cz","nl","lu"]') }}
         fatia: [0,1,2,3,4,5,6,7]
+    env: {GH_TOKEN: "${{ github.token }}", EU_ENTREGAR: "1"}
     steps:
       - uses: actions/checkout@v4
-      - run: sudo apt-get -qq update && sudo apt-get -qq install -y gdal-bin >/dev/null
-      - name: descarregar
+      - name: ferramentas
         run: |
-          if [ "${{ matrix.pais }}" != "fr" ] && [ "${{ matrix.pais }}" != "cz" ] && [ "${{ matrix.fatia }}" != "0" ]; then echo "só fatia 0"; mkdir -p out; exit 0; fi
-          python3 -I ferramentas/eu_cadastro.py ${{ matrix.pais }} ${{ matrix.fatia }} 8 out
-      - uses: actions/upload-artifact@v4
-        with: {name: "eu-${{ matrix.pais }}-${{ matrix.fatia }}", path: out/, if-no-files-found: ignore, retention-days: 3}
-  pmtiles:
-    needs: partes
-    if: always()
-    runs-on: ubuntu-latest
-    timeout-minutes: 350
-    strategy:
-      fail-fast: false
-      matrix:
-        pais: ${{ fromJSON(github.event.inputs.paises || '["fr","cz","nl","lu"]') }}
-    steps:
-      - uses: actions/download-artifact@v4
-        with: {pattern: "eu-${{ matrix.pais }}-*", path: dl, merge-multiple: true}
-      - name: tippecanoe
+          if [ "${{ matrix.pais }}" = "nl" ] || [ "${{ matrix.pais }}" = "lu" ]; then [ "${{ matrix.fatia }}" = "0" ] || exit 0; fi
+          sudo apt-get -qq update && sudo apt-get -qq install -y gdal-bin >/dev/null
+          if ! sudo apt-get -qq install -y tippecanoe >/dev/null; then
+            sudo apt-get -qq install -y build-essential libsqlite3-dev zlib1g-dev >/dev/null
+            git clone -q --depth 1 https://github.com/felt/tippecanoe.git /tmp/tc && make -C /tmp/tc -j4 >/dev/null && sudo make -C /tmp/tc install >/dev/null
+          fi
+      - name: descarregar e entregar
         run: |
-          ls -la dl || exit 0
-          sudo apt-get -qq update && sudo apt-get -qq install -y build-essential libsqlite3-dev zlib1g-dev >/dev/null
-          git clone -q --depth 1 https://github.com/felt/tippecanoe.git && (cd tippecanoe && make -j4 >/dev/null && sudo make install >/dev/null)
-          P=${{ matrix.pais }}
-          cat dl/*.geojsons > all.geojsons 2>/dev/null || exit 0
-          wc -l all.geojsons
-          tippecanoe -o eu-$P-cadastro.pmtiles -l cadastro -Z12 -z16 --drop-densest-as-needed --extend-zooms-if-still-dropping --no-tile-size-limit -P all.geojsons --force
-          ls -la eu-$P-cadastro.pmtiles
-      - name: publicar
-        env: {GH_TOKEN: "${{ github.token }}"}
-        run: |
-          P=${{ matrix.pais }}; F=eu-$P-cadastro.pmtiles; [ -f $F ] || exit 0
-          gh release view eu-$P-pmtiles -R $GITHUB_REPOSITORY >/dev/null 2>&1 || gh release create eu-$P-pmtiles -R $GITHUB_REPOSITORY -t "Cadastro $P (dados abertos)" -n "Cópia IPR Atlas. Licença da fonte de origem."
-          gh release upload eu-$P-pmtiles $F -R $GITHUB_REPOSITORY --clobber
-          curl -s -m 600 "https://ipr-copia-ficheiro.terracrua-ipr.workers.dev/?ext=eu-$P-pmtiles/$F&ir=1" || true
+          if [ "${{ matrix.pais }}" = "nl" ] || [ "${{ matrix.pais }}" = "lu" ]; then [ "${{ matrix.fatia }}" = "0" ] || { echo "só fatia 0"; exit 0; }; fi
+          sudo mkdir -p /mnt/eu && sudo chown $USER /mnt/eu
+          RUNNER_TEMP=/mnt/eu python3 -I ferramentas/eu_cadastro.py ${{ matrix.pais }} ${{ matrix.fatia }} 8 /mnt/eu/out

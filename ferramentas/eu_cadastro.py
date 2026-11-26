@@ -3,6 +3,10 @@
 Nuno, 25/11/2026 13h30: «queremos o cadastro de toda a Europa [...] aproveita agora esta cena do GitHub».
 Cada fatia descarrega a sua parte, converte para GeoJSON por linhas em EPSG:4326 (GDAL) e escreve <saida>/<nome>.geojsons.
 Licenças: FR Licence Ouverte Etalab 2.0 (DGFiP/Etalab); NL CC BY 4.0 (Kadaster/PDOK); CZ CC BY 4.0 (ČÚZK); LU CC0 (ACT).
+26/11/2026 (Nuno: «avança já»): Espanha (Catastro, INSPIRE ATOM, uso livre citando a Dirección General del Catastro; o País
+Basco e Navarra têm cadastro próprio e ficam de fora). Cada ficheiro acabado (departamento, província, fatia) vira logo um
+PMTiles próprio, é publicado e copiado para o R2 (EU_ENTREGAR=1): um PMTiles do país inteiro passaria dos 2 GB que as
+versões do GitHub aceitam, e assim um corte a meio não deita fora o que já ficou pronto.
 Uso: eu_cadastro.py <pais> <fatia> <n_fatias> <saida>"""
 import gzip, json, os, re, shutil, subprocess, sys, time, urllib.request
 pais, fatia, nf, saida = sys.argv[1], int(sys.argv[2]), int(sys.argv[3]), sys.argv[4]
@@ -15,6 +19,24 @@ def baixar(u, f, tent=0):
     except Exception as e:
         if tent < 5: time.sleep(20 * (tent + 1)); return baixar(u, f, tent + 1)
         print("falhou", u, e, flush=True); return False
+def entregar(g):
+    """Faz o PMTiles de um ficheiro acabado, publica-o na versão eu-<pais>-pmtiles e pede a cópia para o R2."""
+    if os.environ.get("EU_ENTREGAR") != "1" or not os.path.exists(g) or os.path.getsize(g) == 0: return
+    b = os.path.splitext(os.path.basename(g))[0]; pm = os.path.join(T, "eu-%s-cadastro.pmtiles" % b); rel = "eu-%s-pmtiles" % pais
+    for z in ("16", "15", "14"):
+        subprocess.run(["tippecanoe", "-o", pm, "-l", "cadastro", "-A", "Cadastro (dados abertos) · cópia IPR Atlas", "-Z12", "-z" + z,
+                        "--drop-densest-as-needed", "--no-tile-size-limit", "-P", "-t", T, "--force", g], check=False)
+        if os.path.exists(pm) and os.path.getsize(pm) < 1900000000: break
+    if not os.path.exists(pm): print("sem PMTiles", b, flush=True); return
+    rp = os.environ.get("GITHUB_REPOSITORY", "")
+    if subprocess.run(["gh", "release", "view", rel, "-R", rp], capture_output=True).returncode:
+        subprocess.run(["gh", "release", "create", rel, "-R", rp, "-t", "Cadastro %s (dados abertos)" % pais, "-n", "Cópia IPR Atlas. Licença da fonte de origem."], check=False)
+    subprocess.run(["gh", "release", "upload", rel, pm, "-R", rp, "--clobber"], check=False)
+    try:
+        with urllib.request.urlopen("https://ipr-copia-ficheiro.terracrua-ipr.workers.dev/?ext=%s/%s&ir=1" % (rel, os.path.basename(pm)), timeout=900) as r: print("R2", b, r.read()[:200], flush=True)
+    except Exception as e: print("R2 falhou", b, e, flush=True)
+    print("entregue", b, round(os.path.getsize(pm) / 1e6), "MB", flush=True)
+    os.remove(pm); os.remove(g)
 def texto(u): 
     with urllib.request.urlopen(urllib.request.Request(u, headers=UA), timeout=120) as r: return r.read().decode("utf-8", "replace")
 def ogr(src, dst, extra=()):
@@ -31,6 +53,7 @@ if pais == "fr":
                 p = f.get("properties", {}); f["properties"] = {k: p.get(k) for k in ("id", "commune", "prefixe", "section", "numero", "contenance") if k in p}
                 o.write(json.dumps(f, ensure_ascii=False, separators=(",", ":")) + "\n"); n += 1
         os.remove(g); print("fr", d, n, "parcelas", flush=True)
+        entregar(os.path.join(saida, "fr-%s.geojsons" % d))
 elif pais == "cz":
     BASE = None
     for b in ("https://services.cuzk.gov.cz/gml/inspire/cp/epsg-4258/", "https://services.cuzk.cz/gml/inspire/cp/epsg-4258/"):
@@ -49,6 +72,7 @@ elif pais == "cz":
             os.remove(tmp)
         os.remove(z)
         if i % 200 == 0: print("cz", i, "/", len(kus), flush=True)
+    entregar(out)
 elif pais == "lu":
     busca = json.loads(texto("https://data.public.lu/api/1/datasets/?q=INSPIRE%20CadastralParcel&page_size=20"))
     res = []
@@ -73,4 +97,25 @@ elif pais == "nl":
     for u in zips[:2]:
         f = os.path.join(T, os.path.basename(u.split("?")[0]) or "nl.zip")
         if baixar(u, f): ogr(("/vsizip/" + f) if f.endswith(".zip") else f, os.path.join(saida, "nl-%s.geojsons" % os.path.basename(f).split(".")[0]))
+elif pais == "es":
+    # ATOM INSPIRE do Catastro: feed geral -> feed por província -> um zip GML por município (EPSG 25829/25830/25831, 4326 no fim).
+    BASE = "https://www.catastro.hacienda.gob.es/INSPIRE/CadastralParcels/"
+    provs = sorted(set(re.findall(r'(https?://[^"<>]+ES\.SDGC\.CP\.atom_\d+\.xml)', texto(BASE + "ES.SDGC.CP.atom.xml"))))
+    print("es", len(provs), "províncias no ATOM", flush=True)
+    for pf in provs[fatia::nf]:
+        cod = re.search(r"atom_(\d+)\.xml", pf).group(1)
+        try: zs = sorted(set(z.replace("&amp;", "&") for z in re.findall(r'(https?://[^"<>]+\.zip)', texto(pf))))
+        except Exception as e: print("es província", cod, e, flush=True); continue
+        out = os.path.join(saida, "es-%s.geojsons" % cod); print("es", cod, len(zs), "municípios", flush=True)
+        for i, u in enumerate(zs):
+            z = os.path.join(T, "m.zip")
+            if not baixar(u.replace("http://", "https://"), z) and not baixar(u, z): continue
+            tmp = os.path.join(T, "m.geojsons"); ogr("/vsizip/" + z, tmp, ("-select", "nationalCadastralReference,areaValue", "CadastralParcel"))
+            if os.path.exists(tmp):
+                with open(out, "a") as o, open(tmp) as s2: shutil.copyfileobj(s2, o)
+                os.remove(tmp)
+            os.remove(z)
+            if i % 100 == 0: print("es", cod, i, "/", len(zs), flush=True)
+        entregar(out)
+for g in [os.path.join(saida, f) for f in os.listdir(saida) if f.endswith(".geojsons")]: entregar(g)
 print("FIM", pais, fatia, os.listdir(saida), flush=True)
