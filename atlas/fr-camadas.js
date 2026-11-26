@@ -3,7 +3,14 @@
    Géoplateforme do IGN (data.geopf.fr/wmts, TILEMATRIXSET=PM): ortofoto, Plan IGN, relevo LiDAR HD, cadastro (PCI
    Express), RPG, Natura 2000 (SIC e ZPS), ZNIEFF 1 e 2, parques naturais regionais e curvas de nível.
    Zonas inundáveis (Géorisques) ficam de fora até se verificar o serviço (em manutenção a 21/10).
-   Não mexe no app.js: usa window.__ipe.mapa. Textos em francês em /fr (IPR_LANG). */
+   Não mexe no app.js: usa window.__ipe.mapa. Textos em francês em /fr (IPR_LANG).
+   26/11/2026 (Nuno, 17h39: «as cores é que estão esquisitas. Faz isto igual às bases cartográficas de Portugal»):
+   - cadastro e curvas de nível passam de imagens do IGN (laranja e castanho, estilo da Géoplateforme) a teselas vectoriais
+     do IGN (PCI e PLAN.IGN, verificadas a 26/11: 200, CORS aberto), desenhadas com as cores do Atlas em Portugal:
+     cadastro a branco fino (#ffffff, como o nt1111-fundo-cores), números das parcelas a partir do nível 17, curvas a
+     #34332f com as mestras mais grossas e cotas #f6e2bb;
+   - em França, com o fundo de imagem, a ortofoto do IGN (20 cm) entra por baixo das camadas, como a da DGT em Portugal
+     (desligar: localStorage tcd_atlas_fr_orto = "0"). */
 (function () {
   "use strict";
   var FR = (window.IPR_LANG === "fr");
@@ -32,7 +39,7 @@
       { id: "fr-relevo", nome: t("Relevo LiDAR HD", "Relief LiDAR HD"), url: wmts("PLANIGN.LIDAR.TERRAIN", "normal", "image/png"), min: 6, max: 18, op: 0.8, attr: "IGN, LiDAR HD, " + LO }
     ] },
     { sub: t("Propriedade e limites", "Propriété et limites"), itens: [
-      { id: "fr-cadastro", nome: t("Cadastro (PCI)", "Cadastre (parcelles)"), url: wmts("CADASTRALPARCELS.PARCELLAIRE_EXPRESS", "PCI vecteur", "image/png"), min: 14, max: 19, op: 0.9, attr: "DGFiP / IGN, PCI Express, " + LO },
+      { id: "fr-cadastro", nome: t("Cadastro (PCI)", "Cadastre (parcelles)"), vec: "cad", url: "https://data.geopf.fr/tms/1.0.0/PCI/{z}/{x}/{y}.pbf", min: 13, max: 19, attr: "DGFiP / IGN, PCI Express, " + LO },
       { id: "fr-rpg", nome: t("Parcelas agrícolas (RPG)", "Parcelles agricoles (RPG)"), url: wmts("LANDUSE.AGRICULTURE.LATEST", "normal", "image/png"), min: 11, max: 16, op: 0.7, attr: "ASP / IGN, RPG, " + LO }
     ] },
     { sub: t("Condicionantes", "Contraintes"), itens: [
@@ -43,7 +50,7 @@
       { id: "fr-pnr", nome: t("Parques naturais regionais", "Parcs naturels régionaux"), url: wmts("Patrinat_PNR", "normal", "image/png"), min: 6, max: 16, op: 0.4, attr: PN }
     ] },
     { sub: t("Água e relevo", "Eau et relief"), itens: [
-      { id: "fr-curvas", nome: t("Curvas de nível (IGN)", "Courbes de niveau (IGN)"), url: wmts("ELEVATION.CONTOUR.LINE", "normal", "image/png"), min: 13, max: 18, op: 0.9, attr: "© IGN, Géoplateforme" }
+      { id: "fr-curvas", nome: t("Curvas de nível (IGN)", "Courbes de niveau (IGN)"), vec: "cur", url: "https://data.geopf.fr/tms/1.0.0/PLAN.IGN/{z}/{x}/{y}.pbf", min: 12, max: 18, attr: "© IGN, Géoplateforme" }
     ] }
   ];
   var CHAVE = "tcd_atlas_fr";
@@ -53,18 +60,67 @@
   function mapa() { return window.__ipe && window.__ipe.mapa ? window.__ipe.mapa : null; }
   function itemPor(id) { for (var g = 0; g < CAT.length; g++) for (var i = 0; i < CAT[g].itens.length; i++) if (CAT[g].itens[i].id === id) return CAT[g].itens[i]; return null; }
   function antes(I) { var L = (I.getStyle() && I.getStyle().layers) || []; for (var i = 0; i < L.length; i++) if (/^tme-|^gl-draw|^tcd-terreno/.test(L[i].id)) return L[i].id; return undefined; }
+  var COR_CAD = "#ffffff", COR_CURVA = "#34332f", FONTE = ["Noto Sans Regular"];
+  function camadasVec(it) {
+    if (it.vec === "cad") return [
+      { id: it.id, type: "line", source: it.id, "source-layer": "parcelle", minzoom: it.min,
+        paint: { "line-color": COR_CAD, "line-opacity": 0.9, "line-width": ["interpolate", ["linear"], ["zoom"], 13, 0.45, 16, 0.9, 18, 1.5] } },
+      { id: it.id + "-n", type: "symbol", source: it.id, "source-layer": "parcelle", minzoom: 17,
+        layout: { "text-field": ["get", "numero"], "text-size": 10, "text-font": FONTE, "text-allow-overlap": false },
+        paint: { "text-color": "#ffffff", "text-halo-color": "rgba(0,0,0,.55)", "text-halo-width": 1 } }
+    ];
+    var mestra = ["in", ["get", "symbo"], ["literal", ["CNV_MAITRESSE", "CUVETTE_MAITRESSE"]]];
+    return [
+      { id: it.id, type: "line", source: it.id, "source-layer": "oro_courbe", minzoom: it.min,
+        paint: { "line-color": COR_CURVA, "line-opacity": 0.9,
+          "line-width": ["interpolate", ["linear"], ["zoom"], 11, ["case", mestra, 0.8, 0.25], 16, ["case", mestra, 1.3, 0.5]] } },
+      { id: it.id + "-t", type: "symbol", source: it.id, "source-layer": "oro_courbe", minzoom: 14, filter: mestra,
+        layout: { "symbol-placement": "line", "text-field": ["get", "texte"], "text-size": 10, "text-font": FONTE },
+        paint: { "text-color": "#f6e2bb", "text-halo-color": "rgba(40,30,15,.7)", "text-halo-width": 1 } }
+    ];
+  }
   function ligar(it) {
     var I = mapa(); if (!I || !I.getStyle) return;
     if (I.style ? I.style._loaded === false : (I.isStyleLoaded && !I.isStyleLoaded())) { if (I.once) I.once("styledata", function () { setTimeout(function () { if (ligados[it.id]) ligar(it); }, 0); }); return; } /* 22/10: o estilo basta; à espera de «idle» a camada só aparecia depois de todas as teselas */
     try {
+      if (it.vec) {
+        var s0 = I.getSource(it.id);
+        if (s0 && s0.type !== "vector") { desligar(it); s0 = null; }   /* 26/11: a raster antiga, de uma sessão aberta antes */
+        if (!s0) I.addSource(it.id, { type: "vector", tiles: [it.url], attribution: it.attr, minzoom: 0, maxzoom: it.max });
+        camadasVec(it).forEach(function (L) { if (!I.getLayer(L.id)) I.addLayer(L, antes(I)); });
+        return;
+      }
       if (!I.getSource(it.id)) I.addSource(it.id, { type: "raster", tiles: [it.url], tileSize: 256, attribution: it.attr, minzoom: 0, maxzoom: it.max });
       if (!I.getLayer(it.id)) I.addLayer({ id: it.id, type: "raster", source: it.id, minzoom: it.min, paint: { "raster-opacity": it.op } }, antes(I));
     } catch (e) { if (window.console) console.warn("[fr-camadas]", it.id, e && e.message); }
   }
   function desligar(it) {
     var I = mapa(); if (!I || !I.getLayer) return;
-    try { if (I.getLayer(it.id)) I.removeLayer(it.id); } catch (e) {}
+    [it.id + "-n", it.id + "-t", it.id].forEach(function (id) { try { if (I.getLayer(id)) I.removeLayer(id); } catch (e) {} });
     try { if (I.getSource(it.id)) I.removeSource(it.id); } catch (e) {}
+  }
+  /* Ortofoto do IGN como fundo em França (26/11), por cima da imagem de satélite e por baixo de tudo o resto. */
+  var ORTO = "fr-orto-fundo", ORTO_URL = wmts("ORTHOIMAGERY.ORTHOPHOTOS", "normal", "image/jpeg");
+  function ortoLigada() { try { return localStorage.getItem(CHAVE + "_orto") !== "0"; } catch (e) { return true; } }
+  function fundoImagem(I) {
+    var L = (I.getStyle() && I.getStyle().layers) || [];
+    var k = -1;
+    for (var i = 0; i < L.length; i++) if (/^iprv-f_(ortosat|orto|s2)/.test(L[i].id) && I.getLayoutProperty(L[i].id, "visibility") !== "none") k = i;
+    if (k < 0) return null;
+    for (var j = k + 1; j < L.length; j++) if (L[j].id !== ORTO) return L[j].id;
+    return undefined;
+  }
+  function orto() {
+    var I = mapa(); if (!I || !I.getStyle || !I.getCenter) return;
+    try {
+      var c = I.getCenter(), quer = ortoLigada() && dentro(c.lng, c.lat) && I.getZoom() >= 9;
+      var depois = quer ? fundoImagem(I) : null;
+      if (depois === null) quer = false;
+      if (!quer) { if (I.getLayer(ORTO)) I.setLayoutProperty(ORTO, "visibility", "none"); return; }
+      if (!I.getSource(ORTO)) I.addSource(ORTO, { type: "raster", tiles: [ORTO_URL], tileSize: 256, attribution: "© IGN, Géoplateforme, BD ORTHO", minzoom: 0, maxzoom: 19 });
+      if (!I.getLayer(ORTO)) I.addLayer({ id: ORTO, type: "raster", source: ORTO, minzoom: 9, paint: { "raster-opacity": 1 } }, depois);
+      else if (I.getLayoutProperty(ORTO, "visibility") === "none") I.setLayoutProperty(ORTO, "visibility", "visible");
+    } catch (e) { if (window.console) console.warn("[fr-camadas] orto", e && e.message); }
   }
   var CSS = ".tfr:not(.aberto)>*:not(h4){display:none}.tfr h4{cursor:pointer;display:flex;align-items:center;gap:8px;margin:0!important}.tfr h4::before{content:\"\";width:0;height:0;border-left:5px solid currentColor;border-top:4px solid transparent;border-bottom:4px solid transparent;transition:transform .15s}.tfr.aberto h4::before{transform:rotate(90deg)}.tfr.aberto h4{margin:0 0 6px!important}" + ".tfr{margin:8px 0 4px;border:1px solid var(--ln2,#ddd);border-radius:8px;padding:8px 10px;background:var(--p2,transparent)}" +
     ".tfr h4{margin:0 0 6px;font:600 13px Inter,system-ui,sans-serif;color:var(--tx,#222)}.tfr h5{margin:8px 0 3px;font:600 11.5px Inter,system-ui,sans-serif;color:var(--mu,#666);text-transform:uppercase;letter-spacing:.04em}" +
@@ -102,8 +158,9 @@
     if (!montar() || !mapa()) { if (n < 60) setTimeout(function () { arrancar(n + 1); }, 500); return; }
     var I = mapa();
     verificar(); repor();
-    if (I.on) { I.on("moveend", verificar); I.on("styledata", function () { setTimeout(repor, 0); }); }
+    orto();
+    if (I.on) { I.on("moveend", function () { verificar(); orto(); }); I.on("styledata", function () { setTimeout(function () { repor(); orto(); }, 0); }); }
   }
-  window.__tcdFrCamadas = { dentro: dentro, CAT: CAT };
+  window.__tcdFrCamadas = { dentro: dentro, CAT: CAT, orto: orto };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", function () { arrancar(0); }); else arrancar(0);
 })();
