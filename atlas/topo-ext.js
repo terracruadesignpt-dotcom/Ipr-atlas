@@ -76,7 +76,7 @@
     inclui: ['Ce que vous recevez', 'Wat u ontvangt', 'What you receive', 'O que recebe'],
     i1: ['Courbes de niveau fines et modèle numérique de terrain', 'Fijne hoogtelijnen en digitaal terreinmodel', 'Fine contour lines and digital terrain model', 'Curvas de nível finas e modelo digital do terreno'],
     i2: ['Pentes, expositions et lignes d’écoulement', 'Hellingen, oriëntatie en afstroomlijnen', 'Slopes, aspect and flow lines', 'Declives, exposições e linhas de escoamento'],
-    i3: ['Vue 3D et fichiers pour SIG et CAO', '3D-weergave en bestanden voor GIS en CAD', '3D view and files for GIS and CAD', 'Vista 3D e ficheiros para SIG e CAD']
+    i3: ['Vue 3D et fichiers pour SIG', '3D-weergave en GIS-bestanden', '3D view and GIS files', 'Vista 3D e ficheiros SIG']
   };
   var IX = { fr: 0, nl: 1, en: 2, pt: 3 };
   function T(k) { var v = TX[k]; return v ? v[IX[lg]] : k; }
@@ -139,39 +139,39 @@
   // ---------- estilo ----------
   var TOPO_H = 56, LARG = 340;
   function css() {
-    if ($('ipr-tp-css')) return;
-    var s = D.createElement('style'); s.id = 'ipr-tp-css';
+    if ($('ipr-tx-css')) return;
+    var s = D.createElement('style'); s.id = 'ipr-tx-css';
     s.textContent =
       'html.ipr-topo .ipe-top,html.ipr-topo #ipe-esq,html.ipr-topo #ipe-dir,html.ipr-topo .ipe-tools,html.ipr-topo #ipe-st,html.ipr-topo #ipr-tri,html.ipr-topo #ipr-as-b,html.ipr-topo .ipe-tour,html.ipr-topo #ipr-lingueta,html.ipr-topo #ipr-pb-barra,html.ipr-topo .ipr-be-p,html.ipr-topo #ipr-cq,html.ipr-topo #ipr-cp-ct,html.ipr-topo .maplibregl-ctrl-top-left.ipr-nav,' +
       'html.ipr-topo [id^="ipr-exd-"],html.ipr-topo [id^="ipr-exm-"],html.ipr-topo .ipr-exd-ui,html.ipr-topo .ipr-exm-ui{display:none!important}' +
       'html.ipr-topo .ipe-mapa{position:fixed!important;top:' + TOPO_H + 'px!important;left:' + LARG + 'px!important;right:0!important;bottom:0!important;width:auto!important;height:auto!important;margin:0!important}' +
       'html.ipr-topo.ipr-topo-form #ipe-dir{display:flex!important;position:fixed!important;top:' + TOPO_H + 'px!important;right:0!important;bottom:0!important;left:auto!important;width:380px!important;max-width:100vw!important;height:auto!important;z-index:30}' +
       'html.ipr-topo.ipr-topo-form .ipe-mapa{right:380px!important}' +
-      '.ipr-tp{--vn:#10170d;--p1:#161e13;--p2:#1f2a1a;--ln:#2e3a28;--tx:#eef0e6;--mu:#a7ae9b;--ac:#94BE39;font:14px/1.45 Inter,system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--tx);box-sizing:border-box;-webkit-font-smoothing:antialiased}' +
-      '.ipr-tp *{box-sizing:border-box}.ipr-tp button,.ipr-tp input,.ipr-tp select{font:inherit;color:inherit}' +
-      '#ipr-tp-top{position:fixed;top:0;left:0;right:0;height:' + TOPO_H + 'px;z-index:40;display:flex;align-items:center;gap:14px;padding:0 16px;background:var(--vn);border-bottom:1px solid var(--ln)}' +
-      '#ipr-tp-top .m{font-weight:600;white-space:nowrap}#ipr-tp-top .m small{font-weight:400;color:var(--mu);margin-left:6px}' +
-      '#ipr-tp-top .d{margin-left:auto;display:flex;gap:10px;align-items:center}#ipr-tp-top select{background:var(--p2);border:1px solid var(--ln);border-radius:6px;padding:5px 8px}' +
-      '#ipr-tp-top a{color:var(--mu);text-decoration:underline;font-size:13px;white-space:nowrap}' +
-      '#ipr-tp-esq{position:fixed;top:' + TOPO_H + 'px;left:0;bottom:0;width:' + LARG + 'px;z-index:35;overflow:auto;background:var(--p1);border-right:1px solid var(--ln);padding:18px 18px 28px}' +
-      '#ipr-tp-esq .k{margin:0 0 4px;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--ac)}' +
-      '#ipr-tp-esq h1{margin:0 0 8px;font-size:21px;line-height:1.25;font-weight:600}#ipr-tp-esq p{margin:0 0 10px}#ipr-tp-esq .mu{color:var(--mu);font-size:13px}' +
-      '#ipr-tp-esq h2{margin:18px 0 8px;font-size:14px;font-weight:600}' +
-      '#ipr-tp-esq form{display:flex;gap:6px;position:relative}#ipr-tp-esq input[type=search]{flex:1;min-width:0;background:var(--p2);border:1px solid var(--ln);border-radius:6px;padding:8px 10px}' +
-      '.ipr-tp .ac{background:var(--ac);color:#10170d!important;border:0;border-radius:6px;padding:9px 12px;font-weight:600;cursor:pointer}.ipr-tp .ac[disabled]{opacity:.45;cursor:not-allowed}' +
-      '.ipr-tp .ol{background:transparent;border:1px solid var(--ln);border-radius:6px;padding:8px 10px;cursor:pointer}.ipr-tp .ol:hover{border-color:var(--ac)}' +
-      '#ipr-tp-esq .lin{display:flex;gap:6px;flex-wrap:wrap}#ipr-tp-esq .lin .ol{flex:1}' +
-      '#ipr-tp-res{list-style:none;margin:6px 0 0;padding:0;border:1px solid var(--ln);border-radius:6px;background:var(--p2);max-height:220px;overflow:auto}' +
-      '#ipr-tp-res button{display:block;width:100%;text-align:left;background:none;border:0;padding:7px 10px;cursor:pointer}#ipr-tp-res button:hover{background:var(--ln)}#ipr-tp-res small{display:block;color:var(--mu);font-size:12px}' +
-      '#ipr-tp-ter{background:var(--p2);border:1px solid var(--ln);border-radius:6px;padding:9px 10px;margin-top:8px;font-size:13px}#ipr-tp-ter b{color:var(--ac)}' +
-      '#ipr-tp-ter button{margin-left:8px;background:none;border:0;color:var(--mu);text-decoration:underline;cursor:pointer;padding:0}' +
-      '#ipr-tp-esq ul.inc{margin:0;padding-left:18px;color:var(--mu);font-size:13px}#ipr-tp-esq ul.inc li{margin:2px 0}' +
-      '#ipr-tp-enc{width:100%;margin-top:4px}#ipr-tp-nota{margin-top:8px!important}' +
-      '#ipr-tp-cam label{display:flex;align-items:center;gap:8px;padding:4px 0;cursor:pointer;font-size:13.5px}#ipr-tp-cam input{accent-color:#94BE39}' +
-      '#ipr-tp-toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:45;background:var(--vn);border:1px solid var(--ln);border-radius:8px;padding:10px 14px;max-width:90vw}' +
-      '#ipr-tp-voltar{display:none}html.ipr-topo-form #ipr-tp-voltar{display:inline-block}' +
-      '@media (max-width:760px){html.ipr-topo .ipe-mapa{left:0!important;bottom:46vh!important}#ipr-tp-esq{top:auto;height:46vh;width:auto;right:0;border-right:0;border-top:1px solid var(--ln)}' +
-      '#ipr-tp-top .m small{display:none}html.ipr-topo.ipr-topo-form #ipe-dir{width:100vw!important}html.ipr-topo.ipr-topo-form #ipr-tp-esq{display:none}html.ipr-topo.ipr-topo-form .ipe-mapa{right:0!important;bottom:0!important}}';
+      '.ipr-tx{--vn:#10170d;--p1:#161e13;--p2:#1f2a1a;--ln:#2e3a28;--tx:#eef0e6;--mu:#a7ae9b;--ac:#94BE39;font:14px/1.45 Inter,system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--tx);box-sizing:border-box;-webkit-font-smoothing:antialiased}' +
+      '.ipr-tx *{box-sizing:border-box}.ipr-tx button,.ipr-tx input,.ipr-tx select{font:inherit;color:inherit}' +
+      '#ipr-tx-top{position:fixed;top:0;left:0;right:0;height:' + TOPO_H + 'px;z-index:40;display:flex;align-items:center;gap:14px;padding:0 16px;background:var(--vn);border-bottom:1px solid var(--ln)}' +
+      '#ipr-tx-top .m{font-weight:600;white-space:nowrap}#ipr-tx-top .m small{font-weight:400;color:var(--mu);margin-left:6px}' +
+      '#ipr-tx-top .d{margin-left:auto;display:flex;gap:10px;align-items:center}#ipr-tx-top select{background:var(--p2);border:1px solid var(--ln);border-radius:6px;padding:5px 8px}' +
+      '#ipr-tx-top a{color:var(--mu);text-decoration:underline;font-size:13px;white-space:nowrap}' +
+      '#ipr-tx-esq{position:fixed;top:' + TOPO_H + 'px;left:0;bottom:0;width:' + LARG + 'px;z-index:35;overflow:auto;background:var(--p1);border-right:1px solid var(--ln);padding:18px 18px 28px}' +
+      '#ipr-tx-esq .k{margin:0 0 4px;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--ac)}' +
+      '#ipr-tx-esq h1{margin:0 0 8px;font-size:21px;line-height:1.25;font-weight:600}#ipr-tx-esq p{margin:0 0 10px}#ipr-tx-esq .mu{color:var(--mu);font-size:13px}' +
+      '#ipr-tx-esq h2{margin:18px 0 8px;font-size:14px;font-weight:600}' +
+      '#ipr-tx-esq form{display:flex;gap:6px;position:relative}#ipr-tx-esq input[type=search]{flex:1;min-width:0;background:var(--p2);border:1px solid var(--ln);border-radius:6px;padding:8px 10px}' +
+      '.ipr-tx .ac{background:var(--ac);color:#10170d!important;border:0;border-radius:6px;padding:9px 12px;font-weight:600;cursor:pointer}.ipr-tx .ac[disabled]{opacity:.45;cursor:not-allowed}' +
+      '.ipr-tx .ol{background:transparent;border:1px solid var(--ln);border-radius:6px;padding:8px 10px;cursor:pointer}.ipr-tx .ol:hover{border-color:var(--ac)}' +
+      '#ipr-tx-esq .lin{display:flex;gap:6px;flex-wrap:wrap}#ipr-tx-esq .lin .ol{flex:1}' +
+      '#ipr-tx-res{list-style:none;margin:6px 0 0;padding:0;border:1px solid var(--ln);border-radius:6px;background:var(--p2);max-height:220px;overflow:auto}' +
+      '#ipr-tx-res button{display:block;width:100%;text-align:left;background:none;border:0;padding:7px 10px;cursor:pointer}#ipr-tx-res button:hover{background:var(--ln)}#ipr-tx-res small{display:block;color:var(--mu);font-size:12px}' +
+      '#ipr-tx-ter{background:var(--p2);border:1px solid var(--ln);border-radius:6px;padding:9px 10px;margin-top:8px;font-size:13px}#ipr-tx-ter b{color:var(--ac)}' +
+      '#ipr-tx-ter button{margin-left:8px;background:none;border:0;color:var(--mu);text-decoration:underline;cursor:pointer;padding:0}' +
+      '#ipr-tx-esq ul.inc{margin:0;padding-left:18px;color:var(--mu);font-size:13px}#ipr-tx-esq ul.inc li{margin:2px 0}' +
+      '#ipr-tx-enc{width:100%;margin-top:4px}#ipr-tx-nota{margin-top:8px!important}' +
+      '#ipr-tx-cam label{display:flex;align-items:center;gap:8px;padding:4px 0;cursor:pointer;font-size:13.5px}#ipr-tx-cam input{accent-color:#94BE39}' +
+      '#ipr-tx-toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:45;background:var(--vn);border:1px solid var(--ln);border-radius:8px;padding:10px 14px;max-width:90vw}' +
+      '#ipr-tx-voltar{display:none}html.ipr-topo-form #ipr-tx-voltar{display:inline-block}' +
+      '@media (max-width:760px){html.ipr-topo .ipe-mapa{left:0!important;bottom:46vh!important}#ipr-tx-esq{top:auto;height:46vh;width:auto;right:0;border-right:0;border-top:1px solid var(--ln)}' +
+      '#ipr-tx-top .m small{display:none}html.ipr-topo.ipr-topo-form #ipe-dir{width:100vw!important}html.ipr-topo.ipr-topo-form #ipr-tx-esq{display:none}html.ipr-topo.ipr-topo-form .ipe-mapa{right:0!important;bottom:0!important}}';
     (D.head || H).appendChild(s);
   }
 
@@ -179,11 +179,11 @@
   var CC = '', montado = false, relogio = null;
   function entrarLink() { var a = $('ipe-user') || $('ipe-entrar'); return a ? { href: a.getAttribute('href') || '/conta/', txt: (a.textContent || '').trim() } : null; }
   function topo() {
-    var o = $('ipr-tp-top') || D.createElement('header'); o.id = 'ipr-tp-top'; o.className = 'ipr-tp';
+    var o = $('ipr-tx-top') || D.createElement('header'); o.id = 'ipr-tx-top'; o.className = 'ipr-tx';
     var en = entrarLink();
     o.innerHTML = '<span class="m">IPR Atlas · ' + esc(T('marca')) + '<small>Terracrua Design</small></span>' +
-      '<div class="d"><button type="button" class="ol" id="ipr-tp-voltar" data-tp="voltar">' + esc(T('voltar')) + '</button>' +
-      '<select id="ipr-tp-lg" aria-label="Langue / Taal / Language">' + ['fr', 'nl', 'en', 'pt'].map(function (l) { return '<option value="' + l + '"' + (l === lg ? ' selected' : '') + '>' + l.toUpperCase() + '</option>'; }).join('') + '</select>' +
+      '<div class="d"><button type="button" class="ol" id="ipr-tx-voltar" data-tp="voltar">' + esc(T('voltar')) + '</button>' +
+      '<select id="ipr-tx-lg" aria-label="Langue / Taal / Language">' + ['fr', 'nl', 'en', 'pt'].map(function (l) { return '<option value="' + l + '"' + (l === lg ? ' selected' : '') + '>' + l.toUpperCase() + '</option>'; }).join('') + '</select>' +
       '<a href="?simples=0&topo=0" data-tp="completo">' + esc(T('completo')) + '</a>' +
       (en ? '<a href="' + esc(en.href) + '">' + esc(en.txt || 'Conta') + '</a>' : '') + '</div>';
     return o;
@@ -192,8 +192,8 @@
     var e = estado(CC), tem = poligonos().length > 0;
     var lbl = e === 'interesse' ? T('int') : T('enc');
     var nota = e === 'aberto' ? T('precoFR').replace('{p}', precoBase()) : e === 'a_pedido' ? T('pedidoT') : T('interT');
-    return '<button type="button" class="ac" id="ipr-tp-enc" data-tp="encomendar"' + (tem ? '' : ' disabled') + '>' + esc(lbl) + '</button>' +
-      '<p class="mu" id="ipr-tp-nota">' + esc(tem ? nota : T('precisa') + ' ' + nota) + '</p>';
+    return '<button type="button" class="ac" id="ipr-tx-enc" data-tp="encomendar"' + (tem ? '' : ' disabled') + '>' + esc(lbl) + '</button>' +
+      '<p class="mu" id="ipr-tx-nota">' + esc(tem ? nota : T('precisa') + ' ' + nota) + '</p>';
   }
   function camadasHtml() {
     return (CAMS[CC] || []).map(function (c) {
@@ -208,25 +208,25 @@
     return esc(T('area')) + '<b>' + ha.toLocaleString(lg === 'en' ? 'en-GB' : lg === 'nl' ? 'nl-NL' : lg === 'pt' ? 'pt-PT' : 'fr-FR', { maximumFractionDigits: ha < 10 ? 2 : 1 }) + ' ha</b><button type="button" data-tp="trocar">' + esc(T('trocar')) + '</button>';
   }
   function esquerda() {
-    var o = $('ipr-tp-esq') || D.createElement('aside'); o.id = 'ipr-tp-esq'; o.className = 'ipr-tp';
+    var o = $('ipr-tx-esq') || D.createElement('aside'); o.id = 'ipr-tx-esq'; o.className = 'ipr-tx';
     o.innerHTML = '<p class="k">' + esc(nomePais(CC)) + '</p><h1>' + esc(T('h1')) + '</h1><p class="mu">' + esc(T('sub')) + '</p>' +
-      '<h2>' + esc(T('p1')) + '</h2><form role="search" id="ipr-tp-f"><input id="ipr-tp-q" type="search" autocomplete="off" placeholder="' + esc(T('ph')) + '"><button type="submit" class="ac">' + esc(T('proc')) + '</button></form>' +
-      '<p class="mu" id="ipr-tp-err" hidden></p><ul id="ipr-tp-res" hidden></ul>' +
+      '<h2>' + esc(T('p1')) + '</h2><form role="search" id="ipr-tx-f"><input id="ipr-tx-q" type="search" autocomplete="off" placeholder="' + esc(T('ph')) + '"><button type="submit" class="ac">' + esc(T('proc')) + '</button></form>' +
+      '<p class="mu" id="ipr-tx-err" hidden></p><ul id="ipr-tx-res" hidden></ul>' +
       '<h2>' + esc(T('p2')) + '</h2><div class="lin"><button type="button" class="ol" data-tp="desenhar">' + esc(T('des')) + '</button><button type="button" class="ol" data-tp="ficheiro">' + esc(T('fic')) + '</button></div>' +
-      '<div id="ipr-tp-ter">' + terrenoHtml() + '</div>' +
-      '<h2>' + esc(T('p3')) + '</h2><div id="ipr-tp-encb">' + blocoEncomenda() + '</div>' +
+      '<div id="ipr-tx-ter">' + terrenoHtml() + '</div>' +
+      '<h2>' + esc(T('p3')) + '</h2><div id="ipr-tx-encb">' + blocoEncomenda() + '</div>' +
       '<h2>' + esc(T('inclui')) + '</h2><ul class="inc"><li>' + esc(T('i1')) + '</li><li>' + esc(T('i2')) + '</li><li>' + esc(T('i3')) + '</li></ul>' +
-      '<h2>' + esc(T('cam')) + '</h2><div id="ipr-tp-cam">' + camadasHtml() + '</div><p class="mu" style="margin-top:8px;font-size:12px">' + esc(T('fontes')) + '</p>';
+      '<h2>' + esc(T('cam')) + '</h2><div id="ipr-tx-cam">' + camadasHtml() + '</div><p class="mu" style="margin-top:8px;font-size:12px">' + esc(T('fontes')) + '</p>';
     return o;
   }
   function pintar() {
     if (!montado) return;
-    var t = $('ipr-tp-ter'); if (t) { var h = terrenoHtml(); if (t.innerHTML !== h) t.innerHTML = h; }
-    var b = $('ipr-tp-encb'); if (b) { var h2 = blocoEncomenda(); if (b.innerHTML !== h2) b.innerHTML = h2; }
-    [].forEach.call(D.querySelectorAll('#ipr-tp-cam [data-tpc]'), function (c) { var on = camOn(c.getAttribute('data-tpc'), c.getAttribute('data-tpg')); if (c.checked !== on) c.checked = on; });
+    var t = $('ipr-tx-ter'); if (t) { var h = terrenoHtml(); if (t.innerHTML !== h) t.innerHTML = h; }
+    var b = $('ipr-tx-encb'); if (b) { var h2 = blocoEncomenda(); if (b.innerHTML !== h2) b.innerHTML = h2; }
+    [].forEach.call(D.querySelectorAll('#ipr-tx-cam [data-tpc]'), function (c) { var on = camOn(c.getAttribute('data-tpc'), c.getAttribute('data-tpg')); if (c.checked !== on) c.checked = on; });
   }
   function toast(txt) {
-    var o = $('ipr-tp-toast'); if (!o) { o = D.createElement('div'); o.id = 'ipr-tp-toast'; o.className = 'ipr-tp'; D.body.appendChild(o); }
+    var o = $('ipr-tx-toast'); if (!o) { o = D.createElement('div'); o.id = 'ipr-tx-toast'; o.className = 'ipr-tx'; D.body.appendChild(o); }
     o.textContent = txt; o.hidden = false; clearTimeout(o._t); o._t = setTimeout(function () { o.hidden = true; }, 6000);
   }
   function redimensionar() { var m = mapa(); setTimeout(function () { try { if (m) m.resize(); } catch (e) {} }, 80); }
@@ -246,7 +246,7 @@
   }
   function procurar(txt) {
     txt = String(txt || '').trim(); if (!txt) return;
-    var err = $('ipr-tp-err'), lst = $('ipr-tp-res'); if (err) err.hidden = true;
+    var err = $('ipr-tx-err'), lst = $('ipr-tx-res'); if (err) err.hidden = true;
     var cc = /^\s*-?\d{1,3}[.,]\d+\s*[,; ]\s*-?\d{1,3}[.,]\d+\s*$/.test(txt) ? null : txt;
     if (!cc) { var p = txt.replace(/,(\d)/g, '.$1').split(/[\s;,]+/).map(Number); var la = p[0], lo = p[1]; if (Math.abs(la) <= 90) { voar({ lat: la, lon: lo }); return; } }
     var cods = (CC ? CC.toLowerCase() : 'fr,be,nl,lu');
@@ -268,7 +268,7 @@
     } catch (e) {}
   }
   function cliques(e) {
-    var b = e.target.closest && e.target.closest('[data-tp]'); if (!b || !b.closest('.ipr-tp')) return;
+    var b = e.target.closest && e.target.closest('[data-tp]'); if (!b || !b.closest('.ipr-tx')) return;
     var a = b.getAttribute('data-tp');
     if (a === 'desenhar') { e.preventDefault(); mostrarForm(false); ferramenta('desenhar'); toast(T('dica')); gtag('topo_desenhar', { pais: CC }); }
     else if (a === 'ficheiro') { e.preventDefault(); var i = $('ipe-file'); if (i) i.click(); else ferramenta('importar'); }
@@ -279,13 +279,13 @@
   }
   function mudancas(e) {
     var c = e.target;
-    if (c && c.id === 'ipr-tp-lg') { lg = c.value; try { localStorage.setItem('ipr_topo_lg', lg); } catch (x) {} reconstruir(); return; }
+    if (c && c.id === 'ipr-tx-lg') { lg = c.value; try { localStorage.setItem('ipr_topo_lg', lg); } catch (x) {} reconstruir(); return; }
     if (c && c.hasAttribute && c.hasAttribute('data-tpc')) { if (!camLigar(c.getAttribute('data-tpc'), c.getAttribute('data-tpg'), c.checked)) c.checked = false; gtag('topo_camada', { id: c.getAttribute('data-tpc'), on: c.checked ? 1 : 0 }); }
   }
   function reconstruir() {
     if (!montado) return;
     D.body.appendChild(topo()); D.body.appendChild(esquerda());
-    $('ipr-tp-f').addEventListener('submit', function (e) { e.preventDefault(); procurar($('ipr-tp-q').value); });
+    $('ipr-tx-f').addEventListener('submit', function (e) { e.preventDefault(); procurar($('ipr-tx-q').value); });
   }
   function ligarPadrao() {
     // primeira vez neste país: fotografia aérea e cadastro ligados, para se ver o terreno
@@ -309,7 +309,7 @@
   function desmontar() {
     if (!montado) return; montado = false; CC = ''; W.__iprTopo = '';
     H.classList.remove('ipr-topo', 'ipr-topo-form');
-    ['ipr-tp-top', 'ipr-tp-esq', 'ipr-tp-toast'].forEach(function (id) { var x = $(id); if (x) x.remove(); });
+    ['ipr-tx-top', 'ipr-tx-esq', 'ipr-tx-toast'].forEach(function (id) { var x = $(id); if (x) x.remove(); });
     D.removeEventListener('click', cliques, true); D.removeEventListener('change', mudancas, true);
     redimensionar();
   }
