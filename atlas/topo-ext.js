@@ -148,7 +148,7 @@
       'html.ipr-topo.ipr-topo-form #ipe-dir{display:flex!important;position:fixed!important;top:' + TOPO_H + 'px!important;right:0!important;bottom:0!important;left:auto!important;width:380px!important;max-width:100vw!important;height:auto!important;z-index:30}' +
       'html.ipr-topo.ipr-topo-form .ipe-mapa{right:380px!important}' +
       '.ipr-tx{--vn:#10170d;--p1:#161e13;--p2:#1f2a1a;--ln:#2e3a28;--tx:#eef0e6;--mu:#a7ae9b;--ac:#94BE39;font:14px/1.45 Inter,system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--tx);box-sizing:border-box;-webkit-font-smoothing:antialiased}' +
-      '.ipr-tx *{box-sizing:border-box}.ipr-tx button,.ipr-tx input,.ipr-tx select{font:inherit;color:inherit}' +
+      '.ipr-tx .tp-wtop{display:none!important}.ipr-tx *{box-sizing:border-box}.ipr-tx button,.ipr-tx input,.ipr-tx select{font:inherit;color:inherit}' +
       '#ipr-tx-top{position:fixed;top:0;left:0;right:0;height:' + TOPO_H + 'px;z-index:99992;display:flex;align-items:center;gap:14px;padding:0 16px;background:var(--vn);border-bottom:1px solid var(--ln)}' +
       '#ipr-tx-top .m{font-weight:600;white-space:nowrap}#ipr-tx-top .m small{font-weight:400;color:var(--mu);margin-left:6px}' +
       '#ipr-tx-top .d{margin-left:auto;display:flex;gap:10px;align-items:center}#ipr-tx-top select{background:var(--p2);border:1px solid var(--ln);border-radius:6px;padding:5px 8px}' +
