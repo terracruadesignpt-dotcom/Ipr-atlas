@@ -56,7 +56,7 @@ def r2(rel, nome):
     return False
 if pais == "r2":  # só copia para o R2 o que já está nas versões eu-<país>-pmtiles
     rp = os.environ.get("GITHUB_REPOSITORY", "")
-    for pp in os.environ.get("EU_PAISES", "es,fr,cz,nl,lu").split(","):
+    for pp in os.environ.get("EU_PAISES", "es,fr,cz,nl,lu,at,be,it").split(","):
         rel = "eu-%s-pmtiles" % pp
         nomes = subprocess.run(["gh", "release", "view", rel, "-R", rp, "--json", "assets", "-q", ".assets[].name"], capture_output=True, text=True).stdout.split()
         print(rel, len(nomes), "ficheiros", flush=True)
@@ -160,5 +160,79 @@ elif pais == "es":
             q = out.replace("es-%s.geojsons" % cod, "es-%sp%d.geojsons" % (cod, int(time.time()))); os.rename(out, q); out = q
         entregar(out)
         if tempo_acabou(): break
+def camada(src, chave=("parcel", "capa", "parcell", "grundst")):
+    """Escolhe a camada das parcelas numa fonte GDAL (gpkg, shp em zip, GML)."""
+    p = subprocess.run(["ogrinfo", "-ro", "-q", src], capture_output=True, text=True)
+    nomes = re.findall(r"^\s*\d+: ([^\s(]+)", p.stdout, re.M)
+    for n in nomes:
+        if any(k in n.lower() for k in chave): return n
+    return nomes[0] if nomes else None
+def faixa(x0, x1, y0, y1):
+    """26/11/2026: países grandes num só ficheiro (AT, BE): cada fatia fica com uma faixa de longitude, para que cada PMTiles caiba nos 2 GB."""
+    d = (x1 - x0) / nf; a = x0 + d * fatia
+    return ("-spat", "%.4f" % a, "%.4f" % y0, "%.4f" % (a + d), "%.4f" % y1, "-spat_srs", "EPSG:4326")
+# 26/11/2026, 22h22 (Nuno: «Queremos a Bélgica, a Holanda, Luxemburgo, a Áustria, a Suíça, a Itália, sim, a Grécia»).
+# AT: BEV, Kataster INSPIRE em GeoPackage do país inteiro (CC BY 4.0). BE: SPF Finances, parcelas cadastrais (situação mensal,
+# shapefile do país inteiro, licença aberta do SPF Finances). IT: Agenzia delle Entrate, download massivo (ITALIA.zip, zips
+# encaixados até ao GML por comune; CC BY 4.0; Trentino-Alto Adige não está incluído). CH e GR ficam para depois: a Suíça é
+# cantonal (geodienste.ch, nem todos os cantões abertos) e a Grécia (Ktimatologio) só entrega a pedido.
+if pais == "at":
+    nome = None
+    try:
+        idx = texto("https://data.bev.gv.at/download/Kataster/gpkg/inspire/")
+        nomes = sorted(set(re.findall(r"(AT-INSPIRE_BEV_CP_epsg\d+_\d{8}\.gpkg)", idx)))
+        if nomes: nome = nomes[-1]
+    except Exception as e: print("at índice", e, flush=True)
+    nome = nome or "AT-INSPIRE_BEV_CP_epsg3416_20230403.gpkg"
+    print("at ficheiro", nome, flush=True)
+    f = os.path.join(T, nome)
+    if baixar("https://data.bev.gv.at/download/Kataster/gpkg/inspire/" + nome, f):
+        c = camada(f); print("at camada", c, flush=True)
+        ogr(f, os.path.join(saida, "at-%d.geojsons" % fatia), ((c,) if c else ()) + faixa(9.4, 17.3, 46.3, 49.1))
+        os.remove(f)
+elif pais == "be":
+    feed = texto("https://opendata.fin.belgium.be/download/ATOM/1d797df0-c988-11ed-abc3-0050569393d1-en.xml")
+    zs = [z.replace("&amp;", "&") for z in re.findall(r'href="([^"]+\.zip[^"]*)"', feed)]
+    subs = [x for x in re.findall(r'href="([^"]+\.xml)"', feed) if "ATOM" in x and x not in feed[:200]]
+    for sx in subs[:6]:
+        try: zs += [z.replace("&amp;", "&") for z in re.findall(r'href="([^"]+\.zip[^"]*)"', texto(sx))]
+        except Exception as e: print("be", sx, e, flush=True)
+    zs = sorted(set(zs), key=lambda u: ("3812" not in u, u))   # Lambert 2008 primeiro; serve qualquer um
+    print("be ficheiros:", zs[:6], flush=True)
+    for u in zs[:1]:
+        f = os.path.join(T, "be.zip")
+        if baixar(u, f):
+            c = camada("/vsizip/" + f); print("be camada", c, flush=True)
+            ogr("/vsizip/" + f, os.path.join(saida, "be-%d.geojsons" % fatia), ((c,) if c else ()) + faixa(2.5, 6.45, 49.45, 51.55))
+            os.remove(f)
+elif pais == "it":
+    f = os.path.join(T, "ITALIA.zip")
+    if baixar("https://wfs.cartografia.agenziaentrate.gov.it/inspire/wfs/GetDataset.php?dataset=ITALIA.zip", f):
+        z1 = zipfile.ZipFile(f); regs = sorted(n for n in z1.namelist() if n.lower().endswith(".zip"))
+        print("it", len(regs), "zips no primeiro nível:", regs[:30], flush=True)
+        def gmls(zp, out, nivel=0):
+            with zipfile.ZipFile(zp) as z:
+                for n in z.namelist():
+                    if tempo_acabou(): return
+                    if n.lower().endswith(".zip"):
+                        t = os.path.join(T, "n%d.zip" % nivel)
+                        with z.open(n) as a, open(t, "wb") as b: shutil.copyfileobj(a, b, 1 << 20)
+                        gmls(t, out, nivel + 1); os.remove(t)
+                    elif n.lower().endswith(".gml"):
+                        t = os.path.join(T, "g.gml")
+                        with z.open(n) as a, open(t, "wb") as b: shutil.copyfileobj(a, b, 1 << 20)
+                        tmp = os.path.join(T, "g.geojsons"); ogr(t, tmp, ("-skipfailures",))
+                        if os.path.exists(tmp):
+                            with open(out, "a") as o, open(tmp) as s2: shutil.copyfileobj(s2, o)
+                            os.remove(tmp)
+                        os.remove(t)
+        for r in regs[fatia::nf]:
+            if tempo_acabou(): break
+            rn = re.sub(r"[^A-Za-z0-9]+", "_", os.path.basename(r).rsplit(".", 1)[0])[:40]
+            t = os.path.join(T, "r.zip")
+            with z1.open(r) as a, open(t, "wb") as b: shutil.copyfileobj(a, b, 1 << 20)
+            out = os.path.join(saida, "it-%s.geojsons" % rn); gmls(t, out); os.remove(t)
+            print("it", rn, "pronto", flush=True); entregar(out)
+        os.remove(f)
 for g in [os.path.join(saida, f) for f in os.listdir(saida) if f.endswith(".geojsons")]: entregar(g)
 print("FIM", pais, fatia, os.listdir(saida), flush=True)

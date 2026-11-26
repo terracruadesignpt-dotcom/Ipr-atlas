@@ -1,5 +1,5 @@
 name: dados-eu-cadastro
-# Cadastro europeu em dados abertos: França, Chéquia, Países Baixos, Luxemburgo e Espanha. Terracrua Design, IPR Atlas.
+# Cadastro europeu em dados abertos: França, Chéquia, Países Baixos, Luxemburgo, Espanha, Áustria, Bélgica e Itália. Terracrua Design, IPR Atlas.
 # 26/11/2026: cada fatia faz os seus PMTiles (um por departamento, província ou fatia), publica-os em eu-<país>-pmtiles e
 # pede a cópia para o R2. Já não se junta o país inteiro num ficheiro (passaria dos 2 GB que as versões aceitam).
 on:
