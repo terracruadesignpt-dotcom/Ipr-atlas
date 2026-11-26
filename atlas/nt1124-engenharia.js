@@ -92,6 +92,40 @@
     "#ipr-eng label small{flex:none;white-space:nowrap;color:var(--mu,#9a9e8a);margin-left:auto;font-size:11px;padding-top:2px}#ipr-eng .ev{color:var(--mu,#9a9e8a);font-size:12px;margin-top:8px}#ipr-eng .es{color:var(--mu,#9a9e8a);font-size:12px;margin:-2px 0 8px}" +
     "#ipr-eng-off{margin:0 0 8px;font:12px Inter,system-ui,sans-serif}#ipr-eng-off button{background:none;border:0;color:var(--ac,#94BE39);text-decoration:underline;cursor:pointer;font:inherit;padding:0}";
   function nome(x) { return String((en() && x.en) || x.n || x.id); }
+  // «i» em todas as camadas do essencial: o que é, fonte e licença (Nuno, 26/11/2026, 16h08: «Em todas as camadas de
+  // informação tem que ter o i a dizer onde é que vem [...] inclusive no essencial»).
+  function bi(i) { return '<button type="button" class="eng-i" data-eng-i="' + esc(i) + '" title="' + t("Sobre esta camada: o que é, fonte, licença", "About this layer: what it is, source, licence") + '" aria-label="' + t("Sobre esta camada", "About this layer") + '">i</button>'; }
+  var IC = null, IA = "";
+  function iFecha() { if (IC) IC.hidden = true; IA = ""; }
+  function iAbre(b) {
+    var id = b.getAttribute("data-eng-i"); if (IA === id && IC && !IC.hidden) { iFecha(); return; }
+    var x = cat()[id]; if (!x) return;
+    if (!IC) {
+      IC = D.createElement("div"); IC.id = "ipr-eng-ii"; IC.hidden = true;
+      IC.style.cssText = "position:fixed;z-index:9999;max-width:320px;background:#1b1c19;color:#f1ece4;border:1px solid rgba(181,211,52,.35);border-radius:10px;padding:12px 14px;font:13px/1.45 Geist,Inter,system-ui,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.35)";
+      D.body.appendChild(IC);
+      IC.addEventListener("click", function (e) { if (e.target.closest(".x")) iFecha(); });
+    }
+    var sub = String((en() && x.subEn) || x.sub || ""), fonte = String(x.fonte || ""), lic = x.lic === "r" ? "IPR Atlas Intelligence" : "Explorer";
+    var leg = typeof x.leg === "string" && /^https?:\/\//.test(x.leg) ? x.leg : "";
+    IC.innerHTML = '<button type="button" class="x" aria-label="' + t("Fechar", "Close") + '" style="float:right;background:none;border:0;color:inherit;font-size:16px;cursor:pointer">×</button>' +
+      '<b style="display:block;margin:0 18px 6px 0;color:#fff">' + esc(nome(x)) + "</b>" +
+      (sub ? '<div style="margin:0 0 6px;color:#cfd6bd">' + esc(sub) + "</div>" : "") +
+      '<div style="color:#b5d334;font-size:12px">' + t("Fonte", "Source") + '</div><div style="margin:0 0 6px">' + esc(fonte || t("Fonte por indicar", "Source not stated")) + "</div>" +
+      '<div style="color:#9a9e8a;font-size:12px">' + t("Disponível em", "Available in") + " " + esc(lic) + "</div>" +
+      (leg ? '<img src="' + esc(leg) + '" alt="" style="display:block;max-width:100%;margin-top:8px;background:#fff;border-radius:4px">' : "");
+    IC.hidden = false; IA = id;
+    var r = b.getBoundingClientRect(), w = IC.offsetWidth, h = IC.offsetHeight, x0 = r.right + 10;
+    if (x0 + w > innerWidth - 8) x0 = Math.max(8, r.left - w - 10);
+    IC.style.left = x0 + "px"; IC.style.top = Math.max(8, Math.min(r.top - 8, innerHeight - h - 8)) + "px";
+  }
+  D.addEventListener("click", function (e) {
+    var b = e.target.closest ? e.target.closest("#ipr-eng .eng-i") : null;
+    if (b) { e.preventDefault(); e.stopPropagation(); iAbre(b); return; }
+    if (IC && !IC.hidden && !IC.contains(e.target)) iFecha();
+  }, true);
+  D.addEventListener("keydown", function (e) { if (e.key === "Escape") iFecha(); });
+  (function () { var st = D.createElement("style"); st.textContent = "#ipr-eng label{position:relative}#ipr-eng .eng-i{margin-left:auto;flex:0 0 18px;width:18px;height:18px;border-radius:50%;border:1px solid rgba(241,236,228,.45);background:transparent;color:#f1ece4;font:italic 600 11px/16px Georgia,serif;cursor:pointer;padding:0}#ipr-eng .eng-i:hover{border-color:#b5d334;color:#b5d334}"; D.head.appendChild(st); })();
   function activas() { var z = viz(); try { return z && z.activas ? z.activas() : []; } catch (e) { return []; } }
   function pintar() {
     var cam = D.getElementById("ipe-cam"); if (!cam) return;
@@ -118,7 +152,7 @@
       var ba = (W.__ipe && W.__ipe.estado && W.__ipe.estado.actual) || {}, bn = String(ba.local || "").split(" · ")[0];
       var lgB = BX.filter(function (i) { return on[i]; }).length, abB = "base" in abertos ? abertos.base : true;
       h += '<details data-g="base"' + (abB ? " open" : "") + "><summary>" + esc(t("Esta Base", "This Base") + (bn ? " · " + bn : "")) + (lgB ? '<span class="n">' + lgB + "</span>" : "") + "</summary>";
-      BX.forEach(function (i) { h += '<label><input type="checkbox" data-cam="' + esc(i) + '"' + (on[i] ? " checked" : "") + "> <span>" + esc(nome(C[i])) + "</span></label>"; });
+      BX.forEach(function (i) { h += '<label><input type="checkbox" data-cam="' + esc(i) + '"' + (on[i] ? " checked" : "") + "> <span>" + esc(nome(C[i])) + "</span>" + bi(i) + "</label>"; });
       h += "</details>";
     }
     var aq = AQUI.filter(function (i) { return C[i]; }), pOn = pdmOn(), lgA = aq.filter(function (i) { return on[i]; }).length + (pOn ? 1 : 0);
@@ -131,7 +165,7 @@
     }
     aq.forEach(function (i) {
       var x = C[i], bl = explorer() && x.lic === "r";
-      h += '<label' + (bl ? ' class="bl"' : "") + '><input type="checkbox" data-cam="' + esc(i) + '"' + (on[i] ? " checked" : "") + (bl ? " disabled" : "") + "> <span>" + esc(nome(x) + (LOC.nome ? " · " + LOC.nome : "")) + "</span>" + (bl ? "<small>Intelligence</small>" : "") + "</label>";
+      h += '<label' + (bl ? ' class="bl"' : "") + '><input type="checkbox" data-cam="' + esc(i) + '"' + (on[i] ? " checked" : "") + (bl ? " disabled" : "") + "> <span>" + esc(nome(x) + (LOC.nome ? " · " + LOC.nome : "")) + "</span>" + (bl ? "<small>Intelligence</small>" : "") + bi(i) + "</label>";
     });
     if (!LOC.nome) h += '<div class="es" style="margin:4px 0 0 14px">' + t("Aproxime o mapa a um concelho para ver o que há dele.", "Zoom in to a municipality to see what is available.") + "</div>";
     else if (LOC.np === 0) h += '<div class="es" style="margin:4px 0 0 14px">' + t("As plantas originais desta câmara ainda estão a ser copiadas. O ordenamento IPR já cobre o concelho.", "This municipality's original plans are still being copied. The IPR zoning already covers it.") + "</div>";
@@ -143,7 +177,7 @@
       h += '<details data-g="' + g[0] + '"' + (ab ? " open" : "") + "><summary>" + esc(t(g[1], g[2])) + (lig ? '<span class="n">' + lig + "</span>" : "") + "</summary>";
       ids.forEach(function (i) {
         var x = C[i], bl = explorer() && x.lic === "r";
-        h += '<label' + (bl ? ' class="bl" title="' + esc(t("IPR Atlas Intelligence", "IPR Atlas Intelligence")) + '"' : "") + '><input type="checkbox" data-cam="' + esc(i) + '"' + (on[i] ? " checked" : "") + (bl ? " disabled" : "") + "> <span>" + esc(nome(x)) + "</span>" + (bl ? "<small>Intelligence</small>" : "") + "</label>";
+        h += '<label' + (bl ? ' class="bl" title="' + esc(t("IPR Atlas Intelligence", "IPR Atlas Intelligence")) + '"' : "") + '><input type="checkbox" data-cam="' + esc(i) + '"' + (on[i] ? " checked" : "") + (bl ? " disabled" : "") + "> <span>" + esc(nome(x)) + "</span>" + (bl ? "<small>Intelligence</small>" : "") + bi(i) + "</label>";
       });
       h += "</details>";
     });
