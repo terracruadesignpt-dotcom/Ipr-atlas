@@ -231,6 +231,167 @@
   }
   function redimensionar() { var m = mapa(); setTimeout(function () { try { if (m) m.resize(); } catch (e) {} }, 80); }
 
+  // ---------- tradução do assistente de compra e do formulário da Base (Nuno, 26/11, 21h24: «para cada língua tem tudo traduzido») ----------
+  // Chaves em português (o Atlas fica em português por baixo); valores [fr, nl, en].
+  var DIC = {
+    'Base Cartográfica': ['Base Cartographique', 'Kaartbasis', 'Base Map'],
+    'Produto': ['Produit', 'Product', 'Product'], 'Terreno': ['Terrain', 'Terrein', 'Land'], 'Preço': ['Prix', 'Prijs', 'Price'], 'Dados': ['Coordonnées', 'Gegevens', 'Details'],
+    'À espera do terreno no mapa · tocar para abrir o assistente': ['En attente du terrain sur la carte · toucher pour ouvrir l’assistant', 'Wacht op het terrein op de kaart · tik om de assistent te openen', 'Waiting for the land on the map · tap to open the assistant'],
+    'Os seus dados': ['Vos coordonnées', 'Uw gegevens', 'Your details'],
+    'Preencha os seus dados no formulário de encomenda e carregue em «Enviar pedido». Com cobertura LiDAR total, paga logo a seguir; sem ela, confirmamos antes de qualquer pagamento.': [
+      'Remplissez vos coordonnées dans le formulaire de commande et cliquez sur « Envoyer la demande ». Si le LiDAR couvre tout le terrain, vous payez aussitôt ; sinon, nous confirmons avant tout paiement.',
+      'Vul uw gegevens in op het bestelformulier en klik op «Aanvraag versturen». Als de LiDAR het hele terrein dekt, betaalt u meteen; anders bevestigen we eerst, vóór elke betaling.',
+      'Fill in your details in the order form and click “Send request”. If LiDAR covers the whole land, you pay straight away; if not, we confirm before any payment.'],
+    'sem IVA': ['HT', 'excl. btw', 'excl. VAT'], 'com IVA': ['TTC', 'incl. btw', 'incl. VAT'],
+    'Paga-se logo a seguir ao pedido: cartão, Multibanco, Apple Pay ou Google Pay.': ['Paiement juste après la demande : carte bancaire, Apple Pay ou Google Pay.', 'Betaling direct na de aanvraag: kaart, Apple Pay of Google Pay.', 'Payment right after the request: card, Apple Pay or Google Pay.'],
+    'Ir para o formulário': ['Aller au formulaire', 'Naar het formulier', 'Go to the form'], 'Voltar': ['Retour', 'Terug', 'Back'],
+    'Mover (duplo toque repõe)': ['Déplacer (double toucher pour replacer)', 'Verplaatsen (dubbel tikken zet terug)', 'Move (double tap resets)'],
+    'Transparência': ['Transparence', 'Transparantie', 'Transparency'], 'Fechar': ['Fermer', 'Sluiten', 'Close'],
+    'Que informação tem do terreno?': ['Quelles informations avez-vous sur le terrain ?', 'Welke informatie heeft u over het terrein?', 'What information do you have about the land?'],
+    'Escolha a primeira que tiver. Quanto mais exacta, mais rápido.': ['Choisissez la première dont vous disposez. Plus elle est précise, plus c’est rapide.', 'Kies de eerste die u heeft. Hoe nauwkeuriger, hoe sneller.', 'Choose the first one you have. The more precise, the faster.'],
+    'Sei a morada ou o nome do sítio': ['Je connais l’adresse ou le nom du lieu', 'Ik ken het adres of de naam van de plek', 'I know the address or place name'],
+    'Rua, lugar, aldeia ou nome da quinta.': ['Rue, lieu-dit, village ou nom du domaine.', 'Straat, plaats, dorp of naam van de boerderij.', 'Street, locality, village or estate name.'],
+    'Tenho o número do prédio': ['J’ai la référence cadastrale', 'Ik heb het perceelnummer', 'I have the parcel number'],
+    'Referência cadastral (NIC), por exemplo AAA000742446. Está na caderneta ou no BUPi.': ['Référence cadastrale portugaise (NIC), par exemple AAA000742446.', 'Portugese kadastrale referentie (NIC), bijvoorbeeld AAA000742446.', 'Portuguese cadastral reference (NIC), e.g. AAA000742446.'],
+    'Usar o terreno que já está no mapa': ['Utiliser le terrain déjà sur la carte', 'Het terrein gebruiken dat al op de kaart staat', 'Use the land already on the map'],
+    'Recomendado': ['Recommandé', 'Aanbevolen', 'Recommended'],
+    'Estou no terreno agora': ['Je suis sur le terrain', 'Ik ben nu op het terrein', 'I am on the land now'],
+    'Usamos a localização do telemóvel.': ['Nous utilisons la position du téléphone.', 'We gebruiken de locatie van uw telefoon.', 'We use your phone’s location.'],
+    'Tenho as coordenadas': ['J’ai les coordonnées', 'Ik heb de coördinaten', 'I have the coordinates'],
+    'Latitude e longitude, ou PT-TM06.': ['Latitude et longitude.', 'Breedte- en lengtegraad.', 'Latitude and longitude.'],
+    'Tenho um ficheiro do terreno': ['J’ai un fichier du terrain', 'Ik heb een bestand van het terrein', 'I have a file of the land'],
+    'KML, KMZ, Shapefile, GeoJSON, GPX, DXF ou DWG.': ['KML, KMZ, Shapefile, GeoJSON, GPX, DXF ou DWG.', 'KML, KMZ, Shapefile, GeoJSON, GPX, DXF of DWG.', 'KML, KMZ, Shapefile, GeoJSON, GPX, DXF or DWG.'],
+    'Consigo mostrar no mapa': ['Je peux l’indiquer sur la carte', 'Ik kan het op de kaart aanwijzen', 'I can show it on the map'],
+    'Clicar nas parcelas do cadastro ou desenhar o limite.': ['Cliquer sur les parcelles du cadastre ou dessiner la limite.', 'Op de kadastrale percelen klikken of de grens tekenen.', 'Click the cadastral parcels or draw the boundary.'],
+    'Não tenho nada disto': ['Je n’ai rien de tout cela', 'Ik heb niets hiervan', 'I have none of these'],
+    'Diga-nos o concelho e a freguesia: nós encontramos o terreno.': ['Indiquez-nous la commune : nous trouvons le terrain.', 'Geef ons de gemeente: wij vinden het terrein.', 'Tell us the municipality: we will find the land.'],
+    'Olá! O que precisa para o seu terreno?': ['Bonjour ! De quoi avez-vous besoin pour votre terrain ?', 'Hallo! Wat heeft u nodig voor uw terrein?', 'Hello! What do you need for your land?'],
+    'Responda a umas perguntas rápidas. Não precisa de saber usar o mapa.': ['Répondez à quelques questions rapides. Pas besoin de savoir utiliser la carte.', 'Beantwoord een paar korte vragen. U hoeft de kaart niet te kunnen gebruiken.', 'Answer a few quick questions. No need to know how to use the map.'],
+    'Sem conta': ['Sans compte', 'Zonder account', 'No account'],
+    'O relevo do terreno em mapas e ficheiros (LiDAR da DGT): curvas de nível, declives, linhas de água, modelo 3D.': ['Le relief du terrain en cartes et fichiers (LiDAR officiel) : courbes de niveau, pentes, lignes d’eau, modèle 3D.', 'Het reliëf van het terrein in kaarten en bestanden (officiële LiDAR): hoogtelijnen, hellingen, waterlijnen, 3D-model.', 'The relief of the land as maps and files (official LiDAR): contour lines, slopes, water lines, 3D model.'],
+    'Não sei bem o que preciso': ['Je ne sais pas trop ce qu’il me faut', 'Ik weet niet goed wat ik nodig heb', 'I am not sure what I need'],
+    'Ajudamos a escolher em 10 segundos.': ['Nous vous aidons à choisir en 10 secondes.', 'We helpen u kiezen in 10 seconden.', 'We help you choose in 10 seconds.'],
+    'Só quero explorar o mapa': ['Je veux juste explorer la carte', 'Ik wil alleen de kaart verkennen', 'I just want to explore the map'],
+    'Encontrámos o terreno': ['Nous avons trouvé le terrain', 'We hebben het terrein gevonden', 'We found the land'],
+    'Confira no mapa. Está certo?': ['Vérifiez sur la carte. Est-ce bien cela ?', 'Controleer op de kaart. Klopt het?', 'Check it on the map. Is it right?'],
+    'Terreno no mapa': ['Terrain sur la carte', 'Terrein op de kaart', 'Land on the map'],
+    'Sim, é este': ['Oui, c’est celui-ci', 'Ja, dit is het', 'Yes, this is it'],
+    'Continuar para o preço.': ['Continuer vers le prix.', 'Verder naar de prijs.', 'Continue to the price.'],
+    'Falta uma parte ou não é bem este': ['Il manque une partie ou ce n’est pas tout à fait cela', 'Er ontbreekt een deel of het klopt niet helemaal', 'A part is missing or it is not quite right'],
+    'Corrigir no mapa: juntar ou retirar parcelas.': ['Corriger sur la carte : ajouter ou retirer des parties.', 'Corrigeren op de kaart: delen toevoegen of verwijderen.', 'Correct it on the map: add or remove parts.'],
+    'Enganei-me: começar de novo': ['Je me suis trompé : recommencer', 'Vergist: opnieuw beginnen', 'My mistake: start again'],
+    'Limpa o terreno marcado e volta ao mapa.': ['Efface le terrain indiqué et revient à la carte.', 'Wist het aangeduide terrein en gaat terug naar de kaart.', 'Clears the marked land and goes back to the map.'],
+    'Cobertura': ['Couverture', 'Dekking', 'Coverage'], 'Enviar': ['Envoyer', 'Versturen', 'Send'],
+    'Falta preencher nome, e-mail e aceitar a política de privacidade.': ['Il manque le nom, l’e-mail et l’acceptation de la politique de confidentialité.', 'Naam, e-mail en het aanvaarden van het privacybeleid ontbreken nog.', 'Name, e-mail and accepting the privacy policy are still missing.'],
+    'Ir para os dados': ['Aller aux coordonnées', 'Naar de gegevens', 'Go to details'],
+    'Parcelas do cadastro': ['Parcelles du cadastre', 'Kadastrale percelen', 'Cadastral parcels'],
+    'Desenhar no mapa': ['Dessiner sur la carte', 'Tekenen op de kaart', 'Draw on the map'],
+    'Carregar ficheiro': ['Importer un fichier', 'Bestand laden', 'Upload a file'],
+    'Usar um dos meus locais': ['Utiliser un de mes lieux', 'Een van mijn locaties gebruiken', 'Use one of my places'],
+    'Aproxime-se do terreno e clique em cada parcela; clique de novo para a retirar. Onde não houver cadastro geométrico, desenhe o limite.': ['Zoomez sur le terrain et cliquez sur chaque parcelle ; cliquez à nouveau pour la retirer. Là où il n’y a pas de cadastre, dessinez la limite.', 'Zoom in op het terrein en klik op elk perceel; klik opnieuw om het te verwijderen. Waar geen kadaster is, tekent u de grens.', 'Zoom in on the land and click each parcel; click again to remove it. Where there is no cadastre, draw the boundary.'],
+    'Localizar': ['Localiser', 'Zoeken', 'Locate'],
+    'Clique em cada canto do terreno. Feche no primeiro ponto ou com duplo clique. Pode desenhar várias parcelas.': ['Cliquez sur chaque angle du terrain. Fermez sur le premier point ou par un double-clic. Vous pouvez dessiner plusieurs parcelles.', 'Klik op elke hoek van het terrein. Sluit af op het eerste punt of met een dubbelklik. U kunt meerdere percelen tekenen.', 'Click each corner of the land. Close on the first point or with a double click. You can draw several parcels.'],
+    'Desenhar parcela': ['Dessiner une parcelle', 'Perceel tekenen', 'Draw a parcel'],
+    'KML, KMZ, GeoJSON, GPX ou Shapefile em .zip aparecem no mapa. GeoPackage e Shapefile (.zip ou os ficheiros .shp, .dbf, .shx e .prj juntos) também aparecem no mapa. DXF e DWG seguem em anexo. Até 50 MB. Também pode largar o ficheiro sobre o mapa.': [
+      'KML, KMZ, GeoJSON, GPX ou Shapefile en .zip s’affichent sur la carte. GeoPackage et Shapefile (.zip ou les fichiers .shp, .dbf, .shx et .prj ensemble) aussi. DXF et DWG sont joints en annexe. Jusqu’à 50 Mo. Vous pouvez aussi déposer le fichier sur la carte.',
+      'KML, KMZ, GeoJSON, GPX of Shapefile in .zip verschijnen op de kaart. GeoPackage en Shapefile (.zip of de bestanden .shp, .dbf, .shx en .prj samen) ook. DXF en DWG gaan als bijlage mee. Tot 50 MB. U kunt het bestand ook op de kaart neerzetten.',
+      'KML, KMZ, GeoJSON, GPX or zipped Shapefile appear on the map. GeoPackage and Shapefile (.zip or the .shp, .dbf, .shx and .prj files together) too. DXF and DWG are sent as attachments. Up to 50 MB. You can also drop the file on the map.'],
+    'Escolher ficheiro': ['Choisir un fichier', 'Bestand kiezen', 'Choose file'],
+    'Terrenos no mapa': ['Terrains sur la carte', 'Terreinen op de kaart', 'Land on the map'],
+    'Editar pontos': ['Modifier les points', 'Punten bewerken', 'Edit points'], 'Apagar': ['Supprimer', 'Verwijderen', 'Delete'],
+    'Limpar terreno': ['Effacer le terrain', 'Terrein wissen', 'Clear land'], 'Guardar terreno': ['Enregistrer le terrain', 'Terrein bewaren', 'Save land'],
+    'Estimativa': ['Estimation', 'Schatting', 'Estimate'], 'Área': ['Surface', 'Oppervlakte', 'Area'],
+    'Não foi possível verificar a cobertura agora. Tente de novo dentro de momentos.': ['Impossible de vérifier la couverture pour l’instant. Réessayez dans quelques instants.', 'De dekking kon nu niet worden gecontroleerd. Probeer het zo opnieuw.', 'Coverage could not be checked right now. Try again in a moment.'],
+    'Encomendar a Base Cartográfica': ['Commander la Base Cartographique', 'De kaartbasis bestellen', 'Order the Base Map'],
+    'Valores sem IVA, por escalões.': ['Montants HT, par tranches.', 'Bedragen excl. btw, per schijf.', 'Amounts excl. VAT, by tier.'],
+    'Com cobertura LiDAR total': ['Si le LiDAR couvre tout le terrain', 'Als de LiDAR het hele terrein dekt', 'With full LiDAR coverage'],
+    ', a ligação de pagamento aparece logo a seguir ao pedido. Sem ela, confirmamos os dados e enviamos o preço por e-mail.': [', le lien de paiement apparaît juste après la demande. Sinon, nous vérifions les données et vous envoyons le prix par e-mail.', ', verschijnt de betaallink direct na de aanvraag. Anders controleren we de gegevens en sturen we u de prijs per e-mail.', ', the payment link appears right after the request. Otherwise we check the data and e-mail you the price.'],
+    'Acima de 5 000 ha, sob consulta. Máximo de 10 000 ha por pedido.': ['Au-delà de 5 000 ha, sur devis. Maximum 10 000 ha par demande.', 'Boven 5 000 ha op aanvraag. Maximaal 10 000 ha per aanvraag.', 'Above 5,000 ha, on request. Maximum 10,000 ha per request.'],
+    'Nome *': ['Nom *', 'Naam *', 'Name *'], 'Telefone': ['Téléphone', 'Telefoon', 'Phone'], 'NIF': ['N° de TVA', 'Btw-nummer', 'VAT number'],
+    'País de facturação': ['Pays de facturation', 'Factuurland', 'Billing country'],
+    'Espanha': ['Espagne', 'Spanje', 'Spain'], 'França': ['France', 'Frankrijk', 'France'], 'Países Baixos': ['Pays-Bas', 'Nederland', 'Netherlands'],
+    'Alemanha': ['Allemagne', 'Duitsland', 'Germany'], 'Reino Unido': ['Royaume-Uni', 'Verenigd Koninkrijk', 'United Kingdom'], 'Brasil': ['Brésil', 'Brazilië', 'Brazil'],
+    'Estados Unidos': ['États-Unis', 'Verenigde Staten', 'United States'], 'Outro': ['Autre', 'Ander', 'Other'], 'Bélgica': ['Belgique', 'België', 'Belgium'], 'Luxemburgo': ['Luxembourg', 'Luxemburg', 'Luxembourg'],
+    'Notas': ['Notes', 'Opmerkingen', 'Notes'], 'Vale de oferta (opcional)': ['Bon cadeau (facultatif)', 'Cadeaubon (optioneel)', 'Gift voucher (optional)'],
+    'O código OFERTA-… que recebeu. Sem o código, reconhecemos o vale pelo seu nome.': ['Le code OFERTA-… que vous avez reçu. Sans code, nous reconnaissons le bon à votre nom.', 'De code OFERTA-… die u ontving. Zonder code herkennen we de bon aan uw naam.', 'The OFERTA-… code you received. Without it, we recognise the voucher by your name.'],
+    'Li a': ['J’ai lu la', 'Ik heb het', 'I have read the'], 'Política de Privacidade': ['politique de confidentialité', 'privacybeleid', 'Privacy Policy'],
+    'e aceito que usem estes dados para responder ao pedido. *': ['et j’accepte que ces données servent à répondre à la demande. *', 'gelezen en ga akkoord dat deze gegevens dienen om op de aanvraag te antwoorden. *', 'and agree that this data is used to answer the request. *'],
+    'Enviar pedido': ['Envoyer la demande', 'Aanvraag versturen', 'Send request'],
+    'Com cobertura LiDAR total, paga logo a seguir ao pedido e a Base é processada e entregue automaticamente na sua área de cliente assim que o processamento termina (de minutos a algumas horas, conforme a área). Sem cobertura total, confirmamos os dados antes de qualquer pagamento.': [
+      'Si le LiDAR couvre tout le terrain, vous payez juste après la demande ; la Base est traitée puis livrée automatiquement dans votre espace client (de quelques minutes à quelques heures selon la surface). Sinon, nous vérifions les données avant tout paiement.',
+      'Als de LiDAR het hele terrein dekt, betaalt u direct na de aanvraag; de kaartbasis wordt verwerkt en automatisch geleverd in uw klantenzone (van enkele minuten tot enkele uren, afhankelijk van de oppervlakte). Anders controleren we de gegevens vóór elke betaling.',
+      'With full LiDAR coverage, you pay right after the request; the Base is processed and delivered automatically to your client area (from minutes to a few hours, depending on the area). Otherwise we check the data before any payment.'],
+    'Forma de indicar o terreno': ['Comment indiquer le terrain', 'Manier om het terrein aan te duiden', 'How to mark the land'],
+    'Escolha uma área guardada em «Os meus locais» para terreno desta encomenda.': ['Choisissez une zone enregistrée dans « Mes lieux » comme terrain de cette commande.', 'Kies een bewaarde zone uit «Mijn locaties» als terrein voor deze bestelling.', 'Choose an area saved in “My places” as the land for this order.'],
+    'Guardar este limite nos seus terrenos': ['Enregistrer cette limite dans vos terrains', 'Deze grens bewaren bij uw terreinen', 'Save this boundary to your land'],
+    'O que pretende fazer no terreno.': ['Ce que vous souhaitez faire sur le terrain.', 'Wat u met het terrein van plan bent.', 'What you intend to do with the land.'],
+    'Nome do projecto': ['Nom du projet', 'Projectnaam', 'Project name'],
+    'Tudo pronto. Reveja a estimativa e envie o pedido.': ['Tout est prêt. Vérifiez l’estimation et envoyez la demande.', 'Alles klaar. Controleer de schatting en verstuur de aanvraag.', 'All set. Review the estimate and send the request.']
+  };
+  var DIC_RE = [
+    [/^Passo (\d+) de (\d+)$/, ['Étape $1 sur $2', 'Stap $1 van $2', 'Step $1 of $2']],
+    [/^Outras formas \((\d+)\)$/, ['Autres façons ($1)', 'Andere manieren ($1)', 'Other ways ($1)']],
+    [/^Terreno (\d+)$/, ['Terrain $1', 'Terrein $1', 'Land $1']],
+    [/^Área (.+)$/, ['Surface $1', 'Oppervlakte $1', 'Area $1']],
+    [/^(\d+) Terreno$/, ['$1 Terrain', '$1 Terrein', '$1 Land']]
+  ];
+  var DIC_PRECO = [[/€ \+ IVA/g, ['€ HT', '€ excl. btw', '€ excl. VAT']], [/€ com IVA/g, ['€ TTC', '€ incl. btw', '€ incl. VAT']], [/^desde /, ['à partir de ', 'vanaf ', 'from ']]];
+  // o que só serve em Portugal sai do ecrã (artigo matricial, NIC, ficha gratuita, Planta e Leitura)
+  var ESCONDER = ['Artigo matricial ou caderneta', 'Conversor NIC ⇄ artigo e secção', 'Ver a ficha gratuita da propriedade', 'Tenho a caderneta ou o artigo matricial', 'Planta de Localização', 'Leitura Territorial', 'Tenho o número do prédio', 'Ficha gratuita da propriedade'];
+  var ORIG = typeof WeakMap === 'function' ? new WeakMap() : null;
+  function trad(pt) {
+    var k = IX[lg]; if (lg === 'pt' || k == null) return pt;
+    var v = DIC[pt]; if (v) return v[k];
+    var s = pt, mud = false;
+    for (var i = 0; i < DIC_RE.length; i++) if (DIC_RE[i][0].test(s)) { s = s.replace(DIC_RE[i][0], DIC_RE[i][1][k]); mud = true; break; }
+    for (var j = 0; j < DIC_PRECO.length; j++) if (DIC_PRECO[j][0].test(s)) { s = s.replace(DIC_PRECO[j][0], DIC_PRECO[j][1][k]); mud = true; }
+    return mud ? s : pt;
+  }
+  function esconder(n, pt) {
+    if (ESCONDER.indexOf(pt) < 0 || lg === 'pt') return;
+    var e = n.parentElement && n.parentElement.closest('button,summary,[role=button],label'); if (!e) e = n.parentElement;
+    if (e && !e.hasAttribute('data-tx-esc')) { e.setAttribute('data-tx-esc', '1'); e.style.display = 'none'; }
+  }
+  function traduzirEm(root) {
+    if (!root || !ORIG) return;
+    var w = D.createTreeWalker(root, NodeFilter.SHOW_TEXT), n;
+    while ((n = w.nextNode())) {
+      var cur = n.nodeValue, t = cur.trim(); if (!t || !/[A-Za-zÀ-ú]/.test(t)) continue;
+      var pt = ORIG.get(n);
+      if (pt == null || (cur.trim() !== trad(pt).trim() && cur.trim() !== pt)) { pt = t; ORIG.set(n, pt); } // texto novo escrito pelo Atlas
+      var alvo = trad(pt);
+      if (cur.trim() !== alvo) n.nodeValue = cur.replace(cur.trim(), alvo);
+      esconder(n, pt);
+    }
+    [].forEach.call(root.querySelectorAll('[placeholder],[title],[aria-label]'), function (e) {
+      ['placeholder', 'title', 'aria-label'].forEach(function (a) {
+        var v = e.getAttribute(a); if (!v) return;
+        var ka = 'data-tx-' + a, pt = e.getAttribute(ka);
+        if (pt == null || (v !== trad(pt) && v !== pt)) { pt = v; e.setAttribute(ka, pt); }
+        var al = trad(pt); if (v !== al) e.setAttribute(a, al);
+      });
+    });
+    if (lg === 'pt') [].forEach.call(root.querySelectorAll('[data-tx-esc]'), function (e) { e.removeAttribute('data-tx-esc'); e.style.display = ''; });
+  }
+  var txUlt = 0, txPend = 0;
+  function traduzir() {
+    var ag = Date.now(); if (ag - txUlt < 250) { if (!txPend) txPend = setTimeout(function () { txPend = 0; traduzir(); }, 260); return; }
+    txUlt = ag;
+    if (!montado) return;
+    ['ipr-as-pn', 'ipr-as-b', 'ipe-dir'].forEach(function (id) { traduzirEm($(id)); });
+  }
+  var obsTx = null;
+  function vigiarTx() {
+    if (obsTx || typeof MutationObserver !== 'function') return;
+    obsTx = new MutationObserver(function () { if (montado && (lg !== 'pt' || D.querySelector('[data-tx-esc]'))) traduzir(); });
+    obsTx.observe(D.body, { subtree: true, childList: true, characterData: true });
+  }
+  function cookieLingua() { try { D.cookie = 'tcd_lingua=' + lg + ';path=/;max-age=31536000;SameSite=Lax'; } catch (e) {} }
+  function atlasEmPt() { // as chaves são portuguesas: com o Atlas em inglês e a página em fr/nl, volta-se ao português por baixo
+    if (lg !== 'fr' && lg !== 'nl') return;
+    if (String(W.IPR_LINGUA || '').toLowerCase() === 'en') { var b = D.querySelector('.ipe-top [data-lg="pt"]'); if (b) try { b.click(); } catch (e) {} }
+  }
+
   // ---------- acções ----------
   function mostrarForm(on) { H.classList.toggle('ipr-topo-form', on); redimensionar(); if (on) gtag('topo_formulario', { pais: CC }); }
   function encomendar() {
@@ -283,7 +444,7 @@
   }
   function mudancas(e) {
     var c = e.target;
-    if (c && c.id === 'ipr-tx-lg') { lg = c.value; try { localStorage.setItem('ipr_topo_lg', lg); } catch (x) {} reconstruir(); return; }
+    if (c && c.id === 'ipr-tx-lg') { lg = c.value; try { localStorage.setItem('ipr_topo_lg', lg); } catch (x) {} cookieLingua(); atlasEmPt(); reconstruir(); txUlt = 0; traduzir(); return; }
     if (c && c.hasAttribute && c.hasAttribute('data-tpc')) { if (!camLigar(c.getAttribute('data-tpc'), c.getAttribute('data-tpg'), c.checked)) c.checked = false; gtag('topo_camada', { id: c.getAttribute('data-tpc'), on: c.checked ? 1 : 0 }); }
   }
   function reconstruir() {
@@ -306,12 +467,14 @@
     reconstruir();
     D.addEventListener('click', cliques, true); D.addEventListener('change', mudancas, true);
     ligarPadrao(); redimensionar();
+    cookieLingua(); atlasEmPt(); vigiarTx(); traduzir();
     if (!REG) lerRegisto();
     gtag('topo_entrada', { pais: cc });
     if (/[?&]modo=encomenda/.test(q) && poligonos().length) setTimeout(encomendar, 800);
   }
   function desmontar() {
     if (!montado) return; montado = false; CC = ''; W.__iprTopo = '';
+    var l0 = lg; lg = 'pt'; try { ['ipr-as-pn', 'ipr-as-b', 'ipe-dir'].forEach(function (id) { traduzirEm($(id)); }); } catch (e) {} lg = l0;
     H.classList.remove('ipr-topo', 'ipr-topo-form');
     ['ipr-tx-top', 'ipr-tx-esq', 'ipr-tx-toast'].forEach(function (id) { var x = $(id); if (x) x.remove(); });
     D.removeEventListener('click', cliques, true); D.removeEventListener('change', mudancas, true);
@@ -322,7 +485,7 @@
     var cc = paisActual();
     if (!cc) { if (montado) desmontar(); return; }
     if (!montado) montar(cc);
-    else if (cc !== CC) { CC = cc; lgPorPais(cc); reconstruir(); ligarPadrao(); }
+    else if (cc !== CC) { CC = cc; lgPorPais(cc); reconstruir(); ligarPadrao(); cookieLingua(); traduzir(); }
     else pintar();
   }
   function arrancar(n) {
