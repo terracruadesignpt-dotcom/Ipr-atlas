@@ -15,10 +15,10 @@ def pedir(u, tent=0):
         with urllib.request.urlopen(urllib.request.Request(u, headers={"User-Agent": "IPR-Atlas/1.0 (terracruadesign.pt)"}), timeout=90) as r:
             return json.loads(r.read())
     except urllib.error.HTTPError as e:
-        if tent < 12 and (e.code == 429 or e.code >= 500): time.sleep(min(300, 10 * (tent + 1))); return pedir(u, tent + 1)
+        if tent < 6 and (e.code == 429 or e.code >= 500): time.sleep(min(120, 10 * (tent + 1))); return pedir(u, tent + 1)
         raise
     except Exception:
-        if tent < 12: time.sleep(min(300, 10 * (tent + 1))); return pedir(u, tent + 1)
+        if tent < 6: time.sleep(min(120, 10 * (tent + 1))); return pedir(u, tent + 1)
         raise
 def partes():
     if modo == "freguesias":
@@ -38,7 +38,26 @@ P = partes()[fatia::nf]
 print(col, modo, "fatia", fatia, "de", nf, ":", len(P), "partes", flush=True)
 vistos, trinco, n_el, n_ped = set(), threading.Lock(), [0], [0]
 out = open(saida, "w")
+falhadas = []
 def parte(p):
+    """26/11/2026: nas curvas de nível a DGT respondia sempre 503 a algumas quadrículas de 0,1° (muitos elementos) e a fatia
+    inteira morria, deitando fora tudo o que já tinha copiado. Agora uma quadrícula que falha parte-se em 4 (até 0,0125°);
+    se mesmo assim falhar, fica registada e a fatia continua."""
+    try:
+        return parte1(p)
+    except Exception as e:  # noqa: BLE001
+        if modo == "grelha":
+            x0, y0, x1, y1 = [float(v) for v in p.split(",")]
+            if x1 - x0 > 0.013:
+                h, g = (x1 - x0) / 2, False
+                for a in (x0, x0 + h):
+                    for b in (y0, y0 + h):
+                        g = parte(",".join("%.4f" % v for v in (a, b, a + h, b + h)))[1] or g
+                return p, g
+        with trinco: falhadas.append(p)
+        print("parte falhada:", p, str(e)[:80], flush=True)
+        return p, False
+def parte1(p):
     q = ("administrativeunit=" if modo == "freguesias" else "bbox=") + p
     off, grandes = 0, False
     while True:
@@ -62,3 +81,5 @@ with cf.ThreadPoolExecutor(FIOS) as ex:
         if i % 50 == 0: print("%d/%d partes · %d elementos · %d pedidos · %.0f s" % (i, len(P), n_el[0], n_ped[0], time.time() - t0), flush=True)
 out.close()
 print("FIM", col, "fatia", fatia, ":", n_el[0], "elementos,", n_ped[0], "pedidos, partes com mais de 9900:", grandes, flush=True)
+print("partes que a DGT não deu (ficam para a próxima volta):", len(falhadas), falhadas[:50], flush=True)
+if n_el[0] == 0 and falhadas: sys.exit(1)
