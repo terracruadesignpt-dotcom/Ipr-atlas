@@ -113,7 +113,7 @@
     h += '<div class="ef">' + FUNDOS.filter(function (f) { return C[f[0]]; }).map(function (f) {
       return '<button type="button" data-fundo="' + f[0] + '" aria-pressed="' + (on[f[0]] ? "true" : "false") + '">' + esc(t(f[1], f[2])) + "</button>"; }).join("") + "</div>";
     // Camadas da Base aberta (grupo «lidar» do catálogo): primeiro grupo, aberto. Nuno, 26/11/2026.
-    var BX = Object.keys(C).filter(function (i) { return C[i].g === "lidar"; }), bxo = {}; BX.forEach(function (i) { bxo[i] = 1; });
+    var BX = Object.keys(C).filter(function (i) { return C[i].g === "lidar" && /^l_/.test(i); }), bxo = {}; BX.forEach(function (i) { bxo[i] = 1; });
     if (BX.length) {
       var ba = (W.__ipe && W.__ipe.estado && W.__ipe.estado.actual) || {}, bn = String(ba.local || "").split(" · ")[0];
       var lgB = BX.filter(function (i) { return on[i]; }).length, abB = "base" in abertos ? abertos.base : true;
