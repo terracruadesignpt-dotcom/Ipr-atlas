@@ -30,6 +30,8 @@
   var A_SRAAC = "© SRAAC/GRA (Secretaria Regional do Ambiente e Ação Climática, Governo dos Açores) · " + CCBY;
   var A_RELEVO = "© SRAAC/GRA (relevo VRICON, 2012–2017) · " + CCBY;
   var A_DROTE = "© Direção Regional do Ordenamento do Território / Governo Regional da Madeira · " + CCBY;
+  var A_DROTE_C = "© Direção Regional do Ordenamento do Território / Governo Regional da Madeira · cópia IPR Atlas";
+  var MDPMT = "https://camadas.terracruadesign.pt/pmtiles/madeira/";
   var A_AEA = "© Agência Europeia do Ambiente (Natura 2000) · " + CCBY;
   function wms(base, camada) {
     return base + (base.indexOf("?") < 0 ? "?" : "&") + "service=WMS&version=1.3.0&request=GetMap&layers=" + encodeURIComponent(camada) +
@@ -96,7 +98,16 @@
     ] },
     { reg: "madeira", sub: t("Madeira e Porto Santo", "Madeira and Porto Santo"), itens: [
       { id: "ilh-md-cosram", nome: t("Ocupação do solo COSRAM 2018", "Land cover COSRAM 2018"), url: wms("https://geoservices.madeira.gov.pt/geoserver/LC_COSRAM_2018/wms", "LC.LandCoverSurfaces"), op: 0.6, min: 9, at: A_DROTE },
-      { id: "ilh-md-n2000", nome: t("Rede Natura 2000 (Agência Europeia do Ambiente)", "Natura 2000 (European Environment Agency)"), url: AEA, op: 0.7, min: 7, at: A_AEA }
+      { id: "ilh-md-n2000", nome: t("Rede Natura 2000 (Agência Europeia do Ambiente)", "Natura 2000 (European Environment Agency)"), url: AEA, op: 0.7, min: 7, at: A_AEA },
+      // 26/11/2026 (Nuno: «temos tudo o que é possível da Madeira, Porto Santo?»): cópia própria das camadas vectoriais da DROTe
+      // (fluxo dados-madeira, R2 pmtiles/madeira/). Condições nos serviços: «NONE» (sem restrições indicadas).
+      { id: "ilh-md-rib", nome: t("Ribeiras", "Streams"), pmt: ["md-Ribeiras"], g: "line", cor: "#2f7fc1", min: 8, at: A_DROTE_C },
+      { id: "ilh-md-bac", nome: t("Bacias hidrográficas (Madeira 2024 e Porto Santo)", "River basins (Madeira 2024 and Porto Santo)"), pmt: ["md-BaciasHidrograficas_Madeira_2024", "md-BaciasHidrograficas_PortoSanto"], g: "fill", cor: "#3a8fd0", min: 8, at: A_DROTE_C },
+      { id: "ilh-md-sub", nome: t("Massas de água subterrânea", "Groundwater bodies"), pmt: ["md-PTMDMC_MacicoCentral", "md-PTMDPS_PaulSerra", "md-PTMDC_Canical", "md-PTMDPS_PortoSanto"], g: "fill", cor: "#7a5fb0", min: 8, at: A_DROTE_C },
+      { id: "ilh-md-msup", nome: t("Massas de água superficiais e costeiras", "Surface and coastal water bodies"), pmt: ["md-AguasSuperficiaisTerrestres", "md-AguasSuperficiaisCosteiras"], g: "fill", cor: "#1f9fa8", min: 8, at: A_DROTE_C },
+      { id: "ilh-md-est", nome: t("Estações udométricas, meteorológicas, hidrométricas e de águas subterrâneas", "Rain, weather, river and groundwater stations"), pmt: ["md-EStacoesUdometricas_ARM", "md-EstacoesMeteorologicas_LREC", "md-RedeHidrometrica_ARM", "md-RedeHidrometrica_LREC", "md-MonitorizacaoAguasSubterraneas"], g: "circle", cor: "#0d5c91", min: 9, at: A_DROTE_C },
+      { id: "ilh-md-via", nome: t("Rede viária regional", "Regional road network"), pmt: ["md-TN_RedeVi_riaAMRAM"], g: "line", cor: "#8a6d3b", min: 10, at: A_DROTE_C },
+      { id: "ilh-md-ap", nome: t("Áreas protegidas (DROTe)", "Protected areas (DROTe)"), pmt: ["md-PS_AreasProtegidas"], g: "fill", cor: "#3f8f3f", min: 8, at: A_DROTE_C }
     ] }
   ];
   // Legenda do próprio serviço (WMS GetLegendGraphic) para as camadas WMS; a Natura 2000 da AEA é ArcGIS (legenda simples).
@@ -124,6 +135,7 @@
   function ligar(x) {
     var it = x.it, cx = REG[x.reg].cx, I = mapa(); if (!I || !I.getStyle) return;
     if (I.style ? I.style._loaded === false : (I.isStyleLoaded && !I.isStyleLoaded())) { if (I.once) I.once("styledata", function () { setTimeout(function () { if (ligados[it.id]) ligar(x); }, 0); }); return; }
+    if (it.pmt) return ligarPmt(it, I);
     var partes = it.partes ? it.partes.map(function (p, i) { return { id: it.id + "-" + i, url: p.url, cx: p.cx }; }) : [{ id: it.id, url: it.url, cx: cx }];
     var pos = antes(I, it.fundo);
     // Ortofotomapas por baixo das outras camadas das ilhas, para não as tapar
@@ -135,8 +147,36 @@
       } catch (e) { if (W.console) console.warn("[ilhas-camadas]", p.id, e && e.message); }
     });
   }
+  // Camadas vectoriais (PMTiles no R2): o protocolo pmtiles pode já estar registado pelo dgt-proprio.js; se não, regista-se aqui.
+  var PMTJS = "https://cdn.jsdelivr.net/npm/pmtiles@3.2.1/dist/pmtiles.js", pmtOk = false, pmtEspera = [];
+  function comPmt(fn) {
+    if (pmtOk) return fn();
+    pmtEspera.push(fn); if (pmtEspera.length > 1) return;
+    function reg() { try { if (!W.__iprPmtProto) { W.__iprPmtProto = new W.pmtiles.Protocol(); W.maplibregl.addProtocol("pmtiles", W.__iprPmtProto.tile); } } catch (e) {} pmtOk = true; var l = pmtEspera; pmtEspera = []; l.forEach(function (f) { try { f(); } catch (e) {} }); }
+    if (W.pmtiles) return reg();
+    var sc = D.createElement("script"); sc.src = PMTJS; sc.onload = reg; sc.onerror = function () { pmtEspera = []; }; D.head.appendChild(sc);
+  }
+  function ligarPmt(it, I) {
+    comPmt(function () {
+      var pos = antes(I, false);
+      it.pmt.forEach(function (n, k) {
+        var id = it.id + "-" + k;
+        try {
+          if (!I.getSource(id)) I.addSource(id, { type: "vector", url: "pmtiles://" + MDPMT + n + ".pmtiles", attribution: it.at });
+          if (I.getLayer(id)) return;
+          if (it.g === "line") I.addLayer({ id: id, type: "line", source: id, "source-layer": n, minzoom: it.min, paint: { "line-color": it.cor, "line-width": ["interpolate", ["linear"], ["zoom"], 9, 0.8, 15, 2.4], "line-opacity": 0.9 } }, pos);
+          else if (it.g === "circle") I.addLayer({ id: id, type: "circle", source: id, "source-layer": n, minzoom: it.min, paint: { "circle-color": it.cor, "circle-radius": 4, "circle-stroke-color": "#fff", "circle-stroke-width": 1 } }, pos);
+          else {
+            I.addLayer({ id: id, type: "fill", source: id, "source-layer": n, minzoom: it.min, paint: { "fill-color": it.cor, "fill-opacity": 0.18 } }, pos);
+            I.addLayer({ id: id + "-l", type: "line", source: id, "source-layer": n, minzoom: it.min, paint: { "line-color": it.cor, "line-width": 1.2, "line-opacity": 0.85 } }, pos);
+          }
+        } catch (e) { if (W.console) console.warn("[ilhas-camadas]", id, e && e.message); }
+      });
+    });
+  }
   function desligar(x) {
     var it = x.it, I = mapa(); if (!I || !I.getLayer) return;
+    if (it.pmt) { it.pmt.forEach(function (n, k) { var id = it.id + "-" + k; [id + "-l", id].forEach(function (l) { try { if (I.getLayer(l)) I.removeLayer(l); } catch (e) {} }); try { if (I.getSource(id)) I.removeSource(id); } catch (e) {} }); return; }
     var ids = it.partes ? it.partes.map(function (p, i) { return it.id + "-" + i; }) : [it.id];
     ids.forEach(function (id) {
       try { if (I.getLayer(id)) I.removeLayer(id); } catch (e) {}
