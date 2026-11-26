@@ -93,7 +93,7 @@
     "#ipr-eng-off{margin:0 0 8px;font:12px Inter,system-ui,sans-serif}#ipr-eng-off button{background:none;border:0;color:var(--ac,#94BE39);text-decoration:underline;cursor:pointer;font:inherit;padding:0}" +
     /* 26/11, 18h30: fora de Portugal o essencial mostra o grupo do país (#tfr, #tes, #teu, que já se escondem sozinhos
        quando o mapa sai desse país) e esconde os grupos portugueses. */
-    "html.ipr-pais-ext #ipe-cam.ipr-eng-on>#tfr:not([hidden]),html.ipr-pais-ext #ipe-cam.ipr-eng-on>#tes:not([hidden]),html.ipr-pais-ext #ipe-cam.ipr-eng-on>#teu:not([hidden]){display:block!important}" +
+    "html.ipr-pais-ext #ipe-cam.ipr-eng-on>#tfr#tfr#tfr:not([hidden]),html.ipr-pais-ext #ipe-cam.ipr-eng-on>#tes#tes#tes:not([hidden]),html.ipr-pais-ext #ipe-cam.ipr-eng-on>#teu#teu#teu:not([hidden]){display:block!important}html.ipr-pais-ext #ipe-cam.ipr-eng-on>#ipr-expro#ipr-expro#ipr-expro,html.ipr-pais-ext #ipe-cam.ipr-eng-on>#ipr-pdmc#ipr-pdmc#ipr-pdmc{display:none!important}" +
     "#ipr-eng .eo{flex:0 0 100%;display:flex;align-items:center;gap:6px;margin:0 0 2px 22px;font-size:11px;color:var(--mu,#9a9e8a)}#ipr-eng .eo input{flex:1 1 auto;min-width:60px;max-width:150px;height:14px;accent-color:var(--ac,#94BE39)}#ipr-eng .eo b{font-weight:500;min-width:30px;text-align:right}";
   function nome(x) { return String((en() && x.en) || x.n || x.id); }
   // «i» em todas as camadas do essencial: o que é, fonte e licença (Nuno, 26/11/2026, 16h08: «Em todas as camadas de
