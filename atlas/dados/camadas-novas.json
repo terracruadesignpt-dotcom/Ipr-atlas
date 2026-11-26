@@ -1,0 +1,14 @@
+{
+  "nota": "Camadas novas do IPR Atlas, para o aviso às organizações (m94011). Acrescentar uma entrada sempre que entra uma camada nova. ambito: continente, madeira, acores, pais:pt, pais:es, distrito:DD, dico:DDDD. data: AAAA-MM-DD. Terracrua Design.",
+  "camadas": [
+    { "id": "ilh-md-rib", "nome": "Ribeiras", "grupo": "Água", "fonte": "DROTe, Governo Regional da Madeira", "ambito": ["madeira"], "data": "2026-11-26" },
+    { "id": "ilh-md-bac", "nome": "Bacias hidrográficas (Madeira 2024 e Porto Santo)", "grupo": "Água", "fonte": "DROTe, Governo Regional da Madeira", "ambito": ["madeira"], "data": "2026-11-26" },
+    { "id": "ilh-md-sub", "nome": "Massas de água subterrânea", "grupo": "Água", "fonte": "DROTe, Governo Regional da Madeira", "ambito": ["madeira"], "data": "2026-11-26" },
+    { "id": "ilh-md-msup", "nome": "Massas de água superficiais e costeiras", "grupo": "Água", "fonte": "DROTe, Governo Regional da Madeira", "ambito": ["madeira"], "data": "2026-11-26" },
+    { "id": "ilh-md-est", "nome": "Estações udométricas, meteorológicas, hidrométricas e de águas subterrâneas", "grupo": "Água", "fonte": "DROTe, Governo Regional da Madeira", "ambito": ["madeira"], "data": "2026-11-26" },
+    { "id": "ilh-md-via", "nome": "Rede viária regional", "grupo": "Infraestruturas", "fonte": "DROTe, Governo Regional da Madeira", "ambito": ["madeira"], "data": "2026-11-26" },
+    { "id": "ilh-md-ap", "nome": "Áreas protegidas", "grupo": "Natureza", "fonte": "DROTe, Governo Regional da Madeira", "ambito": ["madeira"], "data": "2026-11-26" },
+    { "id": "ovar-cm", "nome": "Dados abertos da Câmara: ordenamento, condicionantes, património, gestão urbanística, grandes obras e limites", "grupo": "Município de Ovar", "fonte": "Câmara Municipal de Ovar", "ambito": ["dico:0115"], "data": "2026-11-26" },
+    { "id": "nt1126-agua-vias", "nome": "Troços de linhas de água sobre ruas (a tracejado)", "grupo": "Água", "fonte": "IPR Atlas", "ambito": ["continente"], "data": "2026-11-26" }
+  ]
+}
