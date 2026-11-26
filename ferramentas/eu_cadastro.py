@@ -8,16 +8,27 @@ Basco e Navarra têm cadastro próprio e ficam de fora). Cada ficheiro acabado (
 PMTiles próprio, é publicado e copiado para o R2 (EU_ENTREGAR=1): um PMTiles do país inteiro passaria dos 2 GB que as
 versões do GitHub aceitam, e assim um corte a meio não deita fora o que já ficou pronto.
 Uso: eu_cadastro.py <pais> <fatia> <n_fatias> <saida>"""
-import gzip, json, os, re, shutil, subprocess, sys, time, urllib.request
+import gzip, json, os, re, shutil, subprocess, sys, time, urllib.parse, urllib.request, zipfile
+INICIO = time.time()
+# 26/11/2026, 19h50: o GitHub corta cada fatia aos 350 min. Pára antes (EU_LIMITE_S, 5 h 20 min por omissão), entrega o que
+# já tem e o resto faz-se na corrida seguinte (as províncias já publicadas são saltadas).
+LIMITE = float(os.environ.get("EU_LIMITE_S", "19200"))
+def tempo_acabou(): return time.time() - INICIO > LIMITE
 pais, fatia, nf, saida = sys.argv[1], int(sys.argv[2]), int(sys.argv[3]), sys.argv[4]
 os.makedirs(saida, exist_ok=True); T = os.environ.get("RUNNER_TEMP", "/tmp") + "/eu"; os.makedirs(T, exist_ok=True)
 UA = {"User-Agent": "IPR-Atlas/1.0 (terracruadesign.pt; dados abertos)"}
 def baixar(u, f, tent=0):
+    # 26/11, 19h50: os nomes dos municípios do Catastro têm espaços e acentos («07015-CIUTADELLA DE MENORCA»); o urllib recusava
+    # o endereço e cada recusa gastava 5 min em tentativas. O caminho passa a ir codificado e um endereço inválido não se repete.
+    u = urllib.parse.quote(u, safe=":/?&=%#+,;@~")
     try:
         with urllib.request.urlopen(urllib.request.Request(u, headers=UA), timeout=600) as r, open(f, "wb") as o: shutil.copyfileobj(r, o, 1 << 20)
         return True
+    except (ValueError, urllib.error.HTTPError) as e:
+        if isinstance(e, urllib.error.HTTPError) and e.code >= 500 and tent < 2: time.sleep(15 * (tent + 1)); return baixar(u, f, tent + 1)
+        print("falhou", u, e, flush=True); return False
     except Exception as e:
-        if tent < 5: time.sleep(20 * (tent + 1)); return baixar(u, f, tent + 1)
+        if tent < 3: time.sleep(15 * (tent + 1)); return baixar(u, f, tent + 1)
         print("falhou", u, e, flush=True); return False
 def entregar(g):
     """Faz o PMTiles de um ficheiro acabado, publica-o na versão eu-<pais>-pmtiles e pede a cópia para o R2."""
@@ -117,20 +128,37 @@ elif pais == "es":
     BASE = "https://www.catastro.hacienda.gob.es/INSPIRE/CadastralParcels/"
     provs = sorted(set(re.findall(r'(https?://[^"<>]+ES\.SDGC\.CP\.atom_\d+\.xml)', texto(BASE + "ES.SDGC.CP.atom.xml"))))
     print("es", len(provs), "províncias no ATOM", flush=True)
+    # 26/11, 19h50: retoma; as províncias já publicadas em eu-es-pmtiles saltam-se. EU_ES_PROVS limita a uma lista (ex.: "07,15").
+    feitas = set(re.findall(r"eu-es-(\d+)-cadastro\.pmtiles", subprocess.run(["gh", "release", "view", "eu-es-pmtiles", "-R",
+                 os.environ.get("GITHUB_REPOSITORY", ""), "--json", "assets", "-q", ".assets[].name"], capture_output=True, text=True).stdout))
+    so = [x.strip() for x in os.environ.get("EU_ES_PROVS", "").split(",") if x.strip()]
+    provs = [p for p in provs if re.search(r"atom_(\d+)\.xml", p).group(1) not in feitas and (not so or re.search(r"atom_(\d+)\.xml", p).group(1) in so)]
+    print("es", len(provs), "por fazer (já feitas:", sorted(feitas), ")", flush=True)
     for pf in provs[fatia::nf]:
+        if tempo_acabou(): print("es: tempo acabou, fica para a próxima corrida", flush=True); break
         cod = re.search(r"atom_(\d+)\.xml", pf).group(1)
         try: zs = sorted(set(z.replace("&amp;", "&") for z in re.findall(r'(https?://[^"<>]+\.zip)', texto(pf))))
         except Exception as e: print("es província", cod, e, flush=True); continue
         out = os.path.join(saida, "es-%s.geojsons" % cod); print("es", cod, len(zs), "municípios", flush=True)
+        parcial = False
         for i, u in enumerate(zs):
+            if tempo_acabou(): parcial = True; print("es", cod, "tempo acabou em", i, "/", len(zs), flush=True); break
             z = os.path.join(T, "m.zip")
-            if not baixar(u.replace("http://", "https://"), z) and not baixar(u, z): continue
-            tmp = os.path.join(T, "m.geojsons"); ogr("/vsizip/" + z, tmp, ("-select", "nationalCadastralReference,areaValue", "CadastralParcel"))
+            if not baixar(u.replace("http://", "https://"), z): continue
+            # 26/11: o zip traz vários GML; abre-se o das parcelas (cadastralparcel), não o zip inteiro.
+            try: nomes = zipfile.ZipFile(z).namelist()
+            except Exception as e: print("zip", u, e, flush=True); os.remove(z); continue
+            gml = [n for n in nomes if n.lower().endswith(".gml") and "cadastralparcel" in n.lower()] or [n for n in nomes if n.lower().endswith(".gml")]
+            if not gml: os.remove(z); continue
+            tmp = os.path.join(T, "m.geojsons"); ogr("/vsizip/" + z + "/" + gml[0], tmp, ("-select", "nationalCadastralReference,areaValue"))
             if os.path.exists(tmp):
                 with open(out, "a") as o, open(tmp) as s2: shutil.copyfileobj(s2, o)
                 os.remove(tmp)
             os.remove(z)
-            if i % 100 == 0: print("es", cod, i, "/", len(zs), flush=True)
+            if i % 25 == 0: print("es", cod, i, "/", len(zs), round((time.time() - INICIO) / 60), "min", flush=True)
+        if parcial and os.path.exists(out):   # meia província: fica com nome próprio e a província não conta como feita
+            q = out.replace("es-%s.geojsons" % cod, "es-%sp%d.geojsons" % (cod, int(time.time()))); os.rename(out, q); out = q
         entregar(out)
+        if tempo_acabou(): break
 for g in [os.path.join(saida, f) for f in os.listdir(saida) if f.endswith(".geojsons")]: entregar(g)
 print("FIM", pais, fatia, os.listdir(saida), flush=True)
