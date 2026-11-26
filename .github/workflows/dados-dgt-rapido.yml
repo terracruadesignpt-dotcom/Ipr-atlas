@@ -8,6 +8,8 @@ on:
     inputs:
       cols: { description: "colecções (vírgulas)", default: "cadastro,cos2025v1,cos2018v4,srup_perigosidade_inc_rural,cos2018v3,altimetria_curvas_nivel,altimetria_pontos" }
       fatias: { description: "fatias por colecção", default: "8" }
+      freg: { description: "só estas freguesias (DICOFRE, vírgulas), partidas em quadrículas dentro da freguesia", default: "" }
+      juntar: { description: "id de um run anterior cujas fatias se juntam antes do PMTiles", default: "" }
 permissions:
   contents: write
 jobs:
@@ -23,7 +25,8 @@ jobs:
           import json
           cols = [c.strip() for c in "${{ github.event.inputs.cols }}".split(",") if c.strip()]
           n = int("${{ github.event.inputs.fatias }}")
-          m = [{"col": c, "modo": "freguesias" if c == "cadastro" else "grelha", "i": i, "n": n} for c in cols for i in range(n)]
+          fr = "${{ github.event.inputs.freg }}".strip()
+          m = [{"col": c, "modo": "fregbbox" if fr else ("freguesias" if c == "cadastro" else "grelha"), "i": i, "n": n} for c in cols for i in range(n)]
           print("m=" + json.dumps({"include": m}))
           print("c=" + json.dumps(cols))
           PY
@@ -37,7 +40,8 @@ jobs:
       matrix: ${{ fromJson(needs.plano.outputs.m) }}
     steps:
       - uses: actions/checkout@v4
-      - run: python3 ferramentas/dgt_partes_gh.py ${{ matrix.col }} ${{ matrix.modo }} ${{ matrix.i }} ${{ matrix.n }} parte.geojsons && gzip -1 parte.geojsons && ls -la
+      - env: { DGT_FREG: "${{ github.event.inputs.freg }}" }
+        run: python3 ferramentas/dgt_partes_gh.py ${{ matrix.col }} ${{ matrix.modo }} ${{ matrix.i }} ${{ matrix.n }} parte.geojsons && gzip -1 parte.geojsons && ls -la
       - uses: actions/upload-artifact@v4
         with: { name: "${{ matrix.col }}-${{ matrix.i }}", path: parte.geojsons.gz, retention-days: 5 }
   pmtiles:
@@ -52,6 +56,12 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with: { pattern: "${{ matrix.col }}-*", path: /tmp/p }
+      - name: Juntar fatias de um run anterior
+        if: ${{ github.event.inputs.juntar != '' }}
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          gh run download ${{ github.event.inputs.juntar }} -R "$GITHUB_REPOSITORY" -p "${{ matrix.col }}-*" -D /tmp/pa
+          for d in /tmp/pa/*/; do mv "$d" "/tmp/p/ant-$(basename $d)"; done; ls /tmp/p
       - name: Ferramentas
         run: |
           sudo apt-get update -qq
@@ -89,7 +99,7 @@ jobs:
           cd /mnt/d; C=${{ matrix.col }}
           # 26/11/2026: se faltar alguma fatia (cortada ou falhada), não se escreve por cima de uma cópia completa que já exista.
           F=$(ls -d /tmp/p/*/ 2>/dev/null | wc -l); N=${{ github.event.inputs.fatias || 8 }}
-          if [ "$F" -lt "$N" ] && gh release view dgt-pmtiles --repo "$GITHUB_REPOSITORY" --json assets -q '.assets[].name' | grep -qx "$C.pmtiles"; then
+          if [ -z "${{ github.event.inputs.juntar }}" ] && [ "$F" -lt "$N" ] && gh release view dgt-pmtiles --repo "$GITHUB_REPOSITORY" --json assets -q '.assets[].name' | grep -qx "$C.pmtiles"; then
             echo "só $F de $N fatias: fica a cópia anterior de $C"; exit 0
           fi
           gh release view dgt-pmtiles --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1 || gh release create dgt-pmtiles --repo "$GITHUB_REPOSITORY" --title "Colecções da DGT em PMTiles (CC BY 4.0)" --notes "Cópia IPR Atlas" || true

@@ -25,7 +25,39 @@ def pedir(u, tent=0):
     except Exception:
         if tent < 6: time.sleep(min(120, 10 * (tent + 1))); return pedir(u, tent + 1)
         raise
+TODAS = []
+def caixa(fr):
+    """Rectângulo envolvente de uma freguesia (colecção freguesias da DGT)."""
+    j = pedir(OGC + "freguesias/items?f=json&limit=5&dtmnfr=" + fr)
+    fs = [f for f in j.get("features", []) if str(f.get("properties", {}).get("dtmnfr")) == fr]
+    if not fs:  # o filtro por propriedade não é aceite: percorre a colecção toda uma vez
+        if not TODAS:
+            for o in range(0, 9000, 100):
+                k = pedir(OGC + "freguesias/items?f=json&limit=100&offset=%d" % o).get("features", [])
+                TODAS.extend(k)
+                if len(k) < 100: break
+        fs = [f for f in TODAS if str(f.get("properties", {}).get("dtmnfr")) == fr]
+    xs, ys = [], []
+    def anda(c):
+        if c and isinstance(c[0], (int, float)): xs.append(c[0]); ys.append(c[1])
+        else:
+            for k in c: anda(k)
+    for f in fs: anda(f["geometry"]["coordinates"])
+    return (min(xs), min(ys), max(xs), max(ys)) if xs else None
 def partes():
+    if modo == "fregbbox":
+        # 26/11/2026: freguesias com mais de 9900 parcelas (a DGT recusa offset >= 10000). Cada uma parte-se em quadrículas
+        # de 0,02° dentro da freguesia (administrativeunit + bbox); a parte() volta a partir em 4 se ainda passar de 9900.
+        l = []
+        for fr in sorted(set(x.strip() for x in os.environ.get("DGT_FREG", "").split(",") if x.strip())):
+            b = caixa(fr)
+            if not b: print("freguesia sem geometria:", fr, flush=True); continue
+            x = b[0]
+            while x < b[2]:
+                y = b[1]
+                while y < b[3]: l.append("%s|%.4f,%.4f,%.4f,%.4f" % (fr, x, y, x + 0.02, y + 0.02)); y += 0.02
+                x += 0.02
+        return l
     if modo == "freguesias":
         l = []
         for o in range(0, 9000, 100):
@@ -54,22 +86,26 @@ def parte(p):
     try:
         return parte1(p)
     except Exception as e:  # noqa: BLE001
-        if modo == "grelha":
-            x0, y0, x1, y1 = [float(v) for v in p.split(",")]
-            if x1 - x0 > 0.013:
+        if modo in ("grelha", "fregbbox"):
+            pre, _, bb = p.rpartition("|"); pre = pre + "|" if pre else ""
+            x0, y0, x1, y1 = [float(v) for v in bb.split(",")]
+            if x1 - x0 > (0.0024 if modo == "fregbbox" else 0.013):
                 h, g = (x1 - x0) / 2, False
                 for a in (x0, x0 + h):
                     for b in (y0, y0 + h):
-                        g = parte(",".join("%.4f" % v for v in (a, b, a + h, b + h)))[1] or g
+                        g = parte(pre + ",".join("%.4f" % v for v in (a, b, a + h, b + h)))[1] or g
                 return p, g
         with trinco: falhadas.append(p)
         print("parte falhada:", p, str(e)[:80], flush=True)
         return p, False
 def parte1(p):
-    q = ("administrativeunit=" if modo == "freguesias" else "bbox=") + p
+    if modo == "fregbbox": fr, bb = p.split("|"); q = "administrativeunit=%s&bbox=%s" % (fr, bb)
+    else: q = ("administrativeunit=" if modo == "freguesias" else "bbox=") + p
     off, grandes = 0, False
     while True:
-        if off >= 9900: grandes = True; break
+        if off >= 9900:
+            if modo == "fregbbox": raise RuntimeError("mais de 9900")  # parte() parte em 4
+            grandes = True; break
         if time.time() - T0 > LIMITE:
             with trinco: por_fazer.append(p)
             break
