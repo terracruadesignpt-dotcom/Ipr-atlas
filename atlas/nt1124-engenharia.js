@@ -90,7 +90,11 @@
     "#ipr-eng summary span.n{margin-left:auto;color:var(--ac,#94BE39);font-weight:600;font-size:12px}" +
     "#ipr-eng label{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:flex-start;margin:3px 0 3px 14px;cursor:pointer}#ipr-eng label>span{flex:1 1 0;min-width:0;overflow-wrap:anywhere}#ipr-eng label input{flex:none;margin-top:3px}#ipr-eng label.bl{opacity:.55;cursor:default}" +
     "#ipr-eng label small{flex:none;white-space:nowrap;color:var(--mu,#9a9e8a);margin-left:auto;font-size:11px;padding-top:2px}#ipr-eng .ev{color:var(--mu,#9a9e8a);font-size:12px;margin-top:8px}#ipr-eng .es{color:var(--mu,#9a9e8a);font-size:12px;margin:-2px 0 8px}" +
-    "#ipr-eng-off{margin:0 0 8px;font:12px Inter,system-ui,sans-serif}#ipr-eng-off button{background:none;border:0;color:var(--ac,#94BE39);text-decoration:underline;cursor:pointer;font:inherit;padding:0}";
+    "#ipr-eng-off{margin:0 0 8px;font:12px Inter,system-ui,sans-serif}#ipr-eng-off button{background:none;border:0;color:var(--ac,#94BE39);text-decoration:underline;cursor:pointer;font:inherit;padding:0}" +
+    /* 26/11, 18h30: fora de Portugal o essencial mostra o grupo do país (#tfr, #tes, #teu, que já se escondem sozinhos
+       quando o mapa sai desse país) e esconde os grupos portugueses. */
+    "html.ipr-pais-ext #ipe-cam.ipr-eng-on>#tfr:not([hidden]),html.ipr-pais-ext #ipe-cam.ipr-eng-on>#tes:not([hidden]),html.ipr-pais-ext #ipe-cam.ipr-eng-on>#teu:not([hidden]){display:block!important}" +
+    "#ipr-eng .eo{flex:0 0 100%;display:flex;align-items:center;gap:6px;margin:0 0 2px 22px;font-size:11px;color:var(--mu,#9a9e8a)}#ipr-eng .eo input{flex:1 1 auto;min-width:60px;max-width:150px;height:14px;accent-color:var(--ac,#94BE39)}#ipr-eng .eo b{font-weight:500;min-width:30px;text-align:right}";
   function nome(x) { return String((en() && x.en) || x.n || x.id); }
   // «i» em todas as camadas do essencial: o que é, fonte e licença (Nuno, 26/11/2026, 16h08: «Em todas as camadas de
   // informação tem que ter o i a dizer onde é que vem [...] inclusive no essencial»).
@@ -155,8 +159,17 @@
       var ba = ba0 || {}, bn = String(ba.local || "").split(" · ")[0];
       var lgB = BX.filter(function (i) { return on[i]; }).length, abB = "base" in abertos ? abertos.base : true;
       h += '<details data-g="base"' + (abB ? " open" : "") + "><summary>" + esc(t("Esta Base", "This Base") + (bn ? " · " + bn : "")) + (lgB ? '<span class="n">' + lgB + "</span>" : "") + "</summary>";
-      BX.forEach(function (i) { h += '<label><input type="checkbox" data-cam="' + esc(i) + '"' + (on[i] ? " checked" : "") + "> <span>" + esc(nome(C[i])) + "</span>" + bi(i) + "</label>"; });
+      BX.forEach(function (i) {
+        h += '<label><input type="checkbox" data-cam="' + esc(i) + '"' + (on[i] ? " checked" : "") + "> <span>" + esc(nome(C[i])) + "</span>" + bi(i);
+        if (on[i]) { var o = opac(i); h += '<span class="eo" title="' + t("Transparência", "Transparency") + '">' + t("Opacidade", "Opacity") + ' <input type="range" min="0" max="100" step="5" value="' + o + '" data-op="' + esc(i) + '" aria-label="' + t("Opacidade de ", "Opacity of ") + esc(nome(C[i])) + '"><b>' + o + " %</b></span>"; }
+        h += "</label>";
+      });
       h += "</details>";
+    }
+    if (fora()) {
+      h += '<div class="ev">' + t("Fora de Portugal: abaixo, as camadas oficiais deste país.", "Outside Portugal: below, this country's official layers.") + "</div>";
+      if (!box) { box = D.createElement("div"); box.id = "ipr-eng"; var r0 = D.getElementById("ipr-pdmc"); cam.insertBefore(box, r0 ? r0.nextSibling : cam.firstChild); ouvir(box); }
+      box.innerHTML = h; paisAbaixo(cam, box); return;
     }
     var aq = AQUI.filter(function (i) { return C[i]; }), pOn = pdmOn(), lgA = aq.filter(function (i) { return on[i]; }).length + (pOn ? 1 : 0);
     cam.classList.toggle("ipr-pdm-on", pOn);
@@ -188,7 +201,18 @@
     if (!box) {
       box = D.createElement("div"); box.id = "ipr-eng";
       var ref2 = D.getElementById("ipr-pdmc"); cam.insertBefore(box, ref2 ? ref2.nextSibling : cam.firstChild);
+      ouvir(box);
+    }
+    box.innerHTML = h;
+  }
+  function ouvir(box) {
+      box.addEventListener("input", function (e) {
+        var i = e.target.getAttribute && e.target.getAttribute("data-op"); if (!i) return;
+        OP[i] = +e.target.value; guardarOp(); aplicarOp(i);
+        var b = e.target.nextElementSibling; if (b) b.textContent = e.target.value + " %";
+      });
       box.addEventListener("change", function (e) {
+        if (e.target.hasAttribute("data-op")) return;
         if (e.target.hasAttribute("data-pdm")) {
           var P = pdm(); try { if (P) P.ligar(e.target.checked); } catch (er) {}
           var pd = D.getElementById("ipr-pdmc"); if (pd && e.target.checked) pd.open = true;
@@ -196,10 +220,52 @@
         }
         var i = e.target.getAttribute("data-cam"); if (!i) return;
         var z = viz(); try { if (z) z.ligar(i, e.target.checked); } catch (er) {}
-        setTimeout(pintar, 300);
+        setTimeout(pintar, 300); setTimeout(function () { aplicarOp(i); }, 400);
       });
-    }
-    box.innerHTML = h;
+  }
+  // ---------- país (26/11/2026, 18h30) ----------
+  // Nuno: «quando saio de Portugal [...] à esquerda as camadas automaticamente mudam de país». O m91589 marca o html com
+  // ipr-pais-ext fora de Portugal; os grupos #tfr, #tes e #teu mostram-se só no seu país.
+  function fora() { return D.documentElement.classList.contains("ipr-pais-ext"); }
+  function paisAbaixo(cam, box) {
+    ["tfr", "tes", "teu"].forEach(function (id) {
+      var g = D.getElementById(id); if (!g || g.hidden) return;
+      if (box.nextSibling !== g) cam.insertBefore(g, box.nextSibling);
+      if (!g.__iprAberto) { g.__iprAberto = 1; g.classList.add("aberto"); if (g.tagName === "DETAILS") g.open = true; }
+    });
+  }
+  // ---------- transparência das camadas da Base (26/11/2026, 18h29) ----------
+  // Nuno: «todas as camadas da base cartográfica podem [...] ter um nível de transparência». Uma régua por camada ligada;
+  // muda a opacidade das camadas do mapa com o prefixo iprv-<id>- e fica lembrada neste navegador (ipr_eng_op).
+  var OP = {}; try { OP = JSON.parse(W.localStorage.getItem("ipr_eng_op") || "{}") || {}; } catch (e) { OP = {}; }
+  function guardarOp() { try { W.localStorage.setItem("ipr_eng_op", JSON.stringify(OP)); } catch (e) {} }
+  var PROP = { raster: ["raster-opacity"], line: ["line-opacity"], fill: ["fill-opacity"], circle: ["circle-opacity", "circle-stroke-opacity"], symbol: ["text-opacity", "icon-opacity"], hillshade: ["hillshade-exaggeration"] };
+  function camadasDe(i) { var I = W.__ipe && W.__ipe.mapa; if (!I || !I.getStyle) return []; var p = "iprv-" + i + "-"; return ((I.getStyle() || {}).layers || []).filter(function (l) { return l.id.indexOf(p) === 0; }); }
+  function opac(i) {
+    if (OP[i] != null) return OP[i];
+    var I = W.__ipe && W.__ipe.mapa, L = camadasDe(i)[0]; if (!I || !L || !PROP[L.type] || L.type === "hillshade") return 100;
+    var v = I.getPaintProperty(L.id, PROP[L.type][0]); return typeof v === "number" ? Math.round(v * 100) : 100;
+  }
+  function aplicarOp(i) {
+    if (OP[i] == null) return;
+    var I = W.__ipe && W.__ipe.mapa; if (!I) return; var f = Math.max(0, Math.min(1, OP[i] / 100));
+    camadasDe(i).forEach(function (L) {
+      (PROP[L.type] || []).forEach(function (k) {
+        if (k === "hillshade-exaggeration") return;
+        try { if (I.getPaintProperty(L.id, k) !== f) I.setPaintProperty(L.id, k, f); } catch (e) {}
+      });
+    });
+  }
+  function aplicarTodas() { Object.keys(OP).forEach(aplicarOp); }
+  // Camadas da Base à vista no mapa mas desligadas na lista (Nuno, 18h27: «tenho as curvas não seleccionadas, mas aparecem
+  // no mapa»): o que está desligado esconde-se.
+  function esconderDesligadas() {
+    var I = W.__ipe && W.__ipe.mapa, C = cat(); if (!I || !I.getStyle) return;
+    var A = {}; activas().forEach(function (i) { A[i] = 1; });
+    Object.keys(C).forEach(function (i) {
+      if (C[i].g !== "lidar" || !/^l_/.test(i) || A[i]) return;
+      camadasDe(i).forEach(function (L) { try { if (I.getLayoutProperty(L.id, "visibility") !== "none") I.setLayoutProperty(L.id, "visibility", "none"); } catch (e) {} });
+    });
   }
   D.addEventListener("click", function (e) {
     var b = e.target.closest && e.target.closest("[data-eng],[data-fundo]"); if (!b || !b.closest("#ipe-cam")) return;
@@ -223,7 +289,9 @@
       // sincroniza as caixas com o que está ligado (só quando a lista está à vista)
       var box = D.getElementById("ipr-eng"); if (!box || !box.offsetParent) return;
       local();
-      var k = activas().join(",") + (pdmOn() ? "|p" : ""); if (k !== ult) { ult = k; pintar(); }
+      var k = activas().join(",") + (pdmOn() ? "|p" : "") + (fora() ? "|x" : ""); if (k !== ult) { ult = k; pintar(); setTimeout(aplicarTodas, 300); }
+      aplicarTodas(); esconderDesligadas();
+      if (fora()) paisAbaixo(D.getElementById("ipe-cam"), box);
     } catch (e) {}
   }, 1500);
   D.addEventListener("click", function (e) { if (e.target.closest && e.target.closest("#ipr-modos")) setTimeout(porAcc, 60); }, true);
