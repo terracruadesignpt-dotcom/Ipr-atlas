@@ -87,6 +87,11 @@ jobs:
         env: { GH_TOKEN: "${{ github.token }}" }
         run: |
           cd /mnt/d; C=${{ matrix.col }}
+          # 26/11/2026: se faltar alguma fatia (cortada ou falhada), não se escreve por cima de uma cópia completa que já exista.
+          F=$(ls -d /tmp/p/*/ 2>/dev/null | wc -l); N=${{ github.event.inputs.fatias || 8 }}
+          if [ "$F" -lt "$N" ] && gh release view dgt-pmtiles --repo "$GITHUB_REPOSITORY" --json assets -q '.assets[].name' | grep -qx "$C.pmtiles"; then
+            echo "só $F de $N fatias: fica a cópia anterior de $C"; exit 0
+          fi
           gh release view dgt-pmtiles --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1 || gh release create dgt-pmtiles --repo "$GITHUB_REPOSITORY" --title "Colecções da DGT em PMTiles (CC BY 4.0)" --notes "Cópia IPR Atlas" || true
           gh release upload dgt-pmtiles $C.pmtiles --repo "$GITHUB_REPOSITORY" --clobber
           sleep 20
