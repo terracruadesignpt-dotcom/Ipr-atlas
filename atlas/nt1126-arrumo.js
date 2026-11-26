@@ -91,19 +91,30 @@
     if (m.getLayoutProperty("ipr-c89-pnoa", "visibility") !== v) m.setLayoutProperty("ipr-c89-pnoa", "visibility", v);
   }
 
-  var ult = 0, pend = 0;
+  /* leve: corre no máximo de 1,5 em 1,5 s, só com a página visível e em tempo livre do navegador */
+  var pend = 0;
+  function corre() {
+    pend = 0;
+    if (D.hidden) return;
+    try { correr(); } catch (e) {}
+  }
   function agenda() {
     if (pend) return;
-    pend = setTimeout(function () { pend = 0; ult = Date.now(); try { correr(); } catch (e) {} try { pnoa(); } catch (e) {} }, Math.max(0, 250 - (Date.now() - ult)));
+    pend = 1;
+    var f = function () { (W.requestIdleCallback || function (cb) { return setTimeout(cb, 1); })(corre, { timeout: 2000 }); };
+    setTimeout(f, 300);
   }
   function arranca() {
     agenda();
     W.addEventListener("resize", agenda);
-    setInterval(agenda, 800);
+    setInterval(agenda, 1500);
     (function liga() {
       var m = W.IPR_MAPA || (W.__ipe && W.__ipe.mapa);
       if (!m || !m.on) { setTimeout(liga, 500); return; }
-      m.on("moveend", agenda); m.on("styledata", agenda);
+      var t = 0;
+      m.on("moveend", function () { clearTimeout(t); t = setTimeout(function () { try { pnoa(); } catch (e) {} }, 300); });
+      setTimeout(function () { try { pnoa(); } catch (e) {} }, 1500);
+      setInterval(function () { if (!D.hidden) try { pnoa(); } catch (e) {} }, 5000);
     })();
   }
   if (D.readyState === "loading") D.addEventListener("DOMContentLoaded", arranca); else arranca();
