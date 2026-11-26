@@ -525,7 +525,7 @@
       var co = r[3] && r[3][0]; h += "<dt>Uso do solo (COS 2023)</dt><dd>" + (co ? esc(co.cos23_n4_l || co.COS23_n4_L || co.legenda || co.designacao || JSON.stringify(co).slice(0, 60)) : r[3] ? "—" : "não respondeu") + "</dd>";
       h += "</dl>";
       if (vis.length) h += "<p class='nt'>Camadas ligadas neste ponto:</p><ul style='margin:4px 0 0 16px;padding:0'>" + vis.slice(0, 12).map(function (v) { return "<li>" + esc(v) + "</li>"; }).join("") + "</ul>";
-      h += "<p class='nt'>Fontes: DGT (CRUS, cadastro, COS 2023, CAOP) e relevo LiDAR/Copernicus. Informação indicativa; quem decide é a Câmara.</p>";
+      h += "<p class='nt'>Fontes: Direção-Geral do Território (DGT), CC BY 4.0 (CRUS, cadastro, COS 2023, CAOP, LiDAR) e Copernicus. Informação indicativa; quem decide é a Câmara.</p>";
       cartao("O que há aqui", h);
       AN.features = AN.features.filter(function (x) { return x.properties.k !== "aqui"; });
       AN.features.push({ type: "Feature", geometry: { type: "Point", coordinates: p }, properties: { k: "aqui" } }); pintar();
@@ -785,7 +785,7 @@
     box.id = "ipr-cmp"; hd.id = "ipr-cmp-h"; hd.innerHTML = "<b>‹ ›</b>"; lb.id = "ipr-cmp-l"; rb.id = "ipr-cmp-r"; rb.textContent = "Agora";
     lb.innerHTML = "<select aria-label='Ano da ortofoto'>" + ANOS.map(function (y) { return "<option>" + y + "</option>"; }).join("") + "</select><button type='button' aria-label='Fechar' title='Fechar'>×</button>";
     [box, hd, lb, rb].forEach(function (e) { ct.appendChild(e); });
-    var m2 = new W.maplibregl.Map({ container: box, style: { version: 8, sources: { o: { type: "raster", tiles: [wmsAno("2018")], tileSize: 256, attribution: "DGT" } }, layers: [{ id: "o", type: "raster", source: "o" }] },
+    var m2 = new W.maplibregl.Map({ container: box, style: { version: 8, sources: { o: { type: "raster", tiles: [wmsAno("2018")], tileSize: 256, attribution: "Fonte: Direção-Geral do Território (DGT), CC BY 4.0" } }, layers: [{ id: "o", type: "raster", source: "o" }] },
       center: M.getCenter(), zoom: M.getZoom(), bearing: M.getBearing(), pitch: M.getPitch(), interactive: false, attributionControl: false, fadeDuration: 0 });
     var pct = 50;
     function por() { box.style.clipPath = "inset(0 " + (100 - pct) + "% 0 0)"; hd.style.left = pct + "%"; lb.style.left = "max(12px, calc(" + pct + "% - " + (lb.offsetWidth + 14) + "px))"; rb.style.left = "calc(" + pct + "% + 14px)"; }

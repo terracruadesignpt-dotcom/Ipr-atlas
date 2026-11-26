@@ -197,7 +197,7 @@
       });
       h += "</details>";
     });
-    h += '<div class="ev">' + t("Fontes oficiais (DGT, APA, ICNF, câmaras). Informação de apoio: prevalece o publicado em Diário da República.", "Official sources (DGT, APA, ICNF, municipalities). Supporting information only.") + "</div>";
+    h += '<div class="ev">' + t("Fonte: Direção-Geral do Território (DGT), CC BY 4.0; também APA, ICNF e câmaras. Informação de apoio: prevalece o publicado em Diário da República.", "Source: Direção-Geral do Território (DGT), CC BY 4.0; also APA, ICNF and municipalities. Supporting information only.") + "</div>";
     if (!box) {
       box = D.createElement("div"); box.id = "ipr-eng";
       var ref2 = D.getElementById("ipr-pdmc"); cam.insertBefore(box, ref2 ? ref2.nextSibling : cam.firstChild);

@@ -86,7 +86,7 @@
       e.n = t("PDM · ordenamento IPR (todo o país)", "PDM · IPR zoning (whole country)");
       e.e = e.e || {}; e.e.tipo = "fill"; e.e.cor = corCrus(); e.e.linha = "#F4F1E6"; e.e.larg = ["interpolate", ["linear"], ["zoom"], 11, 0.2, 16, 0.8];
       e.op = 0.5; e.leg = legCrus(); e.cor = "#E6D26E";
-      e.fonte = "DGT · CRUS (Carta do Regime de Uso do Solo), CC BY 4.0 · cores IPR";
+      e.fonte = "Fonte: Direção-Geral do Território (DGT) · CRUS (Carta do Regime de Uso do Solo) · CC BY 4.0 · cores IPR";
       e.nota = t("Classe e categoria do solo de todos os PDM em vigor, com as categorias nacionais e as mesmas cores em todos os concelhos. Ao tocar num polígono vê-se o nome que o plano lhe dá. Indicativo: fazem fé as plantas publicadas em Diário da República.",
         "Land class and category of every PDM in force, with national categories and the same colours in every municipality. Indicative only.");
     }
@@ -209,7 +209,7 @@
   function urlPlanta(srv, nome) { return R2 + "pmtiles/snit/" + srv + "__" + nome + ".pmtiles"; }
   function urlLegenda(srv, nome) { return R2 + "snit/" + srv + "/" + nome + "/leg.png"; }
   function txtLigacoes() {
-    var l = [t("Plantas do PDM", "PDM plans") + " · " + (S.nome || S.dico) + " (" + S.dico + ")", t("Fonte: Câmara Municipal / DGT, SNIT. Cópia IPR Atlas. Informação indicativa.", "Source: Municipality / DGT, SNIT. Indicative."),
+    var l = [t("Plantas do PDM", "PDM plans") + " · " + (S.nome || S.dico) + " (" + S.dico + ")", t("Fonte: Câmara Municipal / Direção-Geral do Território (DGT), SNIT, CC BY 4.0. Cópia IPR Atlas. Informação indicativa.", "Source: Municipality / Direção-Geral do Território (DGT), SNIT, CC BY 4.0. Indicative."),
       t("PMTiles raster, EPSG:3857, zoom 12 a 16. Abre no QGIS 3.32+ (Camada › Adicionar camada raster) e no GDAL 3.8+.", "Raster PMTiles, EPSG:3857, zoom 12-16. Opens in QGIS 3.32+ and GDAL 3.8+."), ""];
     S.camadas.forEach(function (x) { l.push(x[1]); l.push(urlPlanta(S.srv, x[0])); l.push(urlLegenda(S.srv, x[0])); l.push(""); });
     var a = D.createElement("a"); a.href = URL.createObjectURL(new Blob([l.join("\r\n")], { type: "text/plain;charset=utf-8" }));
@@ -315,7 +315,7 @@
       var I2 = mapa(); if (!I2) return;
       try {
         I2.addSource(SRC, { type: "raster", url: "pmtiles://" + R2 + "pmtiles/snit/" + S.srv + "__" + S.escolhida + ".pmtiles", tileSize: 256,
-          attribution: "Plantas do PDM: Câmara Municipal / DGT · SNIT (cópia IPR)" });
+          attribution: "Plantas do PDM: Câmara Municipal / Direção-Geral do Território (DGT) · SNIT · CC BY 4.0 (cópia IPR)" });
         I2.addLayer({ id: LAY, type: "raster", source: SRC, minzoom: 10, paint: { "raster-opacity": S.op, "raster-resampling": "nearest" } });
       } catch (e) {}
     }).catch(function () { S.estado = t("Não foi possível carregar o leitor de mosaicos.", "Could not load the tile reader."); pintar(); });
@@ -354,7 +354,7 @@
       var co = crusLigada();
       h += '<label><input type="checkbox" data-pdmc="crus"' + (co ? " checked" : "") + "> <span>" + t("Ordenamento IPR · todo o país, mesmas cores", "IPR zoning · whole country, same colours") + "</span></label>";
       if (co) h += '<div class="lg">' + legCrus().map(function (x) { return '<span><i style="background:' + x[0] + '"></i>' + esc(x[1]) + "</span>"; }).join("") + "</div>" +
-        "<small>" + t("Fonte: CRUS da DGT (classes e categorias nacionais). Indicativo: fazem fé as plantas publicadas em Diário da República.", "Source: DGT CRUS. Indicative only.") + "</small>";
+        "<small>" + t("Fonte: Direção-Geral do Território (DGT), CRUS, CC BY 4.0 (classes e categorias nacionais). Indicativo: fazem fé as plantas publicadas em Diário da República.", "Source: Direção-Geral do Território (DGT), CRUS, CC BY 4.0. Indicative only.") + "</small>";
     }
     h += '<label><input type="checkbox" data-pdmc="on"' + (S.on ? " checked" : "") + "> <span>" + t("Plantas originais da câmara onde está o mapa (cores da câmara)", "Original municipal plans in view (municipality colours)") + "</span></label>";
     if (S.on) {
@@ -375,8 +375,8 @@
         if (!explorer()) h += '<button type="button" class="dlt" data-pdmc="txt">' + t("Descarregar todas as plantas deste concelho (lista de ligações)", "Download all plans of this municipality (link list)") + "</button>" +
           "<small>" + t("PMTiles abre no QGIS 3.32 ou mais recente. A lista traz as ligações de todas as plantas e legendas.", "PMTiles opens in QGIS 3.32+. The list has every link.") + "</small>";
         if (S.escolhida) h += '<img alt="' + esc(t("Legenda da planta", "Plan legend")) + '" src="' + esc(R2 + "snit/" + S.srv + "/" + S.escolhida + "/leg.png") + '" onerror="this.remove()">';
-        h += "<small>" + t("Fonte: Câmara Municipal, plantas do PDM publicadas no SNIT (DGT), copiadas pelo IPR. Informação indicativa: não substitui as plantas oficiais nem a consulta à câmara.",
-          "Source: Municipality, PDM plans published on SNIT (DGT), copied by IPR. Indicative only.") + "</small>";
+        h += "<small>" + t("Fonte: Câmara Municipal, plantas do PDM publicadas no SNIT (Fonte: Direção-Geral do Território (DGT), CC BY 4.0), copiadas pelo IPR. Informação indicativa: não substitui as plantas oficiais nem a consulta à câmara.",
+          "Source: Municipality, PDM plans published on SNIT (Source: Direção-Geral do Território (DGT), CC BY 4.0), copied by IPR. Indicative only.") + "</small>";
       }
     } else {
       h += "<small>" + t("Uma câmara de cada vez: ao ligar, aparecem só as plantas do concelho onde está o mapa, e mudam sozinhas quando muda de concelho.",

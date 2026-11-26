@@ -40,5 +40,20 @@
   }
   (function vez(n) { var a = false, b = false; try { a = aplicar(); b = atribuicao(); } catch (e) {} if (a && b) return; if (n < 200) setTimeout(function () { vez(n + 1); }, 200); })(0);
   setInterval(function () { try { aplicar(); atribuicao(); } catch (e) {} }, 5000);
-  W.__iprCitacaoDgt = { citar: citar, feitos: function () { return feitos; } };
+  // 26/11, 21h54 (Nuno: «avança com tudo»): também nos produtos. As exportações (imagem e PDF) escrevem «Fontes: DGT, ...» no
+  // canvas; aqui a menção curta passa a ser a pedida pela DGT, sem mexer no código de cada exportação.
+  function textoProd(t) {
+    if (typeof t !== "string" || t.indexOf(NOME) >= 0 || !/\bDGT\b/.test(t)) return t;
+    return t.replace(/\b(Fontes?|Sources?|Fuentes?)\s*:\s*DGT\b/, function (m, f) { return f + ": " + NOME + " (CC BY 4.0)"; });
+  }
+  try {
+    var C2 = W.CanvasRenderingContext2D && W.CanvasRenderingContext2D.prototype;
+    if (C2 && !C2.__iprCitDgt) {
+      C2.__iprCitDgt = 1;
+      var ft = C2.fillText, st = C2.strokeText;
+      C2.fillText = function (t) { arguments[0] = textoProd(t); return ft.apply(this, arguments); };
+      if (st) C2.strokeText = function (t) { arguments[0] = textoProd(t); return st.apply(this, arguments); };
+    }
+  } catch (e) {}
+  W.__iprCitacaoDgt = { citar: citar, texto: textoProd, feitos: function () { return feitos; } };
 })();
