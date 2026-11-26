@@ -217,6 +217,17 @@
     return true;
   }
   (function vez(n) { var a = false, b = false; try { a = bloco(); b = prender(); } catch (e) {} if (a && b) return; if (n < 200) setTimeout(function () { vez(n + 1); }, 150); })(0);
-  setInterval(function () { try { bloco(); } catch (e) {} }, 3000);
+  // Só aparece em Ovar (Nuno, 26/11/2026, 16h07: aparecia na organização do Atelier do Beco da Bela Vista): mapa sobre o
+  // concelho (zoom 9 ou mais), entidade Ovar aberta, ou alguma camada de Ovar ligada.
+  function aqui() {
+    var I = mapa(); if (!I) return false;
+    if (Object.keys(S.on).some(function (k) { return S.on[k]; })) return true;
+    var en = W.IPR_ENTIDADE && W.IPR_ENTIDADE.id; if (en && /ovar/i.test(String(en))) return true;
+    var c = I.getCenter(), m = 0.05;
+    return I.getZoom() >= 9 && c.lng > BBOX[0][0] - m && c.lng < BBOX[1][0] + m && c.lat > BBOX[0][1] - m && c.lat < BBOX[1][1] + m;
+  }
+  function mostrar() { var d = D.getElementById("ipr-ovar"); if (d) d.style.display = aqui() ? "" : "none"; }
+  var presoM = false;
+  setInterval(function () { try { bloco(); mostrar(); var I = mapa(); if (I && !presoM) { presoM = true; I.on("moveend", mostrar); } } catch (e) {} }, 1500);
   W.__iprOvar = { ligar: ligar, ir: ir, estado: function () { return { on: S.on, estado: S.estado }; }, catalogo: Object.keys(IDX) };
 })();
