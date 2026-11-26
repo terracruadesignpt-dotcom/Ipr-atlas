@@ -112,6 +112,15 @@
       '<div class="es">' + t("Selecção técnica de " + curta + " camadas para projecto. O Atlas tem " + total + ".", "A technical selection of " + curta + " layers for design work. The Atlas has " + total + ".") + "</div>";
     h += '<div class="ef">' + FUNDOS.filter(function (f) { return C[f[0]]; }).map(function (f) {
       return '<button type="button" data-fundo="' + f[0] + '" aria-pressed="' + (on[f[0]] ? "true" : "false") + '">' + esc(t(f[1], f[2])) + "</button>"; }).join("") + "</div>";
+    // Camadas da Base aberta (grupo «lidar» do catálogo): primeiro grupo, aberto. Nuno, 26/11/2026.
+    var BX = Object.keys(C).filter(function (i) { return C[i].g === "lidar"; }), bxo = {}; BX.forEach(function (i) { bxo[i] = 1; });
+    if (BX.length) {
+      var ba = (W.__ipe && W.__ipe.estado && W.__ipe.estado.actual) || {}, bn = String(ba.local || "").split(" · ")[0];
+      var lgB = BX.filter(function (i) { return on[i]; }).length, abB = "base" in abertos ? abertos.base : true;
+      h += '<details data-g="base"' + (abB ? " open" : "") + "><summary>" + esc(t("Esta Base", "This Base") + (bn ? " · " + bn : "")) + (lgB ? '<span class="n">' + lgB + "</span>" : "") + "</summary>";
+      BX.forEach(function (i) { h += '<label><input type="checkbox" data-cam="' + esc(i) + '"' + (on[i] ? " checked" : "") + "> <span>" + esc(nome(C[i])) + "</span></label>"; });
+      h += "</details>";
+    }
     var aq = AQUI.filter(function (i) { return C[i]; }), pOn = pdmOn(), lgA = aq.filter(function (i) { return on[i]; }).length + (pOn ? 1 : 0);
     cam.classList.toggle("ipr-pdm-on", pOn);
     var abA = "aqui" in abertos ? abertos.aqui : true;
@@ -128,7 +137,7 @@
     else if (LOC.np === 0) h += '<div class="es" style="margin:4px 0 0 14px">' + t("As plantas originais desta câmara ainda estão a ser copiadas. O ordenamento IPR já cobre o concelho.", "This municipality's original plans are still being copied. The IPR zoning already covers it.") + "</div>";
     h += "</details>";
     GRUPOS.forEach(function (g) {
-      var ids = g[3].filter(function (i) { return C[i]; }); if (!ids.length) return;
+      var ids = g[3].filter(function (i) { return C[i] && !bxo[i]; }); if (!ids.length) return;
       var lig = ids.filter(function (i) { return on[i]; }).length; n += ids.length;
       var ab = g[0] in abertos ? abertos[g[0]] : !!ABERTOS[g[0]];
       h += '<details data-g="' + g[0] + '"' + (ab ? " open" : "") + "><summary>" + esc(t(g[1], g[2])) + (lig ? '<span class="n">' + lig + "</span>" : "") + "</summary>";
