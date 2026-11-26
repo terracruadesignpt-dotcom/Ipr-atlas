@@ -1,0 +1,76 @@
+name: dados-cadastro-freg
+# Cadastro de Portugal: as 18 freguesias com mais de 9900 parcelas, copiadas pelo Worker ipr-cadastro-freg (Cloudflare), porque a
+# DGT passou a recusar o GitHub (26/11/2026, 403). Este fluxo só empurra o Worker (/volta, uma volta de 40 pedidos de cada vez)
+# e, no fim, junta as partes às 8 fatias de 25/11 (run 45622636454), refaz o cadastro.pmtiles e copia-o para o R2. Terracrua Design.
+on:
+  workflow_dispatch:
+    inputs:
+      juntar: { description: "run com as fatias antigas do cadastro", default: "45622636454" }
+permissions: { contents: write, actions: read }
+jobs:
+  puxar:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 345
+    steps:
+      - name: Empurrar o Worker até acabar
+        run: |
+          W=https://ipr-cadastro-freg.terracrua-ipr.workers.dev
+          b=0; t0=$(date +%s)
+          while [ $(( $(date +%s) - t0 )) -lt 20000 ]; do
+            r=$(curl -sS --max-time 120 "$W/volta" || echo '{}'); echo "$(date +%H:%M:%S) $r" | cut -c1-300
+            echo "$r" | grep -q '"fim":true' && exit 0
+            if echo "$r" | grep -q '"bloqueado":"'; then b=$((b+1)); else b=0; fi
+            [ $b -ge 20 ] && { echo "a DGT recusa também a Cloudflare"; exit 1; }
+            sleep 12
+          done
+          echo "tempo esgotado; voltar a lançar"; exit 1
+  juntar:
+    needs: puxar
+    runs-on: ubuntu-24.04
+    timeout-minutes: 300
+    steps:
+      - name: Ferramentas
+        run: |
+          sudo apt-get update -qq
+          if ! sudo apt-get install -y -qq tippecanoe; then
+            sudo apt-get install -y -qq build-essential libsqlite3-dev zlib1g-dev
+            git clone --depth 1 https://github.com/felt/tippecanoe.git /tmp/tc && make -C /tmp/tc -j4 && sudo make -C /tmp/tc install
+          fi
+          sudo mkdir -p /mnt/d && sudo chown $USER /mnt/d
+      - name: Fatias antigas e partes novas
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          gh run download ${{ github.event.inputs.juntar }} -R "$GITHUB_REPOSITORY" -p "cadastro-*" -D /mnt/d/ant
+          W=https://ipr-cadastro-freg.terracrua-ipr.workers.dev
+          N=$(curl -sS "$W/manifesto" | python3 -c 'import json,sys;print(json.load(sys.stdin)["partes"])'); echo "partes novas: $N"
+          mkdir -p /mnt/d/novo; seq 0 $((N-1)) | xargs -P 8 -I{} sh -c "curl -sS --retry 5 -o /mnt/d/novo/{}.json $W/p/{}"
+      - name: Juntar sem repetidos
+        run: |
+          python3 - <<'PY'
+          import glob, gzip, json
+          vistos, n, novos = set(), 0, 0
+          with open("/mnt/d/c.geojsons", "w") as o:
+              fontes = [("n", f) for f in glob.glob("/mnt/d/novo/*.json")] + [("a", f) for f in sorted(glob.glob("/mnt/d/ant/*/parte.geojsons.gz"))]
+              for tipo, f in fontes:
+                  fh = gzip.open(f, "rt") if f.endswith(".gz") else open(f)
+                  for l in fh:
+                      l = l.strip()
+                      if not l: continue
+                      try: k = json.loads(l).get("id")
+                      except Exception: continue
+                      if k is not None and k in vistos: continue
+                      if k is not None: vistos.add(k)
+                      o.write(l + "\n"); n += 1; novos += tipo == "n"
+          print("elementos:", n, "(das freguesias grandes:", novos, ")")
+          PY
+      - name: PMTiles, publicar e R2
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          cd /mnt/d; C=cadastro
+          for z in 14 13 12; do
+            tippecanoe -o $C.pmtiles -l $C -n "$C (DGT)" -A "DGT · $C · CC BY 4.0 · cópia IPR Atlas" -Z5 -z$z --coalesce-densest-as-needed --detect-shared-borders --simplify-only-low-zooms --extend-zooms-if-still-dropping --hilbert -P -t /mnt/d --force c.geojsons
+            S=$(stat -c %s $C.pmtiles); echo "z$z: $S"; [ $S -lt 500000000 ] && break
+          done
+          gh release upload dgt-pmtiles $C.pmtiles --repo "$GITHUB_REPOSITORY" --clobber
+          sleep 20
+          curl -sS --max-time 900 "https://ipr-copia-ficheiro.terracrua-ipr.workers.dev/?f=$C&ir=1" || true
