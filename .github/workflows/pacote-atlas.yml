@@ -1,0 +1,36 @@
+# IPR Atlas · refaz o pacote dos scripts quando o atlas.json do site muda (Terracrua Design, 26/11/2026).
+# O site (m14626) procura o pacote em @main/atlas/pacotes/pacote-<md5>.js; se ainda não existir, carrega os scripts um a um.
+name: pacote-atlas
+on:
+  schedule:
+    - cron: "7,27,47 * * * *"
+  workflow_dispatch:
+concurrency:
+  group: pacote-atlas
+  cancel-in-progress: false
+permissions:
+  contents: write
+jobs:
+  pacote:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm i -g terser@5
+      - id: p
+        run: python3 ferramentas/pacote.py
+      - if: steps.p.outputs.novo != ''
+        run: |
+          git config user.name "IPR Atlas (pacote)"
+          git config user.email "pacote@terracruadesign.pt"
+          git add atlas/pacotes
+          git commit -m "Pacote do Atlas refeito para a lista js actual do atlas.json"
+          for i in 1 2 3; do git pull --rebase -q origin main && git push -q origin HEAD:main && break; sleep 5; done
+          f="${{ steps.p.outputs.novo }}"
+          curl -s "https://purge.jsdelivr.net/gh/terracruadesignpt-dotcom/Ipr-atlas@main/$f" || true
+          curl -s "https://purge.jsdelivr.net/gh/terracruadesignpt-dotcom/Ipr-atlas@main" || true
