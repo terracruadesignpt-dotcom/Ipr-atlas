@@ -56,7 +56,7 @@ def r2(rel, nome):
     return False
 if pais == "r2":  # só copia para o R2 o que já está nas versões eu-<país>-pmtiles
     rp = os.environ.get("GITHUB_REPOSITORY", "")
-    for pp in os.environ.get("EU_PAISES", "es,fr,cz,nl,lu,at,be,it").split(","):
+    for pp in os.environ.get("EU_PAISES", "es,fr,cz,nl,lu,at,be,it,esf").split(","):
         rel = "eu-%s-pmtiles" % pp
         nomes = subprocess.run(["gh", "release", "view", rel, "-R", rp, "--json", "assets", "-q", ".assets[].name"], capture_output=True, text=True).stdout.split()
         print(rel, len(nomes), "ficheiros", flush=True)
@@ -205,6 +205,53 @@ elif pais == "be":
             c = camada("/vsizip/" + f); print("be camada", c, flush=True)
             ogr("/vsizip/" + f, os.path.join(saida, "be-%d.geojsons" % fatia), ((c,) if c else ()) + faixa(2.5, 6.45, 49.45, 51.55))
             os.remove(f)
+elif pais == "esf":
+    # 26/11/2026, 22h30 (Nuno: «Então e o cadastro do País Basco e Navarra? Vai lá buscar também.»). Territórios forais com
+    # cadastro próprio: Bizkaia, Gipuzkoa e Araba/Álava (ATOM INSPIRE das diputaciones forales) e Navarra (Hacienda Foral, CC BY 4.0).
+    # Cada território é uma fatia; segue o feed até aos zip/gml das parcelas, por município quando é assim que vêm.
+    FONTES = [("bi", "https://apli.bizkaia.eus/apps/Danok/INSPIRE/cadastralparcels.xml"),
+              ("ss", "https://b5m.gipuzkoa.eus/inspire/download/cadastralparcels.xml"),
+              ("vi", "https://geo.araba.eus/atom/ATOM.atom"),
+              ("na", "https://catastro.navarra.es/descargas/")]
+    def ligacoes(u):
+        t = texto(u); base = u.rsplit("/", 1)[0] + "/"
+        hs = [h.replace("&amp;", "&") for h in re.findall(r'href=["\']([^"\']+)["\']', t)]
+        return t, [h if h.startswith("http") else urllib.parse.urljoin(base, h) for h in hs]
+    def eparc(h): return re.search(r"parcel|cadastral|_cp[_.]|\.cp\.|catast_pol|parcela", h, re.I)
+    for cod, raiz in FONTES[fatia::nf]:
+        out = os.path.join(saida, "esf-%s.geojsons" % cod); vistos, fila, fich = set(), [raiz], []
+        while fila and len(vistos) < 400 and not tempo_acabou():
+            u = fila.pop(0)
+            if u in vistos: continue
+            vistos.add(u)
+            try: _, hs = ligacoes(u)
+            except Exception as e: print("esf", cod, u, e, flush=True); continue
+            for h in hs:
+                hl = h.lower().split("?")[0]
+                if hl.endswith((".zip", ".gml", ".gpkg")) and (eparc(h) or cod != "na"): fich.append(h)
+                elif (hl.endswith((".xml", ".atom")) or "atom" in hl) and h not in vistos and urllib.parse.urlparse(h).netloc == urllib.parse.urlparse(raiz).netloc \
+                        and (eparc(h) or u == raiz) and not re.search(r"opensearch|address|building|geographical|administrative|edific|direcc", h, re.I):
+                    fila.append(h)
+        fich = sorted(set(fich)); print("esf", cod, len(fich), "ficheiros", fich[:5], flush=True)
+        for i, u in enumerate(fich):
+            if tempo_acabou(): break
+            ext = u.lower().split("?")[0].rsplit(".", 1)[-1]; f = os.path.join(T, "f." + ext)
+            if not baixar(u, f): continue
+            src = f
+            if ext == "zip":
+                try: nomes = zipfile.ZipFile(f).namelist()
+                except Exception as e: print("zip", u, e, flush=True); os.remove(f); continue
+                cand = [n for n in nomes if n.lower().endswith((".gml", ".shp", ".gpkg"))]
+                cand = sorted(cand, key=lambda n: (not eparc(n), n))
+                if not cand: os.remove(f); continue
+                src = "/vsizip/" + f + "/" + cand[0]
+            c = camada(src); tmp = os.path.join(T, "f.geojsons"); ogr(src, tmp, ((c,) if c else ()) + ("-skipfailures",))
+            if os.path.exists(tmp):
+                with open(out, "a") as o, open(tmp) as s2: shutil.copyfileobj(s2, o)
+                os.remove(tmp)
+            os.remove(f)
+            if i % 20 == 0: print("esf", cod, i, "/", len(fich), flush=True)
+        entregar(out)
 elif pais == "it":
     f = os.path.join(T, "ITALIA.zip")
     if baixar("https://wfs.cartografia.agenziaentrate.gov.it/inspire/wfs/GetDataset.php?dataset=ITALIA.zip", f):
