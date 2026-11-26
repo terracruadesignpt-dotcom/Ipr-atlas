@@ -10,8 +10,8 @@
  */
 (function (W, D) {
   "use strict";
-  if (W.__iprArrumo) return;
-  W.__iprArrumo = 1;
+  if (W.__iprArrumo1126) return;
+  W.__iprArrumo1126 = 1;
   try { if (/[?&]arrumo=0\b/.test(W.location.search)) return; } catch (e) {}
 
   var GAP = 12;
