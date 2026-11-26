@@ -97,7 +97,9 @@
       b.addEventListener("click", function (e) {
         var x = e.target.closest("button"); if (!x) return;
         var pr = x.getAttribute("data-sep-p");
-        if (pr === "base") { var pe = pane("enc"); if (pe) { pe.classList.add("ipr-sep-base"); var fm = pe.querySelector("#ipe-form, #ipr-proc-sel"); if (fm) fm.scrollIntoView({ behavior: "smooth", block: "start" }); } return; }
+        // 26/11/2026, 16h06 (Nuno): na organização, «Ficha gratuita» não fazia nada (o separador de encomenda já é este).
+        // Passa a abrir o formulário de escolha do terreno, como a Base, e leva a ele.
+        if (pr === "base" || pr === "ficha") { var pe = pane("enc"); if (pe) { pe.classList.add("ipr-sep-base"); var fm = pe.querySelector("#ipe-form, #ipr-proc-sel"); if (fm) fm.scrollIntoView({ behavior: "smooth", block: "start" }); } return; }
         if (pr) { var o = D.querySelector('#ipr-be-topo [data-be-prod="' + pr + '"]'); if (o) clicar(o); return; }
         if (x.getAttribute("data-sep-a") === "terra") clicar($("ipr-pz-top"));
         var si = x.getAttribute("data-sep-s");
