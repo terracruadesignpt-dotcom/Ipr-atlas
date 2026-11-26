@@ -1855,8 +1855,12 @@ if (window.IPR_A2_DEMO) (function(){
         return vz;
       }).filter(Boolean);
       g.querySelectorAll(':scope > .tp-vz').forEach(function(v){ if (els.indexOf(v) === -1) v.remove(); });
-      var certo = els.length === g.children.length;
-      if (certo) els.forEach(function(e, i){ if (g.children[i] !== e) certo = false; });
+      /* 26/11 (diagnóstico do Atlas pendurado): compara só a ordem dos botões deste grupo. Outro script põe ali um botão
+         a mais («Árvores e edifícios»); antes isso dava sempre «errado» e os botões eram mexidos 1 vez por segundo, para sempre,
+         o que acordava os vigias de mudanças de outros scripts. */
+      var meus = [].filter.call(g.children, function(c){ return els.indexOf(c) !== -1; });
+      var certo = meus.length === els.length;
+      if (certo) els.forEach(function(e, i){ if (meus[i] !== e) certo = false; });
       if (!certo) els.forEach(function(e){ g.appendChild(e); });
     });
     /* A rosa fica no seu contentor (.ipr-nav), que a app volta a usar; so se coloca por cima da casa reservada. */
