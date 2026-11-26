@@ -2,7 +2,7 @@
    Serra da Estrela; quando me aproximo, quero ver a diferença de altimetria à escala do que estou a ver»).
    Quando a camada «Hipsometria (DGT)» (r_hipso) está ligada, a imagem da DGT dá lugar a um relevo colorido feito no browser
    a partir do MDE já usado no 3D (ipr-longe-dem). Até ao zoom 8 a escala é a do país (0 a 2 000 m); a partir daí, a escala
-   vai do mínimo ao máximo da área à vista (percentis 2 e 98), recalculada sempre que o mapa pára. A legenda diz as cotas.
+   vai do mínimo ao máximo da área à vista (percentis 1 e 99,5), recalculada sempre que o mapa pára. A legenda diz as cotas.
    Desligar: ?hipsoescala=0. Terracrua Design. */
 (function () {
   "use strict";
@@ -68,7 +68,7 @@
     function fim() {
       if (vals.length < 20) { cb(null); return; }
       vals.sort(function (a, b) { return a - b; });
-      cb([vals[Math.floor(vals.length * 0.02)], vals[Math.floor(vals.length * 0.98)]]);
+      cb([vals[Math.floor(vals.length * 0.01)], vals[Math.floor(vals.length * 0.995)]]);
     }
   }
   function aplicar() {
