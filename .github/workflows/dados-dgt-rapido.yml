@@ -1,13 +1,15 @@
-# IPR Atlas · cópia rápida das colecções grandes da DGT (Nuno, 25/11/2026 13h06: «não consegues acelerar isto? não pares»).
-# Cada colecção é partida em fatias; cada fatia corre numa máquina com IP próprio (a DGT limita por IP). No fim junta-se tudo,
+# IPR Atlas · cópia das colecções da DGT que ainda faltam, a ritmo responsável.
+# 27/11/2026: depois do bloqueio de 26/11, segue as regras da DGT (Eng.º Danilo Furtado, 27/11): uma só máquina de cada vez
+# (max-parallel 1), um só fio com pausa entre pedidos, paginação, só o que falta, preferir os ZIP de descarga directa, nunca
+# cópias integrais diárias; um 403 ou 429 repetido pára a cópia. Não se usam várias máquinas para contornar limites. No fim junta-se tudo,
 # faz-se o PMTiles (tippecanoe), publica-se na versão «dgt-pmtiles» e o Worker ipr-copia-ficheiro copia-o para o R2
 # (pmtiles/dgt/<colecção>.pmtiles). O dgt-proprio.js do Atlas passa a servir dele assim que existe. Dados abertos DGT, CC BY 4.0.
 name: dados-dgt-rapido
 on:
   workflow_dispatch:
     inputs:
-      cols: { description: "colecções (vírgulas)", default: "cadastro,cos2025v1,cos2018v4,srup_perigosidade_inc_rural,cos2018v3,altimetria_curvas_nivel,altimetria_pontos" }
-      fatias: { description: "fatias por colecção", default: "8" }
+      cols: { description: "colecções (vírgulas)", default: "cadastro" }
+      fatias: { description: "fatias por colecção (correm uma de cada vez)", default: "1" }
       freg: { description: "só estas freguesias (DICOFRE, vírgulas), partidas em quadrículas dentro da freguesia", default: "" }
       juntar: { description: "id de um run anterior cujas fatias se juntam antes do PMTiles", default: "" }
 permissions:
@@ -36,11 +38,11 @@ jobs:
     timeout-minutes: 350
     strategy:
       fail-fast: false
-      max-parallel: 20
+      max-parallel: 1
       matrix: ${{ fromJson(needs.plano.outputs.m) }}
     steps:
       - uses: actions/checkout@v4
-      - env: { DGT_FREG: "${{ github.event.inputs.freg }}" }
+      - env: { DGT_FREG: "${{ github.event.inputs.freg }}", DGT_FIOS: "1", DGT_PAUSA: "1.5" }
         run: python3 ferramentas/dgt_partes_gh.py ${{ matrix.col }} ${{ matrix.modo }} ${{ matrix.i }} ${{ matrix.n }} parte.geojsons && gzip -1 parte.geojsons && ls -la
       - uses: actions/upload-artifact@v4
         with: { name: "${{ matrix.col }}-${{ matrix.i }}", path: parte.geojsons.gz, retention-days: 5 }
@@ -98,7 +100,7 @@ jobs:
         run: |
           cd /mnt/d; C=${{ matrix.col }}
           # 26/11/2026: se faltar alguma fatia (cortada ou falhada), não se escreve por cima de uma cópia completa que já exista.
-          F=$(ls -d /tmp/p/*/ 2>/dev/null | wc -l); N=${{ github.event.inputs.fatias || 8 }}
+          F=$(ls -d /tmp/p/*/ 2>/dev/null | wc -l); N=${{ github.event.inputs.fatias || 1 }}
           if [ -z "${{ github.event.inputs.juntar }}" ] && [ "$F" -lt "$N" ] && gh release view dgt-pmtiles --repo "$GITHUB_REPOSITORY" --json assets -q '.assets[].name' | grep -qx "$C.pmtiles"; then
             echo "só $F de $N fatias: fica a cópia anterior de $C"; exit 0
           fi

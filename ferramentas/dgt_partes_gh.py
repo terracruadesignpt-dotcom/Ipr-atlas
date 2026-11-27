@@ -5,25 +5,44 @@ O Worker ipr-copia-dgt faz no máximo ~20 pedidos por minuto (limites da conta g
 muito do mesmo IP. Aqui cada fatia corre numa máquina do GitHub, com IP próprio, e escreve GeoJSON por linhas (um elemento
 por linha, sem repetidos pelo id). A DGT dá no máximo 100 por pedido e recusa offset >= 10000: por isso reparte-se por
 freguesia (administrativeunit = DICOFRE) ou por quadrícula de 0,1°.
+27/11/2026: regras da DGT (Eng.º Danilo Furtado, Chefe da Divisão de Informação Geográfica, 27/11 16h59) depois do bloqueio
+de 26/11: a OGC API serve para consulta, não para descarga integral; limitar os pedidos concorrentes, usar a paginação, evitar
+pedidos repetidos, reutilizar resultados, preferir os ZIP de descarga directa e nunca copiar tudo todos os dias. Por isso: um só
+fio (DGT_FIOS=1), uma pausa entre pedidos (DGT_PAUSA, 1,5 s), uma só máquina de cada vez no fluxo, e um 403 pára logo a cópia
+(não se insiste). Só se copia o que falta.
 Uso: dgt_partes_gh.py <colecção> <freguesias|grelha> <fatia> <n_fatias> <saida.geojsons>"""
-import json, sys, time, urllib.request, urllib.error, concurrent.futures as cf, threading
+import json, os, sys, time, urllib.request, urllib.error, concurrent.futures as cf, threading
 OGC = "https://ogcapi.dgterritorio.gov.pt/collections/"
 col, modo, fatia, nf, saida = sys.argv[1], sys.argv[2], int(sys.argv[3]), int(sys.argv[4]), sys.argv[5]
-FIOS = 3
+FIOS = int(os.environ.get("DGT_FIOS", "1"))
+PAUSA = float(os.environ.get("DGT_PAUSA", "1.5"))
 # 26/11/2026: o GitHub mata a fatia aos 350 min e perde-se tudo o que copiou. A fatia pára sozinha antes (DGT_TEMPO, segundos),
 # grava o que tem e lista as partes por fazer, para a próxima volta.
-import os
 T0, LIMITE = time.time(), float(os.environ.get("DGT_TEMPO", "18900"))
 por_fazer = []
+def parar(msg):
+    """Pára a cópia sem insistir, mas guarda o que já se copiou (o fluxo junta-o ao que já havia)."""
+    print("PAROU:", msg, flush=True)
+    try: out.flush(); out.close()
+    except Exception: pass
+    os._exit(0)
 def pedir(u, tent=0):
+    time.sleep(PAUSA)
     try:
         with urllib.request.urlopen(urllib.request.Request(u, headers={"User-Agent": "IPR-Atlas/1.0 (terracruadesign.pt)"}), timeout=90) as r:
             return json.loads(r.read())
     except urllib.error.HTTPError as e:
-        if tent < 6 and (e.code == 429 or e.code >= 500): time.sleep(min(120, 10 * (tent + 1))); return pedir(u, tent + 1)
+        if e.code == 403:  # a DGT bloqueou: parar tudo, sem insistir
+            parar("a DGT respondeu 403")
+        if e.code == 429:
+            if tent >= 3: parar("a DGT respondeu 429 três vezes")
+            try: w = int(e.headers.get("Retry-After") or 0)
+            except Exception: w = 0
+            time.sleep(max(w, 120 * (tent + 1))); return pedir(u, tent + 1)
+        if tent < 4 and e.code >= 500: time.sleep(30 * (tent + 1)); return pedir(u, tent + 1)
         raise
     except Exception:
-        if tent < 6: time.sleep(min(120, 10 * (tent + 1))); return pedir(u, tent + 1)
+        if tent < 4: time.sleep(30 * (tent + 1)); return pedir(u, tent + 1)
         raise
 TODAS = []
 def caixa(fr):
