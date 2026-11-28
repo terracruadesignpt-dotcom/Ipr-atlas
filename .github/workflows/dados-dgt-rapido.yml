@@ -63,7 +63,7 @@ jobs:
         env: { GH_TOKEN: "${{ github.token }}" }
         run: |
           gh run download ${{ github.event.inputs.juntar }} -R "$GITHUB_REPOSITORY" -p "${{ matrix.col }}-*" -D /tmp/pa
-          for d in /tmp/pa/*/; do mv "$d" "/tmp/p/ant-$(basename $d)"; done; ls /tmp/p
+          mkdir -p /tmp/p; for d in /tmp/pa/*/; do mv "$d" "/tmp/p/ant-$(basename $d)"; done; ls /tmp/p
       - name: Ferramentas
         run: |
           sudo apt-get update -qq
